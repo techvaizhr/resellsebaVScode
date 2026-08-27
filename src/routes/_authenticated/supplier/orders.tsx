@@ -285,7 +285,6 @@ function SupplierOrdersPage() {
       <PageHeader
         title="Orders"
         className="flex-row items-center justify-between"
-        description="আপনার প্রোডাক্ট আছে এমন অর্ডার — শুধু নিজের আইটেম ও নিজের হিসাব।"
         actions={
           <button
             onClick={() => void load()}
@@ -295,12 +294,6 @@ function SupplierOrdersPage() {
           </button>
         }
       />
-
-      <div className="mb-4 grid gap-4 sm:grid-cols-3">
-        <StatCard label="Total orders" value={String(totals.orders)} tone="primary" />
-        <StatCard label="My items" value={String(totals.qty)} tone="amber" />
-        <StatCard label="My value" value={bdtNum(totals.value)} tone="emerald" />
-      </div>
 
       <div className="mb-4 space-y-2">
         <div className="flex items-center gap-2">
