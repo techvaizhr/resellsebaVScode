@@ -54,7 +54,7 @@ export async function importImagesToStorage(
         const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
         const file = new File([bytes], "import.bin", { type: mime });
         const compressed = await validateAndCompress(file, { square: true });
-        const path = `master/${crypto.randomUUID()}.webp`;
+        const path = `${folder}/${crypto.randomUUID()}.webp`;
         const { error } = await supabase.storage.from("product-images").upload(path, compressed.blob, {
           contentType: "image/webp",
           cacheControl: "31536000",
