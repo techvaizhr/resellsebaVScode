@@ -65,6 +65,11 @@ export const Route = createFileRoute("/_authenticated/supplier/orders")({
 });
 
 function SupplierOrdersPage() {
+  const { data: supplierData } = useSupplier();
+  const myTint = useMemo(
+    () => orderSupplierTint([supplierData.supplier?.id ?? null]),
+    [supplierData.supplier?.id],
+  );
   const [rows, setRows] = useState<SupplierOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
