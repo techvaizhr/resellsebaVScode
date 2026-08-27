@@ -347,6 +347,88 @@ function SupplierProductsPage_() {
   );
 }
 
+/** Read-only product detail — same layout language as the admin product detail modal, without platform pricing. */
+function SupplierProductDetail({
+  product,
+  brands,
+  categories,
+  onClose,
+  onEdit,
+}: {
+  product: SupplierProduct;
+  brands: { id: string; name: string }[];
+  categories: { id: string; name: string }[];
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  const draft = (product.pending_changes ?? {}) as Record<string, any>;
+  const images = ((draft.images as { url: string }[] | undefined) ?? product.images ?? []) as { url: string }[];
+  const brandName = brands.find((b) => b.id === product.brand_id)?.name ?? "—";
+  const categoryName = categories.find((c) => c.id === product.category_id)?.name ?? "—";
+
+  return (
+    <AppModal
+      open
+      onClose={onClose}
+      title={product.name}
+      subtitle={`ID #${product.product_code}`}
+      footer={
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted">
+            Close
+          </button>
+          <button onClick={onEdit} className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium">
+            <Pencil className="h-4 w-4" /> Edit (needs approval)
+          </button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        {images.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {images.map((im, i) => (
+              <img key={i} src={im.url} alt="" className="h-20 w-20 rounded-md border object-cover" />
+            ))}
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+          <Field label="Supply price" value={bdtNum(Number(product.supplier_price))} />
+          <Field label="Stock" value={String(product.stock)} />
+          <Field label="Visibility" value={product.is_active ? "Live" : "Hidden"} />
+          <Field label="Brand" value={brandName} />
+          <Field label="Category" value={categoryName} />
+          <Field label="Approval" value={product.approval_status} />
+        </div>
+        {product.pending_changes && (
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
+            একটি এডিট অ্যাডমিন অ্যাপ্রুভালের অপেক্ষায় আছে।
+          </div>
+        )}
+        {product.approval_note && (
+          <div className="rounded-md border px-3 py-2 text-xs text-muted-foreground">{product.approval_note}</div>
+        )}
+        {product.description && (
+          <div
+            className="prose prose-sm max-w-none text-sm text-muted-foreground"
+            dangerouslySetInnerHTML={{ __html: product.description }}
+          />
+        )}
+      </div>
+    </AppModal>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border bg-muted/30 px-3 py-2">
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-0.5 truncate text-sm font-medium capitalize">{value}</div>
+    </div>
+  );
+}
+
+
+
 export type Prefill = {
   name: string;
   sku: string;
