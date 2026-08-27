@@ -19,6 +19,7 @@ export type DatePreset =
 export type OrderFilterState = {
   q: string;
   reseller: string;
+  supplier: string;
   datePreset: DatePreset;
   from: string;
   to: string;
@@ -31,6 +32,7 @@ export type OrderFilterState = {
 export const DEFAULT_ORDER_FILTERS: OrderFilterState = {
   q: "",
   reseller: "",
+  supplier: "",
   datePreset: "lifetime",
   from: "",
   to: "",
@@ -210,6 +212,7 @@ export function filterByCourier<T extends { id: string }>(
 export function activeFilterCount(f: OrderFilterState): number {
   let n = 0;
   if (f.reseller) n += 1;
+  if (f.supplier) n += 1;
   if (f.area) n += 1;
   if (f.courier) n += 1;
   if (f.datePreset !== "lifetime") n += 1;
