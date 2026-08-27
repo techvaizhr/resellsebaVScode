@@ -108,6 +108,9 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
       setAdvanceBy(((o as any).advance_by === "admin" ? "admin" : "reseller") as any);
 
 
+      const orig: Record<string, number> = {};
+      for (const it of its ?? []) if (it.id) orig[it.id] = Number(it.quantity ?? 0);
+      setOriginalQty(orig);
       setItems(
         (its ?? []).map((it: any) => ({
           id: it.id,
@@ -123,6 +126,7 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
           ),
         })),
       );
+
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
