@@ -130,7 +130,9 @@ function SupplierLayout() {
         nav={NAV}
         user={{ name: supplier.display_name, email: user.email ?? "" }}
       >
+        <ImpersonationBanner />
         <Outlet />
+
       </AppShell>
     </SupplierProvider>
   );
