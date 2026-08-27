@@ -63,7 +63,15 @@ export type SupplierReturnRow = {
   note: string | null;
   handed_over_at: string | null;
   created_at: string;
+  updated_at?: string | null;
+  product_image?: string | null;
 };
+
+/** Supplier marks returned items as received (single or bulk). */
+export async function receiveSupplierReturns(ids: string[]) {
+  const { error } = await supabase.rpc("supplier_receive_returns" as never, { _ids: ids } as never);
+  if (error) throw error;
+}
 
 export type SupplierPayoutRow = {
   id: string;
