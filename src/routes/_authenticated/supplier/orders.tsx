@@ -428,7 +428,14 @@ function SupplierOrdersPage() {
           <div className="surface-card overflow-hidden">
             {/* Desktop header */}
             <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] gap-2 rounded-lg border bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground lg:grid">
-              <div className="flex justify-center" />
+              <div className="flex justify-center">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-[hsl(var(--primary))]"
+                  checked={marked.length > 0 && marked.length === paged.length}
+                  onChange={(e) => setMarked(e.target.checked ? paged.map((x) => x.id) : [])}
+                />
+              </div>
               <div className="text-center">Order</div>
               <div className="text-center">Products</div>
               <div className="text-center">My value</div>
