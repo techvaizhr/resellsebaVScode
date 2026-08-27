@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   applyCourierUpdate,
   assertAdmin,
+  courierActorClient,
   fullAddress,
   getCourierConfig,
   getOrderForBooking,
@@ -26,8 +27,8 @@ export const bookSteadfast = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    await assertAdmin(supabase, userId);
+    const { userId } = context;
+    const supabase = await courierActorClient(context.supabase, userId, data.orderId);
     const conf = await getCourierConfig(supabase, "steadfast");
     const order = await getOrderForBooking(supabase, data.orderId);
 
@@ -268,8 +269,8 @@ export const bookPathao = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    await assertAdmin(supabase, userId);
+    const { userId } = context;
+    const supabase = await courierActorClient(context.supabase, userId, data.orderId);
     const { pathaoRequest } = await import("@/lib/pathao.server");
     const conf = await getCourierConfig(supabase, "pathao");
     if (!conf.store_id) throw new Response("Pathao store id set korun", { status: 400 });
@@ -438,8 +439,8 @@ export const bookCarrybee = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    await assertAdmin(supabase, userId);
+    const { userId } = context;
+    const supabase = await courierActorClient(context.supabase, userId, data.orderId);
     const { carrybeeRequest, carrybeeResolveLocation } = await import("@/lib/carrybee.server");
     const conf = await getCourierConfig(supabase, "carrybee");
     if (!conf.store_id) throw new Response("Carrybee store id set korun", { status: 400 });
