@@ -315,6 +315,87 @@ const PANEL_PATHS: RegExp[] = [
   /^\/p\/([^/]+)\/?$/i, // reseller storefront on a custom domain
 ];
 
+/** Extracts the product slug / code a panel link points at. */
+function panelRef(url: URL): { slug?: string; code?: string } | null {
+  for (const re of PANEL_PATHS) {
+    const m = url.pathname.match(re);
+    if (m?.[1]) return { slug: decodeURIComponent(m[1]) };
+  }
+  const code = url.searchParams.get("code") ?? url.searchParams.get("product_code");
+  if (code) return { code };
+  if (url.pathname.replace(/\/$/, "") === "/api/public/product") {
+    const slug = url.searchParams.get("slug");
+    const c = url.searchParams.get("code");
+    if (slug) return { slug };
+    if (c) return { code: c };
+  }
+  return null;
+}
+
+/**
+ * Best path: the linked product already lives in THIS panel (own catalog or a
+ * reseller storefront of this instance). We read it straight from the database
+ * so the real admin/buying prices and the original rich-text description come
+ * through instead of the public sale price + plain text.
+ * Cost fields are only returned to catalog staff (`includeCosts`).
+ */
+async function tryLocalImport(url: URL, includeCosts: boolean): Promise<ImportedProduct | null> {
+  const ref = panelRef(url);
+  if (!ref) return null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = supabaseAdmin
+      .from("products")
+      .select(
+        "name, slug, sku, product_code, short_description, description, buying_price, reseller_price, suggested_price, meta_title, meta_description, og_image_url, brands(name), categories(name), product_images(url, is_primary, sort_order)",
+      )
+      .limit(1);
+    q = ref.slug ? q.eq("slug", ref.slug) : q.eq("product_code", (ref.code ?? "").toUpperCase());
+    const { data } = await q.maybeSingle();
+    if (!data?.name) return null;
+
+    const images = [...((data.product_images ?? []) as { url: string; is_primary: boolean | null; sort_order: number | null }[])]
+      .sort(
+        (a, b) =>
+          Number(!!b.is_primary) - Number(!!a.is_primary) ||
+          Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0),
+      )
+      .map((i) => i.url)
+      .filter((u) => typeof u === "string" && /^https:\/\//i.test(u));
+
+    const brand = (Array.isArray(data.brands) ? data.brands[0] : data.brands) as { name: string } | null;
+    const category = (Array.isArray(data.categories) ? data.categories[0] : data.categories) as { name: string } | null;
+
+    // Own rich text: keep the markup, drop only scripts/styles.
+    const description = String(data.description ?? "")
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .slice(0, 20_000)
+      .trim();
+
+    return {
+      source: "This panel",
+      url: url.href,
+      name: String(data.name).slice(0, 200),
+      description,
+      shortDescription: toPlainText(String(data.short_description ?? ""), 400) || toPlainText(description, 200),
+      price: Number(data.suggested_price ?? 0) || null,
+      adminPrice: includeCosts ? Number(data.reseller_price ?? 0) || null : null,
+      buyingPrice: includeCosts ? Number(data.buying_price ?? 0) || null : null,
+      currency: "BDT",
+      sku: (data.sku as string | null) ?? (data.product_code as string | null) ?? null,
+      brand: brand?.name ?? null,
+      category: category?.name ?? null,
+      images: images.length ? images : data.og_image_url ? [String(data.og_image_url)] : [],
+      metaTitle: toPlainText(String(data.meta_title || data.name), 60),
+      metaDescription: toPlainText(String(data.meta_description || ""), 160) || toPlainText(description, 160),
+    };
+  } catch {
+    return null; // fall back to the public feed / scraper
+  }
+}
+
+
 /**
  * Fast path: the link belongs to another (or this) instance of this platform,
  * so read the structured public product feed instead of scraping HTML.
