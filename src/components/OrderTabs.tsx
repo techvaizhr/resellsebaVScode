@@ -130,7 +130,7 @@ export function OrderTabs({
               className="no-scrollbar grid grid-cols-2 gap-1.5 overflow-y-auto overscroll-contain"
               style={{ maxHeight: menuPosition.maxHeight }}
             >
-              {ORDER_TABS.map((t) => {
+              {tabs.map((t) => {
                 const isActive = tab === t.key;
                 return (
                   <button
@@ -155,7 +155,7 @@ export function OrderTabs({
 
       {/* Desktop: wrapping buttons */}
       <div className="hidden flex-wrap gap-2 sm:flex">
-        {ORDER_TABS.map((t) => {
+        {tabs.map((t) => {
           const isActive = tab === t.key;
           return (
             <button
