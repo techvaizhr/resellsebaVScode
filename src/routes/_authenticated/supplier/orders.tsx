@@ -508,16 +508,14 @@ function SupplierOrdersPage() {
                   {/* Desktop row */}
                   <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-start gap-2 px-4 py-3 text-sm hover:bg-muted/40 lg:grid">
                     <div className="flex flex-col items-center gap-1.5">
-                      {next && (
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 accent-[hsl(var(--primary))]"
-                          checked={marked.includes(o.id)}
-                          onChange={(e) =>
-                            setMarked((prev) => (e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id)))
-                          }
-                        />
-                      )}
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-[hsl(var(--primary))]"
+                        checked={marked.includes(o.id)}
+                        onChange={(e) =>
+                          setMarked((prev) => (e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id)))
+                        }
+                      />
                       <button onClick={() => toggleExpand(o.id)} className="rounded-full p-1 hover:bg-muted">
                         <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
                       </button>
