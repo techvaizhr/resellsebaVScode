@@ -686,7 +686,7 @@ function AdminOrdersPage() {
                       isBulk: true,
                     });
                   }}
-                  className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-9 items-center gap-2 rounded-md border border-blue-500/40 bg-blue-500/10 px-3 text-xs font-medium text-blue-600 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50 dark:text-blue-400"
                 >
                   <Settings2 className="h-3.5 w-3.5" /> Change Status
                 </button>
@@ -694,14 +694,14 @@ function AdminOrdersPage() {
             })()}
             <button
               onClick={() => printShippingLabels(marked)}
-              className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 text-xs font-medium text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
             >
               <Printer className="h-3.5 w-3.5" /> Print Labels
             </button>
             {canShip && (
             <button
               onClick={() => setBookingModal({ open: true, orderIds: marked })}
-              className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-violet-500/40 bg-violet-500/10 px-3 text-xs font-medium text-violet-600 hover:bg-violet-500/20 dark:text-violet-400"
             >
               <Truck className="h-3.5 w-3.5" /> {activeProviderLabel ? `Book ${activeProviderLabel}` : "Book Courier"}
             </button>
@@ -709,7 +709,7 @@ function AdminOrdersPage() {
             {canDelete && (
             <button
               onClick={bulkDeleteOrders}
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-destructive/40 bg-background px-3 text-xs font-medium text-destructive hover:bg-destructive/10"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-xs font-medium text-destructive hover:bg-destructive/20"
             >
               <Trash2 className="h-3.5 w-3.5" /> Delete
             </button>
