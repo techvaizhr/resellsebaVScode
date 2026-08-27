@@ -392,12 +392,12 @@ function SupplierProductDetail({
           </div>
         )}
         <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-          <Field label="Supply price" value={bdtNum(Number(product.supplier_price))} />
-          <Field label="Stock" value={String(product.stock)} />
-          <Field label="Visibility" value={product.is_active ? "Live" : "Hidden"} />
-          <Field label="Brand" value={brandName} />
-          <Field label="Category" value={categoryName} />
-          <Field label="Approval" value={product.approval_status} />
+          <DetailField label="Supply price" value={bdtNum(Number(product.supplier_price))} />
+          <DetailField label="Stock" value={String(product.stock)} />
+          <DetailField label="Visibility" value={product.is_active ? "Live" : "Hidden"} />
+          <DetailField label="Brand" value={brandName} />
+          <DetailField label="Category" value={categoryName} />
+          <DetailField label="Approval" value={product.approval_status} />
         </div>
         {product.pending_changes && (
           <div className="rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
@@ -418,7 +418,7 @@ function SupplierProductDetail({
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function DetailField({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border bg-muted/30 px-3 py-2">
       <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
@@ -614,12 +614,12 @@ function ProductForm({
           <Field label="Supplier price (৳)" hint="আপনি প্রতি ইউনিটে যত পাবেন।">
             <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" min={0} className={inp} required />
           </Field>
-          <Field label="Stock">
+          <DetailField label="Stock">
             <input value={stock} onChange={(e) => setStock(e.target.value)} type="number" min={0} className={inp} />
           </Field>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Brand">
+          <DetailField label="Brand">
             <select value={brandId} onChange={(e) => setBrandId(e.target.value)} className={inp}>
               <option value="">— None —</option>
               {brands.map((b) => (
@@ -629,7 +629,7 @@ function ProductForm({
               ))}
             </select>
           </Field>
-          <Field label="Category">
+          <DetailField label="Category">
             <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={inp}>
               <option value="">— None —</option>
               {categories.map((c) => (
