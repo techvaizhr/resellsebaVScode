@@ -37,6 +37,8 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
   const [busy, setBusy] = useState(false);
   const [order, setOrder] = useState<any>(null);
   const [items, setItems] = useState<EditItem[]>([]);
+  const [originalQty, setOriginalQty] = useState<Record<string, number>>({});
+
   const [removed, setRemoved] = useState<string[]>([]);
 
   const [name, setName] = useState("");
@@ -108,6 +110,9 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
       setAdvanceBy(((o as any).advance_by === "admin" ? "admin" : "reseller") as any);
 
 
+      const orig: Record<string, number> = {};
+      for (const it of its ?? []) if (it.id) orig[it.id] = Number(it.quantity ?? 0);
+      setOriginalQty(orig);
       setItems(
         (its ?? []).map((it: any) => ({
           id: it.id,
@@ -123,6 +128,7 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
           ),
         })),
       );
+
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -244,10 +250,39 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
 
   const errors = { name: nameError(name), phone: phoneError(phone), address: addressError(address) };
 
+  /** Max quantity a line can reach = free catalog stock + units already held by this order line. */
+  function maxQtyFor(it: EditItem) {
+    const p = allProducts.find((x) => x.id === it.product_id);
+    if (!p) return Infinity;
+    const held = it.id ? Number(originalQty[it.id] ?? 0) : 0;
+    return Number(p.stock ?? 0) + held;
+  }
+
+  function bumpQty(target: EditItem, next: number) {
+    const max = maxQtyFor(target);
+    if (next > max) {
+      toast.error(`Only ${max} available in stock`);
+      return;
+    }
+    setItems((prev) => prev.map((x) => (x === target ? { ...x, quantity: Math.max(1, next) } : x)));
+  }
+
   function addProduct(p: any) {
+    const stock = Number(p.stock ?? 0);
+    if (stock <= 0) {
+      toast.error(`${p.name} is out of stock`);
+      return;
+    }
     setItems((prev) => {
       const hit = prev.find((x) => x.product_id === p.id);
-      if (hit) return prev.map((x) => (x === hit ? { ...x, quantity: x.quantity + 1 } : x));
+      if (hit) {
+        const held = hit.id ? Number(originalQty[hit.id] ?? 0) : 0;
+        if (hit.quantity + 1 > stock + held) {
+          toast.error(`Only ${stock + held} available in stock`);
+          return prev;
+        }
+        return prev.map((x) => (x === hit ? { ...x, quantity: x.quantity + 1 } : x));
+      }
       const sa = Number(p.reseller_price ?? 0) + Number(p.packaging_cost ?? 0);
       return [
         ...prev,
@@ -264,6 +299,7 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
       ];
     });
     setQuery("");
+
   }
 
   async function save(e: React.FormEvent) {
@@ -274,6 +310,10 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
     const low = items.find((it) => it.reseller_price < minFor(it));
     if (low)
       return toast.error(`${low.product_name}: minimum selling price is ৳${minFor(low)} — cannot save below this`);
+    const short = items.find((it) => it.quantity > maxQtyFor(it));
+    if (short)
+      return toast.error(`${short.product_name}: only ${maxQtyFor(short)} available in stock`);
+
     setBusy(true);
     try {
       if (removed.length > 0) {
@@ -466,7 +506,11 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
                             )}
                           </span>
                           <span className="min-w-0 flex-1 truncate font-medium">{p.name}</span>
+                          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-black uppercase ${Number(p.stock ?? 0) <= 0 ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-600"}`}>
+                            {Number(p.stock ?? 0) <= 0 ? "Out" : `Stock ${Number(p.stock ?? 0)}`}
+                          </span>
                           <span className="shrink-0 text-muted-foreground">৳{Number(p.suggested_price ?? 0)}</span>
+
                         </button>
                       ))}
                     </div>
@@ -514,19 +558,12 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
                             <input
                               className={`${inp} text-center`}
                               value={it.quantity}
-                              onChange={(e) =>
-                                setItems((prev) =>
-                                  prev.map((x) =>
-                                    x === it ? { ...x, quantity: Math.max(1, Number(e.target.value) || 1) } : x,
-                                  ),
-                                )
-                              }
+                              onChange={(e) => bumpQty(it, Math.max(1, Number(e.target.value) || 1))}
                             />
                             <button
                               type="button"
-                              onClick={() =>
-                                setItems((prev) => prev.map((x) => (x === it ? { ...x, quantity: x.quantity + 1 } : x)))
-                              }
+                              onClick={() => bumpQty(it, it.quantity + 1)}
+
                               className="rounded border p-1 hover:bg-accent"
                             >
                               <Plus className="h-3 w-3" />

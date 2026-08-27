@@ -197,23 +197,36 @@ export function NewOrderModal({
   };
 
   function pick(item: { type: 'listing' | 'product', data: any }) {
+    const prod = item.type === 'listing' ? item.data.products : item.data;
+    const stock = Number(prod?.stock ?? 0);
+    if (stock <= 0) {
+      toast.error(`${prod?.name ?? "Product"} is out of stock`);
+      return;
+    }
     if (item.type === 'listing') {
       const l = item.data;
-      setLines(prev =>
-        prev.some(x => x.listing_id === l.id)
-          ? prev.map(x => (x.listing_id === l.id ? { ...x, qty: x.qty + 1 } : x))
-          : [...prev, { listing_id: l.id, qty: 1 }]
-      );
+      setLines(prev => {
+        const cur = prev.find(x => x.listing_id === l.id);
+        if (cur) {
+          if (cur.qty + 1 > stock) { toast.error(`Only ${stock} in stock`); return prev; }
+          return prev.map(x => (x.listing_id === l.id ? { ...x, qty: x.qty + 1 } : x));
+        }
+        return [...prev, { listing_id: l.id, qty: 1 }];
+      });
     } else {
       const p = item.data;
-      setLines(prev =>
-        prev.some(x => x.product_id === p.id)
-          ? prev.map(x => (x.product_id === p.id ? { ...x, qty: x.qty + 1 } : x))
-          : [...prev, { product_id: p.id, qty: 1, price: p.suggested_price || (p.reseller_price + p.packaging_cost) }]
-      );
+      setLines(prev => {
+        const cur = prev.find(x => x.product_id === p.id);
+        if (cur) {
+          if (cur.qty + 1 > stock) { toast.error(`Only ${stock} in stock`); return prev; }
+          return prev.map(x => (x.product_id === p.id ? { ...x, qty: x.qty + 1 } : x));
+        }
+        return [...prev, { product_id: p.id, qty: 1, price: p.suggested_price || (p.reseller_price + p.packaging_cost) }];
+      });
     }
     setQuery("");
   }
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -223,6 +236,10 @@ export function NewOrderModal({
     const low = picked.find((x) => x.sellPrice < x.minPrice);
     if (low)
       return toast.error(`${low.p.name}: minimum selling price is ৳${low.minPrice} — order cannot be placed below this`);
+    const short = picked.find((x) => x.line.qty > Number(x.p?.stock ?? 0));
+    if (short)
+      return toast.error(`${short.p.name}: only ${Number(short.p?.stock ?? 0)} in stock`);
+
     setBusy(true);
     try {
       const { data: order, error } = await supabase
@@ -490,6 +507,10 @@ export function NewOrderModal({
                                     <span className="text-[10px] text-muted-foreground">
                                       ৳{Number(price).toFixed(0)} · Delivery: ৳{dc.toFixed(0)}
                                     </span>
+                                    <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black uppercase ${Number(p.stock ?? 0) <= 0 ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-600"}`}>
+                                      {Number(p.stock ?? 0) <= 0 ? "Out of stock" : `Stock ${Number(p.stock ?? 0)}`}
+                                    </span>
+
                                   </div>
                                 </div>
                                 <div className={`shrink-0 rounded-full p-1.5 transition-all ${inCart ? 'bg-primary text-primary-foreground scale-110' : 'bg-accent hover:bg-primary/20 hover:text-primary'}`}>
@@ -562,7 +583,13 @@ export function NewOrderModal({
                                 <span className="w-8 text-center text-[12px] font-black">{line.qty}</span>
                                 <button 
                                   type="button" 
-                                  onClick={() => setLines(prev => prev.map((l, idx) => idx === i ? {...l, qty: l.qty + 1} : l))} 
+                                  onClick={() => setLines(prev => prev.map((l, idx) => {
+                                    if (idx !== i) return l;
+                                    const stock = Number(p?.stock ?? 0);
+                                    if (l.qty + 1 > stock) { toast.error(`Only ${stock} in stock`); return l; }
+                                    return { ...l, qty: l.qty + 1 };
+                                  }))}
+
                                   className="h-7 w-7 flex items-center justify-center hover:bg-background rounded-lg transition-all active:scale-90"
                                 >
                                   <Plus className="h-3 w-3" />

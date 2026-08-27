@@ -143,17 +143,20 @@ export function useStoreLoader(code: string, themeOverride?: string | null, pale
       const rid = r.reseller_id;
       const s = r as unknown as StoreSettings;
 
-      const listings = ((boot?.listings ?? []) as unknown as StoreListing[]).map((l) => ({
-        ...l,
-        product: l.product
-          ? {
-              ...l.product,
-              product_images: [...(l.product.product_images ?? [])].sort(
-                (a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0),
-              ),
-            }
-          : null,
-      })) as StoreListing[];
+      // Out-of-stock products are hidden from the storefront automatically.
+      const listings = ((boot?.listings ?? []) as unknown as StoreListing[])
+        .filter((l) => l.product && (l.product.stock === null || Number(l.product.stock) > 0))
+        .map((l) => ({
+          ...l,
+          product: l.product
+            ? {
+                ...l.product,
+                product_images: [...(l.product.product_images ?? [])].sort(
+                  (a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0),
+                ),
+              }
+            : null,
+        })) as StoreListing[];
 
       const categories = (boot?.categories ?? []) as StoreCategory[];
       const menuRows = (boot?.menu ?? []) as never;
