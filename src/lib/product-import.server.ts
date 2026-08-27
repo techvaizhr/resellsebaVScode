@@ -22,7 +22,12 @@ export interface ImportedProduct {
   name: string;
   description: string;
   shortDescription: string;
+  /** Sale / suggested price of the source product. */
   price: number | null;
+  /** Admin (reseller) price — only filled when the product lives in this panel. */
+  adminPrice?: number | null;
+  /** Buying cost — only filled when the product lives in this panel. */
+  buyingPrice?: number | null;
   currency: string | null;
   sku: string | null;
   brand: string | null;
