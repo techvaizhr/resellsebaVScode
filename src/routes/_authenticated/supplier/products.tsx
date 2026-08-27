@@ -62,7 +62,7 @@ function SupplierProductsPage_() {
 
   useEffect(() => {
     setPage(1);
-  }, [q, status, brand, category, live, perPage]);
+  }, [q, status, brand, category, live, stock, perPage]);
 
   const products = data?.products ?? [];
   const brands = data?.brands ?? [];
@@ -76,10 +76,13 @@ function SupplierProductsPage_() {
       if (category && p.category_id !== category) return false;
       if (live === "active" && !p.is_active) return false;
       if (live === "hidden" && p.is_active) return false;
+      if (stock === "in" && Number(p.stock) <= 0) return false;
+      if (stock === "low" && Number(p.stock) > 0 && Number(p.stock) < 5) return false;
+      if (stock === "out" && Number(p.stock) > 0) return false;
       if (!needle) return true;
       return p.name.toLowerCase().includes(needle) || String(p.product_code).includes(needle);
     });
-  }, [products, q, status, brand, category, live]);
+  }, [products, q, status, brand, category, live, stock]);
 
   const paged = usePaginated(rows, page, perPage);
 
