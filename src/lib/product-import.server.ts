@@ -492,3 +492,16 @@ export async function fetchRemoteImage(rawUrl: string): Promise<{ base64: string
     clearTimeout(timer);
   }
 }
+
+/** Catalog staff OR an active supplier may pull product data from a link. */
+export async function assertImporter(client: any, userId: string) {
+  const { data } = await client
+    .from("suppliers")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .maybeSingle();
+  if (data?.id) return;
+  const { assertAnyPermission } = await import("@/lib/admin-users.server");
+  await assertAnyPermission(client, userId, ["products.manage"]);
+}
