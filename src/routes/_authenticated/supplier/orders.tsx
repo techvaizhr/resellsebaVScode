@@ -434,7 +434,7 @@ function SupplierOrdersPage() {
                   </div>
 
                   {/* Desktop row */}
-                  <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(140px,1fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-start gap-2 px-4 py-3 text-sm hover:bg-muted/40 lg:grid">
+                  <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-start gap-2 px-4 py-3 text-sm hover:bg-muted/40 lg:grid">
                     <div className="flex flex-col items-center gap-1.5">
                       {next && (
                         <input
@@ -457,20 +457,6 @@ function SupplierOrdersPage() {
                         {new Date(o.created_at).toLocaleDateString()}
                       </div>
                       <div className="text-[11px] capitalize text-muted-foreground">{o.area.replace(/_/g, " ")}</div>
-                    </div>
-
-                    <div className="min-w-0">
-                      <div className="truncate text-xs font-medium">{o.customer_name}</div>
-                      <div className="flex items-center gap-1 text-[11px] tabular-nums text-muted-foreground">
-                        <span className="truncate">{o.customer_phone}</span>
-                        <a href={`tel:${o.customer_phone}`} className="shrink-0 text-primary">
-                          <Phone className="h-3 w-3" />
-                        </a>
-                      </div>
-                      <div className="truncate text-[11px] text-muted-foreground">
-                        {o.address_line}
-                        {o.city ? `, ${o.city}` : ""}
-                      </div>
                     </div>
 
                     <OrderProductCell items={items} expanded={open} onZoom={setZoomImage} onToggle={() => toggleExpand(o.id)} />
