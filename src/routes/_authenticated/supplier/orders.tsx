@@ -528,9 +528,6 @@ function SupplierOrdersPage() {
                   {open && (
                     <div className="border-t bg-muted/20 px-4 py-3">
                       <OrderItemsList items={items} onZoom={setZoomImage} />
-                      <p className="mt-2 text-[11px] text-muted-foreground">
-                        এই অর্ডারে অন্য সাপ্লায়ারের প্রোডাক্ট থাকলে তা এখানে দেখানো হয় না।
-                      </p>
                     </div>
                   )}
                 </div>
