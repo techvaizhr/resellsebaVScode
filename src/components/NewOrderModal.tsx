@@ -197,23 +197,36 @@ export function NewOrderModal({
   };
 
   function pick(item: { type: 'listing' | 'product', data: any }) {
+    const prod = item.type === 'listing' ? item.data.products : item.data;
+    const stock = Number(prod?.stock ?? 0);
+    if (stock <= 0) {
+      toast.error(`${prod?.name ?? "Product"} is out of stock`);
+      return;
+    }
     if (item.type === 'listing') {
       const l = item.data;
-      setLines(prev =>
-        prev.some(x => x.listing_id === l.id)
-          ? prev.map(x => (x.listing_id === l.id ? { ...x, qty: x.qty + 1 } : x))
-          : [...prev, { listing_id: l.id, qty: 1 }]
-      );
+      setLines(prev => {
+        const cur = prev.find(x => x.listing_id === l.id);
+        if (cur) {
+          if (cur.qty + 1 > stock) { toast.error(`Only ${stock} in stock`); return prev; }
+          return prev.map(x => (x.listing_id === l.id ? { ...x, qty: x.qty + 1 } : x));
+        }
+        return [...prev, { listing_id: l.id, qty: 1 }];
+      });
     } else {
       const p = item.data;
-      setLines(prev =>
-        prev.some(x => x.product_id === p.id)
-          ? prev.map(x => (x.product_id === p.id ? { ...x, qty: x.qty + 1 } : x))
-          : [...prev, { product_id: p.id, qty: 1, price: p.suggested_price || (p.reseller_price + p.packaging_cost) }]
-      );
+      setLines(prev => {
+        const cur = prev.find(x => x.product_id === p.id);
+        if (cur) {
+          if (cur.qty + 1 > stock) { toast.error(`Only ${stock} in stock`); return prev; }
+          return prev.map(x => (x.product_id === p.id ? { ...x, qty: x.qty + 1 } : x));
+        }
+        return [...prev, { product_id: p.id, qty: 1, price: p.suggested_price || (p.reseller_price + p.packaging_cost) }];
+      });
     }
     setQuery("");
   }
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
