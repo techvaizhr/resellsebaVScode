@@ -35,6 +35,8 @@ import {
   type StripItem,
 } from "@/components/order-items-strip";
 import { bdtNum } from "@/lib/supplier";
+import { useSupplier } from "@/components/supplier-context";
+import { orderSupplierTint } from "@/lib/supplier-colors";
 import { printLabelDocs, type LabelDoc } from "@/lib/labels";
 import { getGlobalSettings } from "@/lib/app-data";
 import {
