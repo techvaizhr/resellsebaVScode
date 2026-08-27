@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, Pencil, Search, PackageSearch, Clock, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, Pencil, Search, PackageSearch, Clock, CheckCircle2, Link2, CloudDownload } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { fetchImportImage, importProductFromUrl } from "@/lib/product-import.functions";
+import { importImagesToStorage } from "@/lib/product-import";
 import { toast } from "sonner";
 import { PageHeader, StatCard, EmptyState } from "@/components/ui-kit";
 import { AppModal } from "@/components/ui-kit/AppModal";
@@ -29,6 +32,8 @@ function SupplierProductsPage_() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [editing, setEditing] = useState<SupplierProduct | null | undefined>(undefined);
+  const [prefill, setPrefill] = useState<Prefill | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -77,12 +82,23 @@ function SupplierProductsPage_() {
         title="My products"
         description="নতুন প্রোডাক্ট যোগ করুন বা এডিট করুন — অ্যাডমিন অ্যাপ্রুভ করলেই লাইভ হবে।"
         actions={
+          <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setEditing(null)}
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+          >
+            <Link2 className="h-4 w-4" /> Import from link
+          </button>
+          <button
+            onClick={() => {
+              setPrefill(null);
+              setEditing(null);
+            }}
             className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
           >
             <Plus className="h-4 w-4" /> New product
           </button>
+          </div>
         }
       />
 
@@ -148,7 +164,10 @@ function SupplierProductsPage_() {
                   <td className="text-muted-foreground">{p.is_active ? "Yes" : "No"}</td>
                   <td className="p-2 text-right">
                     <button
-                      onClick={() => setEditing(p)}
+                      onClick={() => {
+                        setPrefill(null);
+                        setEditing(p);
+                      }}
                       className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-muted"
                     >
                       <Pencil className="h-3 w-3" /> Edit
@@ -161,15 +180,32 @@ function SupplierProductsPage_() {
         </div>
       )}
 
+      {importOpen && (
+        <ImportModal
+          supplierId={supplierId}
+          onClose={() => setImportOpen(false)}
+          onReady={(data) => {
+            setImportOpen(false);
+            setPrefill(data);
+            setEditing(null);
+          }}
+        />
+      )}
+
       {editing !== undefined && (
         <ProductForm
           product={editing}
+          prefill={prefill}
           supplierId={supplierId}
           brands={page?.brands ?? []}
           categories={page?.categories ?? []}
-          onClose={() => setEditing(undefined)}
+          onClose={() => {
+            setEditing(undefined);
+            setPrefill(null);
+          }}
           onSaved={() => {
             setEditing(undefined);
+            setPrefill(null);
             void load();
           }}
         />
@@ -178,8 +214,96 @@ function SupplierProductsPage_() {
   );
 }
 
+export type Prefill = {
+  name: string;
+  sku: string;
+  description: string;
+  images: UploadedImage[];
+};
+
+function ImportModal({
+  supplierId,
+  onClose,
+  onReady,
+}: {
+  supplierId: string;
+  onClose: () => void;
+  onReady: (data: Prefill) => void;
+}) {
+  const runImport = useServerFn(importProductFromUrl);
+  const pullImage = useServerFn(fetchImportImage);
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState("");
+
+  async function go(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    try {
+      setStep("লিংক পড়া হচ্ছে…");
+      const data = await runImport({ data: { url: url.trim() } });
+      setStep("ছবি ডাউনলোড হচ্ছে…");
+      const images = await importImagesToStorage(
+        data.images,
+        pullImage,
+        6,
+        (d, t) => setStep(`ছবি ${d}/${t}…`),
+        `suppliers/${supplierId}`,
+      );
+      onReady({
+        name: data.name ?? "",
+        sku: data.sku ?? "",
+        description: data.description ?? data.shortDescription ?? "",
+        images,
+      });
+      toast.success("ডাটা রেডি — আপনার সাপ্লাই প্রাইস দিয়ে সাবমিট করুন।");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setBusy(false);
+      setStep("");
+    }
+  }
+
+  return (
+    <AppModal
+      open
+      onClose={onClose}
+      title="Import product from link"
+      subtitle="যেকোনো প্রোডাক্ট পেজের লিংক দিন — নাম, বর্ণনা ও ছবি স্বয়ংক্রিয়ভাবে আসবে।"
+      footer={
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted">
+            Cancel
+          </button>
+          <button
+            form="supplier-import-form"
+            disabled={busy || !url.trim()}
+            className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudDownload className="h-4 w-4" />} Fetch
+          </button>
+        </div>
+      }
+    >
+      <form id="supplier-import-form" onSubmit={go} className="space-y-2">
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://…"
+          className={inp}
+          autoFocus
+        />
+        {step && <p className="text-xs text-muted-foreground">{step}</p>}
+      </form>
+    </AppModal>
+  );
+}
+
 function ProductForm({
   product,
+  prefill,
   supplierId,
   brands,
   categories,
@@ -187,6 +311,7 @@ function ProductForm({
   onSaved,
 }: {
   product: SupplierProduct | null;
+  prefill?: Prefill | null;
   supplierId: string;
   brands: { id: string; name: string }[];
   categories: { id: string; name: string }[];
@@ -196,15 +321,17 @@ function ProductForm({
   const draft = (product?.pending_changes ?? {}) as Record<string, any>;
   const v = <T,>(key: string, fallback: T): T => (draft[key] ?? fallback) as T;
 
-  const [name, setName] = useState(v("name", product?.name ?? ""));
-  const [sku, setSku] = useState(v("sku", product?.sku ?? "") ?? "");
+  const [name, setName] = useState(prefill?.name || v("name", product?.name ?? ""));
+  const [sku, setSku] = useState(prefill?.sku || (v("sku", product?.sku ?? "") ?? ""));
   const [price, setPrice] = useState(String(v("supplier_price", product?.supplier_price ?? "")));
   const [stock, setStock] = useState(String(v("stock", product?.stock ?? 0)));
   const [brandId, setBrandId] = useState(v("brand_id", product?.brand_id ?? "") ?? "");
   const [categoryId, setCategoryId] = useState(v("category_id", product?.category_id ?? "") ?? "");
-  const [description, setDescription] = useState(v("description", product?.description ?? "") ?? "");
+  const [description, setDescription] = useState(
+    prefill?.description || (v("description", product?.description ?? "") ?? ""),
+  );
   const [images, setImages] = useState<UploadedImage[]>(
-    ((draft.images as UploadedImage[] | undefined) ?? product?.images ?? []).map((i: any) => ({
+    (prefill?.images ?? (draft.images as UploadedImage[] | undefined) ?? product?.images ?? []).map((i: any) => ({
       url: i.url,
       path: i.path ?? "",
       bytes: i.bytes ?? 0,
