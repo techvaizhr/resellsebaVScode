@@ -1195,7 +1195,8 @@ function AdminOrdersPage() {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
         <Pagination
