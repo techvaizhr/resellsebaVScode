@@ -6,7 +6,6 @@ import {
   Play,
   ShieldOff,
   X,
-  Check,
   Pencil,
   KeyRound,
   LogIn,
