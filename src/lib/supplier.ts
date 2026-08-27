@@ -233,8 +233,6 @@ export type SupplierProduct = {
   brand_id: string | null;
   category_id: string | null;
   supplier_price: number;
-  reseller_price: number;
-  suggested_price: number;
   stock: number;
   is_active: boolean;
   approval_status: "approved" | "pending" | "rejected";

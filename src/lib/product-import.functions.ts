@@ -11,9 +11,8 @@ export const importProductFromUrl = createServerFn({ method: "POST" })
     return { url: input.url };
   })
   .handler(async ({ data, context }): Promise<ImportedProduct> => {
-    const { assertAnyPermission } = await import("@/lib/admin-users.server");
-    await assertAnyPermission(context.supabase, context.userId, ["products.manage"]);
-    const { scrapeProduct } = await import("@/lib/product-import.server");
+    const { assertImporter, scrapeProduct } = await import("@/lib/product-import.server");
+    await assertImporter(context.supabase, context.userId);
     return scrapeProduct(data.url);
   });
 
@@ -25,8 +24,7 @@ export const fetchImportImage = createServerFn({ method: "POST" })
     return { url: input.url };
   })
   .handler(async ({ data, context }): Promise<{ base64: string; mime: string }> => {
-    const { assertAnyPermission } = await import("@/lib/admin-users.server");
-    await assertAnyPermission(context.supabase, context.userId, ["products.manage"]);
-    const { fetchRemoteImage } = await import("@/lib/product-import.server");
+    const { assertImporter, fetchRemoteImage } = await import("@/lib/product-import.server");
+    await assertImporter(context.supabase, context.userId);
     return fetchRemoteImage(data.url);
   });

@@ -41,6 +41,7 @@ export async function importImagesToStorage(
   fetchImage: (args: { data: { url: string } }) => Promise<{ base64: string; mime: string }>,
   max = 6,
   onProgress?: (done: number, total: number) => void,
+  folder = "master",
 ): Promise<UploadedImage[]> {
   const list = urls.slice(0, max);
   let done = 0;
@@ -53,7 +54,7 @@ export async function importImagesToStorage(
         const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
         const file = new File([bytes], "import.bin", { type: mime });
         const compressed = await validateAndCompress(file, { square: true });
-        const path = `master/${crypto.randomUUID()}.webp`;
+        const path = `${folder}/${crypto.randomUUID()}.webp`;
         const { error } = await supabase.storage.from("product-images").upload(path, compressed.blob, {
           contentType: "image/webp",
           cacheControl: "31536000",
