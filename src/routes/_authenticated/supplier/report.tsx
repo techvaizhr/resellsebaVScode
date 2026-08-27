@@ -13,7 +13,18 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/supplier/report")({
   component: SupplierReportPage,
+  head: () => ({
+    meta: [
+      { title: "Supplier sales report · earnings breakdown" },
+      { name: "description", content: "ডেলিভারি হওয়া আইটেমের আয় ও চলমান অর্ডারের হিসাব দেখুন।" },
+      { property: "og:title", content: "Supplier sales report" },
+      { property: "og:description", content: "Delivered earnings and in-progress order values." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
+
 
 const inp = "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
 
