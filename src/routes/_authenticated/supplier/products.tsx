@@ -614,12 +614,12 @@ function ProductForm({
           <Field label="Supplier price (৳)" hint="আপনি প্রতি ইউনিটে যত পাবেন।">
             <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" min={0} className={inp} required />
           </Field>
-          <DetailField label="Stock">
+          <Field label="Stock">
             <input value={stock} onChange={(e) => setStock(e.target.value)} type="number" min={0} className={inp} />
           </Field>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          <DetailField label="Brand">
+          <Field label="Brand">
             <select value={brandId} onChange={(e) => setBrandId(e.target.value)} className={inp}>
               <option value="">— None —</option>
               {brands.map((b) => (
@@ -629,7 +629,7 @@ function ProductForm({
               ))}
             </select>
           </Field>
-          <DetailField label="Category">
+          <Field label="Category">
             <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={inp}>
               <option value="">— None —</option>
               {categories.map((c) => (
