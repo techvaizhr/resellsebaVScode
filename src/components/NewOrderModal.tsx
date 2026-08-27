@@ -236,6 +236,10 @@ export function NewOrderModal({
     const low = picked.find((x) => x.sellPrice < x.minPrice);
     if (low)
       return toast.error(`${low.p.name}: minimum selling price is ৳${low.minPrice} — order cannot be placed below this`);
+    const short = picked.find((x) => x.line.qty > Number(x.p?.stock ?? 0));
+    if (short)
+      return toast.error(`${short.p.name}: only ${Number(short.p?.stock ?? 0)} in stock`);
+
     setBusy(true);
     try {
       const { data: order, error } = await supabase
