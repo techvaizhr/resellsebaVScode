@@ -381,27 +381,48 @@ function SupplierOrdersPage() {
       </div>
 
 
-      {actionable.length > 0 && (
+      {paged.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
           <button
             type="button"
             onClick={() =>
-              setMarked((prev) => (prev.length === actionable.length ? [] : actionable.map((o) => o.id)))
+              setMarked((prev) => (prev.length === paged.length ? [] : paged.map((o) => o.id)))
             }
-            className="rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
+            className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
           >
-            {marked.length === actionable.length && marked.length > 0 ? "Clear selection" : "Select page"}
+            <CheckSquare className="h-3.5 w-3.5" />
+            {marked.length === paged.length && marked.length > 0 ? "Clear selection" : "Select page"}
           </button>
           <span className="text-sm font-medium">{marked.length} marked</span>
-          {bulkNext && (
-            <button
-              disabled={busy}
-              onClick={() => askStatus(marked, bulkNext)}
-              className="btn-brand ml-auto inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-xs font-semibold disabled:opacity-50"
-            >
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
-              {marked.length} → {supplierStatusLabel(bulkNext)}
-            </button>
+
+          {marked.length > 0 && (
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <button
+                onClick={printMarked}
+                className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Print labels
+              </button>
+              <button
+                onClick={bookMarked}
+                disabled={unbookedMarked.length === 0}
+                className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                <Truck className="h-3.5 w-3.5" />
+                Book courier {unbookedMarked.length > 0 ? `(${unbookedMarked.length})` : ""}
+              </button>
+              {bulkNext && (
+                <button
+                  disabled={busy}
+                  onClick={() => askStatus(marked, bulkNext)}
+                  className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-xs font-semibold disabled:opacity-50"
+                >
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
+                  {marked.length} → {supplierStatusLabel(bulkNext)}
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
