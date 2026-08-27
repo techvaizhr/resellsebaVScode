@@ -55,11 +55,12 @@ function NewProduct() {
     setName(d.name);
     if (d.sku) setSku(d.sku);
     if (d.description) setDescription(d.description);
-    if (d.price) {
-      setBuying(String(d.price));
-      setResellerPrice(String(d.price));
-      setSuggested(String(d.price));
-    }
+    // Own-panel imports carry real admin/buying prices; marketplace links only a sale price.
+    const admin = d.adminPrice ?? d.price;
+    const buy = d.buyingPrice ?? admin;
+    if (buy) setBuying(String(buy));
+    if (admin) setResellerPrice(String(admin));
+    if (d.price || admin) setSuggested(String(d.price || admin));
     if (d.images.length) setImages(d.images);
     if (d.metaTitle) setMetaTitle(d.metaTitle);
     if (d.metaDescription) setMetaDesc(d.metaDescription);
