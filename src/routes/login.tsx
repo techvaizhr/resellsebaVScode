@@ -24,6 +24,15 @@ export const Route = createFileRoute("/login")({
   component: AuthPage,
 });
 
+/** Makes sure the signed-in user has a reseller/supplier record + role. Safe to call repeatedly. */
+async function ensureAccount() {
+  try {
+    await (supabase.rpc as unknown as (fn: string) => Promise<unknown>)("bootstrap_current_user");
+  } catch {
+    /* non-fatal */
+  }
+}
+
 function AuthPage() {
   const nav = useNavigate();
   const search = Route.useSearch();
