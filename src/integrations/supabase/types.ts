@@ -3220,6 +3220,10 @@ export type Database = {
         Returns: Json
       }
       supplier_products: { Args: never; Returns: Json }
+      supplier_quick_update: {
+        Args: { _id: string; _price?: number; _stock?: number }
+        Returns: Json
+      }
       supplier_report: {
         Args: { _from?: string; _supplier?: string; _to?: string }
         Returns: Json

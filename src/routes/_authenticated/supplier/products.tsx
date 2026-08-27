@@ -18,6 +18,7 @@ import {
   bdtNum,
   loadSupplierProducts,
   saveSupplierProduct,
+  supplierQuickUpdate,
   type SupplierProduct,
   type SupplierProductsPage,
 } from "@/lib/supplier";
@@ -259,8 +260,36 @@ function SupplierProductsPage_() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-3 tabular-nums">{bdtNum(Number(p.supplier_price))}</td>
-                    <td className="px-3 py-3 tabular-nums">{p.stock}</td>
+                    <td className="px-3 py-3 tabular-nums">
+                      <InlineNumber
+                        value={Number(p.supplier_price)}
+                        prefix="৳"
+                        onSave={async (val) => {
+                          const res = await supplierQuickUpdate(p.id, { price: val });
+                          toast.success(
+                            res.price_pending
+                              ? "Price change অ্যাডমিন অ্যাপ্রুভালের জন্য পাঠানো হয়েছে"
+                              : "Price আপডেট হয়েছে — অ্যাপ্রুভালের অপেক্ষায়",
+                          );
+                          await load();
+                        }}
+                      />
+                      {typeof (p.pending_changes as any)?.supplier_price !== "undefined" && (
+                        <div className="mt-1 text-[10px] text-amber-600">
+                          Pending ৳{Number((p.pending_changes as any).supplier_price)}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 tabular-nums">
+                      <InlineNumber
+                        value={Number(p.stock)}
+                        onSave={async (val) => {
+                          await supplierQuickUpdate(p.id, { stock: val });
+                          toast.success("Stock আপডেট হয়েছে");
+                          await load();
+                        }}
+                      />
+                    </td>
                     <td className="px-3 py-3">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -432,6 +461,78 @@ function SupplierProductDetail({
         )}
       </div>
     </AppModal>
+  );
+}
+
+/** Click-to-edit number cell — saves on blur/Enter, reverts on Escape. */
+function InlineNumber({
+  value,
+  prefix,
+  onSave,
+}: {
+  value: number;
+  prefix?: string;
+  onSave: (val: number) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(value));
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!editing) setDraft(String(value));
+  }, [value, editing]);
+
+  async function commit() {
+    setEditing(false);
+    const next = Number(draft);
+    if (!Number.isFinite(next) || next < 0 || next === value) {
+      setDraft(String(value));
+      return;
+    }
+    setBusy(true);
+    try {
+      await onSave(next);
+    } catch (e) {
+      setDraft(String(value));
+      toast.error(e instanceof Error ? e.message : "Update failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => setEditing(true)}
+        className="inline-flex items-center gap-1 rounded border border-transparent px-1.5 py-0.5 text-sm hover:border-border hover:bg-muted disabled:opacity-50"
+      >
+        {busy && <Loader2 className="h-3 w-3 animate-spin" />}
+        {prefix}
+        {value}
+        <Pencil className="h-3 w-3 text-muted-foreground" />
+      </button>
+    );
+  }
+
+  return (
+    <input
+      autoFocus
+      type="number"
+      min={0}
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => void commit()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") void commit();
+        if (e.key === "Escape") {
+          setDraft(String(value));
+          setEditing(false);
+        }
+      }}
+      className="w-24 rounded-md border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
+    />
   );
 }
 
