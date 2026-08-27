@@ -10,7 +10,7 @@ import {
   Truck,
 } from "lucide-react";
 import { toast } from "sonner";
-import { PageHeader, StatCard, EmptyState } from "@/components/ui-kit";
+import { PageHeader, EmptyState } from "@/components/ui-kit";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { ShipmentBookingModal } from "@/components/ShipmentBookingModal";
 import { CourierLogo, courierLabel } from "@/components/courier-brand";
