@@ -226,8 +226,19 @@ function AdminSuppliersPage() {
                             {s.status === "pending" && (
                               <Action busy={busyId === s.id} onClick={() => setStatus(s.id, "rejected")} label="Reject" danger />
                             )}
+                            <Action onClick={() => setEditFor(s)} label="Edit" icon={<Pencil className="h-3 w-3" />} />
+                            <Action onClick={() => setResetFor(s)} label="Password" icon={<KeyRound className="h-3 w-3" />} />
+                            {s.status === "active" && (
+                              <Action
+                                busy={busyId === s.id}
+                                onClick={() => void loginAsSupplier(s)}
+                                label="Login as"
+                                icon={<LogIn className="h-3 w-3" />}
+                              />
+                            )}
                           </div>
                         </td>
+
                       </tr>
                     );
                   })}
