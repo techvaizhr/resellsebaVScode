@@ -506,7 +506,11 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
                             )}
                           </span>
                           <span className="min-w-0 flex-1 truncate font-medium">{p.name}</span>
+                          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-black uppercase ${Number(p.stock ?? 0) <= 0 ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-600"}`}>
+                            {Number(p.stock ?? 0) <= 0 ? "Out" : `Stock ${Number(p.stock ?? 0)}`}
+                          </span>
                           <span className="shrink-0 text-muted-foreground">৳{Number(p.suggested_price ?? 0)}</span>
+
                         </button>
                       ))}
                     </div>
