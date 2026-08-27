@@ -50,6 +50,9 @@ export function ProductImportModal({ open, onClose, onSaved }: { open: boolean; 
 
       setStep("Saving product…");
       const price = data.price ?? 0;
+      // Panel/own-catalog imports carry the real admin + buying prices; marketplace links don't.
+      const adminPrice = data.adminPrice ?? price;
+      const buyingPrice = data.buyingPrice ?? adminPrice;
       const [{ data: brandRow }, { data: catRow }] = await Promise.all([
         data.brand
           ? supabase.from("brands").select("id").ilike("name", data.brand).maybeSingle()
@@ -70,9 +73,9 @@ export function ProductImportModal({ open, onClose, onSaved }: { open: boolean; 
           short_description: data.shortDescription || null,
           brand_id: (brandRow as { id: string } | null)?.id ?? null,
           category_id: (catRow as { id: string } | null)?.id ?? null,
-          buying_price: price,
-          reseller_price: price,
-          suggested_price: price,
+          buying_price: buyingPrice,
+          reseller_price: adminPrice,
+          suggested_price: price || adminPrice,
           packaging_cost: 0,
           delivery_mode: "area",
           delivery_inside: 60,
