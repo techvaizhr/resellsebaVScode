@@ -247,7 +247,10 @@ function AdminOrdersPage() {
     setResellers(rs);
     const sp = (pl.suppliers ?? []) as { id: string; display_name: string; code: string }[];
     setSuppliers(sp);
-    setSupplierOptions(sp.map((s) => ({ value: s.id, label: `${s.display_name} (/${s.code})` })));
+    setSupplierOptions([
+      { value: "__admin_only__", label: "Admin only" },
+      ...sp.map((s) => ({ value: s.id, label: `${s.display_name} (/${s.code})` })),
+    ]);
     setAllProducts((lookups?.products ?? []) as any[]);
     if (!opts?.silent) setLoading(false);
   }
