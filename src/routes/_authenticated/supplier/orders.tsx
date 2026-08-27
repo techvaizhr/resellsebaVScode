@@ -104,7 +104,7 @@ function SupplierOrdersPage() {
   useEffect(() => {
     setMarked([]);
     setPage(1);
-  }, [tab, q, sort, perPage]);
+  }, [tab, q, sort, perPage, area, courier, datePreset]);
 
   const counts = useCallback(
     (key: string) => {
@@ -118,8 +118,20 @@ function SupplierOrdersPage() {
   const filtered = useMemo(() => {
     const t = SUPPLIER_ORDER_TABS.find((x) => x.key === tab);
     const term = q.trim().toLowerCase();
+    const { fromTs, toTs } = resolveDateRange({
+      ...DEFAULT_ORDER_FILTERS,
+      datePreset,
+    });
     const list = rows.filter((o) => {
       if (t && t.statuses.length && !t.statuses.includes(o.status)) return false;
+      if (area && o.area !== area) return false;
+      if (courier) {
+        const provider = o.shipment?.provider ?? null;
+        if (courier === "none" ? !!provider : provider !== courier) return false;
+      }
+      const ts = new Date(o.created_at).getTime();
+      if (fromTs != null && ts < fromTs) return false;
+      if (toTs != null && ts > toTs) return false;
       if (!term) return true;
       if (searchMode === "product") return o.items.some((i) => i.product_name.toLowerCase().includes(term));
       return (
@@ -135,7 +147,8 @@ function SupplierOrdersPage() {
       const tb = new Date(b.created_at).getTime();
       return sort === "oldest" ? ta - tb : tb - ta;
     });
-  }, [rows, tab, q, searchMode, sort]);
+  }, [rows, tab, q, searchMode, sort, area, courier, datePreset]);
+
 
   const paged = usePaginated(filtered, page, perPage);
   const actionable = paged.filter((o) => supplierNextStatus(o.status));
