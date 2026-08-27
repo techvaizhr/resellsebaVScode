@@ -10,7 +10,19 @@ export type StripItem = {
   line_total?: number | null;
   image?: string | null;
   slug?: string | null;
+  /** Supplier display name — rendered as a light badge when present. */
+  supplier_name?: string | null;
 };
+
+/** Light-background supplier badge — only rendered for supplier-sourced items. */
+export function SupplierBadge({ name }: { name?: string | null }) {
+  if (!name) return null;
+  return (
+    <span className="inline-flex max-w-[110px] items-center truncate rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">
+      {name}
+    </span>
+  );
+}
 
 export function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   return (
@@ -180,8 +192,9 @@ export function OrderProductCell({
           ) : (
             <span className="block truncate text-xs font-semibold">{it.product_name}</span>
           )}
-          <span className="text-[10px] text-muted-foreground tabular-nums">
+          <span className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground tabular-nums">
             x{it.quantity} {unit > 0 && <span className="ml-1">৳{unit.toFixed(0)}</span>}
+            <SupplierBadge name={it.supplier_name} />
           </span>
         </div>
       </div>
@@ -250,8 +263,9 @@ export function OrderItemsList({
                 ) : (
                   <span className="block truncate text-xs font-semibold">{it.product_name}</span>
                 )}
-                <span className="text-[10px] text-muted-foreground tabular-nums">
+                <span className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground tabular-nums">
                   x{it.quantity} {unit > 0 && <span className="ml-1">৳{unit.toFixed(0)}</span>}
+                  <SupplierBadge name={it.supplier_name} />
                 </span>
               </div>
               <span className="shrink-0 text-xs font-bold tabular-nums">৳{total.toFixed(0)}</span>
