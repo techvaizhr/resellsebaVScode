@@ -118,6 +118,17 @@ function SupplierProductsPage_() {
       ],
     },
     {
+      key: "stock",
+      label: "Stock",
+      value: stock,
+      onChange: setStock,
+      options: [
+        { value: "in", label: "In stock" },
+        { value: "low", label: "Low (<5)" },
+        { value: "out", label: "Out of stock" },
+      ],
+    },
+    {
       key: "brand",
       label: "Brand",
       value: brand,
