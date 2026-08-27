@@ -32,6 +32,7 @@ import { Route as SCodeThanksRouteImport } from './routes/s.$code.thanks'
 import { Route as SCodeCheckoutRouteImport } from './routes/s.$code.checkout'
 import { Route as ApiPublicRobotsRouteImport } from './routes/api/public/robots'
 import { Route as ApiPublicProductRouteImport } from './routes/api/public/product'
+import { Route as ApiPublicManifestRouteImport } from './routes/api/public/manifest'
 import { Route as AuthenticatedSupplierReturnsRouteImport } from './routes/_authenticated/supplier/returns'
 import { Route as AuthenticatedSupplierReportRouteImport } from './routes/_authenticated/supplier/report'
 import { Route as AuthenticatedSupplierProfileRouteImport } from './routes/_authenticated/supplier/profile'
@@ -219,6 +220,11 @@ const ApiPublicRobotsRoute = ApiPublicRobotsRouteImport.update({
 const ApiPublicProductRoute = ApiPublicProductRouteImport.update({
   id: '/api/public/product',
   path: '/api/public/product',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicManifestRoute = ApiPublicManifestRouteImport.update({
+  id: '/api/public/manifest',
+  path: '/api/public/manifest',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSupplierReturnsRoute =
@@ -707,6 +713,7 @@ export interface FileRoutesByFullPath {
   '/supplier/profile': typeof AuthenticatedSupplierProfileRoute
   '/supplier/report': typeof AuthenticatedSupplierReportRoute
   '/supplier/returns': typeof AuthenticatedSupplierReturnsRoute
+  '/api/public/manifest': typeof ApiPublicManifestRoute
   '/api/public/product': typeof ApiPublicProductRoute
   '/api/public/robots': typeof ApiPublicRobotsRoute
   '/s/$code/checkout': typeof SCodeCheckoutRoute
@@ -796,6 +803,7 @@ export interface FileRoutesByTo {
   '/supplier/profile': typeof AuthenticatedSupplierProfileRoute
   '/supplier/report': typeof AuthenticatedSupplierReportRoute
   '/supplier/returns': typeof AuthenticatedSupplierReturnsRoute
+  '/api/public/manifest': typeof ApiPublicManifestRoute
   '/api/public/product': typeof ApiPublicProductRoute
   '/api/public/robots': typeof ApiPublicRobotsRoute
   '/s/$code/checkout': typeof SCodeCheckoutRoute
@@ -892,6 +900,7 @@ export interface FileRoutesById {
   '/_authenticated/supplier/profile': typeof AuthenticatedSupplierProfileRoute
   '/_authenticated/supplier/report': typeof AuthenticatedSupplierReportRoute
   '/_authenticated/supplier/returns': typeof AuthenticatedSupplierReturnsRoute
+  '/api/public/manifest': typeof ApiPublicManifestRoute
   '/api/public/product': typeof ApiPublicProductRoute
   '/api/public/robots': typeof ApiPublicRobotsRoute
   '/s/$code/checkout': typeof SCodeCheckoutRoute
@@ -988,6 +997,7 @@ export interface FileRouteTypes {
     | '/supplier/profile'
     | '/supplier/report'
     | '/supplier/returns'
+    | '/api/public/manifest'
     | '/api/public/product'
     | '/api/public/robots'
     | '/s/$code/checkout'
@@ -1077,6 +1087,7 @@ export interface FileRouteTypes {
     | '/supplier/profile'
     | '/supplier/report'
     | '/supplier/returns'
+    | '/api/public/manifest'
     | '/api/public/product'
     | '/api/public/robots'
     | '/s/$code/checkout'
@@ -1172,6 +1183,7 @@ export interface FileRouteTypes {
     | '/_authenticated/supplier/profile'
     | '/_authenticated/supplier/report'
     | '/_authenticated/supplier/returns'
+    | '/api/public/manifest'
     | '/api/public/product'
     | '/api/public/robots'
     | '/s/$code/checkout'
@@ -1204,6 +1216,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   TutorialsRoute: typeof TutorialsRoute
   SCodeRoute: typeof SCodeRouteWithChildren
+  ApiPublicManifestRoute: typeof ApiPublicManifestRoute
   ApiPublicProductRoute: typeof ApiPublicProductRoute
   ApiPublicRobotsRoute: typeof ApiPublicRobotsRoute
   ApiPublicCourierCarrybeeRoute: typeof ApiPublicCourierCarrybeeRoute
@@ -1377,6 +1390,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/product'
       fullPath: '/api/public/product'
       preLoaderRoute: typeof ApiPublicProductRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/manifest': {
+      id: '/api/public/manifest'
+      path: '/api/public/manifest'
+      fullPath: '/api/public/manifest'
+      preLoaderRoute: typeof ApiPublicManifestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/supplier/returns': {
@@ -2116,6 +2136,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   TutorialsRoute: TutorialsRoute,
   SCodeRoute: SCodeRouteWithChildren,
+  ApiPublicManifestRoute: ApiPublicManifestRoute,
   ApiPublicProductRoute: ApiPublicProductRoute,
   ApiPublicRobotsRoute: ApiPublicRobotsRoute,
   ApiPublicCourierCarrybeeRoute: ApiPublicCourierCarrybeeRoute,
