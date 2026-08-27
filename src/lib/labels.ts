@@ -62,6 +62,12 @@ export async function printShippingLabels(
   const docs: LabelDoc[] = orders.map((o) => {
     const reseller = resellerMap.get(o.reseller_id);
     const s = shipmentsByOrder.get(o.id);
+    const rawPhone = o.customer_phone || "";
+    const maskedPhone = maskPhone && rawPhone
+      ? rawPhone.length <= 4
+        ? "****"
+        : rawPhone.slice(0, 3) + "*".repeat(Math.max(rawPhone.length - 6, 4)) + rawPhone.slice(-2)
+      : rawPhone;
     return {
       orderNumber: o.order_number,
       storeName: reseller?.name || siteName,
@@ -69,7 +75,7 @@ export async function printShippingLabels(
       area: o.area,
       customer: hideCustomer
         ? null
-        : { name: o.customer_name, phone: o.customer_phone, address: o.address_line },
+        : { name: o.customer_name, phone: maskedPhone, address: o.address_line },
       items: (itemsByOrder.get(o.id) || []).map((it) => ({ name: it.product_name, qty: it.quantity })),
       courier: { provider: s?.provider ?? null, tracking: s?.tracking_id || s?.consignment_id || null },
       cod: hideCustomer ? null : Number(o.total),
