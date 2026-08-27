@@ -115,7 +115,6 @@ export function supplierStatusTone(status: string) {
 
 /** One-way flow only. Nothing is editable after courier handover. */
 export function supplierNextStatus(status: string): string | null {
-  if (status === "pending" || status === "forwarded") return "confirmed";
   if (status === "confirmed") return "packaging";
   if (status === "packaging") return "ready_to_ship";
   return null;
