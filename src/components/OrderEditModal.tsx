@@ -37,6 +37,8 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
   const [busy, setBusy] = useState(false);
   const [order, setOrder] = useState<any>(null);
   const [items, setItems] = useState<EditItem[]>([]);
+  const [originalQty, setOriginalQty] = useState<Record<string, number>>({});
+
   const [removed, setRemoved] = useState<string[]>([]);
 
   const [name, setName] = useState("");
