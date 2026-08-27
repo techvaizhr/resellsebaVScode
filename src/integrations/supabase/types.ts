@@ -3235,6 +3235,7 @@ export type Database = {
         Args: { _id: string; _price?: number; _stock?: number }
         Returns: Json
       }
+      supplier_receive_returns: { Args: { _ids: string[] }; Returns: number }
       supplier_report: {
         Args: { _from?: string; _supplier?: string; _to?: string }
         Returns: Json
