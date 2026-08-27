@@ -104,6 +104,11 @@ export function OrderItemsStrip({
               ) : (
                 <span className="block truncate text-xs font-semibold">{it.product_name}</span>
               )}
+              {it.supplier_name && (
+                <span className="mt-0.5 block">
+                  <SupplierBadge name={it.supplier_name} />
+                </span>
+              )}
             </div>
 
             <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary tabular-nums">
@@ -194,8 +199,12 @@ export function OrderProductCell({
           )}
           <span className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground tabular-nums">
             x{it.quantity} {unit > 0 && <span className="ml-1">৳{unit.toFixed(0)}</span>}
-            <SupplierBadge name={it.supplier_name} />
           </span>
+          {it.supplier_name && (
+            <span className="mt-0.5 block">
+              <SupplierBadge name={it.supplier_name} />
+            </span>
+          )}
         </div>
       </div>
 
@@ -265,8 +274,12 @@ export function OrderItemsList({
                 )}
                 <span className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground tabular-nums">
                   x{it.quantity} {unit > 0 && <span className="ml-1">৳{unit.toFixed(0)}</span>}
-                  <SupplierBadge name={it.supplier_name} />
                 </span>
+                {it.supplier_name && (
+                  <span className="mt-0.5 block">
+                    <SupplierBadge name={it.supplier_name} />
+                  </span>
+                )}
               </div>
               <span className="shrink-0 text-xs font-bold tabular-nums">৳{total.toFixed(0)}</span>
             </div>
