@@ -24,6 +24,15 @@ export const Route = createFileRoute("/login")({
   component: AuthPage,
 });
 
+/** Makes sure the signed-in user has a reseller/supplier record + role. Safe to call repeatedly. */
+async function ensureAccount() {
+  try {
+    await (supabase.rpc as unknown as (fn: string) => Promise<unknown>)("bootstrap_current_user");
+  } catch {
+    /* non-fatal */
+  }
+}
+
 function AuthPage() {
   const nav = useNavigate();
   const search = Route.useSearch();
@@ -75,6 +84,7 @@ function AuthPage() {
         if (!data.session) {
           setSentEmail(email);
         } else {
+          await ensureAccount();
           const adv = await fetchAdvancedSettings();
           if (adv.verifyEnabled && (adv.verifyEmail || adv.verifySms)) {
             // Fire the codes off, then let /verify collect them.
@@ -90,6 +100,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        await ensureAccount();
         toast.success("স্বাগতম!");
         const target =
           search.redirect && search.redirect.startsWith("/") && !search.redirect.startsWith("/login")
