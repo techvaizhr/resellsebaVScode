@@ -1,15 +1,35 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Search, Truck, Undo2, Wallet, CheckCircle2, XCircle, PackageCheck } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  Loader2,
+  Search,
+  Truck,
+  Undo2,
+  Wallet,
+  CheckCircle2,
+  XCircle,
+  PackageCheck,
+  Pencil,
+  KeyRound,
+  LogIn,
+  Save,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, StatCard } from "@/components/ui-kit";
 import { supabase } from "@/integrations/supabase/client";
+import { PasswordResetModal } from "@/components/password-reset-modal";
+import { startImpersonation } from "@/lib/impersonation";
+import { impersonateSupplier, resetSupplierPassword } from "@/lib/supplier-access.functions";
 import {
   bdtNum,
   loadAdminSupplierOverview,
   orderStatusLabel,
   type AdminSupplierOverview,
+  type AdminSupplierRow,
 } from "@/lib/supplier";
+
 
 export const Route = createFileRoute("/_authenticated/admin/suppliers")({
   component: AdminSuppliersPage,
@@ -34,6 +54,41 @@ function AdminSuppliersPage() {
   const [tab, setTab] = useState<Tab>("suppliers");
   const [q, setQ] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [editFor, setEditFor] = useState<AdminSupplierRow | null>(null);
+  const [resetFor, setResetFor] = useState<AdminSupplierRow | null>(null);
+  const nav = useNavigate();
+  const resetPasswordFn = useServerFn(resetSupplierPassword);
+  const impersonateFn = useServerFn(impersonateSupplier);
+
+  async function applyPasswordReset(s: AdminSupplierRow, password: string) {
+    try {
+      await resetPasswordFn({ data: { userId: s.user_id, password } });
+      toast.success(`Password updated for ${s.display_name}`);
+      setResetFor(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to reset password");
+    }
+  }
+
+  async function loginAsSupplier(s: AdminSupplierRow) {
+    setBusyId(s.id);
+    try {
+      const res = await impersonateFn({ data: { userId: s.user_id } });
+      await startImpersonation({
+        email: res.email,
+        password: res.password,
+        label: s.display_name,
+        returnTo: window.location.pathname + window.location.search,
+      });
+      nav({ to: "/supplier", replace: true });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not log in as supplier");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+
 
   const load = useCallback(async () => {
     try {
@@ -226,8 +281,19 @@ function AdminSuppliersPage() {
                             {s.status === "pending" && (
                               <Action busy={busyId === s.id} onClick={() => setStatus(s.id, "rejected")} label="Reject" danger />
                             )}
+                            <Action onClick={() => setEditFor(s)} label="Edit" icon={<Pencil className="h-3 w-3" />} />
+                            <Action onClick={() => setResetFor(s)} label="Password" icon={<KeyRound className="h-3 w-3" />} />
+                            {s.status === "active" && (
+                              <Action
+                                busy={busyId === s.id}
+                                onClick={() => void loginAsSupplier(s)}
+                                label="Login as"
+                                icon={<LogIn className="h-3 w-3" />}
+                              />
+                            )}
                           </div>
                         </td>
+
                       </tr>
                     );
                   })}
@@ -346,9 +412,186 @@ function AdminSuppliersPage() {
           )}
         </div>
       )}
+      {editFor && (
+        <SupplierEditModal
+          supplier={editFor}
+          onClose={() => setEditFor(null)}
+          onSaved={() => {
+            setEditFor(null);
+            void load();
+          }}
+        />
+      )}
+
+      {resetFor && (
+        <PasswordResetModal
+          label={resetFor.display_name}
+          onClose={() => setResetFor(null)}
+          onReset={(pw) => applyPasswordReset(resetFor, pw)}
+        />
+      )}
     </div>
   );
 }
+
+function SupplierEditModal({
+  supplier,
+  onClose,
+  onSaved,
+}: {
+  supplier: AdminSupplierRow;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState({
+    display_name: supplier.display_name ?? "",
+    contact_phone: supplier.contact_phone ?? "",
+    whatsapp: supplier.whatsapp ?? "",
+    address: supplier.address ?? "",
+    status: supplier.status as string,
+    notes: supplier.notes ?? "",
+    payout_method: supplier.payout_method ?? "bkash",
+    payout_account_name: supplier.payout_account_name ?? "",
+    payout_account_number: supplier.payout_account_number ?? "",
+    payout_bank_name: supplier.payout_bank_name ?? "",
+    payout_branch: supplier.payout_branch ?? "",
+  });
+  const [busy, setBusy] = useState(false);
+  const isBank = form.payout_method === "bank";
+
+  function set(k: keyof typeof form, v: string) {
+    setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.display_name.trim()) return toast.error("নাম দিন");
+    setBusy(true);
+    const patch: Record<string, unknown> = {
+      display_name: form.display_name.trim(),
+      contact_phone: form.contact_phone || null,
+      whatsapp: form.whatsapp || null,
+      address: form.address || null,
+      status: form.status,
+      notes: form.notes || null,
+      payout_method: form.payout_method,
+      payout_account_name: form.payout_account_name || null,
+      payout_account_number: form.payout_account_number || null,
+      payout_bank_name: isBank ? form.payout_bank_name || null : null,
+      payout_branch: isBank ? form.payout_branch || null : null,
+    };
+    if (form.status === "active" && supplier.status !== "active") patch.approved_at = new Date().toISOString();
+    const { error } = await supabase.from("suppliers").update(patch as never).eq("id", supplier.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Supplier updated");
+    onSaved();
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+      onClick={busy ? undefined : onClose}
+    >
+      <form
+        onSubmit={save}
+        onClick={(e) => e.stopPropagation()}
+        className="surface-card modal-scroll max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-b-none sm:rounded-lg"
+      >
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-card px-4 py-3">
+          <h3 className="text-base font-semibold">Edit supplier · {supplier.code}</h3>
+          <button type="button" onClick={onClose} className="rounded-md p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid gap-3 px-4 py-4 sm:grid-cols-2">
+          <Field label="Supplier / business name">
+            <input value={form.display_name} onChange={(e) => set("display_name", e.target.value)} className={inp} />
+          </Field>
+          <Field label="Email (login)">
+            <input value={supplier.email ?? ""} disabled className={inp + " opacity-60"} />
+          </Field>
+          <Field label="Phone">
+            <input value={form.contact_phone} onChange={(e) => set("contact_phone", e.target.value)} className={inp} />
+          </Field>
+          <Field label="WhatsApp">
+            <input value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} className={inp} />
+          </Field>
+          <Field label="Status">
+            <select value={form.status} onChange={(e) => set("status", e.target.value)} className={inp}>
+              <option value="pending">Pending</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </Field>
+          <Field label="Payout method">
+            <select value={form.payout_method} onChange={(e) => set("payout_method", e.target.value)} className={inp}>
+              <option value="bkash">bKash</option>
+              <option value="nagad">Nagad</option>
+              <option value="rocket">Rocket</option>
+              <option value="bank">Bank</option>
+            </select>
+          </Field>
+          <Field label="Account holder name">
+            <input
+              value={form.payout_account_name}
+              onChange={(e) => set("payout_account_name", e.target.value)}
+              className={inp}
+            />
+          </Field>
+          <Field label={isBank ? "Account number" : "Mobile number"}>
+            <input
+              value={form.payout_account_number}
+              onChange={(e) => set("payout_account_number", e.target.value)}
+              className={inp}
+            />
+          </Field>
+          {isBank && (
+            <>
+              <Field label="Bank name">
+                <input value={form.payout_bank_name} onChange={(e) => set("payout_bank_name", e.target.value)} className={inp} />
+              </Field>
+              <Field label="Branch">
+                <input value={form.payout_branch} onChange={(e) => set("payout_branch", e.target.value)} className={inp} />
+              </Field>
+            </>
+          )}
+          <div className="sm:col-span-2">
+            <Field label="Address">
+              <textarea rows={2} value={form.address} onChange={(e) => set("address", e.target.value)} className={inp} />
+            </Field>
+          </div>
+          <div className="sm:col-span-2">
+            <Field label="Admin note (internal)">
+              <textarea rows={2} value={form.notes} onChange={(e) => set("notes", e.target.value)} className={inp} />
+            </Field>
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 flex justify-end gap-2 border-t bg-card px-4 py-3">
+          <button type="button" onClick={onClose} disabled={busy} className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50">
+            Cancel
+          </button>
+          <button disabled={busy} className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-1.5 text-xs font-semibold disabled:opacity-50">
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium">{label}</label>
+      {children}
+    </div>
+  );
+}
+
 
 function Action({
   label,

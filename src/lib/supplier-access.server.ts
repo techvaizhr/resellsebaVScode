@@ -1,0 +1,44 @@
+const WORDS = ["shop", "sell", "store", "order", "supply", "market"];
+
+/** Easy to type/read temporary password, e.g. "supply4821". */
+export function easyPassword(): string {
+  const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+  return `${word}${String(Math.floor(1000 + Math.random() * 9000))}`;
+}
+
+type DbClient = { from: (table: string) => any };
+
+/** Keeps edge-case active supplier accounts from landing on reseller onboarding. */
+export async function ensureActiveSupplierRole(supabase: DbClient, userId: string) {
+  const { data: supplier, error } = await supabase
+    .from("suppliers")
+    .select("id,status,display_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw new Response(error.message, { status: 400 });
+  if (!supplier) throw new Response("Supplier profile not found", { status: 404 });
+  if (supplier.status !== "active") {
+    throw new Response("Only active suppliers can be opened", { status: 400 });
+  }
+
+  const { error: roleError } = await supabase
+    .from("user_roles")
+    .upsert({ user_id: userId, role: "supplier" }, { onConflict: "user_id,role" });
+  if (roleError) throw new Response(roleError.message, { status: 400 });
+
+  return supplier as { id: string; status: string; display_name: string | null };
+}
+
+/** Creates temporary credentials the browser can exchange for a supplier session. */
+export async function createSupplierImpersonationLogin(supabase: DbClient, userId: string) {
+  await ensureActiveSupplierRole(supabase, userId);
+  const { confirmEmail, loadAuthUsers, setPassword } = await import("@/lib/auth-admin.server");
+  const account = (await loadAuthUsers(supabase)).find((u: any) => u.user_id === userId);
+  if (!account?.email) throw new Response("Supplier account has no email", { status: 400 });
+
+  const password = easyPassword();
+  await confirmEmail(supabase, userId);
+  await setPassword(supabase, userId, password);
+
+  return { ok: true as const, email: account.email, password };
+}
