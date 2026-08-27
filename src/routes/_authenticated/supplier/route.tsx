@@ -18,6 +18,8 @@ import { useBrandingTheme } from "@/lib/branding";
 import { supabase } from "@/integrations/supabase/client";
 import { loadSupplierBootstrap, type SupplierReport } from "@/lib/supplier";
 import { SupplierProvider } from "@/components/supplier-context";
+import { ImpersonationBanner } from "@/components/impersonation-banner";
+
 
 export const Route = createFileRoute("/_authenticated/supplier")({
   component: SupplierLayout,
