@@ -41,6 +41,7 @@ function SupplierProductsPage_() {
   const [editing, setEditing] = useState<SupplierProduct | null | undefined>(undefined);
   const [prefill, setPrefill] = useState<Prefill | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [detail, setDetail] = useState<SupplierProduct | null>(null);
 
   const load = useCallback(async () => {
     try {
