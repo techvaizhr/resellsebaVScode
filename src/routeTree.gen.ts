@@ -35,6 +35,7 @@ import { Route as ApiPublicProductRouteImport } from './routes/api/public/produc
 import { Route as AuthenticatedSupplierReturnsRouteImport } from './routes/_authenticated/supplier/returns'
 import { Route as AuthenticatedSupplierReportRouteImport } from './routes/_authenticated/supplier/report'
 import { Route as AuthenticatedSupplierProfileRouteImport } from './routes/_authenticated/supplier/profile'
+import { Route as AuthenticatedSupplierProductsRouteImport } from './routes/_authenticated/supplier/products'
 import { Route as AuthenticatedSupplierPayoutsRouteImport } from './routes/_authenticated/supplier/payouts'
 import { Route as AuthenticatedResellerVisitorsRouteImport } from './routes/_authenticated/reseller/visitors'
 import { Route as AuthenticatedResellerTutorialsRouteImport } from './routes/_authenticated/reseller/tutorials'
@@ -232,6 +233,12 @@ const AuthenticatedSupplierProfileRoute =
   AuthenticatedSupplierProfileRouteImport.update({
     id: '/profile',
     path: '/profile',
+    getParentRoute: () => AuthenticatedSupplierRouteRoute,
+  } as any)
+const AuthenticatedSupplierProductsRoute =
+  AuthenticatedSupplierProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
     getParentRoute: () => AuthenticatedSupplierRouteRoute,
   } as any)
 const AuthenticatedSupplierPayoutsRoute =
@@ -664,6 +671,7 @@ export interface FileRoutesByFullPath {
   '/reseller/tutorials': typeof AuthenticatedResellerTutorialsRoute
   '/reseller/visitors': typeof AuthenticatedResellerVisitorsRoute
   '/supplier/payouts': typeof AuthenticatedSupplierPayoutsRoute
+  '/supplier/products': typeof AuthenticatedSupplierProductsRoute
   '/supplier/profile': typeof AuthenticatedSupplierProfileRoute
   '/supplier/report': typeof AuthenticatedSupplierReportRoute
   '/supplier/returns': typeof AuthenticatedSupplierReturnsRoute
@@ -748,6 +756,7 @@ export interface FileRoutesByTo {
   '/reseller/tutorials': typeof AuthenticatedResellerTutorialsRoute
   '/reseller/visitors': typeof AuthenticatedResellerVisitorsRoute
   '/supplier/payouts': typeof AuthenticatedSupplierPayoutsRoute
+  '/supplier/products': typeof AuthenticatedSupplierProductsRoute
   '/supplier/profile': typeof AuthenticatedSupplierProfileRoute
   '/supplier/report': typeof AuthenticatedSupplierReportRoute
   '/supplier/returns': typeof AuthenticatedSupplierReturnsRoute
@@ -839,6 +848,7 @@ export interface FileRoutesById {
   '/_authenticated/reseller/tutorials': typeof AuthenticatedResellerTutorialsRoute
   '/_authenticated/reseller/visitors': typeof AuthenticatedResellerVisitorsRoute
   '/_authenticated/supplier/payouts': typeof AuthenticatedSupplierPayoutsRoute
+  '/_authenticated/supplier/products': typeof AuthenticatedSupplierProductsRoute
   '/_authenticated/supplier/profile': typeof AuthenticatedSupplierProfileRoute
   '/_authenticated/supplier/report': typeof AuthenticatedSupplierReportRoute
   '/_authenticated/supplier/returns': typeof AuthenticatedSupplierReturnsRoute
@@ -930,6 +940,7 @@ export interface FileRouteTypes {
     | '/reseller/tutorials'
     | '/reseller/visitors'
     | '/supplier/payouts'
+    | '/supplier/products'
     | '/supplier/profile'
     | '/supplier/report'
     | '/supplier/returns'
@@ -1014,6 +1025,7 @@ export interface FileRouteTypes {
     | '/reseller/tutorials'
     | '/reseller/visitors'
     | '/supplier/payouts'
+    | '/supplier/products'
     | '/supplier/profile'
     | '/supplier/report'
     | '/supplier/returns'
@@ -1104,6 +1116,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reseller/tutorials'
     | '/_authenticated/reseller/visitors'
     | '/_authenticated/supplier/payouts'
+    | '/_authenticated/supplier/products'
     | '/_authenticated/supplier/profile'
     | '/_authenticated/supplier/report'
     | '/_authenticated/supplier/returns'
@@ -1333,6 +1346,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/supplier/profile'
       preLoaderRoute: typeof AuthenticatedSupplierProfileRouteImport
+      parentRoute: typeof AuthenticatedSupplierRouteRoute
+    }
+    '/_authenticated/supplier/products': {
+      id: '/_authenticated/supplier/products'
+      path: '/products'
+      fullPath: '/supplier/products'
+      preLoaderRoute: typeof AuthenticatedSupplierProductsRouteImport
       parentRoute: typeof AuthenticatedSupplierRouteRoute
     }
     '/_authenticated/supplier/payouts': {
@@ -1923,6 +1943,7 @@ const AuthenticatedResellerRouteRouteWithChildren =
 
 interface AuthenticatedSupplierRouteRouteChildren {
   AuthenticatedSupplierPayoutsRoute: typeof AuthenticatedSupplierPayoutsRoute
+  AuthenticatedSupplierProductsRoute: typeof AuthenticatedSupplierProductsRoute
   AuthenticatedSupplierProfileRoute: typeof AuthenticatedSupplierProfileRoute
   AuthenticatedSupplierReportRoute: typeof AuthenticatedSupplierReportRoute
   AuthenticatedSupplierReturnsRoute: typeof AuthenticatedSupplierReturnsRoute
@@ -1932,6 +1953,7 @@ interface AuthenticatedSupplierRouteRouteChildren {
 const AuthenticatedSupplierRouteRouteChildren: AuthenticatedSupplierRouteRouteChildren =
   {
     AuthenticatedSupplierPayoutsRoute: AuthenticatedSupplierPayoutsRoute,
+    AuthenticatedSupplierProductsRoute: AuthenticatedSupplierProductsRoute,
     AuthenticatedSupplierProfileRoute: AuthenticatedSupplierProfileRoute,
     AuthenticatedSupplierReportRoute: AuthenticatedSupplierReportRoute,
     AuthenticatedSupplierReturnsRoute: AuthenticatedSupplierReturnsRoute,
