@@ -464,6 +464,78 @@ function SupplierProductDetail({
   );
 }
 
+/** Click-to-edit number cell — saves on blur/Enter, reverts on Escape. */
+function InlineNumber({
+  value,
+  prefix,
+  onSave,
+}: {
+  value: number;
+  prefix?: string;
+  onSave: (val: number) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(value));
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!editing) setDraft(String(value));
+  }, [value, editing]);
+
+  async function commit() {
+    setEditing(false);
+    const next = Number(draft);
+    if (!Number.isFinite(next) || next < 0 || next === value) {
+      setDraft(String(value));
+      return;
+    }
+    setBusy(true);
+    try {
+      await onSave(next);
+    } catch (e) {
+      setDraft(String(value));
+      toast.error(e instanceof Error ? e.message : "Update failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => setEditing(true)}
+        className="inline-flex items-center gap-1 rounded border border-transparent px-1.5 py-0.5 text-sm hover:border-border hover:bg-muted disabled:opacity-50"
+      >
+        {busy && <Loader2 className="h-3 w-3 animate-spin" />}
+        {prefix}
+        {value}
+        <Pencil className="h-3 w-3 text-muted-foreground" />
+      </button>
+    );
+  }
+
+  return (
+    <input
+      autoFocus
+      type="number"
+      min={0}
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => void commit()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") void commit();
+        if (e.key === "Escape") {
+          setDraft(String(value));
+          setEditing(false);
+        }
+      }}
+      className="w-24 rounded-md border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
+    />
+  );
+}
+
 function DetailField({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border bg-muted/30 px-3 py-2">
