@@ -82,6 +82,7 @@ function SupplierOrdersPage() {
   const [expanded, setExpanded] = useState<string[]>([]);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [booking, setBooking] = useState<{ open: boolean; orderIds: string[] }>({ open: false, orderIds: [] });
+  const [pendingStatus, setPendingStatus] = useState<{ ids: string[]; next: string } | null>(null);
   const [confirm, setConfirm] = useState<{
     title: string;
     description: string;
