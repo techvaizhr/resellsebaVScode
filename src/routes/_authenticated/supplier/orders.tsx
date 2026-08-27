@@ -149,13 +149,15 @@ function SupplierOrdersPage() {
 
 
   const paged = usePaginated(filtered, page, perPage);
-  const actionable = paged.filter((o) => supplierNextStatus(o.status));
   const markedRows = rows.filter((o) => marked.includes(o.id));
   const bulkNext = useMemo(() => {
     if (!markedRows.length) return null;
     const next = supplierNextStatus(markedRows[0]!.status);
     return markedRows.every((o) => supplierNextStatus(o.status) === next) ? next : null;
   }, [markedRows]);
+
+  const isBooked = (o: SupplierOrderRow) => Boolean(o.shipment?.provider);
+  const unbookedMarked = markedRows.filter((o) => !isBooked(o));
 
   const totals = useMemo(
     () => ({
@@ -200,25 +202,73 @@ function SupplierOrdersPage() {
       toast.success(`${ok} order${ok > 1 ? "s" : ""} → ${supplierStatusLabel(next)}`);
       setMarked([]);
       await load();
-      // Courier booking is confirmed the moment an order moves into Packaging.
-      if (next === "packaging") setBooking({ open: true, orderIds: ids.slice(0, ok) });
     }
   };
 
+  /** Packaging requires a confirmed courier booking first — already booked orders are never re-booked. */
   const askStatus = (ids: string[], next: string) => {
+    if (next === "packaging") {
+      const targets = rows.filter((o) => ids.includes(o.id));
+      const needBooking = targets.filter((o) => !isBooked(o)).map((o) => o.id);
+      if (needBooking.length > 0) {
+        setPendingStatus({ ids, next });
+        setBooking({ open: true, orderIds: needBooking });
+        return;
+      }
+    }
     setConfirm({
       title: `Move to ${supplierStatusLabel(next)}?`,
       description:
-        next === "packaging"
-          ? `${ids.length} order(s) প্যাকেজিং-এ যাবে এবং সাথে সাথে কুরিয়ার বুকিং কনফার্ম হবে।`
-          : next === "ready_to_ship"
-            ? `${ids.length} order(s) কুরিয়ার হ্যান্ডওভার হবে। এরপর আর কোনো পরিবর্তন করা যাবে না।`
-            : `${ids.length} order(s) ${supplierStatusLabel(next)} করা হবে।`,
+        next === "ready_to_ship"
+          ? `${ids.length} order(s) কুরিয়ার হ্যান্ডওভার হবে।`
+          : `${ids.length} order(s) ${supplierStatusLabel(next)} করা হবে।`,
       onConfirm: async () => {
         setConfirm(null);
         await applyStatus(ids, next);
       },
     });
+  };
+
+  const bookMarked = () => {
+    const ids = unbookedMarked.map((o) => o.id);
+    if (!ids.length) {
+      toast.info("Selected order(s) are already booked.");
+      return;
+    }
+    setPendingStatus(null);
+    setBooking({ open: true, orderIds: ids });
+  };
+
+  const handleBookingDone = async () => {
+    const pending = pendingStatus;
+    setPendingStatus(null);
+    await load();
+    if (pending) await applyStatus(pending.ids, pending.next);
+  };
+
+  const printMarked = async () => {
+    if (!markedRows.length) return;
+    let siteName = "Shipping label";
+    try {
+      const settings = await getGlobalSettings();
+      siteName = settings?.site_name || siteName;
+    } catch {
+      /* branding is optional on the label */
+    }
+    const docs: LabelDoc[] = markedRows.map((o) => ({
+      orderNumber: o.order_number,
+      storeName: siteName,
+      storeLogo: null,
+      area: o.area,
+      customer: null, // suppliers never see customer information
+      items: o.items.map((it) => ({ name: it.product_name, qty: it.quantity })),
+      courier: {
+        provider: o.shipment?.provider ?? null,
+        tracking: o.shipment?.consignment_id || o.shipment?.tracking_id || null,
+      },
+      cod: null,
+    }));
+    printLabelDocs(docs);
   };
 
   if (loading) {
