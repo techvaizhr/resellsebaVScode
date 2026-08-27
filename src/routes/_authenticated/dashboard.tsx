@@ -55,6 +55,10 @@ function DashboardRouter() {
     done.current = true;
     void (async () => {
       if (!accessError) {
+        // Self-heal: create the reseller/supplier record + role if signup never did.
+        await (supabase.rpc as unknown as (fn: string) => Promise<unknown>)(
+          "bootstrap_current_user",
+        ).catch(() => null);
         const { data: sup } = await supabase
           .from("suppliers")
           .select("id")
