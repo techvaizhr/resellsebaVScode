@@ -24,8 +24,8 @@ function Btn({
       title={title}
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-40 ${
-        active ? "bg-primary/15 text-primary" : ""
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-foreground/80 transition hover:border-border hover:bg-muted hover:text-foreground disabled:opacity-40 ${
+        active ? "border-primary/30 bg-primary/15 text-primary" : ""
       }`}
     >
       {children}
