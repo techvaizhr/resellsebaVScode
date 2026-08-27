@@ -301,8 +301,8 @@ function SupplierProductsPage_() {
           product={editing}
           prefill={prefill}
           supplierId={supplierId}
-          brands={page?.brands ?? []}
-          categories={page?.categories ?? []}
+          brands={brands}
+          categories={categories}
           onClose={() => {
             setEditing(undefined);
             setPrefill(null);
