@@ -247,7 +247,10 @@ function AdminOrdersPage() {
     setResellers(rs);
     const sp = (pl.suppliers ?? []) as { id: string; display_name: string; code: string }[];
     setSuppliers(sp);
-    setSupplierOptions(sp.map((s) => ({ value: s.id, label: `${s.display_name} (/${s.code})` })));
+    setSupplierOptions([
+      { value: "__admin_only__", label: "Admin only" },
+      ...sp.map((s) => ({ value: s.id, label: `${s.display_name} (/${s.code})` })),
+    ]);
     setAllProducts((lookups?.products ?? []) as any[]);
     if (!opts?.silent) setLoading(false);
   }
@@ -461,7 +464,15 @@ function AdminOrdersPage() {
     let base = applyOrderFilters(courierFiltered, { ...filters, q: "" });
     // Supplier filter: keep orders that contain at least one item from the supplier.
     if (filters.supplier) {
-      base = base.filter((o) => (itemsByOrder.get(o.id) ?? []).some((it) => it.supplier_id === filters.supplier));
+      if (filters.supplier === "__admin_only__") {
+        // Admin-only: orders where ALL items belong to admin (no supplier)
+        base = base.filter((o) => {
+          const its = itemsByOrder.get(o.id) ?? [];
+          return its.length > 0 && its.every((it) => !it.supplier_id);
+        });
+      } else {
+        base = base.filter((o) => (itemsByOrder.get(o.id) ?? []).some((it) => it.supplier_id === filters.supplier));
+      }
     }
     const q = filters.q.trim().toLowerCase();
     if (!q) return base;
