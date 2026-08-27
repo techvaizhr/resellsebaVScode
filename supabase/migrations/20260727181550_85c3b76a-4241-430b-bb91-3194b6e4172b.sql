@@ -1,1 +1,0 @@
-DELETE FROM public.courier_configs WHERE provider IN ('redx','paperfly');
