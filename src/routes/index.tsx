@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { APP_ICONS } from "@/lib/icons";
 import { toast } from "sonner";
+import { PwaInstallButton } from "@/components/pwa-install";
 import {
   Accordion,
   AccordionContent,
