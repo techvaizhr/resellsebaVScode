@@ -6,10 +6,10 @@ import { ORDER_TABS, orderTabClasses, orderTabGroup, type OrderTabKey } from "@/
 /** Light tint classes for the mobile status dropdown, based on the active tab's group. */
 function tabTint(key: OrderTabKey): string {
   const group = orderTabGroup(key);
-  if (group === "delivered") return "bg-emerald-50 border-emerald-200 text-emerald-700";
-  if (group === "partial") return "bg-amber-50 border-amber-200 text-amber-700";
-  if (group === "terminal") return "bg-rose-50 border-rose-200 text-rose-700";
-  return "bg-blue-50 border-blue-200 text-blue-700";
+  if (group === "delivered") return "bg-emerald-600 border-emerald-600 text-white font-semibold shadow-sm ring-2 ring-emerald-600/30";
+  if (group === "partial") return "bg-amber-500 border-amber-500 text-white font-semibold shadow-sm ring-2 ring-amber-500/30";
+  if (group === "terminal") return "bg-rose-600 border-rose-600 text-white font-semibold shadow-sm ring-2 ring-rose-600/30";
+  return "bg-blue-600 border-blue-600 text-white font-semibold shadow-sm ring-2 ring-blue-600/30";
 }
 
 /**

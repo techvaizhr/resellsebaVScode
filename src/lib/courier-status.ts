@@ -396,10 +396,10 @@ export function orderTabGroup(key: OrderTabKey): OrderTabGroup {
 export function orderTabClasses(key: OrderTabKey, active: boolean) {
   const group = orderTabGroup(key);
   if (active) {
-    if (group === "delivered") return "bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold";
-    if (group === "partial") return "bg-amber-100 text-amber-800 border-amber-300 font-semibold";
-    if (group === "terminal") return "bg-rose-100 text-rose-800 border-rose-300 font-semibold";
-    return "bg-primary/15 text-primary border-primary/30 font-semibold";
+    if (group === "delivered") return "bg-emerald-600 text-white border-emerald-600 font-semibold shadow-sm ring-2 ring-emerald-600/30";
+    if (group === "partial") return "bg-amber-500 text-white border-amber-500 font-semibold shadow-sm ring-2 ring-amber-500/30";
+    if (group === "terminal") return "bg-rose-600 text-white border-rose-600 font-semibold shadow-sm ring-2 ring-rose-600/30";
+    return "bg-blue-600 text-white border-blue-600 font-semibold shadow-sm ring-2 ring-blue-600/30";
   }
   if (group === "delivered") return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100";
   if (group === "partial") return "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100";
