@@ -1,15 +1,35 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Search, Truck, Undo2, Wallet, CheckCircle2, XCircle, PackageCheck } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  Loader2,
+  Search,
+  Truck,
+  Undo2,
+  Wallet,
+  CheckCircle2,
+  XCircle,
+  PackageCheck,
+  Pencil,
+  KeyRound,
+  LogIn,
+  Save,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, StatCard } from "@/components/ui-kit";
 import { supabase } from "@/integrations/supabase/client";
+import { PasswordResetModal } from "@/components/password-reset-modal";
+import { startImpersonation } from "@/lib/impersonation";
+import { impersonateSupplier, resetSupplierPassword } from "@/lib/supplier-access.functions";
 import {
   bdtNum,
   loadAdminSupplierOverview,
   orderStatusLabel,
   type AdminSupplierOverview,
+  type AdminSupplierRow,
 } from "@/lib/supplier";
+
 
 export const Route = createFileRoute("/_authenticated/admin/suppliers")({
   component: AdminSuppliersPage,
