@@ -2829,6 +2829,10 @@ export type Database = {
       }
       admin_dashboard: { Args: { _from?: string; _to?: string }; Returns: Json }
       admin_delete_user: { Args: { _user_id: string }; Returns: undefined }
+      admin_handover_returns: {
+        Args: { _ids: string[]; _undo?: boolean }
+        Returns: number
+      }
       admin_lookups: { Args: never; Returns: Json }
       admin_orders_page: { Args: { _statuses?: string[] }; Returns: Json }
       admin_reseller_metrics: {
