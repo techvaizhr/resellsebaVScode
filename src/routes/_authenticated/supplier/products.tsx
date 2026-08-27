@@ -27,17 +27,22 @@ const inp = "w-full rounded-md border bg-background px-3 py-2 text-sm outline-no
 function SupplierProductsPage_() {
   const { data: boot } = useSupplier();
   const supplierId = boot.supplier?.id ?? "";
-  const [page, setPage] = useState<SupplierProductsPage | null>(null);
+  const [data, setData] = useState<SupplierProductsPage | null>(null);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
+  const [brand, setBrand] = useState("");
+  const [category, setCategory] = useState("");
+  const [live, setLive] = useState("");
+  const [perPage, setPerPage] = useState(20);
+  const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<SupplierProduct | null | undefined>(undefined);
   const [prefill, setPrefill] = useState<Prefill | null>(null);
   const [importOpen, setImportOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      setPage(await loadSupplierProducts());
+      setData(await loadSupplierProducts());
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Load failed");
     } finally {
@@ -49,24 +54,75 @@ function SupplierProductsPage_() {
     void load();
   }, [load]);
 
-  const products = page?.products ?? [];
+  useEffect(() => {
+    setPage(1);
+  }, [q, status, brand, category, live, perPage]);
+
+  const products = data?.products ?? [];
+  const brands = data?.brands ?? [];
+  const categories = data?.categories ?? [];
+
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return products.filter((p) => {
       if (status && p.approval_status !== status) return false;
+      if (brand && p.brand_id !== brand) return false;
+      if (category && p.category_id !== category) return false;
+      if (live === "active" && !p.is_active) return false;
+      if (live === "hidden" && p.is_active) return false;
       if (!needle) return true;
       return p.name.toLowerCase().includes(needle) || String(p.product_code).includes(needle);
     });
-  }, [products, q, status]);
+  }, [products, q, status, brand, category, live]);
+
+  const paged = usePaginated(rows, page, perPage);
 
   const stats = useMemo(
     () => ({
       total: products.length,
-      pending: products.filter((p) => p.approval_status === "pending").length,
+      pending: products.filter((p) => p.approval_status === "pending" || p.pending_changes).length,
       live: products.filter((p) => p.approval_status === "approved" && p.is_active).length,
     }),
     [products],
   );
+
+  const filters: FilterDef[] = [
+    {
+      key: "approval",
+      label: "Approval",
+      value: status,
+      onChange: setStatus,
+      options: [
+        { value: "pending", label: "Pending" },
+        { value: "approved", label: "Approved" },
+        { value: "rejected", label: "Rejected" },
+      ],
+    },
+    {
+      key: "live",
+      label: "Visibility",
+      value: live,
+      onChange: setLive,
+      options: [
+        { value: "active", label: "Live" },
+        { value: "hidden", label: "Hidden" },
+      ],
+    },
+    {
+      key: "brand",
+      label: "Brand",
+      value: brand,
+      onChange: setBrand,
+      options: brands.map((b) => ({ value: b.id, label: b.name })),
+    },
+    {
+      key: "category",
+      label: "Category",
+      value: category,
+      onChange: setCategory,
+      options: categories.map((c) => ({ value: c.id, label: c.name })),
+    },
+  ];
 
   if (loading) {
     return (
@@ -79,106 +135,154 @@ function SupplierProductsPage_() {
   return (
     <div>
       <PageHeader
-        title="My products"
-        description="নতুন প্রোডাক্ট যোগ করুন বা এডিট করুন — অ্যাডমিন অ্যাপ্রুভ করলেই লাইভ হবে।"
+        title="Products"
+        description="আপনার সাবমিট করা প্রোডাক্ট — অ্যাডমিন অ্যাপ্রুভ করলেই লাইভ হবে।"
         actions={
-          <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setImportOpen(true)}
-            className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
-          >
-            <Link2 className="h-4 w-4" /> Import from link
-          </button>
-          <button
-            onClick={() => {
-              setPrefill(null);
-              setEditing(null);
-            }}
-            className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
-          >
-            <Plus className="h-4 w-4" /> New product
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setImportOpen(true)}
+              className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+            >
+              <CloudDownload className="h-4 w-4" /> Import from URL
+            </button>
+            <button
+              onClick={() => {
+                setPrefill(null);
+                setEditing(null);
+              }}
+              className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+            >
+              <Plus className="h-4 w-4" /> New product
+            </button>
           </div>
         }
       />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
         <StatCard label="Products" value={stats.total} icon={<PackageSearch className="h-4 w-4" />} />
-        <StatCard label="Pending approval" value={stats.pending} tone="amber" icon={<Clock className="h-4 w-4" />} />
+        <StatCard label="Waiting approval" value={stats.pending} tone="amber" icon={<Clock className="h-4 w-4" />} />
         <StatCard label="Live" value={stats.live} tone="emerald" icon={<CheckCircle2 className="h-4 w-4" />} />
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search…" className={inp + " pl-8"} />
-        </div>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className={inp + " w-auto"}>
-          <option value="">All status</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
-      </div>
+      <DataToolbar
+        search={q}
+        onSearch={setQ}
+        searchPlaceholder="Search by name or ID…"
+        filters={filters}
+        perPage={perPage}
+        onPerPage={setPerPage}
+      />
 
       {rows.length === 0 ? (
-        <EmptyState title="No products" description="নতুন প্রোডাক্ট যোগ করুন — অ্যাডমিন অ্যাপ্রুভ করলে রিসেলাররা বিক্রি করতে পারবে।" />
+        <EmptyState
+          title="No products match"
+          description="ফিল্টার বদলান অথবা নতুন প্রোডাক্ট যোগ করুন — অ্যাডমিন অ্যাপ্রুভ করলে রিসেলাররা বিক্রি করতে পারবে।"
+          action={
+            <button
+              onClick={() => {
+                setPrefill(null);
+                setEditing(null);
+              }}
+              className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+            >
+              <Plus className="h-4 w-4" /> Add product
+            </button>
+          }
+        />
       ) : (
-        <div className="surface-card overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-muted/40 text-left uppercase text-muted-foreground">
-              <tr>
-                <th className="p-2">Product</th>
-                <th>Supplier price</th>
-                <th>Stock</th>
-                <th>Approval</th>
-                <th>Live</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {rows.map((p) => (
-                <tr key={p.id} className="hover:bg-muted/40">
-                  <td className="p-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-muted">
-                        {p.og_image_url && <img src={p.og_image_url} alt="" className="h-full w-full object-cover" />}
-                      </div>
-                      <div>
-                        <div className="font-medium">{p.name}</div>
-                        <div className="text-[10px] text-muted-foreground">ID #{p.product_code}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="tabular-nums">{bdtNum(Number(p.supplier_price))}</td>
-                  <td className="tabular-nums">{p.stock}</td>
-                  <td>
-                    <span className={"rounded-full px-2 py-0.5 text-[11px] font-medium capitalize " + (APPROVAL_TONE[p.approval_status] ?? "bg-muted")}>
-                      {p.approval_status}
-                    </span>
-                    {p.pending_changes && (
-                      <div className="mt-1 text-[10px] text-amber-600">Edit waiting for approval</div>
-                    )}
-                    {p.approval_note && <div className="mt-1 text-[10px] text-muted-foreground">{p.approval_note}</div>}
-                  </td>
-                  <td className="text-muted-foreground">{p.is_active ? "Yes" : "No"}</td>
-                  <td className="p-2 text-right">
-                    <button
-                      onClick={() => {
-                        setPrefill(null);
-                        setEditing(p);
-                      }}
-                      className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-muted"
-                    >
-                      <Pencil className="h-3 w-3" /> Edit
-                    </button>
-                  </td>
+        <>
+          <div className="surface-card overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="min-w-[240px] px-3 py-3">Product</th>
+                  <th className="px-3 py-3">Supply price</th>
+                  <th className="px-3 py-3">Stock</th>
+                  <th className="px-3 py-3">Status</th>
+                  <th className="px-3 py-3">Submitted</th>
+                  <th className="px-3 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y">
+                {paged.map((p) => (
+                  <tr key={p.id} className="hover:bg-muted/50">
+                    <td className="min-w-[240px] px-3 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-muted">
+                          {p.og_image_url && <img src={p.og_image_url} className="h-full w-full object-cover" alt="" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-medium">{p.name}</div>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+                            <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium">
+                              ID #{p.product_code}
+                            </span>
+                            {p.brand_id && brands.find((b) => b.id === p.brand_id) && (
+                              <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5">
+                                {brands.find((b) => b.id === p.brand_id)!.name}
+                              </span>
+                            )}
+                            {p.category_id && categories.find((c) => c.id === p.category_id) && (
+                              <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5">
+                                {categories.find((c) => c.id === p.category_id)!.name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3 tabular-nums">{bdtNum(Number(p.supplier_price))}</td>
+                    <td className="px-3 py-3 tabular-nums">{p.stock}</td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                          p.is_active
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${p.is_active ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                        {p.is_active ? "Live" : "Hidden"}
+                      </span>
+                      <div
+                        className={
+                          "mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium capitalize " +
+                          (APPROVAL_TONE[p.approval_status] ?? "bg-muted")
+                        }
+                      >
+                        {p.approval_status}
+                      </div>
+                      {p.pending_changes && <div className="mt-1 text-[10px] text-amber-600">Edit waiting</div>}
+                      {p.approval_note && (
+                        <div className="mt-1 text-[10px] text-muted-foreground">{p.approval_note}</div>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">
+                      {new Date(p.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex justify-end">
+                        <ActionMenu>
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              setPrefill(null);
+                              setEditing(p);
+                            }}
+                          >
+                            <Pencil className="mr-2 h-4 w-4" /> Edit (needs approval)
+                          </DropdownMenuItem>
+                        </ActionMenu>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination page={page} perPage={perPage} total={rows.length} onPage={setPage} />
+        </>
       )}
+
 
       {importOpen && (
         <ImportModal
