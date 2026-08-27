@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getCatalog } from "@/lib/catalog.functions";
-import { CopyBtn, useCatalogBrand } from "@/components/catalog/shell";
+import { CopyBtn, useCatalogBrand, useCatalogPrices } from "@/components/catalog/shell";
 import { ImagePickerButton } from "@/components/catalog/image-picker";
 import { ProductCodeChip } from "@/components/product-code";
 import { bdt } from "@/lib/finance-report";
@@ -56,8 +56,8 @@ function CatalogIndex() {
   const fetchCatalog = useServerFn(getCatalog);
   const [data, setData] = useState<{ categories: Cat[]; brands: { id: string; name: string; slug: string }[]; products: Prod[] } | null>(null);
   const [term, setTerm] = useState(q ?? "");
-  // Master catalog is a reseller-facing showcase: admin price & profit are always visible.
-  const showPrices = true;
+  // Price/profit শুধু admin/staff/reseller/leader লগইন থাকলে দেখাবে।
+  const showPrices = useCatalogPrices();
   const perPage = 100;
   const currentPage = page ?? 1;
 
@@ -232,14 +232,17 @@ function CatalogIndex() {
                             </div>
                           </div>
                         ) : (
-                          <div className="mt-3">
-                            <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sale price</div>
-                            <div className="text-base font-black text-primary">{bdt(p.price)}</div>
+                          <div className="mt-3 rounded-xl border border-dashed bg-muted/30 p-2.5 text-[11px] font-semibold text-muted-foreground">
+                            প্রাইস দেখতে রিসেলার হিসেবে লগইন করুন
                           </div>
                         )}
                         <div className="mt-3 flex flex-wrap gap-1.5 border-t pt-3">
                           <CopyBtn text={p.name} title="Title" label="Title copied" />
-                          <CopyBtn text={`${p.name}\n\n${p.short}\n\nPrice: ${bdt(p.price)}`} title="Details" label="Details copied" />
+                          <CopyBtn
+                            text={showPrices ? `${p.name}\n\n${p.short}\n\nPrice: ${bdt(p.price)}` : `${p.name}\n\n${p.short}`}
+                            title="Details"
+                            label="Details copied"
+                          />
                           <ImagePickerButton images={p.images ?? (p.image ? [p.image] : [])} baseName={p.name} />
                         </div>
                       </div>
