@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Copy, Download } from "lucide-react";
 import { toast } from "sonner";
 import { PublicHeaderContent } from "@/components/public-header";
+import { useAuth } from "@/lib/use-auth";
 
 export type CatalogBrand = {
   siteName: string;
@@ -109,4 +110,14 @@ export function DownloadBtn({ url }: { url: string }) {
       <Download className="h-3.5 w-3.5" /> Image
     </a>
   );
+}
+
+/**
+ * Master catalog price visibility.
+ * Admin/staff/reseller/leader দেখতে পাবে — গেস্ট ও সাপ্লায়ার পাবে না।
+ */
+export function useCatalogPrices() {
+  const { roles, loading } = useAuth();
+  if (loading) return false;
+  return roles.some((r) => r === "super_admin" || r === "staff" || r === "reseller" || r === "leader");
 }

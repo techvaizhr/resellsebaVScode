@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getCatalogProduct } from "@/lib/catalog.functions";
-import { CopyBtn } from "@/components/catalog/shell";
+import { CopyBtn, useCatalogPrices } from "@/components/catalog/shell";
 import { ImagePickerButton } from "@/components/catalog/image-picker";
 import { bdt } from "@/lib/finance-report";
 import { areaLabel } from "@/lib/delivery";
@@ -30,8 +30,8 @@ function CatalogDetails() {
   const [state, setState] = useState<"loading" | "done">("loading");
   const [p, setP] = useState<P>(null);
   const [idx, setIdx] = useState(0);
-  // Master catalog is a reseller-facing showcase: admin price & profit are always visible.
-  const showPrices = true;
+  // Price/profit/delivery শুধু admin/staff/reseller/leader লগইন থাকলে দেখাবে।
+  const showPrices = useCatalogPrices();
 
   useEffect(() => {
     setState("loading");
@@ -63,7 +63,7 @@ function CatalogDetails() {
     p.name,
     p.short,
     p.description?.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
-    `Price: ${bdt(p.price)}`,
+    showPrices ? `Price: ${bdt(p.price)}` : "",
     `Code: #${p.code}`,
   ]
     .filter(Boolean)
@@ -117,6 +117,8 @@ function CatalogDetails() {
           <h1 className="mt-4 text-2xl font-extrabold tracking-tight sm:text-3xl">{p.name}</h1>
           {p.short && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{p.short}</p>}
 
+          {showPrices ? (
+            <>
           <div className="surface-card mt-6 flex flex-wrap items-end gap-6 p-5">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sale price (suggested)</div>
@@ -160,6 +162,22 @@ function CatalogDetails() {
               )}
             </div>
           </div>
+            </>
+          ) : (
+            <div className="surface-card mt-6 p-5">
+              <p className="text-sm font-semibold">প্রাইস ও ডেলিভারি চার্জ দেখতে লগইন করুন</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                রিসেলার অ্যাকাউন্ট দিয়ে সাইন ইন করলে Admin price, Sale price, Profit ও ডেলিভারি চার্জ দেখতে পাবেন।
+              </p>
+              <Link
+                to="/login"
+                search={{ mode: "signup" }}
+                className="btn-brand mt-4 inline-flex rounded-lg px-5 py-2.5 text-sm font-semibold"
+              >
+                রিসেলার সাইনআপ / লগইন
+              </Link>
+            </div>
+          )}
 
           <div className="surface-card mt-5 p-5">
             <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Reseller tools</h2>
