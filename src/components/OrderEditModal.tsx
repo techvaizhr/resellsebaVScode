@@ -310,6 +310,10 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
     const low = items.find((it) => it.reseller_price < minFor(it));
     if (low)
       return toast.error(`${low.product_name}: minimum selling price is ৳${minFor(low)} — cannot save below this`);
+    const short = items.find((it) => it.quantity > maxQtyFor(it));
+    if (short)
+      return toast.error(`${short.product_name}: only ${maxQtyFor(short)} available in stock`);
+
     setBusy(true);
     try {
       if (removed.length > 0) {
