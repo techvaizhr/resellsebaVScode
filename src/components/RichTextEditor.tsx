@@ -75,7 +75,7 @@ export function RichTextEditor({
     try {
       const f = files[0];
       const compressed = await validateAndCompress(f);
-      const path = `descriptions/${crypto.randomUUID()}.webp`;
+      const path = `${uploadFolder.replace(/\/+$/, "")}/${crypto.randomUUID()}.webp`;
       const { error } = await supabase.storage
         .from("product-images")
         .upload(path, compressed.blob, { contentType: "image/webp", cacheControl: "31536000" });
