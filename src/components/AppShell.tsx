@@ -245,6 +245,7 @@ export function AppShell({
               <h1 className="truncate text-base font-bold tracking-tight sm:text-lg">{title}</h1>
             </div>
             <div className="flex items-center gap-2">
+              <PwaInstallButton />
               {headerRight}
             </div>
           </header>
