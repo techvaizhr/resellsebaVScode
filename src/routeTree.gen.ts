@@ -59,6 +59,7 @@ import { Route as AuthenticatedAdminTutorialsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminTransactionsRouteImport } from './routes/_authenticated/admin/transactions'
 import { Route as AuthenticatedAdminSuppliersRouteImport } from './routes/_authenticated/admin/suppliers'
 import { Route as AuthenticatedAdminSupplierReportRouteImport } from './routes/_authenticated/admin/supplier-report'
+import { Route as AuthenticatedAdminSupplierPayoutsRouteImport } from './routes/_authenticated/admin/supplier-payouts'
 import { Route as AuthenticatedAdminStaffRouteImport } from './routes/_authenticated/admin/staff'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminResellersRouteImport } from './routes/_authenticated/admin/resellers'
@@ -380,6 +381,12 @@ const AuthenticatedAdminSupplierReportRoute =
     path: '/supplier-report',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminSupplierPayoutsRoute =
+  AuthenticatedAdminSupplierPayoutsRouteImport.update({
+    id: '/supplier-payouts',
+    path: '/supplier-payouts',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminStaffRoute = AuthenticatedAdminStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
@@ -656,6 +663,7 @@ export interface FileRoutesByFullPath {
   '/admin/resellers': typeof AuthenticatedAdminResellersRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/staff': typeof AuthenticatedAdminStaffRoute
+  '/admin/supplier-payouts': typeof AuthenticatedAdminSupplierPayoutsRoute
   '/admin/supplier-report': typeof AuthenticatedAdminSupplierReportRoute
   '/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
   '/admin/transactions': typeof AuthenticatedAdminTransactionsRoute
@@ -742,6 +750,7 @@ export interface FileRoutesByTo {
   '/admin/resellers': typeof AuthenticatedAdminResellersRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/staff': typeof AuthenticatedAdminStaffRoute
+  '/admin/supplier-payouts': typeof AuthenticatedAdminSupplierPayoutsRoute
   '/admin/supplier-report': typeof AuthenticatedAdminSupplierReportRoute
   '/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
   '/admin/transactions': typeof AuthenticatedAdminTransactionsRoute
@@ -835,6 +844,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/resellers': typeof AuthenticatedAdminResellersRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/staff': typeof AuthenticatedAdminStaffRoute
+  '/_authenticated/admin/supplier-payouts': typeof AuthenticatedAdminSupplierPayoutsRoute
   '/_authenticated/admin/supplier-report': typeof AuthenticatedAdminSupplierReportRoute
   '/_authenticated/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
   '/_authenticated/admin/transactions': typeof AuthenticatedAdminTransactionsRoute
@@ -928,6 +938,7 @@ export interface FileRouteTypes {
     | '/admin/resellers'
     | '/admin/settings'
     | '/admin/staff'
+    | '/admin/supplier-payouts'
     | '/admin/supplier-report'
     | '/admin/suppliers'
     | '/admin/transactions'
@@ -1014,6 +1025,7 @@ export interface FileRouteTypes {
     | '/admin/resellers'
     | '/admin/settings'
     | '/admin/staff'
+    | '/admin/supplier-payouts'
     | '/admin/supplier-report'
     | '/admin/suppliers'
     | '/admin/transactions'
@@ -1106,6 +1118,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/resellers'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/staff'
+    | '/_authenticated/admin/supplier-payouts'
     | '/_authenticated/admin/supplier-report'
     | '/_authenticated/admin/suppliers'
     | '/_authenticated/admin/transactions'
@@ -1529,6 +1542,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSupplierReportRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/supplier-payouts': {
+      id: '/_authenticated/admin/supplier-payouts'
+      path: '/supplier-payouts'
+      fullPath: '/admin/supplier-payouts'
+      preLoaderRoute: typeof AuthenticatedAdminSupplierPayoutsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/staff': {
       id: '/_authenticated/admin/staff'
       path: '/staff'
@@ -1839,6 +1859,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminResellersRoute: typeof AuthenticatedAdminResellersRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminStaffRoute: typeof AuthenticatedAdminStaffRoute
+  AuthenticatedAdminSupplierPayoutsRoute: typeof AuthenticatedAdminSupplierPayoutsRoute
   AuthenticatedAdminSupplierReportRoute: typeof AuthenticatedAdminSupplierReportRoute
   AuthenticatedAdminSuppliersRoute: typeof AuthenticatedAdminSuppliersRoute
   AuthenticatedAdminTransactionsRoute: typeof AuthenticatedAdminTransactionsRoute
@@ -1880,6 +1901,8 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminResellersRoute: AuthenticatedAdminResellersRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminStaffRoute: AuthenticatedAdminStaffRoute,
+    AuthenticatedAdminSupplierPayoutsRoute:
+      AuthenticatedAdminSupplierPayoutsRoute,
     AuthenticatedAdminSupplierReportRoute:
       AuthenticatedAdminSupplierReportRoute,
     AuthenticatedAdminSuppliersRoute: AuthenticatedAdminSuppliersRoute,
