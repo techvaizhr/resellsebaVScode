@@ -28,6 +28,7 @@ function AuthPage() {
   const nav = useNavigate();
   const search = Route.useSearch();
   const [mode, setMode] = useState<"signin" | "signup">(search.mode ?? "signin");
+  const [accountType, setAccountType] = useState<"reseller" | "supplier">("reseller");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,6 +37,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [sentEmail, setSentEmail] = useState<string | null>(null);
   const sendCode = useServerFn(sendVerificationCode);
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -63,7 +65,9 @@ function AuthPage() {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/login`,
-            data: { full_name: name, phone },
+            data: { full_name: name, phone, account_type: accountType },
+
+
           },
         });
         if (error) throw error;
@@ -153,6 +157,32 @@ function AuthPage() {
           <form onSubmit={onSubmit} className="mt-6 space-y-3">
             {isSignup && (
               <>
+                <Field label="অ্যাকাউন্টের ধরন">
+                  <div className="grid grid-cols-2 gap-2">
+                    {(
+                      [
+                        ["reseller", "রিসেলার", "নিজের স্টোর চালাবো"],
+                        ["supplier", "সাপ্লায়ার", "প্রোডাক্ট সাপ্লাই দিবো"],
+                      ] as const
+                    ).map(([key, label, hint]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setAccountType(key)}
+                        className={
+                          "rounded-md border px-3 py-2 text-left text-xs transition-colors " +
+                          (accountType === key
+                            ? "border-primary bg-primary/5 ring-1 ring-primary"
+                            : "hover:bg-muted")
+                        }
+                      >
+                        <span className="block text-sm font-medium">{label}</span>
+                        <span className="text-muted-foreground">{hint}</span>
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+
                 <Field label="আপনার নাম">
                   <input
                     className={inp}

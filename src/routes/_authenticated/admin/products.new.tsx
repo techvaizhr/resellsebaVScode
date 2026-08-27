@@ -41,6 +41,9 @@ function NewProduct() {
   const [keywords, setKeywords] = useState("");
   const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
   const [cats, setCats] = useState<{ id: string; name: string }[]>([]);
+  const [suppliers, setSuppliers] = useState<{ id: string; display_name: string; code: string }[]>([]);
+  const [supplierId, setSupplierId] = useState("");
+
   const [busy, setBusy] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [source, setSource] = useState<{ label: string; url: string } | null>(null);
@@ -67,6 +70,13 @@ function NewProduct() {
   useEffect(() => {
     supabase.from("brands").select("id,name").order("name").then(({ data }) => setBrands(data ?? []));
     supabase.from("categories").select("id,name").order("name").then(({ data }) => setCats(data ?? []));
+    supabase
+      .from("suppliers")
+      .select("id,display_name,code")
+      .eq("status", "active")
+      .order("display_name")
+      .then(({ data }) => setSuppliers(data ?? []));
+
   }, []);
 
   const calc = useMemo(() => {
@@ -120,7 +130,9 @@ function NewProduct() {
           description: description || null,
           brand_id: brandId || null,
           category_id: categoryId || null,
+          supplier_id: supplierId || null,
           buying_price: Number(buying),
+
           reseller_price: Number(resellerPrice),
           packaging_cost: Number(packaging),
           delivery_mode: deliveryMode,
