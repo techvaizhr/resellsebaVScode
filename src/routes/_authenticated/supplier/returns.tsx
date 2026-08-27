@@ -1,0 +1,104 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { PageHeader, StatCard } from "@/components/ui-kit";
+import { useSupplier } from "@/components/supplier-context";
+import { bdtNum, orderStatusLabel } from "@/lib/supplier";
+
+export const Route = createFileRoute("/_authenticated/supplier/returns")({
+  component: SupplierReturnsPage,
+});
+
+function SupplierReturnsPage() {
+  const { data } = useSupplier();
+  const [tab, setTab] = useState<"all" | "pending_handover" | "handed_over">("all");
+
+  const rows = useMemo(
+    () => (tab === "all" ? data.returns : data.returns.filter((r) => r.status === tab)),
+    [data.returns, tab],
+  );
+
+  const pending = data.returns.filter((r) => r.status === "pending_handover");
+  const handed = data.returns.filter((r) => r.status === "handed_over");
+  const sum = (list: typeof data.returns) => list.reduce((s, r) => s + Number(r.quantity) * Number(r.unit_price), 0);
+
+  return (
+    <div>
+      <PageHeader
+        title="Returns"
+        description="ফেরত আসা আইটেম — অ্যাডমিন হ্যান্ডওভার করলে এখানে 'Handed over' দেখাবে।"
+      />
+
+      <div className="mb-4 grid gap-4 sm:grid-cols-3">
+        <StatCard label="Total returned" value={bdtNum(sum(data.returns))} hint={`${data.returns.length} items`} tone="rose" />
+        <StatCard label="Waiting handover" value={bdtNum(sum(pending))} hint={`${pending.length} items`} tone="amber" />
+        <StatCard label="Handed over" value={bdtNum(sum(handed))} hint={`${handed.length} items`} tone="emerald" />
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        {([
+          ["all", `All (${data.returns.length})`],
+          ["pending_handover", `Waiting (${pending.length})`],
+          ["handed_over", `Handed over (${handed.length})`],
+        ] as const).map(([k, label]) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={
+              "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors " +
+              (tab === k ? "border-transparent bg-primary text-primary-foreground" : "hover:bg-muted")
+            }
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="surface-card p-4">
+        {rows.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-8 text-center text-xs text-muted-foreground">
+            কোনো রিটার্ন নেই।
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-md border">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/40 text-left uppercase text-muted-foreground">
+                <tr>
+                  <th className="p-2">Date</th>
+                  <th>Order</th>
+                  <th>Product</th>
+                  <th>Qty</th>
+                  <th>Value</th>
+                  <th>Order status</th>
+                  <th>Handover</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-t">
+                    <td className="p-2 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
+                    <td className="font-medium">#{r.order_number}</td>
+                    <td className="text-muted-foreground">{r.product_name}</td>
+                    <td className="tabular-nums">{r.quantity}</td>
+                    <td className="font-semibold tabular-nums">{bdtNum(Number(r.quantity) * Number(r.unit_price))}</td>
+                    <td className="capitalize text-muted-foreground">{orderStatusLabel(r.order_status)}</td>
+                    <td>
+                      {r.status === "handed_over" ? (
+                        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+                          Handed over{r.handed_over_at ? ` · ${new Date(r.handed_over_at).toLocaleDateString()}` : ""}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+                          Waiting
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

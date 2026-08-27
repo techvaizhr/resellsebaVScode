@@ -28,6 +28,7 @@ function DashboardRouter() {
     const isSuperAdmin = roles.includes("super_admin");
     const isStaff = roles.includes("staff");
     const isReseller = roles.includes("reseller") || roles.includes("leader");
+    const isSupplier = roles.includes("supplier");
 
     if (isSuperAdmin || isStaff) {
       done.current = true;
@@ -36,11 +37,17 @@ function DashboardRouter() {
       nav({ to: "/admin", replace: true });
       return;
     }
+    if (isSupplier) {
+      done.current = true;
+      nav({ to: "/supplier", replace: true });
+      return;
+    }
     if (isReseller) {
       done.current = true;
       nav({ to: "/reseller", replace: true });
       return;
     }
+
 
     // No roles came back. That is either a genuinely new user OR a failed
     // lookup — sending an existing reseller to "Become a reseller" is the bug
@@ -48,6 +55,15 @@ function DashboardRouter() {
     done.current = true;
     void (async () => {
       if (!accessError) {
+        const { data: sup } = await supabase
+          .from("suppliers")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (sup) {
+          nav({ to: "/supplier", replace: true });
+          return;
+        }
         const { data, error } = await supabase
           .from("resellers")
           .select("status")
@@ -62,6 +78,7 @@ function DashboardRouter() {
           return;
         }
       }
+
       // Lookup failed — never guess. Offer a retry instead.
       done.current = false;
       setStuck(true);

@@ -60,6 +60,8 @@ const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/admin/payouts": ["payouts.manage"],
   "/admin/commissions": ["commissions.manage"],
   "/admin/resellers": ["resellers.manage"],
+  "/admin/suppliers": ["suppliers.view", "suppliers.manage"],
+
   "/admin/agents": ["agents.manage"],
   "/admin/agent-report": ["agents.view", "agents.manage"],
   "/admin/agent-payouts": ["agents.manage", "payouts.manage"],
@@ -110,6 +112,8 @@ const NAV: NavEntry[] = [
     ],
   },
   { label: "Resellers", to: "/admin/resellers", icon: <Handshake className="h-4 w-4" /> },
+  { label: "Suppliers", to: "/admin/suppliers", icon: <Truck className="h-4 w-4" /> },
+
   {
     label: "Agents",
     icon: <UserCheck className="h-4 w-4" />,

@@ -41,6 +41,9 @@ function NewProduct() {
   const [keywords, setKeywords] = useState("");
   const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
   const [cats, setCats] = useState<{ id: string; name: string }[]>([]);
+  const [suppliers, setSuppliers] = useState<{ id: string; display_name: string; code: string }[]>([]);
+  const [supplierId, setSupplierId] = useState("");
+
   const [busy, setBusy] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [source, setSource] = useState<{ label: string; url: string } | null>(null);
@@ -67,6 +70,13 @@ function NewProduct() {
   useEffect(() => {
     supabase.from("brands").select("id,name").order("name").then(({ data }) => setBrands(data ?? []));
     supabase.from("categories").select("id,name").order("name").then(({ data }) => setCats(data ?? []));
+    supabase
+      .from("suppliers")
+      .select("id,display_name,code")
+      .eq("status", "active")
+      .order("display_name")
+      .then(({ data }) => setSuppliers(data ?? []));
+
   }, []);
 
   const calc = useMemo(() => {
@@ -120,7 +130,9 @@ function NewProduct() {
           description: description || null,
           brand_id: brandId || null,
           category_id: categoryId || null,
+          supplier_id: supplierId || null,
           buying_price: Number(buying),
+
           reseller_price: Number(resellerPrice),
           packaging_cost: Number(packaging),
           delivery_mode: deliveryMode,
@@ -251,9 +263,27 @@ function NewProduct() {
             </Hint>
           </h3>
           <div className="grid gap-3 md:grid-cols-3">
-            <Field label="Buying price / Admin cost (৳)" required hint="Your cost. Resellers do not see this.">
+            <Field
+              label="Supplier"
+              hint="Supplier select korle buying price = oi supplier er prapya. Admin er nijer product hole — None — rakhun."
+            >
+              <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className={inputCls}>
+                <option value="">— None (admin's own product) —</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.display_name} ({s.code})
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              label={supplierId ? "Supplier price / Admin cost (৳)" : "Buying price / Admin cost (৳)"}
+              required
+              hint={supplierId ? "Supplier ei amount ta pabe (per unit, delivered item)." : "Your cost. Resellers do not see this."}
+            >
               <input required type="number" min={0} value={buying} onChange={(e) => setBuying(e.target.value)} className={inputCls} />
             </Field>
+
             <Field label="Reseller price (৳)" required hint="Resellers see this as the product price and cannot sell below it.">
               <input required type="number" min={0} value={resellerPrice} onChange={(e) => setResellerPrice(e.target.value)} className={inputCls} />
             </Field>

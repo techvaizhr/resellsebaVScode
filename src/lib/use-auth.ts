@@ -9,7 +9,7 @@ import {
   type PanelBootstrap,
 } from "@/lib/panel-bootstrap";
 
-export type Role = "super_admin" | "reseller" | "leader" | "staff";
+export type Role = "super_admin" | "reseller" | "leader" | "staff" | "supplier";
 
 export interface AuthState {
   session: Session | null;
