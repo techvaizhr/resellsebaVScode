@@ -13,7 +13,10 @@ export const Route = createFileRoute("/_authenticated/admin/supplier-payouts")({
   head: () => ({
     meta: [
       { title: "Supplier payouts — Admin" },
-      { name: "description", content: "Approve, reject or record supplier withdrawals and track payable balance." },
+      {
+        name: "description",
+        content: "Approve, reject or record supplier withdrawals and track payable balance.",
+      },
       { property: "og:title", content: "Supplier payouts — Admin" },
       { property: "og:description", content: "Supplier withdrawal requests and manual payments." },
       { property: "og:type", content: "website" },
@@ -22,7 +25,8 @@ export const Route = createFileRoute("/_authenticated/admin/supplier-payouts")({
   }),
 });
 
-const inp = "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
+const inp =
+  "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
 
 const TONE: Record<string, string> = {
   pending: "bg-amber-500/10 text-amber-600",
@@ -86,7 +90,10 @@ function AdminSupplierPayoutsPage() {
     return out;
   }, [all, supplierFilter, search]);
 
-  const rows = useMemo(() => (tab === "all" ? scoped : scoped.filter((p) => p.status === tab)), [scoped, tab]);
+  const rows = useMemo(
+    () => (tab === "all" ? scoped : scoped.filter((p) => p.status === tab)),
+    [scoped, tab],
+  );
   const count = useCallback(
     (k: string) => (k === "all" ? scoped.length : scoped.filter((p) => p.status === k).length),
     [scoped],
@@ -95,12 +102,16 @@ function AdminSupplierPayoutsPage() {
   const totals = useMemo(
     () => ({
       pending: all.filter((p) => p.status === "pending").reduce((s, p) => s + Number(p.amount), 0),
-      approved: all.filter((p) => p.status === "approved").reduce((s, p) => s + Number(p.amount), 0),
+      approved: all
+        .filter((p) => p.status === "approved")
+        .reduce((s, p) => s + Number(p.amount), 0),
       paid: all.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0),
       due: suppliers.reduce((s, r) => s + Math.max(r.earning - r.paid - r.pending_payout, 0), 0),
     }),
     [all, suppliers],
   );
+
+  const paged = usePaginated(rows, page, perPage);
 
   async function setStatus(id: string, status: "approved" | "paid" | "rejected") {
     setBusyId(id);
@@ -110,7 +121,10 @@ function AdminSupplierPayoutsPage() {
       patch.approved_at = new Date().toISOString();
       patch.paid_at = new Date().toISOString();
     }
-    const { error } = await supabase.from("supplier_payouts").update(patch as never).eq("id", id);
+    const { error } = await supabase
+      .from("supplier_payouts")
+      .update(patch as never)
+      .eq("id", id);
     setBusyId(null);
     if (error) return toast.error(error.message);
     toast.success("Payout updated");
@@ -149,8 +163,9 @@ function AdminSupplierPayoutsPage() {
   }
 
   const selected = suppliers.find((s) => s.id === supplierId);
-  const available = selected ? Math.max(selected.earning - selected.paid - selected.pending_payout, 0) : 0;
-  const paged = usePaginated(rows, page, perPage);
+  const available = selected
+    ? Math.max(selected.earning - selected.paid - selected.pending_payout, 0)
+    : 0;
 
   return (
     <div>
@@ -160,16 +175,43 @@ function AdminSupplierPayoutsPage() {
       />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Payable now" value={bdtNum(totals.due)} tone="violet" icon={<Wallet className="h-4 w-4" />} />
-        <StatCard label="Pending requests" value={bdtNum(totals.pending)} tone="amber" icon={<Clock className="h-4 w-4" />} />
-        <StatCard label="Approved" value={bdtNum(totals.approved)} tone="sky" icon={<CheckCircle2 className="h-4 w-4" />} />
-        <StatCard label="Paid" value={bdtNum(totals.paid)} tone="emerald" icon={<CheckCircle2 className="h-4 w-4" />} />
+        <StatCard
+          label="Payable now"
+          value={bdtNum(totals.due)}
+          tone="violet"
+          icon={<Wallet className="h-4 w-4" />}
+        />
+        <StatCard
+          label="Pending requests"
+          value={bdtNum(totals.pending)}
+          tone="amber"
+          icon={<Clock className="h-4 w-4" />}
+        />
+        <StatCard
+          label="Approved"
+          value={bdtNum(totals.approved)}
+          tone="sky"
+          icon={<CheckCircle2 className="h-4 w-4" />}
+        />
+        <StatCard
+          label="Paid"
+          value={bdtNum(totals.paid)}
+          tone="emerald"
+          icon={<CheckCircle2 className="h-4 w-4" />}
+        />
       </div>
 
-      <form onSubmit={createPayout} className="surface-card mb-4 grid gap-3 p-4 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
+      <form
+        onSubmit={createPayout}
+        className="surface-card mb-4 grid gap-3 p-4 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto]"
+      >
         <div>
           <label className="mb-1 block text-xs font-medium">Supplier</label>
-          <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className={inp}>
+          <select
+            value={supplierId}
+            onChange={(e) => setSupplierId(e.target.value)}
+            className={inp}
+          >
             <option value="">— Select —</option>
             {suppliers.map((s) => (
               <option key={s.id} value={s.id}>
@@ -177,15 +219,28 @@ function AdminSupplierPayoutsPage() {
               </option>
             ))}
           </select>
-          {selected && <p className="mt-1 text-[11px] text-muted-foreground">Payable: {bdtNum(available)}</p>}
+          {selected && (
+            <p className="mt-1 text-[11px] text-muted-foreground">Payable: {bdtNum(available)}</p>
+          )}
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium">Amount (৳)</label>
-          <input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" min={0} className={inp} />
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            type="number"
+            min={0}
+            className={inp}
+          />
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium">Method</label>
-          <input value={method} onChange={(e) => setMethod(e.target.value)} placeholder="bkash / bank" className={inp} />
+          <input
+            value={method}
+            onChange={(e) => setMethod(e.target.value)}
+            placeholder="bkash / bank"
+            className={inp}
+          />
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium">Reference / note</label>
@@ -196,7 +251,8 @@ function AdminSupplierPayoutsPage() {
             disabled={creating}
             className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
           >
-            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Record payment
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}{" "}
+            Record payment
           </button>
         </div>
       </form>
@@ -272,7 +328,12 @@ function AdminSupplierPayoutsPage() {
                     {p.reference ?? p.note}
                   </p>
                 )}
-                <Actions p={p} busy={busyId === p.id} setStatus={setStatus} className="mt-3 justify-end" />
+                <Actions
+                  p={p}
+                  busy={busyId === p.id}
+                  setStatus={setStatus}
+                  className="mt-3 justify-end"
+                />
               </div>
             ))}
           </div>
@@ -294,7 +355,9 @@ function AdminSupplierPayoutsPage() {
               <tbody className="divide-y">
                 {paged.map((p) => (
                   <tr key={p.id}>
-                    <td className="whitespace-nowrap p-3">{new Date(p.created_at).toLocaleDateString()}</td>
+                    <td className="whitespace-nowrap p-3">
+                      {new Date(p.created_at).toLocaleDateString()}
+                    </td>
                     <td className="p-3 font-medium">{p.supplier_name}</td>
                     <td className="p-3 font-semibold tabular-nums">{bdtNum(Number(p.amount))}</td>
                     <td className="p-3 capitalize text-muted-foreground">{p.method ?? "—"}</td>
@@ -302,14 +365,20 @@ function AdminSupplierPayoutsPage() {
                     <td className="p-3">
                       <span
                         className={
-                          "rounded-full px-2 py-0.5 text-[11px] font-medium capitalize " + (TONE[p.status] ?? "bg-muted")
+                          "rounded-full px-2 py-0.5 text-[11px] font-medium capitalize " +
+                          (TONE[p.status] ?? "bg-muted")
                         }
                       >
                         {p.status}
                       </span>
                     </td>
                     <td className="p-3 text-right">
-                      <Actions p={p} busy={busyId === p.id} setStatus={setStatus} className="justify-end" />
+                      <Actions
+                        p={p}
+                        busy={busyId === p.id}
+                        setStatus={setStatus}
+                        className="justify-end"
+                      />
                     </td>
                   </tr>
                 ))}
@@ -335,16 +404,33 @@ function Actions({
   setStatus: (id: string, status: "approved" | "paid" | "rejected") => void;
   className?: string;
 }) {
-  if (p.status === "paid" || p.status === "rejected") return <span className="text-[11px] text-muted-foreground">—</span>;
+  if (p.status === "paid" || p.status === "rejected")
+    return <span className="text-[11px] text-muted-foreground">—</span>;
   return (
     <div className={"inline-flex flex-wrap gap-1 " + className}>
       {p.status === "pending" && (
         <>
-          <Btn busy={busy} onClick={() => setStatus(p.id, "approved")} label="Approve" icon={<CheckCircle2 className="h-3 w-3" />} />
-          <Btn busy={busy} onClick={() => setStatus(p.id, "rejected")} label="Reject" danger icon={<XCircle className="h-3 w-3" />} />
+          <Btn
+            busy={busy}
+            onClick={() => setStatus(p.id, "approved")}
+            label="Approve"
+            icon={<CheckCircle2 className="h-3 w-3" />}
+          />
+          <Btn
+            busy={busy}
+            onClick={() => setStatus(p.id, "rejected")}
+            label="Reject"
+            danger
+            icon={<XCircle className="h-3 w-3" />}
+          />
         </>
       )}
-      <Btn busy={busy} onClick={() => setStatus(p.id, "paid")} label="Mark paid" icon={<Wallet className="h-3 w-3" />} />
+      <Btn
+        busy={busy}
+        onClick={() => setStatus(p.id, "paid")}
+        label="Mark paid"
+        icon={<Wallet className="h-3 w-3" />}
+      />
     </div>
   );
 }
@@ -368,7 +454,9 @@ function Btn({
       disabled={busy}
       className={
         "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-50 " +
-        (danger ? "border-destructive/40 text-destructive hover:bg-destructive/10" : "hover:bg-muted")
+        (danger
+          ? "border-destructive/40 text-destructive hover:bg-destructive/10"
+          : "hover:bg-muted")
       }
     >
       {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : icon} {label}

@@ -36,23 +36,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { PasswordResetModal } from "@/components/password-reset-modal";
 import { startImpersonation } from "@/lib/impersonation";
 import { impersonateSupplier, resetSupplierPassword } from "@/lib/supplier-access.functions";
-import { bdtNum, loadAdminSupplierOverview, type AdminSupplierOverview, type AdminSupplierRow } from "@/lib/supplier";
+import {
+  bdtNum,
+  loadAdminSupplierOverview,
+  type AdminSupplierOverview,
+  type AdminSupplierRow,
+} from "@/lib/supplier";
 
 export const Route = createFileRoute("/_authenticated/admin/suppliers")({
   component: AdminSuppliersPage,
   head: () => ({
     meta: [
       { title: "Supplier network — Admin" },
-      { name: "description", content: "Approve suppliers, track their sales, payable balance and account access." },
+      {
+        name: "description",
+        content: "Approve suppliers, track their sales, payable balance and account access.",
+      },
       { property: "og:title", content: "Supplier network — Admin" },
-      { property: "og:description", content: "Supplier accounts, earnings and payouts in one list." },
+      {
+        property: "og:description",
+        content: "Supplier accounts, earnings and payouts in one list.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
 });
 
-const inp = "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
+const inp =
+  "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
 
 const FILTERS = ["all", "pending", "active", "suspended", "rejected"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -134,10 +146,15 @@ function AdminSuppliersPage() {
     setBusyId(s.id);
     const patch: { status: string; approved_at?: string } = { status };
     if (status === "active") patch.approved_at = new Date().toISOString();
-    const { error } = await supabase.from("suppliers").update(patch as never).eq("id", s.id);
+    const { error } = await supabase
+      .from("suppliers")
+      .update(patch as never)
+      .eq("id", s.id);
     setBusyId(null);
     if (error) return toast.error(error.message);
-    toast.success(status === "active" ? `${s.display_name} is now active` : `Status set to ${status}`);
+    toast.success(
+      status === "active" ? `${s.display_name} is now active` : `Status set to ${status}`,
+    );
     void load();
   }
 
@@ -187,11 +204,15 @@ function AdminSuppliersPage() {
             }}
             className={
               "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors " +
-              (filter === f ? "border-transparent bg-primary text-primary-foreground" : "hover:bg-muted")
+              (filter === f
+                ? "border-transparent bg-primary text-primary-foreground"
+                : "hover:bg-muted")
             }
           >
             {FILTER_LABELS[f]}
-            <span className={"tabular-nums " + (filter === f ? "opacity-80" : "text-muted-foreground")}>
+            <span
+              className={"tabular-nums " + (filter === f ? "opacity-80" : "text-muted-foreground")}
+            >
               {counts[f]}
             </span>
           </button>
@@ -249,8 +270,12 @@ function AdminSuppliersPage() {
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
                         <IdCard className="h-3 w-3 text-primary" />
-                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">ID</span>
-                        <span className="font-mono text-[11px] font-bold tracking-wider text-primary">{s.code}</span>
+                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                          ID
+                        </span>
+                        <span className="font-mono text-[11px] font-bold tracking-wider text-primary">
+                          {s.code}
+                        </span>
                         <button
                           type="button"
                           title="Copy supplier ID"
@@ -278,7 +303,11 @@ function AdminSuppliersPage() {
                           >
                             <Copy className="h-3 w-3" />
                           </button>
-                          <a href={`tel:${phone}`} title="Call" className="text-muted-foreground transition hover:text-primary">
+                          <a
+                            href={`tel:${phone}`}
+                            title="Call"
+                            className="text-muted-foreground transition hover:text-primary"
+                          >
                             <PhoneCall className="h-3 w-3" />
                           </a>
                           <a
@@ -292,7 +321,9 @@ function AdminSuppliersPage() {
                           </a>
                         </span>
                       ) : (
-                        <span className="rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">no phone</span>
+                        <span className="rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">
+                          no phone
+                        </span>
                       )}
                       {s.email && (
                         <span className="truncate rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">
@@ -433,7 +464,8 @@ function Metric({
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
       <div
         className={
-          "text-sm font-semibold tabular-nums " + (accent ? "text-success" : muted ? "text-muted-foreground" : "")
+          "text-sm font-semibold tabular-nums " +
+          (accent ? "text-success" : muted ? "text-muted-foreground" : "")
         }
       >
         {value == null ? "—" : plain ? value.toLocaleString() : bdtNum(value)}
@@ -488,8 +520,12 @@ function SupplierEditModal({
       payout_bank_name: isBank ? form.payout_bank_name || null : null,
       payout_branch: isBank ? form.payout_branch || null : null,
     };
-    if (form.status === "active" && supplier.status !== "active") patch.approved_at = new Date().toISOString();
-    const { error } = await supabase.from("suppliers").update(patch as never).eq("id", supplier.id);
+    if (form.status === "active" && supplier.status !== "active")
+      patch.approved_at = new Date().toISOString();
+    const { error } = await supabase
+      .from("suppliers")
+      .update(patch as never)
+      .eq("id", supplier.id);
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Supplier updated");
@@ -515,19 +551,35 @@ function SupplierEditModal({
 
         <div className="grid gap-3 px-4 py-4 sm:grid-cols-2">
           <Field label="Supplier / business name">
-            <input value={form.display_name} onChange={(e) => set("display_name", e.target.value)} className={inp} />
+            <input
+              value={form.display_name}
+              onChange={(e) => set("display_name", e.target.value)}
+              className={inp}
+            />
           </Field>
           <Field label="Email (login)">
             <input value={supplier.email ?? ""} disabled className={inp + " opacity-60"} />
           </Field>
           <Field label="Phone">
-            <input value={form.contact_phone} onChange={(e) => set("contact_phone", e.target.value)} className={inp} />
+            <input
+              value={form.contact_phone}
+              onChange={(e) => set("contact_phone", e.target.value)}
+              className={inp}
+            />
           </Field>
           <Field label="WhatsApp">
-            <input value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} className={inp} />
+            <input
+              value={form.whatsapp}
+              onChange={(e) => set("whatsapp", e.target.value)}
+              className={inp}
+            />
           </Field>
           <Field label="Status">
-            <select value={form.status} onChange={(e) => set("status", e.target.value)} className={inp}>
+            <select
+              value={form.status}
+              onChange={(e) => set("status", e.target.value)}
+              className={inp}
+            >
               <option value="pending">Pending</option>
               <option value="active">Active</option>
               <option value="suspended">Suspended</option>
@@ -535,7 +587,11 @@ function SupplierEditModal({
             </select>
           </Field>
           <Field label="Payout method">
-            <select value={form.payout_method} onChange={(e) => set("payout_method", e.target.value)} className={inp}>
+            <select
+              value={form.payout_method}
+              onChange={(e) => set("payout_method", e.target.value)}
+              className={inp}
+            >
               <option value="bkash">bKash</option>
               <option value="nagad">Nagad</option>
               <option value="rocket">Rocket</option>
@@ -559,21 +615,39 @@ function SupplierEditModal({
           {isBank && (
             <>
               <Field label="Bank name">
-                <input value={form.payout_bank_name} onChange={(e) => set("payout_bank_name", e.target.value)} className={inp} />
+                <input
+                  value={form.payout_bank_name}
+                  onChange={(e) => set("payout_bank_name", e.target.value)}
+                  className={inp}
+                />
               </Field>
               <Field label="Branch">
-                <input value={form.payout_branch} onChange={(e) => set("payout_branch", e.target.value)} className={inp} />
+                <input
+                  value={form.payout_branch}
+                  onChange={(e) => set("payout_branch", e.target.value)}
+                  className={inp}
+                />
               </Field>
             </>
           )}
           <div className="sm:col-span-2">
             <Field label="Address">
-              <textarea rows={2} value={form.address} onChange={(e) => set("address", e.target.value)} className={inp} />
+              <textarea
+                rows={2}
+                value={form.address}
+                onChange={(e) => set("address", e.target.value)}
+                className={inp}
+              />
             </Field>
           </div>
           <div className="sm:col-span-2">
             <Field label="Admin note (internal)">
-              <textarea rows={2} value={form.notes} onChange={(e) => set("notes", e.target.value)} className={inp} />
+              <textarea
+                rows={2}
+                value={form.notes}
+                onChange={(e) => set("notes", e.target.value)}
+                className={inp}
+              />
             </Field>
           </div>
         </div>
@@ -587,8 +661,16 @@ function SupplierEditModal({
           >
             Cancel
           </button>
-          <button disabled={busy} className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-1.5 text-xs font-semibold disabled:opacity-50">
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save
+          <button
+            disabled={busy}
+            className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-1.5 text-xs font-semibold disabled:opacity-50"
+          >
+            {busy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}{" "}
+            Save
           </button>
         </div>
       </form>

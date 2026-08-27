@@ -1,5 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PackageCheck, Undo2, Wallet, Clock, TrendingUp, CheckCircle2, Package, ClipboardList } from "lucide-react";
+import {
+  PackageCheck,
+  Undo2,
+  Wallet,
+  Clock,
+  TrendingUp,
+  CheckCircle2,
+  Package,
+  ClipboardList,
+} from "lucide-react";
 import { PageHeader, StatCard } from "@/components/ui-kit";
 import { ReportCard } from "@/components/report-blocks";
 import { useSupplier } from "@/components/supplier-context";
@@ -10,9 +19,16 @@ export const Route = createFileRoute("/_authenticated/supplier/")({
   head: () => ({
     meta: [
       { title: "Supplier dashboard — Sales & payouts" },
-      { name: "description", content: "Delivered sales, in-progress orders, returns and withdrawable balance for your products." },
+      {
+        name: "description",
+        content:
+          "Delivered sales, in-progress orders, returns and withdrawable balance for your products.",
+      },
       { property: "og:title", content: "Supplier dashboard — Sales & payouts" },
-      { property: "og:description", content: "Track your product sales, returns and payouts in one place." },
+      {
+        property: "og:description",
+        content: "Track your product sales, returns and payouts in one place.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -141,7 +157,10 @@ function SupplierDashboard() {
         <ReportCard
           title="Recent sales"
           right={
-            <Link to="/supplier/report" className="inline-flex items-center gap-1.5 text-xs text-primary">
+            <Link
+              to="/supplier/report"
+              className="inline-flex items-center gap-1.5 text-xs text-primary"
+            >
               <Package className="h-3.5 w-3.5" /> Full report
             </Link>
           }
@@ -152,7 +171,10 @@ function SupplierDashboard() {
         <ReportCard
           title="In progress orders"
           right={
-            <Link to="/supplier/orders" className="inline-flex items-center gap-1.5 text-xs text-primary">
+            <Link
+              to="/supplier/orders"
+              className="inline-flex items-center gap-1.5 text-xs text-primary"
+            >
               <ClipboardList className="h-3.5 w-3.5" /> All orders
             </Link>
           }
@@ -169,7 +191,15 @@ function ItemTable({
   qtyKey,
   empty,
 }: {
-  rows: { id: string; order_number: string; product_name: string; quantity: number; kept_qty: number; unit_price: number; status: string }[];
+  rows: {
+    id: string;
+    order_number: string;
+    product_name: string;
+    quantity: number;
+    kept_qty: number;
+    unit_price: number;
+    status: string;
+  }[];
   qtyKey: "kept_qty" | "quantity";
   empty: string;
 }) {
@@ -198,7 +228,9 @@ function ItemTable({
                 <td className="p-2 tabular-nums">{qty}</td>
                 <td className="p-2 tabular-nums">{bdtNum(r.unit_price)}</td>
                 <td className="p-2 font-semibold tabular-nums">{bdtNum(qty * r.unit_price)}</td>
-                <td className="p-2 capitalize text-muted-foreground">{orderStatusLabel(r.status)}</td>
+                <td className="p-2 capitalize text-muted-foreground">
+                  {orderStatusLabel(r.status)}
+                </td>
               </tr>
             );
           })}
