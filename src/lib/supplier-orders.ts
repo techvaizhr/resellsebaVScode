@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { OrderTabKey } from "@/lib/courier-status";
 
 export type SupplierOrderItem = {
   id: string;
