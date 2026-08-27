@@ -64,17 +64,21 @@ function EditProduct() {
   const [keywords, setKeywords] = useState("");
   const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
   const [cats, setCats] = useState<{ id: string; name: string }[]>([]);
+  const [suppliers, setSuppliers] = useState<{ id: string; display_name: string; code: string }[]>([]);
+  const [supplierId, setSupplierId] = useState("");
 
   useEffect(() => {
     (async () => {
-      const [{ data: p }, { data: bs }, { data: cs }, { data: imgs }] = await Promise.all([
+      const [{ data: p }, { data: bs }, { data: cs }, { data: imgs }, { data: sup }] = await Promise.all([
         supabase.from("products").select("*").eq("id", id).maybeSingle(),
         supabase.from("brands").select("id,name").order("name"),
         supabase.from("categories").select("id,name").order("name"),
         supabase.from("product_images").select("url,sort_order").eq("product_id", id).order("sort_order"),
+        supabase.from("suppliers").select("id,display_name,code").eq("status", "active").order("display_name"),
       ]);
       setBrands(bs ?? []);
       setCats(cs ?? []);
+      setSuppliers(sup ?? []);
       if (!p) {
         toast.error("Product not found");
         nav({ to: "/admin/products" });
@@ -88,7 +92,9 @@ function EditProduct() {
       setDescription(p.description ?? "");
       setBrandId(p.brand_id ?? "");
       setCategoryId(p.category_id ?? "");
+      setSupplierId(anyP.supplier_id ?? "");
       setBuying(String(p.buying_price ?? 0));
+
       setResellerPrice(String(anyP.reseller_price ?? p.buying_price ?? 0));
       setPackaging(String(p.packaging_cost ?? 0));
       setDeliveryMode(((p as any).delivery_mode ?? "global") as ProductDeliveryMode);
@@ -162,7 +168,11 @@ function EditProduct() {
           description: description || null,
           brand_id: brandId || null,
           category_id: categoryId || null,
+          supplier_id: supplierId || null,
           buying_price: Number(buying),
+
+          supplier_price: Number(buying),
+
           reseller_price: Number(resellerPrice),
           packaging_cost: Number(packaging),
           delivery_mode: deliveryMode,
@@ -306,9 +316,27 @@ function EditProduct() {
             </Hint>
           </h3>
           <div className="grid gap-3 md:grid-cols-3">
-            <Field label="Buying price / Admin cost (৳)" required hint="Your cost. Resellers do not see this.">
+            <Field
+              label="Supplier"
+              hint="Supplier select korle buying price = oi supplier er prapya. Admin er nijer product hole — None — rakhun."
+            >
+              <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className={inputCls}>
+                <option value="">— None (admin's own product) —</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.display_name} ({s.code})
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              label={supplierId ? "Supplier price / Admin cost (৳)" : "Buying price / Admin cost (৳)"}
+              required
+              hint={supplierId ? "Supplier ei amount ta pabe (per unit, delivered item)." : "Your cost. Resellers do not see this."}
+            >
               <input required type="number" min={0} value={buying} onChange={(e) => setBuying(e.target.value)} className={inputCls} />
             </Field>
+
             <Field label="Reseller price (৳)" required hint="Resellers see this as the product price.">
               <input required type="number" min={0} value={resellerPrice} onChange={(e) => setResellerPrice(e.target.value)} className={inputCls} />
             </Field>
