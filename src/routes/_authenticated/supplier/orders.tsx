@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  CheckSquare,
   ChevronDown,
   Loader2,
   PackageCheck,
+  Printer,
   RefreshCw,
   Truck,
 } from "lucide-react";
@@ -33,6 +35,8 @@ import {
   type StripItem,
 } from "@/components/order-items-strip";
 import { bdtNum } from "@/lib/supplier";
+import { printLabelDocs, type LabelDoc } from "@/lib/labels";
+import { getGlobalSettings } from "@/lib/app-data";
 import {
   loadSupplierOrders,
   setSupplierOrderStatus,
@@ -78,6 +82,7 @@ function SupplierOrdersPage() {
   const [expanded, setExpanded] = useState<string[]>([]);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [booking, setBooking] = useState<{ open: boolean; orderIds: string[] }>({ open: false, orderIds: [] });
+  const [pendingStatus, setPendingStatus] = useState<{ ids: string[]; next: string } | null>(null);
   const [confirm, setConfirm] = useState<{
     title: string;
     description: string;
@@ -145,13 +150,15 @@ function SupplierOrdersPage() {
 
 
   const paged = usePaginated(filtered, page, perPage);
-  const actionable = paged.filter((o) => supplierNextStatus(o.status));
   const markedRows = rows.filter((o) => marked.includes(o.id));
   const bulkNext = useMemo(() => {
     if (!markedRows.length) return null;
     const next = supplierNextStatus(markedRows[0]!.status);
     return markedRows.every((o) => supplierNextStatus(o.status) === next) ? next : null;
   }, [markedRows]);
+
+  const isBooked = (o: SupplierOrderRow) => Boolean(o.shipment?.provider);
+  const unbookedMarked = markedRows.filter((o) => !isBooked(o));
 
   const totals = useMemo(
     () => ({
@@ -196,25 +203,73 @@ function SupplierOrdersPage() {
       toast.success(`${ok} order${ok > 1 ? "s" : ""} → ${supplierStatusLabel(next)}`);
       setMarked([]);
       await load();
-      // Courier booking is confirmed the moment an order moves into Packaging.
-      if (next === "packaging") setBooking({ open: true, orderIds: ids.slice(0, ok) });
     }
   };
 
+  /** Packaging requires a confirmed courier booking first — already booked orders are never re-booked. */
   const askStatus = (ids: string[], next: string) => {
+    if (next === "packaging") {
+      const targets = rows.filter((o) => ids.includes(o.id));
+      const needBooking = targets.filter((o) => !isBooked(o)).map((o) => o.id);
+      if (needBooking.length > 0) {
+        setPendingStatus({ ids, next });
+        setBooking({ open: true, orderIds: needBooking });
+        return;
+      }
+    }
     setConfirm({
       title: `Move to ${supplierStatusLabel(next)}?`,
       description:
-        next === "packaging"
-          ? `${ids.length} order(s) প্যাকেজিং-এ যাবে এবং সাথে সাথে কুরিয়ার বুকিং কনফার্ম হবে।`
-          : next === "ready_to_ship"
-            ? `${ids.length} order(s) কুরিয়ার হ্যান্ডওভার হবে। এরপর আর কোনো পরিবর্তন করা যাবে না।`
-            : `${ids.length} order(s) ${supplierStatusLabel(next)} করা হবে।`,
+        next === "ready_to_ship"
+          ? `${ids.length} order(s) কুরিয়ার হ্যান্ডওভার হবে।`
+          : `${ids.length} order(s) ${supplierStatusLabel(next)} করা হবে।`,
       onConfirm: async () => {
         setConfirm(null);
         await applyStatus(ids, next);
       },
     });
+  };
+
+  const bookMarked = () => {
+    const ids = unbookedMarked.map((o) => o.id);
+    if (!ids.length) {
+      toast.info("Selected order(s) are already booked.");
+      return;
+    }
+    setPendingStatus(null);
+    setBooking({ open: true, orderIds: ids });
+  };
+
+  const handleBookingDone = async () => {
+    const pending = pendingStatus;
+    setPendingStatus(null);
+    await load();
+    if (pending) await applyStatus(pending.ids, pending.next);
+  };
+
+  const printMarked = async () => {
+    if (!markedRows.length) return;
+    let siteName = "Shipping label";
+    try {
+      const settings = await getGlobalSettings();
+      siteName = settings?.site_name || siteName;
+    } catch {
+      /* branding is optional on the label */
+    }
+    const docs: LabelDoc[] = markedRows.map((o) => ({
+      orderNumber: o.order_number,
+      storeName: siteName,
+      storeLogo: null,
+      area: o.area,
+      customer: null, // suppliers never see customer information
+      items: o.items.map((it) => ({ name: it.product_name, qty: it.quantity })),
+      courier: {
+        provider: o.shipment?.provider ?? null,
+        tracking: o.shipment?.consignment_id || o.shipment?.tracking_id || null,
+      },
+      cod: null,
+    }));
+    printLabelDocs(docs);
   };
 
   if (loading) {
@@ -326,27 +381,48 @@ function SupplierOrdersPage() {
       </div>
 
 
-      {actionable.length > 0 && (
+      {paged.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
           <button
             type="button"
             onClick={() =>
-              setMarked((prev) => (prev.length === actionable.length ? [] : actionable.map((o) => o.id)))
+              setMarked((prev) => (prev.length === paged.length ? [] : paged.map((o) => o.id)))
             }
-            className="rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
+            className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
           >
-            {marked.length === actionable.length && marked.length > 0 ? "Clear selection" : "Select page"}
+            <CheckSquare className="h-3.5 w-3.5" />
+            {marked.length === paged.length && marked.length > 0 ? "Clear selection" : "Select page"}
           </button>
           <span className="text-sm font-medium">{marked.length} marked</span>
-          {bulkNext && (
-            <button
-              disabled={busy}
-              onClick={() => askStatus(marked, bulkNext)}
-              className="btn-brand ml-auto inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-xs font-semibold disabled:opacity-50"
-            >
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
-              {marked.length} → {supplierStatusLabel(bulkNext)}
-            </button>
+
+          {marked.length > 0 && (
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <button
+                onClick={printMarked}
+                className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Print labels
+              </button>
+              <button
+                onClick={bookMarked}
+                disabled={unbookedMarked.length === 0}
+                className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                <Truck className="h-3.5 w-3.5" />
+                Book courier {unbookedMarked.length > 0 ? `(${unbookedMarked.length})` : ""}
+              </button>
+              {bulkNext && (
+                <button
+                  disabled={busy}
+                  onClick={() => askStatus(marked, bulkNext)}
+                  className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-xs font-semibold disabled:opacity-50"
+                >
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
+                  {marked.length} → {supplierStatusLabel(bulkNext)}
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -375,16 +451,14 @@ function SupplierOrdersPage() {
                   {/* Mobile card */}
                   <div className="space-y-2.5 p-3 lg:hidden">
                     <div className="flex items-start gap-2">
-                      {next && (
-                        <input
-                          type="checkbox"
-                          className="mt-1 h-4 w-4 accent-[hsl(var(--primary))]"
-                          checked={marked.includes(o.id)}
-                          onChange={(e) =>
-                            setMarked((prev) => (e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id)))
-                          }
-                        />
-                      )}
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 accent-[hsl(var(--primary))]"
+                        checked={marked.includes(o.id)}
+                        onChange={(e) =>
+                          setMarked((prev) => (e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id)))
+                        }
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-semibold">#{o.order_number}</span>
@@ -434,16 +508,14 @@ function SupplierOrdersPage() {
                   {/* Desktop row */}
                   <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-start gap-2 px-4 py-3 text-sm hover:bg-muted/40 lg:grid">
                     <div className="flex flex-col items-center gap-1.5">
-                      {next && (
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 accent-[hsl(var(--primary))]"
-                          checked={marked.includes(o.id)}
-                          onChange={(e) =>
-                            setMarked((prev) => (e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id)))
-                          }
-                        />
-                      )}
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-[hsl(var(--primary))]"
+                        checked={marked.includes(o.id)}
+                        onChange={(e) =>
+                          setMarked((prev) => (e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id)))
+                        }
+                      />
                       <button onClick={() => toggleExpand(o.id)} className="rounded-full p-1 hover:bg-muted">
                         <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
                       </button>
@@ -504,7 +576,7 @@ function SupplierOrdersPage() {
         isOpen={booking.open}
         orderIds={booking.orderIds}
         onClose={() => setBooking({ open: false, orderIds: [] })}
-        onSuccess={() => void load()}
+        onSuccess={() => void handleBookingDone()}
       />
 
       {confirm && (

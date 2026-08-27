@@ -2,7 +2,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { getGlobalSettings } from "@/lib/app-data";
 import { courierLabel } from "@/components/courier-brand";
 
-export async function printShippingLabels(orderIds: string[], forceSize?: "3x3" | "3x4") {
+export type LabelDoc = {
+  orderNumber: string;
+  storeName: string;
+  storeLogo?: string | null;
+  area: string;
+  customer?: { name: string; phone: string; address: string } | null;
+  items: { name: string; qty: number }[];
+  courier?: { provider: string | null; tracking: string | null } | null;
+  cod?: number | null;
+};
+
+export async function printShippingLabels(
+  orderIds: string[],
+  forceSize?: "3x3" | "3x4",
+  options?: { hideCustomer?: boolean },
+) {
+  const hideCustomer = options?.hideCustomer === true;
   if (!orderIds.length) return;
 
   const [settings, { data: orders }, { data: items }, { data: shipments }] = await Promise.all([
@@ -31,7 +47,7 @@ export async function printShippingLabels(orderIds: string[], forceSize?: "3x3" 
 
   const size = forceSize || (settings as any)?.label_size || "3x4";
   const siteName = settings?.site_name || "ResellHub";
-  
+
   const itemsByOrder = new Map<string, any[]>();
   items?.forEach(it => {
     const arr = itemsByOrder.get(it.order_id) || [];
@@ -42,6 +58,28 @@ export async function printShippingLabels(orderIds: string[], forceSize?: "3x3" 
   const shipmentsByOrder = new Map<string, any>();
   shipments?.forEach(s => shipmentsByOrder.set(s.order_id, s));
 
+  const docs: LabelDoc[] = orders.map((o) => {
+    const reseller = resellerMap.get(o.reseller_id);
+    const s = shipmentsByOrder.get(o.id);
+    return {
+      orderNumber: o.order_number,
+      storeName: reseller?.name || siteName,
+      storeLogo: reseller?.logo ?? null,
+      area: o.area,
+      customer: hideCustomer
+        ? null
+        : { name: o.customer_name, phone: o.customer_phone, address: o.address_line },
+      items: (itemsByOrder.get(o.id) || []).map((it) => ({ name: it.product_name, qty: it.quantity })),
+      courier: { provider: s?.provider ?? null, tracking: s?.tracking_id || s?.consignment_id || null },
+      cod: hideCustomer ? null : Number(o.total),
+    };
+  });
+
+  printLabelDocs(docs, size);
+}
+
+export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
+  if (!docs.length) return;
   const width = size === "3x3" ? "3in" : "3in";
   const height = size === "3x3" ? "3in" : "4in";
 
@@ -126,45 +164,44 @@ export async function printShippingLabels(orderIds: string[], forceSize?: "3x3" 
         </style>
       </head>
       <body>
-        ${orders.map(o => {
-          const reseller = resellerMap.get(o.reseller_id);
-          const s = shipmentsByOrder.get(o.id);
-          const oItems = itemsByOrder.get(o.id) || [];
-          const itemLines = oItems.map(it => `${it.product_name} x ${it.quantity}`).join(", ");
-          
-          return `
+        ${docs.map((d) => `
             <div class="label">
               <div class="header">
                 <div class="reseller-info">
-                  ${reseller?.logo ? `<img src="${reseller.logo}" class="reseller-logo" />` : ""}
-                  <div class="site-name">${reseller?.name || siteName}</div>
+                  ${d.storeLogo ? `<img src="${d.storeLogo}" class="reseller-logo" />` : ""}
+                  <div class="site-name">${d.storeName}</div>
                 </div>
-                <div class="order-num">#${o.order_number}</div>
+                <div class="order-num">#${d.orderNumber}</div>
               </div>
               <div class="customer">
-                <div class="section-title">Recipient</div>
-                <div class="name">${o.customer_name}</div>
-                <div class="phone">${o.customer_phone}</div>
-                <div class="address">${o.address_line}<br><strong>${o.area.replace("_", " ")}</strong></div>
+                ${d.customer
+                  ? `<div class="section-title">Recipient</div>
+                     <div class="name">${d.customer.name}</div>
+                     <div class="phone">${d.customer.phone}</div>
+                     <div class="address">${d.customer.address}<br><strong>${d.area.replace("_", " ")}</strong></div>`
+                  : `<div class="section-title">Parcel</div>
+                     <div class="name">#${d.orderNumber}</div>
+                     <div class="address"><strong>${d.area.replace("_", " ")}</strong></div>`}
               </div>
               <div class="items-box">
                 <div class="section-title">Order Items</div>
-                ${oItems.map(it => `<span class="item-row">${it.product_name} <strong>x ${it.quantity}</strong></span>`).join("")}
+                ${d.items.map((it) => `<span class="item-row">${it.name} <strong>x ${it.qty}</strong></span>`).join("")}
               </div>
               <div class="footer">
                 <div class="courier-info">
                   <div class="section-title">Courier</div>
-                  <div class="courier">${courierLabel(s?.provider) === "—" ? "Manual" : courierLabel(s?.provider)}</div>
-                  <div class="tracking">${s?.tracking_id || s?.consignment_id || "PENDING"}</div>
+                  <div class="courier">${courierLabel(d.courier?.provider as never) === "—" ? "Manual" : courierLabel(d.courier?.provider as never)}</div>
+                  <div class="tracking">${d.courier?.tracking || "PENDING"}</div>
                 </div>
-                <div class="cod-badge">
-                  <span class="cod-label">Cash to Collect</span>
-                  <span class="cod-value">৳${Number(o.total).toFixed(0)}</span>
-                </div>
+                ${d.cod == null
+                  ? ""
+                  : `<div class="cod-badge">
+                       <span class="cod-label">Cash to Collect</span>
+                       <span class="cod-value">৳${Number(d.cod).toFixed(0)}</span>
+                     </div>`}
               </div>
             </div>
-          `;
-        }).join("")}
+          `).join("")}
         <script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }</script>
       </body>
     </html>
