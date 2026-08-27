@@ -10,6 +10,27 @@ export async function assertAdmin(supabase: any, userId: string) {
   if (error || !data) throw new Response("Forbidden", { status: 403 });
 }
 
+/**
+ * Booking access: admins/staff use their own (RLS-scoped) client.
+ * A supplier that owns items in the order books through the privileged client,
+ * since suppliers have no direct row access to orders/shipments.
+ */
+export async function courierActorClient(userClient: any, userId: string, orderId: string) {
+  const { data: allowed } = await userClient.rpc("has_any_permission", {
+    _user_id: userId,
+    _permissions: ["couriers.manage", "orders.edit"],
+  });
+  if (allowed) return userClient;
+
+  const { data: supplierOk } = await userClient.rpc("supplier_can_book_order", { _order: orderId });
+  if (!supplierOk) throw new Response("Forbidden", { status: 403 });
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin as any;
+}
+
+
+
 export async function getCourierConfig(supabase: any, provider: string): Promise<Cfg> {
   const { data: cfg } = await supabase
     .from("courier_configs")

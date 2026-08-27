@@ -3206,6 +3206,7 @@ export type Database = {
         }[]
       }
       supplier_bootstrap: { Args: never; Returns: Json }
+      supplier_can_book_order: { Args: { _order: string }; Returns: boolean }
       supplier_kept_qty: {
         Args: {
           _qty: number
@@ -3213,6 +3214,10 @@ export type Database = {
           _status: Database["public"]["Enums"]["order_status"]
         }
         Returns: number
+      }
+      supplier_orders_page: {
+        Args: { _limit?: number; _q?: string; _status?: string }
+        Returns: Json
       }
       supplier_products: { Args: never; Returns: Json }
       supplier_report: {
@@ -3230,6 +3235,10 @@ export type Database = {
       supplier_save_product: {
         Args: { _id: string; _payload: Json }
         Returns: Json
+      }
+      supplier_set_order_status: {
+        Args: { _order: string; _status: string }
+        Returns: undefined
       }
       sync_supplier_returns: { Args: { _order_id: string }; Returns: undefined }
       transaction_report: {

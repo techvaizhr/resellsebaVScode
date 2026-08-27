@@ -9,6 +9,18 @@ export const getActiveCouriers = createServerFn({ method: "GET" })
       .from("courier_configs")
       .select("provider, is_active")
       .eq("is_active", true);
-    
-    return (data ?? []).map(c => c.provider);
+
+    if (data && data.length) return data.map((c) => c.provider);
+
+    // Suppliers have no row access to courier configs, but they book couriers for
+    // their own orders — expose only the active provider names in that case.
+    const { data: supplierId } = await supabase.rpc("current_supplier_id");
+    if (!supplierId) return [];
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows } = await supabaseAdmin
+      .from("courier_configs")
+      .select("provider")
+      .eq("is_active", true);
+    return (rows ?? []).map((c: { provider: string }) => c.provider);
   });
