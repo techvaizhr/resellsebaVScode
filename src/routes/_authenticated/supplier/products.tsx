@@ -38,6 +38,7 @@ function SupplierProductsPage_() {
   const [brand, setBrand] = useState("");
   const [category, setCategory] = useState("");
   const [live, setLive] = useState("");
+  const [stock, setStock] = useState("");
   const [perPage, setPerPage] = useState(20);
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<SupplierProduct | null | undefined>(undefined);
