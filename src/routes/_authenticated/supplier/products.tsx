@@ -202,7 +202,7 @@ function SupplierProductsPage_() {
                   <th className="px-3 py-3">Stock</th>
                   <th className="px-3 py-3">Status</th>
                   <th className="px-3 py-3">Submitted</th>
-                  <th className="px-3 py-3" />
+                  <th className="px-3 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -210,11 +210,19 @@ function SupplierProductsPage_() {
                   <tr key={p.id} className="hover:bg-muted/50">
                     <td className="min-w-[240px] px-3 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-muted">
+                        <div
+                          className="h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-md border bg-muted transition-all hover:ring-2 hover:ring-primary/50"
+                          onClick={() => setDetail(p)}
+                        >
                           {p.og_image_url && <img src={p.og_image_url} className="h-full w-full object-cover" alt="" />}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate font-medium">{p.name}</div>
+                          <div
+                            className="cursor-pointer truncate font-medium transition-colors hover:text-primary"
+                            onClick={() => setDetail(p)}
+                          >
+                            {p.name}
+                          </div>
                           <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
                             <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium">
                               ID #{p.product_code}
@@ -265,6 +273,9 @@ function SupplierProductsPage_() {
                     <td className="px-3 py-3">
                       <div className="flex justify-end">
                         <ActionMenu>
+                          <DropdownMenuItem onSelect={() => setDetail(p)}>
+                            <Eye className="mr-2 h-4 w-4" /> View details
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onSelect={() => {
                               setPrefill(null);
@@ -284,6 +295,21 @@ function SupplierProductsPage_() {
           <Pagination page={page} perPage={perPage} total={rows.length} onPage={setPage} />
         </>
       )}
+
+      {detail && (
+        <SupplierProductDetail
+          product={detail}
+          brands={brands}
+          categories={categories}
+          onClose={() => setDetail(null)}
+          onEdit={() => {
+            setPrefill(null);
+            setEditing(detail);
+            setDetail(null);
+          }}
+        />
+      )}
+
 
 
       {importOpen && (
