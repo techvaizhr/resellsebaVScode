@@ -359,10 +359,9 @@ function SupplierOrdersPage() {
         <>
           <div className="surface-card overflow-hidden">
             {/* Desktop header */}
-            <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(140px,1fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] gap-2 border-b bg-muted px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
+            <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] gap-2 border-b bg-muted px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
               <span />
               <span>Order</span>
-              <span>Customer</span>
               <span>Products</span>
               <span>My value</span>
               <span>Courier</span>
