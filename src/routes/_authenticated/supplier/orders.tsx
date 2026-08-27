@@ -215,7 +215,7 @@ function SupplierOrdersPage() {
           ? `${ids.length} order(s) প্যাকেজিং-এ যাবে এবং সাথে সাথে কুরিয়ার বুকিং কনফার্ম হবে।`
           : next === "ready_to_ship"
             ? `${ids.length} order(s) কুরিয়ার হ্যান্ডওভার হবে। এরপর আর কোনো পরিবর্তন করা যাবে না।`
-            : `${ids.length} order(s) ${supplierStatusLabel(next)} করা হবে। এটি একমুখী পরিবর্তন।`,
+            : `${ids.length} order(s) ${supplierStatusLabel(next)} করা হবে।`,
       onConfirm: async () => {
         setConfirm(null);
         await applyStatus(ids, next);
