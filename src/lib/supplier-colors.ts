@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 /**
  * Dynamic, unlimited per-supplier row tinting.
  *
@@ -26,7 +27,7 @@ export function supplierAccentColor(id: string): string {
 
 export type SupplierTint = {
   /** Inline style to spread on the row container. */
-  style: React.CSSProperties;
+  style: CSSProperties;
   /** True when more than one supplier contributed to the order. */
   mixed: boolean;
 };
