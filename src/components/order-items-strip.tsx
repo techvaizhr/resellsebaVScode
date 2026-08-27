@@ -192,8 +192,9 @@ export function OrderProductCell({
           ) : (
             <span className="block truncate text-xs font-semibold">{it.product_name}</span>
           )}
-          <span className="text-[10px] text-muted-foreground tabular-nums">
+          <span className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground tabular-nums">
             x{it.quantity} {unit > 0 && <span className="ml-1">৳{unit.toFixed(0)}</span>}
+            <SupplierBadge name={it.supplier_name} />
           </span>
         </div>
       </div>
@@ -262,8 +263,9 @@ export function OrderItemsList({
                 ) : (
                   <span className="block truncate text-xs font-semibold">{it.product_name}</span>
                 )}
-                <span className="text-[10px] text-muted-foreground tabular-nums">
+                <span className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground tabular-nums">
                   x{it.quantity} {unit > 0 && <span className="ml-1">৳{unit.toFixed(0)}</span>}
+                  <SupplierBadge name={it.supplier_name} />
                 </span>
               </div>
               <span className="shrink-0 text-xs font-bold tabular-nums">৳{total.toFixed(0)}</span>
