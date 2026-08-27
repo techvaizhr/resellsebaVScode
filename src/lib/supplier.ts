@@ -288,6 +288,21 @@ export async function saveSupplierProduct(id: string | null, payload: SupplierPr
   if (error) throw error;
 }
 
+/** Inline list edit: stock saves instantly, price change waits for admin approval. */
+export async function supplierQuickUpdate(
+  id: string,
+  patch: { price?: number | null; stock?: number | null },
+): Promise<{ price_pending: boolean; approval_status: string }> {
+  const { data, error } = await supabase.rpc("supplier_quick_update" as never, {
+    _id: id,
+    _price: patch.price ?? null,
+    _stock: patch.stock ?? null,
+  } as never);
+  if (error) throw error;
+  const raw = (data ?? {}) as any;
+  return { price_pending: !!raw.price_pending, approval_status: String(raw.approval_status ?? "pending") };
+}
+
 export async function reviewProduct(id: string, approve: boolean, note?: string | null) {
   const { error } = await supabase.rpc("admin_review_product" as never, {
     _id: id,
