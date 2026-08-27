@@ -134,11 +134,7 @@ function SupplierOrdersPage() {
       if (toTs != null && ts > toTs) return false;
       if (!term) return true;
       if (searchMode === "product") return o.items.some((i) => i.product_name.toLowerCase().includes(term));
-      return (
-        o.order_number.toLowerCase().includes(term) ||
-        o.customer_name.toLowerCase().includes(term) ||
-        o.customer_phone.includes(term)
-      );
+      return o.order_number.toLowerCase().includes(term);
     });
     return [...list].sort((a, b) => {
       if (sort === "high") return b.my_amount - a.my_amount;
