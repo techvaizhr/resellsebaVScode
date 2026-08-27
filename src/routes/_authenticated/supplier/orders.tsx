@@ -576,7 +576,7 @@ function SupplierOrdersPage() {
         isOpen={booking.open}
         orderIds={booking.orderIds}
         onClose={() => setBooking({ open: false, orderIds: [] })}
-        onSuccess={() => void load()}
+        onSuccess={() => void handleBookingDone()}
       />
 
       {confirm && (
