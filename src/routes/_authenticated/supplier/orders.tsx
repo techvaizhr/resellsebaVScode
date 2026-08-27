@@ -215,7 +215,7 @@ function SupplierOrdersPage() {
           ? `${ids.length} order(s) প্যাকেজিং-এ যাবে এবং সাথে সাথে কুরিয়ার বুকিং কনফার্ম হবে।`
           : next === "ready_to_ship"
             ? `${ids.length} order(s) কুরিয়ার হ্যান্ডওভার হবে। এরপর আর কোনো পরিবর্তন করা যাবে না।`
-            : `${ids.length} order(s) ${supplierStatusLabel(next)} করা হবে। এটি একমুখী পরিবর্তন।`,
+            : `${ids.length} order(s) ${supplierStatusLabel(next)} করা হবে।`,
       onConfirm: async () => {
         setConfirm(null);
         await applyStatus(ids, next);
@@ -528,9 +528,6 @@ function SupplierOrdersPage() {
                   {open && (
                     <div className="border-t bg-muted/20 px-4 py-3">
                       <OrderItemsList items={items} onZoom={setZoomImage} />
-                      <p className="mt-2 text-[11px] text-muted-foreground">
-                        এই অর্ডারে অন্য সাপ্লায়ারের প্রোডাক্ট থাকলে তা এখানে দেখানো হয় না।
-                      </p>
                     </div>
                   )}
                 </div>
