@@ -18,6 +18,7 @@ import {
   bdtNum,
   loadSupplierProducts,
   saveSupplierProduct,
+  supplierQuickUpdate,
   type SupplierProduct,
   type SupplierProductsPage,
 } from "@/lib/supplier";
