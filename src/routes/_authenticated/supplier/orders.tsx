@@ -64,10 +64,14 @@ function SupplierOrdersPage() {
   const [rows, setRows] = useState<SupplierOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState("pending");
+  const [tab, setTab] = useState<OrderTabKey>("new");
   const [q, setQ] = useState("");
   const [searchMode, setSearchMode] = useState<OrderSearchMode>("order");
+  const [area, setArea] = useState("");
+  const [courier, setCourier] = useState("");
+  const [datePreset, setDatePreset] = useState<DatePreset>("lifetime");
   const [sort, setSort] = useState<"newest" | "oldest" | "high" | "low">("newest");
+
   const [perPage, setPerPage] = useState(20);
   const [page, setPage] = useState(1);
   const [marked, setMarked] = useState<string[]>([]);
