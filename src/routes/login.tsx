@@ -100,6 +100,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        await ensureAccount();
         toast.success("স্বাগতম!");
         const target =
           search.redirect && search.redirect.startsWith("/") && !search.redirect.startsWith("/login")
