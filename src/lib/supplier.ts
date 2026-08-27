@@ -205,6 +205,15 @@ export async function loadAdminSupplierOverview(
   };
 }
 
+/** Admin hands returned items over to the supplier (single or bulk); `undo` reverts. */
+export async function handoverSupplierReturns(ids: string[], undo = false) {
+  const { error } = await supabase.rpc("admin_handover_returns" as never, {
+    _ids: ids,
+    _undo: undo,
+  } as never);
+  if (error) throw error;
+}
+
 /** Withdrawable balance = earned on kept items − already paid − pending requests. */
 export function supplierAvailable(t: SupplierTotals) {
   return Math.max(t.earning - t.paid - t.pending_payout, 0);
