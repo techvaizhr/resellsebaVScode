@@ -1,11 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, PackageCheck, RefreshCw, Search, Truck } from "lucide-react";
+import {
+  ChevronDown,
+  Copy,
+  Loader2,
+  PackageCheck,
+  Phone,
+  RefreshCw,
+  Truck,
+} from "lucide-react";
 import { toast } from "sonner";
-import { PageHeader, StatCard } from "@/components/ui-kit";
+import { PageHeader, StatCard, EmptyState } from "@/components/ui-kit";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { ShipmentBookingModal } from "@/components/ShipmentBookingModal";
 import { CourierLogo, courierLabel } from "@/components/courier-brand";
+import { OrderSearch, type OrderSearchMode } from "@/components/order-search";
+import { StatusTabs } from "@/components/status-tabs";
+import { Pagination, usePaginated } from "@/components/data-list";
+import {
+  ImageLightbox,
+  OrderItemsList,
+  OrderProductCell,
+  type StripItem,
+} from "@/components/order-items-strip";
 import { bdtNum } from "@/lib/supplier";
 import {
   loadSupplierOrders,
@@ -40,11 +57,15 @@ function SupplierOrdersPage() {
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState("pending");
   const [q, setQ] = useState("");
-  const [selected, setSelected] = useState<string[]>([]);
+  const [searchMode, setSearchMode] = useState<OrderSearchMode>("order");
+  const [sort, setSort] = useState<"newest" | "oldest" | "high" | "low">("newest");
+  const [perPage, setPerPage] = useState(20);
+  const [page, setPage] = useState(1);
+  const [marked, setMarked] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<string[]>([]);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [booking, setBooking] = useState<{ open: boolean; orderIds: string[] }>({ open: false, orderIds: [] });
   const [confirm, setConfirm] = useState<{
-    open: boolean;
     title: string;
     description: string;
     onConfirm: () => Promise<void>;
@@ -52,10 +73,10 @@ function SupplierOrdersPage() {
 
   const load = useCallback(async () => {
     try {
-      const page = await loadSupplierOrders();
-      setRows(page.orders);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Orders load failed");
+      const data = await loadSupplierOrders();
+      setRows(data.orders);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Orders load failed");
     } finally {
       setLoading(false);
     }
@@ -65,39 +86,50 @@ function SupplierOrdersPage() {
     void load();
   }, [load]);
 
-  const counts = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const t of SUPPLIER_ORDER_TABS) {
-      map[t.key] = t.statuses.length === 0 ? rows.length : rows.filter((o) => t.statuses.includes(o.status)).length;
-    }
-    return map;
-  }, [rows]);
+  useEffect(() => {
+    setMarked([]);
+    setPage(1);
+  }, [tab, q, sort, perPage]);
+
+  const counts = useCallback(
+    (key: string) => {
+      const t = SUPPLIER_ORDER_TABS.find((x) => x.key === key);
+      if (!t || t.statuses.length === 0) return rows.length;
+      return rows.filter((o) => t.statuses.includes(o.status)).length;
+    },
+    [rows],
+  );
 
   const filtered = useMemo(() => {
     const t = SUPPLIER_ORDER_TABS.find((x) => x.key === tab);
     const term = q.trim().toLowerCase();
-    return rows.filter((o) => {
+    const list = rows.filter((o) => {
       if (t && t.statuses.length && !t.statuses.includes(o.status)) return false;
       if (!term) return true;
+      if (searchMode === "product") return o.items.some((i) => i.product_name.toLowerCase().includes(term));
       return (
         o.order_number.toLowerCase().includes(term) ||
         o.customer_name.toLowerCase().includes(term) ||
         o.customer_phone.includes(term)
       );
     });
-  }, [rows, tab, q]);
+    return [...list].sort((a, b) => {
+      if (sort === "high") return b.my_amount - a.my_amount;
+      if (sort === "low") return a.my_amount - b.my_amount;
+      const ta = new Date(a.created_at).getTime();
+      const tb = new Date(b.created_at).getTime();
+      return sort === "oldest" ? ta - tb : tb - ta;
+    });
+  }, [rows, tab, q, searchMode, sort]);
 
-  useEffect(() => {
-    setSelected([]);
-  }, [tab, q]);
-
-  const actionable = filtered.filter((o) => supplierNextStatus(o.status));
-  const selectedRows = rows.filter((o) => selected.includes(o.id));
+  const paged = usePaginated(filtered, page, perPage);
+  const actionable = paged.filter((o) => supplierNextStatus(o.status));
+  const markedRows = rows.filter((o) => marked.includes(o.id));
   const bulkNext = useMemo(() => {
-    if (!selectedRows.length) return null;
-    const next = supplierNextStatus(selectedRows[0].status);
-    return selectedRows.every((o) => supplierNextStatus(o.status) === next) ? next : null;
-  }, [selectedRows]);
+    if (!markedRows.length) return null;
+    const next = supplierNextStatus(markedRows[0]!.status);
+    return markedRows.every((o) => supplierNextStatus(o.status) === next) ? next : null;
+  }, [markedRows]);
 
   const totals = useMemo(
     () => ({
@@ -108,6 +140,24 @@ function SupplierOrdersPage() {
     [rows],
   );
 
+  const stripItems = useCallback(
+    (o: SupplierOrderRow): StripItem[] =>
+      o.items.map((it) => ({
+        id: it.id,
+        product_id: null,
+        product_name: it.product_name,
+        quantity: it.quantity,
+        unit_price: it.unit_price,
+        line_total: it.line_total,
+        image: it.product_image,
+        slug: null,
+      })),
+    [],
+  );
+
+  const toggleExpand = (id: string) =>
+    setExpanded((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
   const applyStatus = async (ids: string[], next: string) => {
     setBusy(true);
     let ok = 0;
@@ -115,14 +165,14 @@ function SupplierOrdersPage() {
       try {
         await setSupplierOrderStatus(id, next);
         ok++;
-      } catch (e: any) {
-        toast.error(e?.message ?? "Status change failed");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Status change failed");
       }
     }
     setBusy(false);
     if (ok) {
       toast.success(`${ok} order${ok > 1 ? "s" : ""} → ${supplierStatusLabel(next)}`);
-      setSelected([]);
+      setMarked([]);
       await load();
       // Courier booking is confirmed the moment an order moves into Packaging.
       if (next === "packaging") setBooking({ open: true, orderIds: ids.slice(0, ok) });
@@ -131,7 +181,6 @@ function SupplierOrdersPage() {
 
   const askStatus = (ids: string[], next: string) => {
     setConfirm({
-      open: true,
       title: `Move to ${supplierStatusLabel(next)}?`,
       description:
         next === "packaging"
@@ -148,7 +197,7 @@ function SupplierOrdersPage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
+      <div className="grid place-items-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -157,14 +206,15 @@ function SupplierOrdersPage() {
   return (
     <div>
       <PageHeader
-        title="My orders"
-        description="আপনার প্রোডাক্ট আছে এমন অর্ডারগুলো — শুধু নিজের আইটেম ও নিজের হিসাব দেখানো হয়।"
+        title="Orders"
+        className="flex-row items-center justify-between"
+        description="আপনার প্রোডাক্ট আছে এমন অর্ডার — শুধু নিজের আইটেম ও নিজের হিসাব।"
         actions={
           <button
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium hover:bg-muted"
+            className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
           >
-            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+            <RefreshCw className="h-4 w-4" /> Refresh
           </button>
         }
       />
@@ -175,192 +225,266 @@ function SupplierOrdersPage() {
         <StatCard label="My value" value={bdtNum(totals.value)} tone="emerald" />
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        {SUPPLIER_ORDER_TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={
-              "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors " +
-              (tab === t.key ? "border-transparent bg-primary text-primary-foreground" : "hover:bg-muted")
-            }
+      <div className="mb-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <OrderSearch mode={searchMode} onMode={setSearchMode} value={q} onChange={setQ} className="min-w-0 flex-1" />
+          <select
+            value={perPage}
+            onChange={(e) => setPerPage(Number(e.target.value))}
+            className="h-10 w-[76px] shrink-0 rounded-md border bg-background px-1 text-xs font-medium outline-none focus:ring-1 focus:ring-primary"
+            title="Per page"
           >
-            {t.label} ({counts[t.key] ?? 0})
-          </button>
-        ))}
+            {[10, 20, 50, 100].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+            <option value={-1}>All</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as typeof sort)}
+            className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
+            title="Sort"
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="high">Amount: high → low</option>
+            <option value="low">Amount: low → high</option>
+          </select>
+          {/* Mobile: status filter sits inside the filter grid, same as admin */}
+          <div className="sm:hidden">
+            <StatusTabs
+              tabs={SUPPLIER_ORDER_TABS}
+              tab={tab}
+              onChange={setTab}
+              count={counts}
+              className="w-full min-w-0"
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[220px]">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Order no / customer / phone"
-            className="w-full rounded-lg border bg-background py-2 pl-9 pr-3 text-xs outline-none focus:ring-1 focus:ring-primary"
-          />
-        </div>
+      <StatusTabs
+        tabs={SUPPLIER_ORDER_TABS}
+        tab={tab}
+        onChange={setTab}
+        count={counts}
+        className="mb-4 hidden w-full min-w-0 sm:block"
+      />
 
-        {actionable.length > 0 && (
+      {actionable.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
           <button
+            type="button"
             onClick={() =>
-              setSelected((prev) =>
-                prev.length === actionable.length ? [] : actionable.map((o) => o.id),
-              )
+              setMarked((prev) => (prev.length === actionable.length ? [] : actionable.map((o) => o.id)))
             }
-            className="rounded-lg border px-3 py-2 text-xs font-medium hover:bg-muted"
+            className="rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
           >
-            {selected.length === actionable.length ? "Clear selection" : "Select all"}
+            {marked.length === actionable.length && marked.length > 0 ? "Clear selection" : "Select page"}
           </button>
-        )}
-
-        {bulkNext && (
-          <button
-            disabled={busy}
-            onClick={() => askStatus(selected, bulkNext)}
-            className="btn-brand inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50"
-          >
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
-            {selected.length} → {supplierStatusLabel(bulkNext)}
-          </button>
-        )}
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="surface-card rounded-lg border border-dashed p-10 text-center text-xs text-muted-foreground">
-          এই ট্যাবে কোনো অর্ডার নেই।
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((o) => {
-            const next = supplierNextStatus(o.status);
-            const open = expanded.includes(o.id);
-            return (
-              <div key={o.id} className="surface-card p-4">
-                <div className="flex flex-wrap items-start gap-3">
-                  {next && (
-                    <input
-                      type="checkbox"
-                      className="mt-1 h-4 w-4 accent-[hsl(var(--primary))]"
-                      checked={selected.includes(o.id)}
-                      onChange={(e) =>
-                        setSelected((prev) => (e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id)))
-                      }
-                    />
-                  )}
-
-                  <div className="min-w-[180px] flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold">#{o.order_number}</span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${supplierStatusTone(o.status)}`}
-                      >
-                        {supplierStatusLabel(o.status)}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(o.created_at).toLocaleString()} · {o.area.replace(/_/g, " ")}
-                    </p>
-                  </div>
-
-                  <div className="min-w-[160px] text-xs">
-                    <p className="font-medium">{o.customer_name}</p>
-                    <p className="text-muted-foreground">{o.customer_phone}</p>
-                  </div>
-
-                  <div className="min-w-[130px] text-xs">
-                    <p className="text-muted-foreground">My items</p>
-                    <p className="font-semibold tabular-nums">
-                      {o.my_qty} pcs · {bdtNum(o.my_amount)}
-                    </p>
-                  </div>
-
-                  <div className="min-w-[150px] text-xs">
-                    {o.shipment?.provider ? (
-                      <div className="flex items-center gap-2">
-                        <CourierLogo provider={o.shipment.provider as any} size={22} />
-                        <div>
-                          <p className="font-medium">{courierLabel(o.shipment.provider as any)}</p>
-                          <p className="text-[11px] text-muted-foreground">{o.shipment.tracking_id || "—"}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-[11px] text-muted-foreground">No courier yet</span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() =>
-                        setExpanded((prev) => (open ? prev.filter((x) => x !== o.id) : [...prev, o.id]))
-                      }
-                      className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-muted"
-                    >
-                      {open ? "Hide items" : "View items"}
-                    </button>
-                    {next ? (
-                      <button
-                        disabled={busy}
-                        onClick={() => askStatus([o.id], next)}
-                        className="btn-brand inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold disabled:opacity-50"
-                      >
-                        {next === "packaging" ? <Truck className="h-3.5 w-3.5" /> : <PackageCheck className="h-3.5 w-3.5" />}
-                        {supplierStatusLabel(next)}
-                      </button>
-                    ) : (
-                      <span className="rounded-lg border border-dashed px-3 py-1.5 text-[11px] text-muted-foreground">
-                        View only
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {open && (
-                  <div className="mt-3 overflow-x-auto rounded-md border">
-                    <table className="w-full text-xs">
-                      <thead className="bg-muted/40 text-left uppercase text-muted-foreground">
-                        <tr>
-                          <th className="p-2">Product</th>
-                          <th>Qty</th>
-                          <th>Returned</th>
-                          <th>My price</th>
-                          <th>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {o.items.map((it) => (
-                          <tr key={it.id} className="border-t">
-                            <td className="p-2">
-                              <div className="flex items-center gap-2">
-                                {it.product_image ? (
-                                  <img
-                                    src={it.product_image}
-                                    alt={it.product_name}
-                                    loading="lazy"
-                                    className="h-8 w-8 rounded object-cover"
-                                  />
-                                ) : null}
-                                <span className="font-medium">{it.product_name}</span>
-                              </div>
-                            </td>
-                            <td className="tabular-nums">{it.quantity}</td>
-                            <td className="tabular-nums">{it.returned_qty || 0}</td>
-                            <td className="tabular-nums">{bdtNum(it.unit_price)}</td>
-                            <td className="font-semibold tabular-nums">{bdtNum(it.line_total)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    <p className="border-t bg-muted/20 p-2 text-[11px] text-muted-foreground">
-                      এই অর্ডারে অন্য সাপ্লায়ারের প্রোডাক্ট থাকলে তা এখানে দেখানো হয় না।
-                    </p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          <span className="text-sm font-medium">{marked.length} marked</span>
+          {bulkNext && (
+            <button
+              disabled={busy}
+              onClick={() => askStatus(marked, bulkNext)}
+              className="btn-brand ml-auto inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-xs font-semibold disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
+              {marked.length} → {supplierStatusLabel(bulkNext)}
+            </button>
+          )}
         </div>
       )}
+
+      {filtered.length === 0 ? (
+        <EmptyState title="No orders" description="এই ট্যাবে কোনো অর্ডার নেই।" />
+      ) : (
+        <>
+          <div className="surface-card overflow-hidden">
+            {/* Desktop header */}
+            <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(140px,1fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] gap-2 border-b bg-muted px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
+              <span />
+              <span>Order</span>
+              <span>Customer</span>
+              <span>Products</span>
+              <span>My value</span>
+              <span>Courier</span>
+              <span className="text-right">Status</span>
+            </div>
+
+            {paged.map((o) => {
+              const next = supplierNextStatus(o.status);
+              const open = expanded.includes(o.id);
+              const items = stripItems(o);
+              return (
+                <div key={o.id} className="border-b last:border-b-0">
+                  {/* Mobile card */}
+                  <div className="space-y-2.5 p-3 lg:hidden">
+                    <div className="flex items-start gap-2">
+                      {next && (
+                        <input
+                          type="checkbox"
+                          className="mt-1 h-4 w-4 accent-[hsl(var(--primary))]"
+                          checked={marked.includes(o.id)}
+                          onChange={(e) =>
+                            setMarked((prev) => (e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id)))
+                          }
+                        />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold">#{o.order_number}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${supplierStatusTone(o.status)}`}>
+                            {supplierStatusLabel(o.status)}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {new Date(o.created_at).toLocaleString()} · {o.area.replace(/_/g, " ")}
+                        </div>
+                      </div>
+                      <button onClick={() => toggleExpand(o.id)} className="rounded-full p-1 hover:bg-muted">
+                        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/30 p-2">
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Customer</div>
+                        <div className="flex min-w-0 items-center gap-1.5 text-xs font-medium">
+                          <span className="truncate">{o.customer_name}</span>
+                          <a href={`tel:${o.customer_phone}`} className="shrink-0 text-primary">
+                            <Phone className="h-3.5 w-3.5" />
+                          </a>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(o.customer_phone);
+                              toast.success("Copied");
+                            }}
+                            className="shrink-0 text-muted-foreground hover:text-foreground"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <div className="text-[11px] tabular-nums text-muted-foreground">{o.customer_phone}</div>
+                      </div>
+                      <div className="min-w-0 space-y-0.5 border-l pl-2">
+                        <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">My value</div>
+                        <div className="text-sm font-semibold tabular-nums">{bdtNum(o.my_amount)}</div>
+                        <div className="text-[11px] text-muted-foreground">{o.my_qty} pcs</div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Products</div>
+                      <OrderProductCell items={items} expanded={open} onZoom={setZoomImage} onToggle={() => toggleExpand(o.id)} />
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <CourierCell shipment={o.shipment} />
+                      {next ? (
+                        <button
+                          disabled={busy}
+                          onClick={() => askStatus([o.id], next)}
+                          className="btn-brand inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                        >
+                          {next === "packaging" ? <Truck className="h-3.5 w-3.5" /> : <PackageCheck className="h-3.5 w-3.5" />}
+                          {supplierStatusLabel(next)}
+                        </button>
+                      ) : (
+                        <span className="rounded-md border border-dashed px-3 py-1.5 text-[11px] text-muted-foreground">View only</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Desktop row */}
+                  <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(140px,1fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-start gap-2 px-4 py-3 text-sm hover:bg-muted/40 lg:grid">
+                    <div className="flex flex-col items-center gap-1.5">
+                      {next && (
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 accent-[hsl(var(--primary))]"
+                          checked={marked.includes(o.id)}
+                          onChange={(e) =>
+                            setMarked((prev) => (e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id)))
+                          }
+                        />
+                      )}
+                      <button onClick={() => toggleExpand(o.id)} className="rounded-full p-1 hover:bg-muted">
+                        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+                      </button>
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-semibold">#{o.order_number}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {new Date(o.created_at).toLocaleDateString()}
+                      </div>
+                      <div className="text-[11px] capitalize text-muted-foreground">{o.area.replace(/_/g, " ")}</div>
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-medium">{o.customer_name}</div>
+                      <div className="flex items-center gap-1 text-[11px] tabular-nums text-muted-foreground">
+                        <span className="truncate">{o.customer_phone}</span>
+                        <a href={`tel:${o.customer_phone}`} className="shrink-0 text-primary">
+                          <Phone className="h-3 w-3" />
+                        </a>
+                      </div>
+                      <div className="truncate text-[11px] text-muted-foreground">
+                        {o.address_line}
+                        {o.city ? `, ${o.city}` : ""}
+                      </div>
+                    </div>
+
+                    <OrderProductCell items={items} expanded={open} onZoom={setZoomImage} onToggle={() => toggleExpand(o.id)} />
+
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold tabular-nums">{bdtNum(o.my_amount)}</div>
+                      <div className="text-[11px] text-muted-foreground">{o.my_qty} pcs</div>
+                    </div>
+
+                    <CourierCell shipment={o.shipment} />
+
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${supplierStatusTone(o.status)}`}>
+                        {supplierStatusLabel(o.status)}
+                      </span>
+                      {next ? (
+                        <button
+                          disabled={busy}
+                          onClick={() => askStatus([o.id], next)}
+                          className="btn-brand inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-semibold disabled:opacity-50"
+                        >
+                          {next === "packaging" ? <Truck className="h-3 w-3" /> : <PackageCheck className="h-3 w-3" />}
+                          {supplierStatusLabel(next)}
+                        </button>
+                      ) : (
+                        <span className="text-[10px] italic text-muted-foreground/70">View only</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {open && (
+                    <div className="border-t bg-muted/20 px-4 py-3">
+                      <OrderItemsList items={items} onZoom={setZoomImage} />
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        এই অর্ডারে অন্য সাপ্লায়ারের প্রোডাক্ট থাকলে তা এখানে দেখানো হয় না।
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <Pagination page={page} perPage={perPage} total={filtered.length} onPage={setPage} />
+        </>
+      )}
+
+      {zoomImage && <ImageLightbox src={zoomImage} onClose={() => setZoomImage(null)} />}
 
       <ShipmentBookingModal
         isOpen={booking.open}
@@ -369,7 +493,7 @@ function SupplierOrdersPage() {
         onSuccess={() => void load()}
       />
 
-      {confirm?.open && (
+      {confirm && (
         <ConfirmModal
           isOpen
           variant="info"
@@ -380,6 +504,23 @@ function SupplierOrdersPage() {
           onClose={() => setConfirm(null)}
         />
       )}
+    </div>
+  );
+}
+
+function CourierCell({ shipment }: { shipment: SupplierOrderRow["shipment"] }) {
+  if (!shipment?.provider) {
+    return <span className="text-[10px] italic text-muted-foreground/60">Not booked yet</span>;
+  }
+  return (
+    <div className="flex min-w-0 items-center gap-1.5">
+      <CourierLogo provider={shipment.provider as never} size={16} />
+      <div className="min-w-0">
+        <div className="truncate text-[11px] font-semibold text-primary">{courierLabel(shipment.provider as never)}</div>
+        <div className="truncate text-[10px] text-muted-foreground">
+          {shipment.consignment_id || shipment.tracking_id || "—"}
+        </div>
+      </div>
     </div>
   );
 }
