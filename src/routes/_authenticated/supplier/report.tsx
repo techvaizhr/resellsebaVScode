@@ -100,20 +100,17 @@ function SupplierReportPage() {
         </div>
       </div>
 
-      <div className="mb-3 flex gap-2">
-        {(["sold", "upcoming"] as const).map((k) => (
-          <button
-            key={k}
-            onClick={() => setTab(k)}
-            className={
-              "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors " +
-              (tab === k ? "border-transparent bg-primary text-primary-foreground" : "hover:bg-muted")
-            }
-          >
-            {k === "sold" ? `Sold (${data.sold.length})` : `In progress (${data.upcoming.length})`}
-          </button>
-        ))}
-      </div>
+      <StatusTabs
+        tabs={[
+          { key: "sold", label: "Sold" },
+          { key: "upcoming", label: "In progress" },
+        ]}
+        tab={tab}
+        onChange={(k) => setTab(k as typeof tab)}
+        count={(k) => (k === "sold" ? data.sold.length : data.upcoming.length)}
+        className="mb-3 w-full min-w-0"
+      />
+
 
       <div className="surface-card p-4">
         {rows.length === 0 ? (
