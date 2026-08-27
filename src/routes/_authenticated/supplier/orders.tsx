@@ -357,13 +357,13 @@ function SupplierOrdersPage() {
         <>
           <div className="surface-card overflow-hidden">
             {/* Desktop header */}
-            <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] gap-2 border-b bg-muted px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
-              <span />
-              <span>Order</span>
-              <span>Products</span>
-              <span>My value</span>
-              <span>Courier</span>
-              <span className="text-right">Status</span>
+            <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] gap-2 rounded-lg border bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground lg:grid">
+              <div className="flex justify-center" />
+              <div className="text-center">Order</div>
+              <div className="text-center">Products</div>
+              <div className="text-center">My value</div>
+              <div className="text-center">Courier</div>
+              <div className="text-center">Status</div>
             </div>
 
             {paged.map((o) => {
