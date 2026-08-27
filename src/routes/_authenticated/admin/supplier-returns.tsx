@@ -14,6 +14,17 @@ import {
 } from "@/lib/supplier";
 import { impersonateSupplier } from "@/lib/supplier-access.functions";
 import { startImpersonation } from "@/lib/impersonation";
+import { SearchableSelect } from "@/components/searchable-select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/supplier-returns")({
   component: AdminSupplierReturnsPage,
@@ -61,6 +72,8 @@ function AdminSupplierReturnsPage() {
   const [q, setQ] = useState("");
   const [sel, setSel] = useState<string[]>([]);
   const [open, setOpen] = useState<string[]>([]);
+  const [supplierFilter, setSupplierFilter] = useState("");
+  const [undoTarget, setUndoTarget] = useState<string[] | null>(null);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -85,12 +98,13 @@ function AdminSupplierReturnsPage() {
       all.filter(
         (r) =>
           (tab === "all" || r.status === tab) &&
+          (!supplierFilter || r.supplier_id === supplierFilter) &&
           (!needle ||
             r.order_number.toLowerCase().includes(needle) ||
             r.product_name.toLowerCase().includes(needle) ||
             (r.supplier_name ?? "").toLowerCase().includes(needle)),
       ),
-    [all, tab, needle],
+    [all, tab, needle, supplierFilter],
   );
 
   const groups = useMemo(() => {
@@ -113,6 +127,15 @@ function AdminSupplierReturnsPage() {
     return new Map([...m].map(([k, v]) => [k, v.size]));
   }, [all]);
 
+  const supplierOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const r of all) if (r.supplier_id) seen.set(r.supplier_id, r.supplier_name ?? "Supplier");
+    return [
+      { value: "", label: "All suppliers" },
+      ...[...seen].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label)),
+    ];
+  }, [all]);
+
   const pending = all.filter((r) => r.status === "pending_handover");
   const handed = all.filter((r) => r.status === "handed_over");
   const sum = (list: SupplierReturnRow[]) => list.reduce((s, r) => s + value(r), 0);
@@ -122,7 +145,11 @@ function AdminSupplierReturnsPage() {
     setBusy(true);
     try {
       await handoverSupplierReturns(ids, undo);
-      toast.success(undo ? `${ids.length}টি হ্যান্ডওভার বাতিল হয়েছে` : `${ids.length}টি রিটার্ন হ্যান্ডওভার হয়েছে`);
+      toast.success(
+        undo
+          ? `${ids.length}টি আইটেমের হ্যান্ডওভার বাতিল হয়েছে — আবার "Waiting handover" এ গেছে`
+          : `${ids.length}টি আইটেম সাপ্লায়ারকে হ্যান্ডওভার করা হয়েছে`,
+      );
       setSel([]);
       await load(true);
     } catch (e) {
@@ -195,7 +222,18 @@ function AdminSupplierReturnsPage() {
             </button>
           );
         })}
-        <div className="relative ml-auto">
+        <SearchableSelect
+          className="ml-auto w-52"
+          options={supplierOptions}
+          value={supplierFilter}
+          onChange={(v) => {
+            setSupplierFilter(v);
+            setSel([]);
+          }}
+          placeholder="All suppliers"
+          searchPlaceholder="Search supplier…"
+        />
+        <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             value={q}
@@ -217,9 +255,9 @@ function AdminSupplierReturnsPage() {
             <PackageCheck className="h-3.5 w-3.5" /> Hand over
           </button>
           <button
-            onClick={() => act(sel, true)}
+            onClick={() => setUndoTarget(sel)}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50"
           >
             <Undo2 className="h-3.5 w-3.5" /> Undo handover
           </button>
@@ -375,10 +413,10 @@ function AdminSupplierReturnsPage() {
                               <div className="w-20 text-right text-xs font-semibold tabular-nums">{bdtNum(value(r))}</div>
                               {done ? (
                                 <button
-                                  onClick={() => act([r.id], true)}
+                                  onClick={() => setUndoTarget([r.id])}
                                   disabled={busy}
                                   className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50"
-                                  title="Undo handover"
+                                  title="ক্লিক করলে হ্যান্ডওভার বাতিল করা যাবে"
                                 >
                                   <PackageCheck className="h-3 w-3" /> Handed over
                                 </button>
@@ -403,6 +441,34 @@ function AdminSupplierReturnsPage() {
           })}
         </div>
       )}
+      <AlertDialog open={undoTarget !== null} onOpenChange={(o) => !o && setUndoTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">
+              হ্যান্ডওভার বাতিল করবেন? ({undoTarget?.length ?? 0}টি আইটেম)
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              এই আইটেমগুলো সাপ্লায়ারকে ইতিমধ্যে বুঝিয়ে দেওয়া হিসেবে চিহ্নিত আছে। বাতিল করলে সেগুলো আবার
+              &ldquo;Waiting handover&rdquo; অবস্থায় ফিরে যাবে এবং সাপ্লায়ারের প্যানেলেও Received স্ট্যাটাস মুছে যাবে।
+              প্রোডাক্ট ফিজিক্যালি ফেরত না নিয়ে থাকলে এটি করবেন না। শুধু এই সাপ্লায়ারের সিলেক্ট করা আইটেমেই প্রভাব পড়বে।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>না, থাক</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                const ids = undoTarget ?? [];
+                setUndoTarget(null);
+                void act(ids, true);
+              }}
+            >
+              হ্যাঁ, হ্যান্ডওভার বাতিল করুন
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
