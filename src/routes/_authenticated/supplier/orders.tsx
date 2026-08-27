@@ -457,7 +457,7 @@ function SupplierOrdersPage() {
               const open = expanded.includes(o.id);
               const items = stripItems(o);
               return (
-                <div key={o.id} className="border-b last:border-b-0">
+                <div key={o.id} style={myTint?.style} className="border-b last:border-b-0">
                   {/* Mobile card */}
                   <div className="space-y-2.5 p-3 lg:hidden">
                     <div className="flex items-start gap-2">
