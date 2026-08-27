@@ -407,6 +407,12 @@ function AdminOrdersPage() {
     return m;
   }, [orderItems]);
 
+  const supplierNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const s of suppliers) m.set(s.id, s.display_name);
+    return m;
+  }, [suppliers]);
+
   const stripItems = useCallback(
     (orderId: string): StripItem[] =>
       (itemsByOrder.get(orderId) ?? []).map((it, idx) => {
@@ -420,9 +426,10 @@ function AdminOrdersPage() {
           line_total: it.line_total,
           image: it.product_image ?? p?.og_image_url ?? null,
           slug: p?.slug ?? null,
+          supplier_name: it.supplier_name ?? (it.supplier_id ? supplierNameById.get(it.supplier_id) ?? null : null),
         };
       }),
-    [itemsByOrder, allProducts],
+    [itemsByOrder, allProducts, supplierNameById],
   );
 
   /**
@@ -451,7 +458,11 @@ function AdminOrdersPage() {
 
   const filtered = useMemo(() => {
     const courierFiltered = filterByCourier(orders, filters.courier, shipments);
-    const base = applyOrderFilters(courierFiltered, { ...filters, q: "" });
+    let base = applyOrderFilters(courierFiltered, { ...filters, q: "" });
+    // Supplier filter: keep orders that contain at least one item from the supplier.
+    if (filters.supplier) {
+      base = base.filter((o) => (itemsByOrder.get(o.id) ?? []).some((it) => it.supplier_id === filters.supplier));
+    }
     const q = filters.q.trim().toLowerCase();
     if (!q) return base;
     return base.filter((o) => {
@@ -516,6 +527,17 @@ function AdminOrdersPage() {
               }}
               placeholder="All resellers"
               searchPlaceholder="Search reseller…"
+              className="w-full lg:w-[150px]"
+            />
+            <SearchableSelect
+              options={supplierOptions.map((s) => ({ value: s.value, label: s.label }))}
+              value={filters.supplier}
+              onChange={(v) => {
+                setFilters({ ...filters, supplier: v });
+                if (v) setTab("all");
+              }}
+              placeholder="All suppliers"
+              searchPlaceholder="Search supplier…"
               className="w-full lg:w-[150px]"
             />
             <select
