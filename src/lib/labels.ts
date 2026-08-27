@@ -2,6 +2,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { getGlobalSettings } from "@/lib/app-data";
 import { courierLabel } from "@/components/courier-brand";
 
+export type LabelDoc = {
+  orderNumber: string;
+  storeName: string;
+  storeLogo?: string | null;
+  area: string;
+  customer?: { name: string; phone: string; address: string } | null;
+  items: { name: string; qty: number }[];
+  courier?: { provider: string | null; tracking: string | null } | null;
+  cod?: number | null;
+};
+
 export async function printShippingLabels(
   orderIds: string[],
   forceSize?: "3x3" | "3x4",
@@ -36,7 +47,7 @@ export async function printShippingLabels(
 
   const size = forceSize || (settings as any)?.label_size || "3x4";
   const siteName = settings?.site_name || "ResellHub";
-  
+
   const itemsByOrder = new Map<string, any[]>();
   items?.forEach(it => {
     const arr = itemsByOrder.get(it.order_id) || [];
@@ -47,6 +58,28 @@ export async function printShippingLabels(
   const shipmentsByOrder = new Map<string, any>();
   shipments?.forEach(s => shipmentsByOrder.set(s.order_id, s));
 
+  const docs: LabelDoc[] = orders.map((o) => {
+    const reseller = resellerMap.get(o.reseller_id);
+    const s = shipmentsByOrder.get(o.id);
+    return {
+      orderNumber: o.order_number,
+      storeName: reseller?.name || siteName,
+      storeLogo: reseller?.logo ?? null,
+      area: o.area,
+      customer: hideCustomer
+        ? null
+        : { name: o.customer_name, phone: o.customer_phone, address: o.address_line },
+      items: (itemsByOrder.get(o.id) || []).map((it) => ({ name: it.product_name, qty: it.quantity })),
+      courier: { provider: s?.provider ?? null, tracking: s?.tracking_id || s?.consignment_id || null },
+      cod: hideCustomer ? null : Number(o.total),
+    };
+  });
+
+  printLabelDocs(docs, size);
+}
+
+export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
+  if (!docs.length) return;
   const width = size === "3x3" ? "3in" : "3in";
   const height = size === "3x3" ? "3in" : "4in";
 
