@@ -218,3 +218,97 @@ export function orderStatusLabel(status: string) {
 }
 
 export const bdtNum = (n: number) => `৳${Math.round(n).toLocaleString()}`;
+
+/* ---------------------------------------------------------------- products */
+
+export type SupplierProductImage = { url: string };
+
+export type SupplierProduct = {
+  id: string;
+  product_code: string;
+  name: string;
+  sku: string | null;
+  short_description: string | null;
+  description: string | null;
+  brand_id: string | null;
+  category_id: string | null;
+  supplier_price: number;
+  reseller_price: number;
+  suggested_price: number;
+  stock: number;
+  is_active: boolean;
+  approval_status: "approved" | "pending" | "rejected";
+  approval_note: string | null;
+  pending_changes: Record<string, unknown> | null;
+  og_image_url: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  keywords: string | null;
+  created_at: string;
+  updated_at: string;
+  images: SupplierProductImage[];
+};
+
+export type SupplierProductPayload = {
+  name: string;
+  sku?: string | null;
+  short_description?: string | null;
+  description?: string | null;
+  brand_id?: string | null;
+  category_id?: string | null;
+  supplier_price: number;
+  stock: number;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  keywords?: string | null;
+  images?: SupplierProductImage[];
+};
+
+export type SupplierProductsPage = {
+  products: SupplierProduct[];
+  brands: { id: string; name: string }[];
+  categories: { id: string; name: string }[];
+};
+
+/** ONE call: supplier's own products + brand/category options. */
+export async function loadSupplierProducts(): Promise<SupplierProductsPage> {
+  const { data, error } = await supabase.rpc("supplier_products" as never);
+  if (error) throw error;
+  const raw = (data ?? {}) as any;
+  return {
+    products: (raw.products ?? []) as SupplierProduct[],
+    brands: (raw.brands ?? []) as { id: string; name: string }[],
+    categories: (raw.categories ?? []) as { id: string; name: string }[],
+  };
+}
+
+export async function saveSupplierProduct(id: string | null, payload: SupplierProductPayload) {
+  const { error } = await supabase.rpc("supplier_save_product" as never, {
+    _id: id,
+    _payload: payload,
+  } as never);
+  if (error) throw error;
+}
+
+export async function reviewProduct(id: string, approve: boolean, note?: string | null) {
+  const { error } = await supabase.rpc("admin_review_product" as never, {
+    _id: id,
+    _approve: approve,
+    _note: note ?? null,
+  } as never);
+  if (error) throw error;
+}
+
+export async function setProductSupplier(id: string, supplierId: string | null) {
+  const { error } = await supabase.rpc("admin_set_product_supplier" as never, {
+    _id: id,
+    _supplier: supplierId,
+  } as never);
+  if (error) throw error;
+}
+
+export const APPROVAL_TONE: Record<string, string> = {
+  approved: "bg-emerald-500/10 text-emerald-600",
+  pending: "bg-amber-500/10 text-amber-600",
+  rejected: "bg-destructive/10 text-destructive",
+};

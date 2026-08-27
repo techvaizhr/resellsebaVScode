@@ -15,6 +15,9 @@ import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdow
 import { CopyButton, ImageDownloadTools, stripHtml } from "@/components/store/reseller-tools";
 import { ProductImportModal } from "@/components/ProductImportModal";
 import { confirmAction } from "@/lib/confirm";
+import { Truck } from "lucide-react";
+import { APPROVAL_TONE, reviewProduct, setProductSupplier } from "@/lib/supplier";
+import { AppModal } from "@/components/ui-kit/AppModal";
 
 type Row = {
   id: string;
@@ -29,11 +32,18 @@ type Row = {
   og_image_url: string | null;
   brand_id: string | null;
   category_id: string | null;
+  supplier_id: string | null;
+  supplier_price: number | null;
+  approval_status: "approved" | "pending" | "rejected";
+  approval_note: string | null;
+  pending_changes: Record<string, unknown> | null;
 };
+
+type SupplierOpt = { id: string; name: string; code: string; status: string };
 
 type Opt = { id: string; name: string };
 
-type ProductSearch = { status?: string; stock?: string; category?: string; brand?: string };
+type ProductSearch = { status?: string; stock?: string; category?: string; brand?: string; supplier?: string; approval?: string };
 
 export const Route = createFileRoute("/_authenticated/admin/products/")({
   validateSearch: (s: Record<string, unknown>): ProductSearch => ({
@@ -41,6 +51,8 @@ export const Route = createFileRoute("/_authenticated/admin/products/")({
     stock: typeof s.stock === "string" ? s.stock : undefined,
     category: typeof s.category === "string" ? s.category : undefined,
     brand: typeof s.brand === "string" ? s.brand : undefined,
+    supplier: typeof s.supplier === "string" ? s.supplier : undefined,
+    approval: typeof s.approval === "string" ? s.approval : undefined,
   }),
   component: ProductsPage,
 });
@@ -51,6 +63,8 @@ function ProductsPage() {
   const [items, setItems] = useState<Row[]>([]);
   const [brands, setBrands] = useState<Opt[]>([]);
   const [categories, setCategories] = useState<Opt[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierOpt[]>([]);
+  const [assignFor, setAssignFor] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -60,6 +74,8 @@ function ProductsPage() {
   const [category, setCategory] = useState(search.category ?? "");
   const [status, setStatus] = useState(search.status ?? "");
   const [stockFilter, setStockFilter] = useState(search.stock ?? "");
+  const [supplierFilter, setSupplierFilter] = useState(search.supplier ?? "");
+  const [approval, setApproval] = useState(search.approval ?? "");
 
   const [perPage, setPerPage] = useState(20);
   const [page, setPage] = useState(1);
@@ -72,6 +88,7 @@ function ProductsPage() {
     setItems((pl.products ?? []) as Row[]);
     setBrands((pl.brands ?? []) as Opt[]);
     setCategories((pl.categories ?? []) as Opt[]);
+    setSuppliers((pl.suppliers ?? []) as SupplierOpt[]);
     setLoading(false);
   }
   const didLoad = useRef(false);
@@ -84,7 +101,7 @@ function ProductsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [q, brand, category, status, stockFilter, perPage]);
+  }, [q, brand, category, status, stockFilter, supplierFilter, approval, perPage]);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -105,6 +122,27 @@ function ProductsPage() {
       n.delete(p.id);
       return n;
     });
+  }
+
+  async function review(p: Row, approve: boolean) {
+    if (
+      !(await confirmAction({
+        title: approve ? "Approve submission" : "Reject submission",
+        description: approve
+          ? "সাপ্লায়ারের সাবমিট করা তথ্য লাইভ হবে।"
+          : "সাবমিশন রিজেক্ট হবে, লাইভ ডেটা অপরিবর্তিত থাকবে।",
+        detail: p.name,
+        confirmText: approve ? "Approve" : "Reject",
+      }))
+    )
+      return;
+    try {
+      await reviewProduct(p.id, approve);
+      toast.success(approve ? "Approved" : "Rejected");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    }
   }
 
   async function bulkSetActive(active: boolean) {
@@ -145,9 +183,12 @@ function ProductsPage() {
       if (stockFilter === "out" && i.stock > 0) return false;
       if (stockFilter === "low" && (i.stock === 0 || i.stock > 5)) return false;
       if (stockFilter === "in" && i.stock <= 0) return false;
+      if (supplierFilter === "admin" && i.supplier_id) return false;
+      if (supplierFilter && supplierFilter !== "admin" && i.supplier_id !== supplierFilter) return false;
+      if (approval && (i.approval_status ?? "approved") !== approval) return false;
       return true;
     });
-  }, [items, q, brand, category, status, stockFilter]);
+  }, [items, q, brand, category, status, stockFilter, supplierFilter, approval]);
 
   const paged = usePaginated(filtered, page, perPage);
 
@@ -176,6 +217,27 @@ function ProductsPage() {
         { value: "active", label: "Active" },
         { value: "hidden", label: "Hidden" },
         { value: "featured", label: "Featured" },
+      ],
+    },
+    {
+      key: "supplier",
+      label: "Supplier",
+      value: supplierFilter,
+      onChange: setSupplierFilter,
+      options: [
+        { value: "admin", label: "Admin's own" },
+        ...suppliers.map((s) => ({ value: s.id, label: s.name })),
+      ],
+    },
+    {
+      key: "approval",
+      label: "Approval",
+      value: approval,
+      onChange: setApproval,
+      options: [
+        { value: "pending", label: "Pending approval" },
+        { value: "approved", label: "Approved" },
+        { value: "rejected", label: "Rejected" },
       ],
     },
     {
@@ -307,6 +369,7 @@ function ProductsPage() {
                     </button>
                   </th>
                   <th className="min-w-[240px] px-3 py-3">Product</th>
+                  <th className="px-3 py-3">Supplier</th>
                   <th className="px-3 py-3">Admin cost</th>
                   <th className="px-3 py-3">Reseller</th>
                   <th className="px-3 py-3">Suggested</th>
@@ -370,6 +433,9 @@ function ProductsPage() {
                         </div>
                       </div>
                     </td>
+                    <td className="px-3 py-3">
+                      <SupplierCell row={p} suppliers={suppliers} />
+                    </td>
                     <td className="px-3 py-3">৳{p.buying_price}</td>
                     <td className="px-3 py-3">৳{p.reseller_price}</td>
                     <td className="px-3 py-3">৳{p.suggested_price}</td>
@@ -387,6 +453,19 @@ function ProductsPage() {
                         <span className={`h-1.5 w-1.5 rounded-full ${p.is_active ? "bg-emerald-500" : "bg-muted-foreground"}`} />
                         {p.is_active ? "Active" : "Hidden"}
                       </span>
+                      {(p.approval_status ?? "approved") !== "approved" && (
+                        <div
+                          className={
+                            "mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium capitalize " +
+                            (APPROVAL_TONE[p.approval_status] ?? "bg-muted")
+                          }
+                        >
+                          {p.approval_status}
+                        </div>
+                      )}
+                      {p.pending_changes && (
+                        <div className="mt-1 text-[10px] text-amber-600">Edit waiting</div>
+                      )}
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex justify-end">
@@ -397,6 +476,19 @@ function ProductsPage() {
                           <DropdownMenuItem onSelect={() => nav({ to: "/admin/products/$id/edit", params: { id: p.id } })}>
                             <Pencil className="mr-2 h-4 w-4" /> Edit
                           </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => setAssignFor(p)}>
+                            <Truck className="mr-2 h-4 w-4" /> {p.supplier_id ? "Change / remove supplier" : "Assign supplier"}
+                          </DropdownMenuItem>
+                          {((p.approval_status ?? "approved") !== "approved" || p.pending_changes) && (
+                            <>
+                              <DropdownMenuItem onSelect={() => review(p, true)}>
+                                <Check className="mr-2 h-4 w-4" /> Approve submission
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => review(p, false)}>
+                                <X className="mr-2 h-4 w-4" /> Reject submission
+                              </DropdownMenuItem>
+                            </>
+                          )}
                           <DropdownMenuItem onSelect={() => toggle(p)}>
                             {p.is_active ? (
                               <>
@@ -425,6 +517,17 @@ function ProductsPage() {
           </div>
           <Pagination page={page} perPage={perPage} total={filtered.length} onPage={setPage} />
         </>
+      )}
+      {assignFor && (
+        <AssignSupplierModal
+          row={assignFor}
+          suppliers={suppliers}
+          onClose={() => setAssignFor(null)}
+          onSaved={() => {
+            setAssignFor(null);
+            load();
+          }}
+        />
       )}
       {detailId && (
         <ProductDetailModal 
@@ -625,5 +728,85 @@ function StockCell({ row, onSaved }: { row: Row; onSaved: (v: number) => void })
         <X className="h-4 w-4" />
       </button>
     </div>
+  );
+}
+
+function SupplierCell({ row, suppliers }: { row: Row; suppliers: SupplierOpt[] }) {
+  const s = row.supplier_id ? suppliers.find((x) => x.id === row.supplier_id) : null;
+  if (!row.supplier_id) return <span className="text-xs text-muted-foreground">Admin&apos;s own</span>;
+  return (
+    <div className="text-xs">
+      <div className="font-medium">{s?.name ?? "Supplier"}</div>
+      <div className="text-[10px] text-muted-foreground">৳{row.supplier_price ?? row.buying_price}</div>
+    </div>
+  );
+}
+
+function AssignSupplierModal({
+  row,
+  suppliers,
+  onClose,
+  onSaved,
+}: {
+  row: Row;
+  suppliers: SupplierOpt[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [value, setValue] = useState(row.supplier_id ?? "");
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    setBusy(true);
+    try {
+      await setProductSupplier(row.id, value || null);
+      toast.success(value ? "Supplier assigned" : "Supplier removed");
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <AppModal
+      open
+      onClose={onClose}
+      size="sm"
+      title="Product supplier"
+      subtitle={row.name}
+      footer={
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted">
+            Cancel
+          </button>
+          <button
+            onClick={save}
+            disabled={busy}
+            className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+          >
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />} Save
+          </button>
+        </div>
+      }
+    >
+      <label className="mb-1 block text-xs font-medium">Supplier</label>
+      <select
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+      >
+        <option value="">— Admin&apos;s own product —</option>
+        {suppliers.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name} ({s.code}){s.status !== "active" ? " · " + s.status : ""}
+          </option>
+        ))}
+      </select>
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        সাপ্লায়ার সিলেক্ট করলে admin cost-ই তার প্রাপ্য ধরা হবে। Remove করলে প্রোডাক্টটি অ্যাডমিনের নিজের হয়ে যাবে।
+      </p>
+    </AppModal>
   );
 }
