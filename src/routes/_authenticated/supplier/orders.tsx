@@ -68,7 +68,7 @@ function SupplierOrdersPage() {
   const [rows, setRows] = useState<SupplierOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<OrderTabKey>("new");
+  const [tab, setTab] = useState<OrderTabKey>("confirmed");
   const [q, setQ] = useState("");
   const [searchMode, setSearchMode] = useState<OrderSearchMode>("order");
   const [area, setArea] = useState("");
