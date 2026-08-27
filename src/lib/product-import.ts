@@ -41,6 +41,7 @@ export async function importImagesToStorage(
   fetchImage: (args: { data: { url: string } }) => Promise<{ base64: string; mime: string }>,
   max = 6,
   onProgress?: (done: number, total: number) => void,
+  folder = "master",
 ): Promise<UploadedImage[]> {
   const list = urls.slice(0, max);
   let done = 0;
