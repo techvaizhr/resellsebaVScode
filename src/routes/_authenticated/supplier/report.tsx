@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { PageHeader, StatCard } from "@/components/ui-kit";
+import { StatusTabs } from "@/components/status-tabs";
+
 import { useSupplier } from "@/components/supplier-context";
 import {
   bdtNum,
@@ -13,7 +15,18 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/supplier/report")({
   component: SupplierReportPage,
+  head: () => ({
+    meta: [
+      { title: "Supplier sales report · earnings breakdown" },
+      { name: "description", content: "ডেলিভারি হওয়া আইটেমের আয় ও চলমান অর্ডারের হিসাব দেখুন।" },
+      { property: "og:title", content: "Supplier sales report" },
+      { property: "og:description", content: "Delivered earnings and in-progress order values." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
+
 
 const inp = "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
 
@@ -89,20 +102,17 @@ function SupplierReportPage() {
         </div>
       </div>
 
-      <div className="mb-3 flex gap-2">
-        {(["sold", "upcoming"] as const).map((k) => (
-          <button
-            key={k}
-            onClick={() => setTab(k)}
-            className={
-              "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors " +
-              (tab === k ? "border-transparent bg-primary text-primary-foreground" : "hover:bg-muted")
-            }
-          >
-            {k === "sold" ? `Sold (${data.sold.length})` : `In progress (${data.upcoming.length})`}
-          </button>
-        ))}
-      </div>
+      <StatusTabs
+        tabs={[
+          { key: "sold", label: "Sold" },
+          { key: "upcoming", label: "In progress" },
+        ]}
+        tab={tab}
+        onChange={(k) => setTab(k as typeof tab)}
+        count={(k) => (k === "sold" ? data.sold.length : data.upcoming.length)}
+        className="mb-3 w-full min-w-0"
+      />
+
 
       <div className="surface-card p-4">
         {rows.length === 0 ? (
