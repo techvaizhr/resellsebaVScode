@@ -579,7 +579,13 @@ export function NewOrderModal({
                                 <span className="w-8 text-center text-[12px] font-black">{line.qty}</span>
                                 <button 
                                   type="button" 
-                                  onClick={() => setLines(prev => prev.map((l, idx) => idx === i ? {...l, qty: l.qty + 1} : l))} 
+                                  onClick={() => setLines(prev => prev.map((l, idx) => {
+                                    if (idx !== i) return l;
+                                    const stock = Number(p?.stock ?? 0);
+                                    if (l.qty + 1 > stock) { toast.error(`Only ${stock} in stock`); return l; }
+                                    return { ...l, qty: l.qty + 1 };
+                                  }))}
+
                                   className="h-7 w-7 flex items-center justify-center hover:bg-background rounded-lg transition-all active:scale-90"
                                 >
                                   <Plus className="h-3 w-3" />
