@@ -9,7 +9,9 @@ import { PageHeader, StatCard, EmptyState } from "@/components/ui-kit";
 import { AppModal } from "@/components/ui-kit/AppModal";
 import { DataToolbar, Pagination, ActionMenu, usePaginated, type FilterDef } from "@/components/data-list";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { ImageUploader, type UploadedImage } from "@/components/ImageUploader";
+import { type UploadedImage } from "@/components/ImageUploader";
+import { ProductFormModal } from "@/components/product-form-modal";
+
 import { useSupplier } from "@/components/supplier-context";
 import {
   APPROVAL_TONE,
