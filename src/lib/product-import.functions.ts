@@ -12,8 +12,8 @@ export const importProductFromUrl = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }): Promise<ImportedProduct> => {
     const { assertImporter, scrapeProduct } = await import("@/lib/product-import.server");
-    await assertImporter(context.supabase, context.userId);
-    return scrapeProduct(data.url);
+    const role = await assertImporter(context.supabase, context.userId);
+    return scrapeProduct(data.url, { includeCosts: role === "staff" });
   });
 
 /** Downloads one remote image server-side (CORS-safe) and returns verified bytes. */
