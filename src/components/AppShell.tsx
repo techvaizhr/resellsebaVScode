@@ -6,6 +6,7 @@ import { ResellerAvatar } from "@/components/reseller-avatar";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { clearImpersonation } from "@/lib/impersonation";
+import { PwaInstallButton } from "@/components/pwa-install";
 
 export interface NavItem {
   label: string;
