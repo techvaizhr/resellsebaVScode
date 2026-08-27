@@ -147,10 +147,14 @@ export async function printShippingLabels(
                 <div class="order-num">#${o.order_number}</div>
               </div>
               <div class="customer">
-                <div class="section-title">Recipient</div>
-                <div class="name">${o.customer_name}</div>
-                <div class="phone">${o.customer_phone}</div>
-                <div class="address">${o.address_line}<br><strong>${o.area.replace("_", " ")}</strong></div>
+                ${hideCustomer
+                  ? `<div class="section-title">Parcel</div>
+                     <div class="name">#${o.order_number}</div>
+                     <div class="address"><strong>${o.area.replace("_", " ")}</strong></div>`
+                  : `<div class="section-title">Recipient</div>
+                     <div class="name">${o.customer_name}</div>
+                     <div class="phone">${o.customer_phone}</div>
+                     <div class="address">${o.address_line}<br><strong>${o.area.replace("_", " ")}</strong></div>`}
               </div>
               <div class="items-box">
                 <div class="section-title">Order Items</div>
