@@ -15,7 +15,18 @@ import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { ShipmentBookingModal } from "@/components/ShipmentBookingModal";
 import { CourierLogo, courierLabel } from "@/components/courier-brand";
 import { OrderSearch, type OrderSearchMode } from "@/components/order-search";
-import { StatusTabs } from "@/components/status-tabs";
+import { OrderTabs } from "@/components/OrderTabs";
+import type { OrderTabKey } from "@/lib/courier-status";
+
+import {
+  AREA_FILTER_OPTIONS,
+  COURIER_FILTER_OPTIONS,
+  DATE_PRESET_OPTIONS,
+  resolveDateRange,
+  DEFAULT_ORDER_FILTERS,
+  type DatePreset,
+} from "@/components/order-filters";
+
 import { Pagination, usePaginated } from "@/components/data-list";
 import {
   ImageLightbox,
@@ -55,10 +66,14 @@ function SupplierOrdersPage() {
   const [rows, setRows] = useState<SupplierOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState("pending");
+  const [tab, setTab] = useState<OrderTabKey>("new");
   const [q, setQ] = useState("");
   const [searchMode, setSearchMode] = useState<OrderSearchMode>("order");
+  const [area, setArea] = useState("");
+  const [courier, setCourier] = useState("");
+  const [datePreset, setDatePreset] = useState<DatePreset>("lifetime");
   const [sort, setSort] = useState<"newest" | "oldest" | "high" | "low">("newest");
+
   const [perPage, setPerPage] = useState(20);
   const [page, setPage] = useState(1);
   const [marked, setMarked] = useState<string[]>([]);
@@ -89,7 +104,7 @@ function SupplierOrdersPage() {
   useEffect(() => {
     setMarked([]);
     setPage(1);
-  }, [tab, q, sort, perPage]);
+  }, [tab, q, sort, perPage, area, courier, datePreset]);
 
   const counts = useCallback(
     (key: string) => {
@@ -103,8 +118,20 @@ function SupplierOrdersPage() {
   const filtered = useMemo(() => {
     const t = SUPPLIER_ORDER_TABS.find((x) => x.key === tab);
     const term = q.trim().toLowerCase();
+    const { fromTs, toTs } = resolveDateRange({
+      ...DEFAULT_ORDER_FILTERS,
+      datePreset,
+    });
     const list = rows.filter((o) => {
       if (t && t.statuses.length && !t.statuses.includes(o.status)) return false;
+      if (area && o.area !== area) return false;
+      if (courier) {
+        const provider = o.shipment?.provider ?? null;
+        if (courier === "none" ? !!provider : provider !== courier) return false;
+      }
+      const ts = new Date(o.created_at).getTime();
+      if (fromTs != null && ts < fromTs) return false;
+      if (toTs != null && ts > toTs) return false;
       if (!term) return true;
       if (searchMode === "product") return o.items.some((i) => i.product_name.toLowerCase().includes(term));
       return (
@@ -120,7 +147,8 @@ function SupplierOrdersPage() {
       const tb = new Date(b.created_at).getTime();
       return sort === "oldest" ? ta - tb : tb - ta;
     });
-  }, [rows, tab, q, searchMode, sort]);
+  }, [rows, tab, q, searchMode, sort, area, courier, datePreset]);
+
 
   const paged = usePaginated(filtered, page, perPage);
   const actionable = paged.filter((o) => supplierNextStatus(o.status));
@@ -244,6 +272,36 @@ function SupplierOrdersPage() {
         </div>
         <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
           <select
+            value={area}
+            onChange={(e) => setArea(e.target.value)}
+            className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
+            title="Delivery area"
+          >
+            {AREA_FILTER_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <select
+            value={courier}
+            onChange={(e) => setCourier(e.target.value)}
+            className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
+            title="Courier"
+          >
+            {COURIER_FILTER_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <select
+            value={datePreset}
+            onChange={(e) => setDatePreset(e.target.value as DatePreset)}
+            className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
+            title="Date range"
+          >
+            {DATE_PRESET_OPTIONS.filter((o) => o.value !== "custom").map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <select
             value={sort}
             onChange={(e) => setSort(e.target.value as typeof sort)}
             className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
@@ -256,24 +314,23 @@ function SupplierOrdersPage() {
           </select>
           {/* Mobile: status filter sits inside the filter grid, same as admin */}
           <div className="sm:hidden">
-            <StatusTabs
+            <OrderTabs
               tabs={SUPPLIER_ORDER_TABS}
               tab={tab}
               onChange={setTab}
               count={counts}
+              highlight
               className="w-full min-w-0"
             />
           </div>
         </div>
       </div>
 
-      <StatusTabs
-        tabs={SUPPLIER_ORDER_TABS}
-        tab={tab}
-        onChange={setTab}
-        count={counts}
-        className="mb-4 hidden w-full min-w-0 sm:block"
-      />
+      {/* Desktop: status tabs below filters — identical look to admin */}
+      <div className="hidden sm:block">
+        <OrderTabs tabs={SUPPLIER_ORDER_TABS} tab={tab} onChange={setTab} count={counts} />
+      </div>
+
 
       {actionable.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2">

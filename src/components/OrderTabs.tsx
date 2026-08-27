@@ -23,6 +23,7 @@ export function OrderTabs({
   count,
   className = "mb-4 w-full min-w-0",
   highlight = false,
+  tabs = ORDER_TABS,
 }: {
   tab: OrderTabKey;
   onChange: (key: OrderTabKey) => void;
@@ -31,6 +32,8 @@ export function OrderTabs({
   className?: string;
   /** When true, the mobile dropdown button gets a light tint based on the active tab's group. */
   highlight?: boolean;
+  /** Optional subset of tabs (e.g. the supplier flow) — defaults to the full admin flow. */
+  tabs?: { key: OrderTabKey; label: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{
@@ -41,7 +44,8 @@ export function OrderTabs({
   } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const active = ORDER_TABS.find((t) => t.key === tab);
+  const active = tabs.find((t) => t.key === tab);
+
 
   const updateMenuPosition = () => {
     const trigger = ref.current?.getBoundingClientRect();
@@ -126,7 +130,7 @@ export function OrderTabs({
               className="no-scrollbar grid grid-cols-2 gap-1.5 overflow-y-auto overscroll-contain"
               style={{ maxHeight: menuPosition.maxHeight }}
             >
-              {ORDER_TABS.map((t) => {
+              {tabs.map((t) => {
                 const isActive = tab === t.key;
                 return (
                   <button
@@ -151,7 +155,7 @@ export function OrderTabs({
 
       {/* Desktop: wrapping buttons */}
       <div className="hidden flex-wrap gap-2 sm:flex">
-        {ORDER_TABS.map((t) => {
+        {tabs.map((t) => {
           const isActive = tab === t.key;
           return (
             <button

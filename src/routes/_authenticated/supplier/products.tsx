@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, Pencil, PackageSearch, Clock, CheckCircle2, CloudDownload } from "lucide-react";
+import { Loader2, Plus, Pencil, PackageSearch, Clock, CheckCircle2, CloudDownload, Eye } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchImportImage, importProductFromUrl } from "@/lib/product-import.functions";
 import { importImagesToStorage } from "@/lib/product-import";
@@ -41,6 +41,7 @@ function SupplierProductsPage_() {
   const [editing, setEditing] = useState<SupplierProduct | null | undefined>(undefined);
   const [prefill, setPrefill] = useState<Prefill | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [detail, setDetail] = useState<SupplierProduct | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -202,7 +203,7 @@ function SupplierProductsPage_() {
                   <th className="px-3 py-3">Stock</th>
                   <th className="px-3 py-3">Status</th>
                   <th className="px-3 py-3">Submitted</th>
-                  <th className="px-3 py-3" />
+                  <th className="px-3 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -210,11 +211,19 @@ function SupplierProductsPage_() {
                   <tr key={p.id} className="hover:bg-muted/50">
                     <td className="min-w-[240px] px-3 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-muted">
+                        <div
+                          className="h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-md border bg-muted transition-all hover:ring-2 hover:ring-primary/50"
+                          onClick={() => setDetail(p)}
+                        >
                           {p.og_image_url && <img src={p.og_image_url} className="h-full w-full object-cover" alt="" />}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate font-medium">{p.name}</div>
+                          <div
+                            className="cursor-pointer truncate font-medium transition-colors hover:text-primary"
+                            onClick={() => setDetail(p)}
+                          >
+                            {p.name}
+                          </div>
                           <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
                             <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium">
                               ID #{p.product_code}
@@ -265,6 +274,9 @@ function SupplierProductsPage_() {
                     <td className="px-3 py-3">
                       <div className="flex justify-end">
                         <ActionMenu>
+                          <DropdownMenuItem onSelect={() => setDetail(p)}>
+                            <Eye className="mr-2 h-4 w-4" /> View details
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onSelect={() => {
                               setPrefill(null);
@@ -284,6 +296,21 @@ function SupplierProductsPage_() {
           <Pagination page={page} perPage={perPage} total={rows.length} onPage={setPage} />
         </>
       )}
+
+      {detail && (
+        <SupplierProductDetail
+          product={detail}
+          brands={brands}
+          categories={categories}
+          onClose={() => setDetail(null)}
+          onEdit={() => {
+            setPrefill(null);
+            setEditing(detail);
+            setDetail(null);
+          }}
+        />
+      )}
+
 
 
       {importOpen && (
@@ -319,6 +346,88 @@ function SupplierProductsPage_() {
     </div>
   );
 }
+
+/** Read-only product detail — same layout language as the admin product detail modal, without platform pricing. */
+function SupplierProductDetail({
+  product,
+  brands,
+  categories,
+  onClose,
+  onEdit,
+}: {
+  product: SupplierProduct;
+  brands: { id: string; name: string }[];
+  categories: { id: string; name: string }[];
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  const draft = (product.pending_changes ?? {}) as Record<string, any>;
+  const images = ((draft.images as { url: string }[] | undefined) ?? product.images ?? []) as { url: string }[];
+  const brandName = brands.find((b) => b.id === product.brand_id)?.name ?? "—";
+  const categoryName = categories.find((c) => c.id === product.category_id)?.name ?? "—";
+
+  return (
+    <AppModal
+      open
+      onClose={onClose}
+      title={product.name}
+      subtitle={`ID #${product.product_code}`}
+      footer={
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted">
+            Close
+          </button>
+          <button onClick={onEdit} className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium">
+            <Pencil className="h-4 w-4" /> Edit (needs approval)
+          </button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        {images.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {images.map((im, i) => (
+              <img key={i} src={im.url} alt="" className="h-20 w-20 rounded-md border object-cover" />
+            ))}
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+          <DetailField label="Supply price" value={bdtNum(Number(product.supplier_price))} />
+          <DetailField label="Stock" value={String(product.stock)} />
+          <DetailField label="Visibility" value={product.is_active ? "Live" : "Hidden"} />
+          <DetailField label="Brand" value={brandName} />
+          <DetailField label="Category" value={categoryName} />
+          <DetailField label="Approval" value={product.approval_status} />
+        </div>
+        {product.pending_changes && (
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
+            একটি এডিট অ্যাডমিন অ্যাপ্রুভালের অপেক্ষায় আছে।
+          </div>
+        )}
+        {product.approval_note && (
+          <div className="rounded-md border px-3 py-2 text-xs text-muted-foreground">{product.approval_note}</div>
+        )}
+        {product.description && (
+          <div
+            className="prose prose-sm max-w-none text-sm text-muted-foreground"
+            dangerouslySetInnerHTML={{ __html: product.description }}
+          />
+        )}
+      </div>
+    </AppModal>
+  );
+}
+
+function DetailField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border bg-muted/30 px-3 py-2">
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-0.5 truncate text-sm font-medium capitalize">{value}</div>
+    </div>
+  );
+}
+
+
 
 export type Prefill = {
   name: string;
