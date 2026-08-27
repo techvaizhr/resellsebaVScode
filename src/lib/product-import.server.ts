@@ -586,14 +586,15 @@ export async function fetchRemoteImage(rawUrl: string): Promise<{ base64: string
 }
 
 /** Catalog staff OR an active supplier may pull product data from a link. */
-export async function assertImporter(client: any, userId: string) {
+export async function assertImporter(client: any, userId: string): Promise<"supplier" | "staff"> {
   const { data } = await client
     .from("suppliers")
     .select("id")
     .eq("user_id", userId)
     .eq("status", "active")
     .maybeSingle();
-  if (data?.id) return;
+  if (data?.id) return "supplier";
   const { assertAnyPermission } = await import("@/lib/admin-users.server");
   await assertAnyPermission(client, userId, ["products.manage"]);
+  return "staff";
 }
