@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { APP_ICONS } from "@/lib/icons";
 import { toast } from "sonner";
+import { PwaInstallButton } from "@/components/pwa-install";
 import {
   Accordion,
   AccordionContent,
@@ -602,6 +603,7 @@ function Landing({
           <div>
             <Brand siteName={siteName} logoUrl={logoUrl} size="sm" />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">{c.footer.tagline}</p>
+            <PwaInstallButton variant="inline" className="mt-4" label="অ্যাপ ইনস্টল করুন" />
           </div>
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">প্ল্যাটফর্ম</h4>
