@@ -2,7 +2,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { getGlobalSettings } from "@/lib/app-data";
 import { courierLabel } from "@/components/courier-brand";
 
-export async function printShippingLabels(orderIds: string[], forceSize?: "3x3" | "3x4") {
+export async function printShippingLabels(
+  orderIds: string[],
+  forceSize?: "3x3" | "3x4",
+  options?: { hideCustomer?: boolean },
+) {
+  const hideCustomer = options?.hideCustomer === true;
   if (!orderIds.length) return;
 
   const [settings, { data: orders }, { data: items }, { data: shipments }] = await Promise.all([
