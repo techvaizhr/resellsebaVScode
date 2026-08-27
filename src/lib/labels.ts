@@ -16,9 +16,10 @@ export type LabelDoc = {
 export async function printShippingLabels(
   orderIds: string[],
   forceSize?: "3x3" | "3x4",
-  options?: { hideCustomer?: boolean },
+  options?: { hideCustomer?: boolean; maskPhone?: boolean },
 ) {
   const hideCustomer = options?.hideCustomer === true;
+  const maskPhone = options?.maskPhone === true;
   if (!orderIds.length) return;
 
   const [settings, { data: orders }, { data: items }, { data: shipments }] = await Promise.all([
