@@ -120,19 +120,22 @@ export function supplierNextStatus(status: string): string | null {
   return null;
 }
 
-export const SUPPLIER_ORDER_TABS: { key: string; label: string; statuses: string[] }[] = [
-  { key: "all", label: "All", statuses: [] },
-  { key: "pending", label: "Pending", statuses: ["pending", "forwarded"] },
+/** Supplier flow tabs — same keys/colours as the admin order tabs, minus the admin-only ones. */
+export const SUPPLIER_ORDER_TABS: { key: OrderTabKey; label: string; statuses: string[] }[] = [
+  { key: "all", label: "All Orders", statuses: [] },
+  { key: "new", label: "Pending", statuses: ["pending", "forwarded"] },
   { key: "confirmed", label: "Confirmed", statuses: ["confirmed"] },
   { key: "packaging", label: "Packaging", statuses: ["packaging"] },
-  { key: "ready_to_ship", label: "Courier handover", statuses: ["ready_to_ship"] },
-  { key: "courier", label: "To courier", statuses: ["shipped", "processing"] },
+  { key: "handover", label: "Courier Handover", statuses: ["ready_to_ship"] },
+  { key: "courier", label: "To Courier", statuses: ["shipped", "processing"] },
   { key: "delivered", label: "Delivered", statuses: ["delivered"] },
-  {
-    key: "partial",
-    label: "Partial",
-    statuses: ["pending_partial", "partial", "partial_full", "partial_item", "partial_delivery"],
-  },
-  { key: "returns", label: "Return", statuses: ["pending_return", "returned", "damaged"] },
+  { key: "pending_partial", label: "Pending Partial", statuses: ["pending_partial"] },
+  { key: "partial_full", label: "Partial (Full item)", statuses: ["partial_full", "partial"] },
+  { key: "partial_item", label: "Partial (Item)", statuses: ["partial_item"] },
+  { key: "partial_delivery", label: "Partial (Delivery Charge)", statuses: ["partial_delivery"] },
+  { key: "pending_return", label: "Pending Return", statuses: ["pending_return"] },
+  { key: "returned", label: "Returned", statuses: ["returned"] },
+  { key: "damaged", label: "Damaged", statuses: ["damaged"] },
   { key: "cancelled", label: "Cancelled", statuses: ["cancelled"] },
 ];
+
