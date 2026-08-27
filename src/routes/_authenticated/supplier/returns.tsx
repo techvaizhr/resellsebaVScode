@@ -23,8 +23,10 @@ export const Route = createFileRoute("/_authenticated/supplier/returns")({
 
 
 function SupplierReturnsPage() {
-  const { data } = useSupplier();
+  const { data, reload } = useSupplier();
   const [tab, setTab] = useState<"all" | "pending_handover" | "handed_over">("all");
+  const [sel, setSel] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
 
   const rows = useMemo(
     () => (tab === "all" ? data.returns : data.returns.filter((r) => r.status === tab)),
@@ -34,6 +36,25 @@ function SupplierReturnsPage() {
   const pending = data.returns.filter((r) => r.status === "pending_handover");
   const handed = data.returns.filter((r) => r.status === "handed_over");
   const sum = (list: typeof data.returns) => list.reduce((s, r) => s + Number(r.quantity) * Number(r.unit_price), 0);
+
+  const selectable = rows.filter((r) => r.status !== "handed_over");
+  const allSelected = selectable.length > 0 && selectable.every((r) => sel.includes(r.id));
+
+  const receive = async (ids: string[]) => {
+    if (!ids.length) return;
+    setBusy(true);
+    try {
+      await receiveSupplierReturns(ids);
+      toast.success(`${ids.length}টি রিটার্ন receive হয়েছে`);
+      setSel([]);
+      await reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
 
   return (
     <div>
