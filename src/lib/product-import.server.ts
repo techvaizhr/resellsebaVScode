@@ -456,8 +456,14 @@ async function tryPanelImport(url: URL): Promise<ImportedProduct | null> {
   }
 }
 
-export async function scrapeProduct(rawUrl: string): Promise<ImportedProduct> {
+export async function scrapeProduct(
+  rawUrl: string,
+  opts: { includeCosts?: boolean } = {},
+): Promise<ImportedProduct> {
   const url = assertSafeUrl(rawUrl);
+
+  const local = await tryLocalImport(url, !!opts.includeCosts);
+  if (local) return local;
 
   const panel = await tryPanelImport(url);
   if (panel) return panel;
