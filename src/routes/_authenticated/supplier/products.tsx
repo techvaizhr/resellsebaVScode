@@ -259,8 +259,36 @@ function SupplierProductsPage_() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-3 tabular-nums">{bdtNum(Number(p.supplier_price))}</td>
-                    <td className="px-3 py-3 tabular-nums">{p.stock}</td>
+                    <td className="px-3 py-3 tabular-nums">
+                      <InlineNumber
+                        value={Number(p.supplier_price)}
+                        prefix="৳"
+                        onSave={async (val) => {
+                          const res = await supplierQuickUpdate(p.id, { price: val });
+                          toast.success(
+                            res.price_pending
+                              ? "Price change অ্যাডমিন অ্যাপ্রুভালের জন্য পাঠানো হয়েছে"
+                              : "Price আপডেট হয়েছে — অ্যাপ্রুভালের অপেক্ষায়",
+                          );
+                          await load();
+                        }}
+                      />
+                      {typeof (p.pending_changes as any)?.supplier_price !== "undefined" && (
+                        <div className="mt-1 text-[10px] text-amber-600">
+                          Pending ৳{Number((p.pending_changes as any).supplier_price)}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 tabular-nums">
+                      <InlineNumber
+                        value={Number(p.stock)}
+                        onSave={async (val) => {
+                          await supplierQuickUpdate(p.id, { stock: val });
+                          toast.success("Stock আপডেট হয়েছে");
+                          await load();
+                        }}
+                      />
+                    </td>
                     <td className="px-3 py-3">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
