@@ -314,9 +314,27 @@ function EditProduct() {
             </Hint>
           </h3>
           <div className="grid gap-3 md:grid-cols-3">
-            <Field label="Buying price / Admin cost (৳)" required hint="Your cost. Resellers do not see this.">
+            <Field
+              label="Supplier"
+              hint="Supplier select korle buying price = oi supplier er prapya. Admin er nijer product hole — None — rakhun."
+            >
+              <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className={inputCls}>
+                <option value="">— None (admin's own product) —</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.display_name} ({s.code})
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              label={supplierId ? "Supplier price / Admin cost (৳)" : "Buying price / Admin cost (৳)"}
+              required
+              hint={supplierId ? "Supplier ei amount ta pabe (per unit, delivered item)." : "Your cost. Resellers do not see this."}
+            >
               <input required type="number" min={0} value={buying} onChange={(e) => setBuying(e.target.value)} className={inputCls} />
             </Field>
+
             <Field label="Reseller price (৳)" required hint="Resellers see this as the product price.">
               <input required type="number" min={0} value={resellerPrice} onChange={(e) => setResellerPrice(e.target.value)} className={inputCls} />
             </Field>
