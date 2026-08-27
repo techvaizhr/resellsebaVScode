@@ -1,12 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PageHeader, StatCard } from "@/components/ui-kit";
+import { StatusTabs } from "@/components/status-tabs";
 import { useSupplier } from "@/components/supplier-context";
 import { bdtNum, orderStatusLabel } from "@/lib/supplier";
 
 export const Route = createFileRoute("/_authenticated/supplier/returns")({
   component: SupplierReturnsPage,
+  head: () => ({
+    meta: [
+      { title: "Supplier returns · handover tracking" },
+      { name: "description", content: "ফেরত আসা আইটেম ও অ্যাডমিন হ্যান্ডওভারের অবস্থা দেখুন।" },
+      { property: "og:title", content: "Supplier returns" },
+      { property: "og:description", content: "Track returned items and handover status." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
+
 
 function SupplierReturnsPage() {
   const { data } = useSupplier();
