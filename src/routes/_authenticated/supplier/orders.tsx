@@ -403,27 +403,8 @@ function SupplierOrdersPage() {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/30 p-2">
+                    <div className="grid grid-cols-1 gap-2 rounded-lg bg-muted/30 p-2">
                       <div className="min-w-0 space-y-0.5">
-                        <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Customer</div>
-                        <div className="flex min-w-0 items-center gap-1.5 text-xs font-medium">
-                          <span className="truncate">{o.customer_name}</span>
-                          <a href={`tel:${o.customer_phone}`} className="shrink-0 text-primary">
-                            <Phone className="h-3.5 w-3.5" />
-                          </a>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(o.customer_phone);
-                              toast.success("Copied");
-                            }}
-                            className="shrink-0 text-muted-foreground hover:text-foreground"
-                          >
-                            <Copy className="h-3 w-3" />
-                          </button>
-                        </div>
-                        <div className="text-[11px] tabular-nums text-muted-foreground">{o.customer_phone}</div>
-                      </div>
-                      <div className="min-w-0 space-y-0.5 border-l pl-2">
                         <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">My value</div>
                         <div className="text-sm font-semibold tabular-nums">{bdtNum(o.my_amount)}</div>
                         <div className="text-[11px] text-muted-foreground">{o.my_qty} pcs</div>
