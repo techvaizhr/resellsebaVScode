@@ -34,6 +34,7 @@ import {
   UserCheck,
   Target,
   Receipt,
+  Undo2,
 } from "lucide-react";
 import { AppShell, type NavEntry } from "@/components/AppShell";
 import { BulkScanButton } from "@/components/BulkScanModal";
