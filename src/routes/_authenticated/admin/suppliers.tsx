@@ -54,6 +54,41 @@ function AdminSuppliersPage() {
   const [tab, setTab] = useState<Tab>("suppliers");
   const [q, setQ] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [editFor, setEditFor] = useState<AdminSupplierRow | null>(null);
+  const [resetFor, setResetFor] = useState<AdminSupplierRow | null>(null);
+  const nav = useNavigate();
+  const resetPasswordFn = useServerFn(resetSupplierPassword);
+  const impersonateFn = useServerFn(impersonateSupplier);
+
+  async function applyPasswordReset(s: AdminSupplierRow, password: string) {
+    try {
+      await resetPasswordFn({ data: { userId: s.user_id, password } });
+      toast.success(`Password updated for ${s.display_name}`);
+      setResetFor(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to reset password");
+    }
+  }
+
+  async function loginAsSupplier(s: AdminSupplierRow) {
+    setBusyId(s.id);
+    try {
+      const res = await impersonateFn({ data: { userId: s.user_id } });
+      await startImpersonation({
+        email: res.email,
+        password: res.password,
+        label: s.display_name,
+        returnTo: window.location.pathname + window.location.search,
+      });
+      nav({ to: "/supplier", replace: true });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not log in as supplier");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+
 
   const load = useCallback(async () => {
     try {
