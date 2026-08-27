@@ -105,7 +105,7 @@ export function RichTextEditor({
 
   return (
     <div className="overflow-hidden rounded-md border bg-background">
-      <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/30 p-1">
+      <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/60 p-1">
         <Btn title="Heading 2" onClick={() => e.chain().focus().toggleHeading({ level: 2 }).run()} active={e.isActive("heading", { level: 2 })}><Heading2 className="h-4 w-4" /></Btn>
         <Btn title="Heading 3" onClick={() => e.chain().focus().toggleHeading({ level: 3 }).run()} active={e.isActive("heading", { level: 3 })}><Heading3 className="h-4 w-4" /></Btn>
         <div className="mx-1 h-5 w-px bg-border" />
