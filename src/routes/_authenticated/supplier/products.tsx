@@ -536,134 +536,55 @@ function ProductForm({
   const draft = (product?.pending_changes ?? {}) as Record<string, any>;
   const v = <T,>(key: string, fallback: T): T => (draft[key] ?? fallback) as T;
 
-  const [name, setName] = useState(prefill?.name || v("name", product?.name ?? ""));
-  const [sku, setSku] = useState(prefill?.sku || (v("sku", product?.sku ?? "") ?? ""));
-  const [price, setPrice] = useState(String(v("supplier_price", product?.supplier_price ?? "")));
-  const [stock, setStock] = useState(String(v("stock", product?.stock ?? 0)));
-  const [brandId, setBrandId] = useState(v("brand_id", product?.brand_id ?? "") ?? "");
-  const [categoryId, setCategoryId] = useState(v("category_id", product?.category_id ?? "") ?? "");
-  const [description, setDescription] = useState(
-    prefill?.description || (v("description", product?.description ?? "") ?? ""),
-  );
-  const [images, setImages] = useState<UploadedImage[]>(
-    (prefill?.images ?? (draft.images as UploadedImage[] | undefined) ?? product?.images ?? []).map((i: any) => ({
-      url: i.url,
-      path: i.path ?? "",
-      bytes: i.bytes ?? 0,
-    })),
-  );
-  const [busy, setBusy] = useState(false);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return toast.error("Product name দিন");
-    if (!(Number(price) > 0)) return toast.error("Supplier price দিন");
-    setBusy(true);
-    try {
-      await saveSupplierProduct(product?.id ?? null, {
-        name: name.trim(),
-        sku: sku || null,
-        description: description || null,
-        brand_id: brandId || null,
-        category_id: categoryId || null,
-        supplier_price: Number(price),
-        stock: Number(stock) || 0,
-        images: images.map((i) => ({ url: i.url })),
-      });
-      toast.success(product ? "Edit সাবমিট হয়েছে — অ্যাডমিন অ্যাপ্রুভালের অপেক্ষায়" : "প্রোডাক্ট সাবমিট হয়েছে — অ্যাপ্রুভালের অপেক্ষায়");
-      onSaved();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const initial = {
+    name: prefill?.name || v("name", product?.name ?? ""),
+    sku: prefill?.sku || (v("sku", product?.sku ?? "") ?? ""),
+    description: prefill?.description || (v("description", product?.description ?? "") ?? ""),
+    brand_id: v("brand_id", product?.brand_id ?? "") ?? "",
+    category_id: v("category_id", product?.category_id ?? "") ?? "",
+    price: String(v("supplier_price", product?.supplier_price ?? "")),
+    stock: String(v("stock", product?.stock ?? 0)),
+    meta_title: v("meta_title", product?.meta_title ?? "") ?? "",
+    meta_description: v("meta_description", product?.meta_description ?? "") ?? "",
+    keywords: v("keywords", product?.keywords ?? "") ?? "",
+    images: (prefill?.images ?? (draft.images as UploadedImage[] | undefined) ?? product?.images ?? []).map(
+      (i: any) => ({ url: i.url, path: i.path ?? "", bytes: i.bytes ?? 0 }),
+    ),
+  };
 
   return (
-    <AppModal
-      open
-      onClose={onClose}
-      size="lg"
+    <ProductFormModal
+      role="supplier"
       title={product ? "Edit product" : "New product"}
       subtitle="অ্যাডমিন অ্যাপ্রুভ করার পরেই পরিবর্তন লাইভ হবে।"
-      footer={
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted">
-            Cancel
-          </button>
-          <button
-            form="supplier-product-form"
-            disabled={busy}
-            className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
-          >
-            {busy && <Loader2 className="h-4 w-4 animate-spin" />} Submit for approval
-          </button>
-        </div>
-      }
-    >
-      <form id="supplier-product-form" onSubmit={submit} className="space-y-3">
-        <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Product name">
-            <input value={name} onChange={(e) => setName(e.target.value)} className={inp} required />
-          </Field>
-          <Field label="SKU (optional)">
-            <input value={sku} onChange={(e) => setSku(e.target.value)} className={inp} />
-          </Field>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Supplier price (৳)" hint="আপনি প্রতি ইউনিটে যত পাবেন।">
-            <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" min={0} className={inp} required />
-          </Field>
-          <Field label="Stock">
-            <input value={stock} onChange={(e) => setStock(e.target.value)} type="number" min={0} className={inp} />
-          </Field>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Brand">
-            <select value={brandId} onChange={(e) => setBrandId(e.target.value)} className={inp}>
-              <option value="">— None —</option>
-              {brands.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Category">
-            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={inp}>
-              <option value="">— None —</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-        <Field label="Description">
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={5} className={inp} />
-        </Field>
-        <Field label="Images">
-          <ImageUploader
-            bucket="product-images"
-            folder={`suppliers/${supplierId}`}
-            value={images}
-            onChange={setImages}
-            multiple
-            maxImages={6}
-          />
-        </Field>
-      </form>
-    </AppModal>
+      submitLabel="Submit for approval"
+      imageFolder={`suppliers/${supplierId}`}
+      brands={brands}
+      categories={categories}
+      initial={initial}
+      onClose={onClose}
+      onSubmit={async (values) => {
+        await saveSupplierProduct(product?.id ?? null, {
+          name: values.name,
+          sku: values.sku || null,
+          description: values.description || null,
+          brand_id: values.brand_id || null,
+          category_id: values.category_id || null,
+          supplier_price: Number(values.price),
+          stock: Number(values.stock) || 0,
+          meta_title: values.meta_title || null,
+          meta_description: values.meta_description || null,
+          keywords: values.keywords || null,
+          images: values.images.map((i) => ({ url: i.url })),
+        });
+        toast.success(
+          product
+            ? "Edit সাবমিট হয়েছে — অ্যাডমিন অ্যাপ্রুভালের অপেক্ষায়"
+            : "প্রোডাক্ট সাবমিট হয়েছে — অ্যাপ্রুভালের অপেক্ষায়",
+        );
+        onSaved();
+      }}
+    />
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="mb-1 block text-xs font-medium">{label}</label>
-      {children}
-      {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
-    </div>
-  );
-}
