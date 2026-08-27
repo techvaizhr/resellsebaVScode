@@ -550,19 +550,12 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
                             <input
                               className={`${inp} text-center`}
                               value={it.quantity}
-                              onChange={(e) =>
-                                setItems((prev) =>
-                                  prev.map((x) =>
-                                    x === it ? { ...x, quantity: Math.max(1, Number(e.target.value) || 1) } : x,
-                                  ),
-                                )
-                              }
+                              onChange={(e) => bumpQty(it, Math.max(1, Number(e.target.value) || 1))}
                             />
                             <button
                               type="button"
-                              onClick={() =>
-                                setItems((prev) => prev.map((x) => (x === it ? { ...x, quantity: x.quantity + 1 } : x)))
-                              }
+                              onClick={() => bumpQty(it, it.quantity + 1)}
+
                               className="rounded border p-1 hover:bg-accent"
                             >
                               <Plus className="h-3 w-3" />
