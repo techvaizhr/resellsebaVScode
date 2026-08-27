@@ -152,7 +152,7 @@ export function ProductFormModal({
               </Field>
             </div>
             <Field label="Description">
-              <RichTextEditor value={v.description} onChange={(html) => set("description", html)} />
+              <RichTextEditor value={v.description} onChange={(html) => set("description", html)} uploadFolder={`${imageFolder}/descriptions`} />
             </Field>
           </div>
         </div>

@@ -37,12 +37,15 @@ export function RichTextEditor({
   value,
   onChange,
   placeholder = "Product er bistarito description likhun…",
+  uploadFolder = "descriptions",
 }: {
   value: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  uploadFolder?: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -72,7 +75,7 @@ export function RichTextEditor({
     try {
       const f = files[0];
       const compressed = await validateAndCompress(f);
-      const path = `descriptions/${crypto.randomUUID()}.webp`;
+      const path = `${uploadFolder.replace(/\/+$/, "")}/${crypto.randomUUID()}.webp`;
       const { error } = await supabase.storage
         .from("product-images")
         .upload(path, compressed.blob, { contentType: "image/webp", cacheControl: "31536000" });
