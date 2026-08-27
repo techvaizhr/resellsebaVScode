@@ -451,16 +451,14 @@ function SupplierOrdersPage() {
                   {/* Mobile card */}
                   <div className="space-y-2.5 p-3 lg:hidden">
                     <div className="flex items-start gap-2">
-                      {next && (
-                        <input
-                          type="checkbox"
-                          className="mt-1 h-4 w-4 accent-[hsl(var(--primary))]"
-                          checked={marked.includes(o.id)}
-                          onChange={(e) =>
-                            setMarked((prev) => (e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id)))
-                          }
-                        />
-                      )}
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 accent-[hsl(var(--primary))]"
+                        checked={marked.includes(o.id)}
+                        onChange={(e) =>
+                          setMarked((prev) => (e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id)))
+                        }
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-semibold">#{o.order_number}</span>
