@@ -75,6 +75,7 @@ function AuthPage() {
         if (!data.session) {
           setSentEmail(email);
         } else {
+          await ensureAccount();
           const adv = await fetchAdvancedSettings();
           if (adv.verifyEnabled && (adv.verifyEmail || adv.verifySms)) {
             // Fire the codes off, then let /verify collect them.
