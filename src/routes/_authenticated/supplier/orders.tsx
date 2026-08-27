@@ -516,7 +516,7 @@ function SupplierOrdersPage() {
                   </div>
 
                   {/* Desktop row */}
-                  <div className={`hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-start gap-2 px-4 py-3 text-sm hover:bg-muted/40 lg:grid ${marked.includes(o.id) ? "bg-primary/5" : ""}`}>
+                  <div className={`hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-center gap-2 px-4 py-3 text-sm hover:bg-muted/40 lg:grid ${marked.includes(o.id) ? "bg-primary/5" : ""}`}>
                     <div className="flex flex-col items-center gap-1.5">
                       <input
                         type="checkbox"
@@ -531,7 +531,7 @@ function SupplierOrdersPage() {
                       </button>
                     </div>
 
-                    <div className="min-w-0">
+                    <div className="min-w-0 text-center">
                       <div className="truncate text-xs font-semibold">#{o.order_number}</div>
                       <div className="text-[11px] text-muted-foreground">
                         {new Date(o.created_at).toLocaleDateString()}
@@ -539,16 +539,20 @@ function SupplierOrdersPage() {
                       <div className="text-[11px] capitalize text-muted-foreground">{o.area.replace(/_/g, " ")}</div>
                     </div>
 
-                    <OrderProductCell items={items} expanded={open} onZoom={setZoomImage} onToggle={() => toggleExpand(o.id)} />
+                    <div className="flex justify-center">
+                      <OrderProductCell items={items} expanded={open} onZoom={setZoomImage} onToggle={() => toggleExpand(o.id)} />
+                    </div>
 
-                    <div className="min-w-0">
+                    <div className="min-w-0 text-center">
                       <div className="text-sm font-semibold tabular-nums">{bdtNum(o.my_amount)}</div>
                       <div className="text-[11px] text-muted-foreground">{o.my_qty} pcs</div>
                     </div>
 
-                    <CourierCell shipment={o.shipment} />
+                    <div className="flex justify-center">
+                      <CourierCell shipment={o.shipment} />
+                    </div>
 
-                    <div className="flex flex-col items-end gap-1.5">
+                    <div className="flex flex-col items-center gap-1.5">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${supplierStatusTone(o.status)}`}>
                         {supplierStatusLabel(o.status)}
                       </span>
