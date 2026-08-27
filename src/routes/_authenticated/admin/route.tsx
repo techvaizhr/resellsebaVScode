@@ -121,6 +121,7 @@ const NAV: NavEntry[] = [
     items: [
       { label: "Supplier accounts", to: "/admin/suppliers", icon: <Truck className="h-4 w-4" /> },
       { label: "Supplier report", to: "/admin/supplier-report", icon: <Target className="h-4 w-4" /> },
+      { label: "Return handover", to: "/admin/supplier-returns", icon: <Undo2 className="h-4 w-4" /> },
       { label: "Supplier payouts", to: "/admin/supplier-payouts", icon: <Wallet className="h-4 w-4" /> },
     ],
   },
