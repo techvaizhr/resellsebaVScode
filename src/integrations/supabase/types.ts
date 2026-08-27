@@ -975,6 +975,7 @@ export type Database = {
           returned_qty: number
           sa_price: number
           sku: string | null
+          stock_held: number
           supplier_id: string | null
         }
         Insert: {
@@ -994,6 +995,7 @@ export type Database = {
           returned_qty?: number
           sa_price?: number
           sku?: string | null
+          stock_held?: number
           supplier_id?: string | null
         }
         Update: {
@@ -1013,6 +1015,7 @@ export type Database = {
           returned_qty?: number
           sa_price?: number
           sku?: string | null
+          stock_held?: number
           supplier_id?: string | null
         }
         Relationships: [
@@ -3089,6 +3092,14 @@ export type Database = {
       lp_bootstrap: { Args: { _host?: string }; Returns: Json }
       my_permissions: { Args: never; Returns: string[] }
       order_has_shipment: { Args: { _order_id: string }; Returns: boolean }
+      order_item_target_hold: {
+        Args: {
+          _qty: number
+          _returned: number
+          _status: Database["public"]["Enums"]["order_status"]
+        }
+        Returns: number
+      }
       order_kept_product_cost: { Args: { _order_id: string }; Returns: number }
       order_visible_to_me: { Args: { _order_id: string }; Returns: boolean }
       panel_bootstrap: { Args: never; Returns: Json }
@@ -3244,6 +3255,7 @@ export type Database = {
         Args: { _order: string; _status: string }
         Returns: undefined
       }
+      sync_order_item_stock: { Args: { _item_id: string }; Returns: undefined }
       sync_supplier_returns: { Args: { _order_id: string }; Returns: undefined }
       transaction_report: {
         Args: {
