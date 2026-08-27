@@ -250,10 +250,39 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
 
   const errors = { name: nameError(name), phone: phoneError(phone), address: addressError(address) };
 
+  /** Max quantity a line can reach = free catalog stock + units already held by this order line. */
+  function maxQtyFor(it: EditItem) {
+    const p = allProducts.find((x) => x.id === it.product_id);
+    if (!p) return Infinity;
+    const held = it.id ? Number(originalQty[it.id] ?? 0) : 0;
+    return Number(p.stock ?? 0) + held;
+  }
+
+  function bumpQty(target: EditItem, next: number) {
+    const max = maxQtyFor(target);
+    if (next > max) {
+      toast.error(`Only ${max} available in stock`);
+      return;
+    }
+    setItems((prev) => prev.map((x) => (x === target ? { ...x, quantity: Math.max(1, next) } : x)));
+  }
+
   function addProduct(p: any) {
+    const stock = Number(p.stock ?? 0);
+    if (stock <= 0) {
+      toast.error(`${p.name} is out of stock`);
+      return;
+    }
     setItems((prev) => {
       const hit = prev.find((x) => x.product_id === p.id);
-      if (hit) return prev.map((x) => (x === hit ? { ...x, quantity: x.quantity + 1 } : x));
+      if (hit) {
+        const held = hit.id ? Number(originalQty[hit.id] ?? 0) : 0;
+        if (hit.quantity + 1 > stock + held) {
+          toast.error(`Only ${stock + held} available in stock`);
+          return prev;
+        }
+        return prev.map((x) => (x === hit ? { ...x, quantity: x.quantity + 1 } : x));
+      }
       const sa = Number(p.reseller_price ?? 0) + Number(p.packaging_cost ?? 0);
       return [
         ...prev,
@@ -270,6 +299,7 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
       ];
     });
     setQuery("");
+
   }
 
   async function save(e: React.FormEvent) {
