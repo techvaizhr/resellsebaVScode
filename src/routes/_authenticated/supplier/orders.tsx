@@ -244,6 +244,36 @@ function SupplierOrdersPage() {
         </div>
         <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
           <select
+            value={area}
+            onChange={(e) => setArea(e.target.value)}
+            className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
+            title="Delivery area"
+          >
+            {AREA_FILTER_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <select
+            value={courier}
+            onChange={(e) => setCourier(e.target.value)}
+            className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
+            title="Courier"
+          >
+            {COURIER_FILTER_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <select
+            value={datePreset}
+            onChange={(e) => setDatePreset(e.target.value as DatePreset)}
+            className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
+            title="Date range"
+          >
+            {DATE_PRESET_OPTIONS.filter((o) => o.value !== "custom").map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <select
             value={sort}
             onChange={(e) => setSort(e.target.value as typeof sort)}
             className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
@@ -256,24 +286,23 @@ function SupplierOrdersPage() {
           </select>
           {/* Mobile: status filter sits inside the filter grid, same as admin */}
           <div className="sm:hidden">
-            <StatusTabs
+            <OrderTabs
               tabs={SUPPLIER_ORDER_TABS}
               tab={tab}
               onChange={setTab}
               count={counts}
+              highlight
               className="w-full min-w-0"
             />
           </div>
         </div>
       </div>
 
-      <StatusTabs
-        tabs={SUPPLIER_ORDER_TABS}
-        tab={tab}
-        onChange={setTab}
-        count={counts}
-        className="mb-4 hidden w-full min-w-0 sm:block"
-      />
+      {/* Desktop: status tabs below filters — identical look to admin */}
+      <div className="hidden sm:block">
+        <OrderTabs tabs={SUPPLIER_ORDER_TABS} tab={tab} onChange={setTab} count={counts} />
+      </div>
+
 
       {actionable.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
