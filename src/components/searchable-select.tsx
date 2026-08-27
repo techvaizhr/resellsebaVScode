@@ -65,10 +65,10 @@ export function SearchableSelect({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-10 w-full items-center justify-between gap-2 rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+        className="flex h-10 w-full items-center justify-between gap-2 rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary"
         title={label ?? placeholder}
       >
-        <span className={`truncate ${selected ? "" : "text-muted-foreground"}`}>
+        <span className="truncate">
           {selected ? selected.label : placeholder}
         </span>
         <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
