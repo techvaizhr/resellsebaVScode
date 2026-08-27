@@ -9,16 +9,36 @@ import { bdtNum, supplierAvailable } from "@/lib/supplier";
 
 export const Route = createFileRoute("/_authenticated/supplier/payouts")({
   component: SupplierPayoutsPage,
+  head: () => ({
+    meta: [
+      { title: "Payouts — Supplier panel" },
+      {
+        name: "description",
+        content: "Withdraw the money earned from delivered items and follow every payout request.",
+      },
+      { property: "og:title", content: "Payouts — Supplier panel" },
+      {
+        property: "og:description",
+        content: "Supplier earning, available balance and withdrawal history.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
-const inp = "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
+const inp =
+  "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
 
-const STATUS_TONE: Record<string, string> = {
-  pending: "bg-amber-500/10 text-amber-600",
-  approved: "bg-sky-500/10 text-sky-600",
-  paid: "bg-emerald-500/10 text-emerald-600",
-  rejected: "bg-destructive/10 text-destructive",
-};
+function statusStyle(s: string) {
+  return s === "paid"
+    ? "bg-success/20 text-success"
+    : s === "approved"
+      ? "bg-primary/15 text-primary"
+      : s === "rejected"
+        ? "bg-destructive/20 text-destructive"
+        : "bg-warning/20 text-warning-foreground";
+}
 
 function SupplierPayoutsPage() {
   const { data, reload } = useSupplier();
@@ -30,6 +50,7 @@ function SupplierPayoutsPage() {
   const [busy, setBusy] = useState(false);
 
   const hasAccount = Boolean(supplier.payout_method && supplier.payout_account_number);
+  const rows = data.payouts;
 
   async function request(e: React.FormEvent) {
     e.preventDefault();
@@ -59,17 +80,56 @@ function SupplierPayoutsPage() {
 
   return (
     <div>
-      <PageHeader title="Payouts" description="ডেলিভারি হওয়া আইটেমের টাকা এখান থেকে উইথড্র করুন।" />
+      <PageHeader
+        title="Payouts"
+        description="ডেলিভারি হওয়া আইটেমের টাকা এখান থেকে উইথড্র করুন।"
+      />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total earning" value={bdtNum(t.earning)} icon={<TrendingUp className="h-4 w-4" />} />
-        <StatCard label="Available" value={bdtNum(available)} hint="Ready to request" icon={<Wallet className="h-4 w-4" />} tone="violet" />
-        <StatCard label="Pending" value={bdtNum(t.pending_payout)} icon={<Clock className="h-4 w-4" />} tone="amber" />
-        <StatCard label="Paid out" value={bdtNum(t.paid)} icon={<CheckCircle2 className="h-4 w-4" />} tone="emerald" />
+        <StatCard
+          label="Total earning"
+          value={bdtNum(t.earning)}
+          icon={<TrendingUp className="h-4 w-4" />}
+        />
+        <StatCard
+          label="Available"
+          value={bdtNum(available)}
+          hint="Ready to request"
+          icon={<Wallet className="h-4 w-4" />}
+          tone="violet"
+        />
+        <StatCard
+          label="In request"
+          value={bdtNum(t.pending_payout)}
+          icon={<Clock className="h-4 w-4" />}
+          tone="amber"
+        />
+        <StatCard
+          label="Paid out"
+          value={bdtNum(t.paid)}
+          icon={<CheckCircle2 className="h-4 w-4" />}
+          tone="emerald"
+        />
+      </div>
+
+      <div className="surface-card mb-4 grid gap-2 p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Info
+          label="Method"
+          value={<span className="capitalize">{supplier.payout_method ?? "—"}</span>}
+        />
+        <Info label="Account name" value={supplier.payout_account_name ?? "—"} />
+        <Info label="Account number" value={supplier.payout_account_number ?? "—"} />
+        <Info
+          label="Bank / branch"
+          value={
+            [supplier.payout_bank_name, supplier.payout_branch].filter(Boolean).join(" · ") || "—"
+          }
+        />
       </div>
 
       <p className="mb-4 rounded-lg border bg-muted/30 px-4 py-2 text-[11px] leading-relaxed text-muted-foreground">
-        হিসাব: মোট আর্নিং ({bdtNum(t.earning)}) − পরিশোধিত ({bdtNum(t.paid)}) − অপেক্ষমান রিকোয়েস্ট ({bdtNum(t.pending_payout)}) ={" "}
+        হিসাব: মোট আর্নিং ({bdtNum(t.earning)}) − পরিশোধিত ({bdtNum(t.paid)}) − অপেক্ষমান রিকোয়েস্ট
+        ({bdtNum(t.pending_payout)}) ={" "}
         <span className="font-bold text-foreground">{bdtNum(available)}</span> উইথড্র করা যাবে।
       </p>
 
@@ -79,10 +139,26 @@ function SupplierPayoutsPage() {
         </div>
       )}
 
-      <form onSubmit={request} className="surface-card mb-6 grid gap-3 p-4 sm:p-5 md:grid-cols-[1fr_1fr_auto]">
+      <form
+        onSubmit={request}
+        className="surface-card mb-6 grid gap-3 p-4 sm:p-5 md:grid-cols-[1fr_1fr_auto]"
+      >
         <div>
           <label className="mb-1 block text-xs font-medium">Amount (৳)</label>
-          <input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" min={0} className={inp} />
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            type="number"
+            min={1}
+            max={available > 0 ? available : undefined}
+            className={inp}
+            required
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Maximum withdrawable{" "}
+            <span className="font-semibold text-foreground">{bdtNum(available)}</span>
+            {t.pending_payout > 0 && <> · in request {bdtNum(t.pending_payout)}</>}
+          </p>
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium">Note (optional)</label>
@@ -91,52 +167,101 @@ function SupplierPayoutsPage() {
         <div className="flex items-end">
           <button
             disabled={busy || available <= 0}
-            className="btn-brand inline-flex items-center gap-2 rounded-md px-5 py-2 text-sm font-medium disabled:opacity-50"
+            className="btn-brand inline-flex w-full items-center justify-center gap-2 rounded-md px-5 py-2 text-sm font-medium disabled:opacity-50"
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />} Request payout
           </button>
         </div>
       </form>
 
-      <div className="surface-card p-4">
-        <div className="mb-3 text-sm font-semibold">Payout history</div>
-        {data.payouts.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-8 text-center text-xs text-muted-foreground">
-            কোনো পেআউট রিকোয়েস্ট নেই।
+      {/* Payout history — mobile cards */}
+      <div className="space-y-2 md:hidden">
+        {rows.length === 0 ? (
+          <div className="surface-card p-8 text-center text-sm text-muted-foreground">
+            No payouts yet.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-md border">
-            <table className="w-full text-xs">
-              <thead className="bg-muted/40 text-left uppercase text-muted-foreground">
-                <tr>
-                  <th className="p-2">Date</th>
-                  <th>Amount</th>
-                  <th>Method</th>
-                  <th>Status</th>
-                  <th>Paid at</th>
-                  <th>Admin note</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.payouts.map((p) => (
-                  <tr key={p.id} className="border-t">
-                    <td className="p-2 whitespace-nowrap">{new Date(p.created_at).toLocaleDateString()}</td>
-                    <td className="font-semibold tabular-nums">{bdtNum(Number(p.amount))}</td>
-                    <td className="capitalize text-muted-foreground">{p.method ?? "—"}</td>
-                    <td>
-                      <span className={"rounded-full px-2 py-0.5 text-[11px] font-medium capitalize " + (STATUS_TONE[p.status] ?? "bg-muted")}>
-                        {p.status}
-                      </span>
-                    </td>
-                    <td className="text-muted-foreground">{p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "—"}</td>
-                    <td className="text-muted-foreground">{p.admin_note ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          rows.map((p) => (
+            <div key={p.id} className="surface-card p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-semibold tabular-nums">{bdtNum(Number(p.amount))}</div>
+                  <div className="text-[11px] capitalize text-muted-foreground">
+                    {p.method ?? "—"} · {new Date(p.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+                <span
+                  className={
+                    "rounded-full px-2 py-0.5 text-[10px] capitalize " + statusStyle(p.status)
+                  }
+                >
+                  {p.status}
+                </span>
+              </div>
+              {p.admin_note && (
+                <p className="mt-2 rounded-md border border-dashed p-2 text-[11px] text-muted-foreground">
+                  <span className="font-medium text-foreground">Admin note:</span> {p.admin_note}
+                </p>
+              )}
+            </div>
+          ))
         )}
       </div>
+
+      <div className="surface-card hidden overflow-x-auto md:block">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+            <tr>
+              <th className="p-3">Date</th>
+              <th className="p-3">Amount</th>
+              <th className="p-3">Method</th>
+              <th className="p-3">Status</th>
+              <th className="p-3">Paid at</th>
+              <th className="p-3">Admin note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((p) => (
+              <tr key={p.id} className="border-t">
+                <td className="p-3">{new Date(p.created_at).toLocaleDateString()}</td>
+                <td className="p-3 font-medium tabular-nums">{bdtNum(Number(p.amount))}</td>
+                <td className="p-3 capitalize">{p.method ?? "—"}</td>
+                <td className="p-3">
+                  <span
+                    className={
+                      "rounded-full px-2 py-0.5 text-[10px] capitalize " + statusStyle(p.status)
+                    }
+                  >
+                    {p.status}
+                  </span>
+                </td>
+                <td className="p-3 text-xs text-muted-foreground">
+                  {p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "—"}
+                </td>
+                <td className="p-3 text-xs text-muted-foreground">
+                  {p.admin_note || p.reference || "—"}
+                </td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                  No payouts yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function Info({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-md border bg-muted/30 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-sm">{value}</div>
     </div>
   );
 }
