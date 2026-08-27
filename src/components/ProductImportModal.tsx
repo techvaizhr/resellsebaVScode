@@ -50,6 +50,9 @@ export function ProductImportModal({ open, onClose, onSaved }: { open: boolean; 
 
       setStep("Saving product…");
       const price = data.price ?? 0;
+      // Panel/own-catalog imports carry the real admin + buying prices; marketplace links don't.
+      const adminPrice = data.adminPrice ?? price;
+      const buyingPrice = data.buyingPrice ?? adminPrice;
       const [{ data: brandRow }, { data: catRow }] = await Promise.all([
         data.brand
           ? supabase.from("brands").select("id").ilike("name", data.brand).maybeSingle()
