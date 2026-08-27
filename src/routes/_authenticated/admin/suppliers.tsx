@@ -141,6 +141,8 @@ function AdminSuppliersPage() {
     [items],
   );
 
+  const paged = usePaginated(filtered, page, perPage);
+
   async function setStatus(s: AdminSupplierRow, status: string) {
     if (status === s.status) return;
     setBusyId(s.id);
@@ -163,8 +165,8 @@ function AdminSuppliersPage() {
       await resetPasswordFn({ data: { userId: s.user_id, password } });
       toast.success(`Password updated for ${s.display_name}`);
       setResetFor(null);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Failed to reset password");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to reset password");
     }
   }
 
@@ -179,8 +181,8 @@ function AdminSuppliersPage() {
         returnTo: window.location.pathname + window.location.search,
       });
       nav({ to: "/supplier", replace: true });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Could not log in as supplier");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not log in as supplier");
     } finally {
       setBusyId(null);
     }
@@ -241,7 +243,7 @@ function AdminSuppliersPage() {
         <EmptyState title="Nothing here" description="No suppliers match this filter." />
       ) : (
         <div className="space-y-3">
-          {usePaginated(filtered, page, perPage).map((s) => {
+          {paged.map((s) => {
             const payable = Math.max(s.earning - s.paid - s.pending_payout, 0);
             const phone = (s.contact_phone ?? "").trim();
             const waPhone = (s.whatsapp || phone).replace(/[^0-9]/g, "").replace(/^0/, "880");
