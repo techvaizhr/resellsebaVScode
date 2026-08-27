@@ -88,6 +88,22 @@ function SupplierReturnsPage() {
       />
 
 
+      {sel.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
+          <span className="text-xs font-semibold">{sel.length} selected</span>
+          <button
+            onClick={() => receive(sel)}
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+          >
+            <PackageCheck className="h-3.5 w-3.5" /> Receive returns
+          </button>
+          <button onClick={() => setSel([])} className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent">
+            Clear
+          </button>
+        </div>
+      )}
+
       <div className="surface-card p-4">
         {rows.length === 0 ? (
           <div className="rounded-lg border border-dashed p-8 text-center text-xs text-muted-foreground">
@@ -98,37 +114,99 @@ function SupplierReturnsPage() {
             <table className="w-full text-xs">
               <thead className="bg-muted/40 text-left uppercase text-muted-foreground">
                 <tr>
-                  <th className="p-2">Date</th>
+                  <th className="p-2 w-8">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      disabled={selectable.length === 0}
+                      onChange={(e) => setSel(e.target.checked ? selectable.map((r) => r.id) : [])}
+                      className="h-3.5 w-3.5 align-middle"
+                    />
+                  </th>
+                  <th className="p-2">Updated</th>
                   <th>Order</th>
                   <th>Product</th>
                   <th>Qty</th>
                   <th>Value</th>
                   <th>Order status</th>
                   <th>Handover</th>
+                  <th className="p-2 text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id} className="border-t">
-                    <td className="p-2 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
-                    <td className="font-medium">#{r.order_number}</td>
-                    <td className="text-muted-foreground">{r.product_name}</td>
-                    <td className="tabular-nums">{r.quantity}</td>
-                    <td className="font-semibold tabular-nums">{bdtNum(Number(r.quantity) * Number(r.unit_price))}</td>
-                    <td className="capitalize text-muted-foreground">{orderStatusLabel(r.order_status)}</td>
-                    <td>
-                      {r.status === "handed_over" ? (
-                        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
-                          Handed over{r.handed_over_at ? ` · ${new Date(r.handed_over_at).toLocaleDateString()}` : ""}
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
-                          Waiting
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {rows.map((r) => {
+                  const done = r.status === "handed_over";
+                  return (
+                    <tr key={r.id} className="border-t">
+                      <td className="p-2">
+                        {!done && (
+                          <input
+                            type="checkbox"
+                            checked={sel.includes(r.id)}
+                            onChange={(e) =>
+                              setSel((p) => (e.target.checked ? [...p, r.id] : p.filter((x) => x !== r.id)))
+                            }
+                            className="h-3.5 w-3.5 align-middle"
+                          />
+                        )}
+                      </td>
+                      <td className="p-2 whitespace-nowrap">
+                        {new Date(r.updated_at ?? r.created_at).toLocaleDateString()}
+                        <div className="text-[10px] text-muted-foreground">
+                          {new Date(r.updated_at ?? r.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                      </td>
+                      <td className="font-medium">#{r.order_number}</td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          {r.product_image ? (
+                            <img
+                              src={r.product_image}
+                              alt={r.product_name}
+                              loading="lazy"
+                              className="h-9 w-9 shrink-0 rounded-md border object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-muted/40">
+                              <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                          <span className="text-muted-foreground">{r.product_name}</span>
+                        </div>
+                      </td>
+                      <td className="tabular-nums">{r.quantity}</td>
+                      <td className="font-semibold tabular-nums">
+                        {bdtNum(Number(r.quantity) * Number(r.unit_price))}
+                      </td>
+                      <td className="capitalize text-muted-foreground">{orderStatusLabel(r.order_status)}</td>
+                      <td>
+                        {done ? (
+                          <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+                            Received{r.handed_over_at ? ` · ${new Date(r.handed_over_at).toLocaleDateString()}` : ""}
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+                            Waiting
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-2 text-right">
+                        {!done && (
+                          <button
+                            onClick={() => receive([r.id])}
+                            disabled={busy}
+                            className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white disabled:opacity-50"
+                          >
+                            <PackageCheck className="h-3 w-3" /> Receive
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
