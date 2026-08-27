@@ -64,17 +64,21 @@ function EditProduct() {
   const [keywords, setKeywords] = useState("");
   const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
   const [cats, setCats] = useState<{ id: string; name: string }[]>([]);
+  const [suppliers, setSuppliers] = useState<{ id: string; display_name: string; code: string }[]>([]);
+  const [supplierId, setSupplierId] = useState("");
 
   useEffect(() => {
     (async () => {
-      const [{ data: p }, { data: bs }, { data: cs }, { data: imgs }] = await Promise.all([
+      const [{ data: p }, { data: bs }, { data: cs }, { data: imgs }, { data: sup }] = await Promise.all([
         supabase.from("products").select("*").eq("id", id).maybeSingle(),
         supabase.from("brands").select("id,name").order("name"),
         supabase.from("categories").select("id,name").order("name"),
         supabase.from("product_images").select("url,sort_order").eq("product_id", id).order("sort_order"),
+        supabase.from("suppliers").select("id,display_name,code").eq("status", "active").order("display_name"),
       ]);
       setBrands(bs ?? []);
       setCats(cs ?? []);
+      setSuppliers(sup ?? []);
       if (!p) {
         toast.error("Product not found");
         nav({ to: "/admin/products" });
@@ -88,7 +92,9 @@ function EditProduct() {
       setDescription(p.description ?? "");
       setBrandId(p.brand_id ?? "");
       setCategoryId(p.category_id ?? "");
+      setSupplierId(anyP.supplier_id ?? "");
       setBuying(String(p.buying_price ?? 0));
+
       setResellerPrice(String(anyP.reseller_price ?? p.buying_price ?? 0));
       setPackaging(String(p.packaging_cost ?? 0));
       setDeliveryMode(((p as any).delivery_mode ?? "global") as ProductDeliveryMode);
