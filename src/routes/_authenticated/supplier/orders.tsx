@@ -256,12 +256,21 @@ function SupplierOrdersPage() {
     } catch {
       /* branding is optional on the label */
     }
+    const maskPhone = (raw: string) => {
+      if (!raw) return "";
+      if (raw.length <= 4) return "****";
+      return raw.slice(0, 3) + "*".repeat(Math.max(raw.length - 5, 4)) + raw.slice(-2);
+    };
     const docs: LabelDoc[] = markedRows.map((o) => ({
       orderNumber: o.order_number,
       storeName: siteName,
       storeLogo: null,
       area: o.area,
-      customer: null, // suppliers never see customer information
+      customer: {
+        name: o.customer_name,
+        phone: maskPhone(o.customer_phone),
+        address: o.address_line,
+      },
       items: o.items.map((it) => ({ name: it.product_name, qty: it.quantity })),
       courier: {
         provider: o.shipment?.provider ?? null,
