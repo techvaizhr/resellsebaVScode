@@ -368,57 +368,58 @@ function SupplierOrdersPage() {
         </div>
       </div>
 
+      {marked.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
+          <span className="mr-2 text-sm font-medium">{marked.length} marked</span>
+          <button
+            type="button"
+            onClick={() =>
+              setMarked(marked.length === paged.length ? [] : paged.map((x) => x.id))
+            }
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent"
+            title={marked.length === paged.length ? "Deselect all" : "Select all on this page"}
+          >
+            <CheckSquare className="h-3.5 w-3.5" />
+            {marked.length === paged.length ? "Unselect all" : "Select all"}
+          </button>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <button
+              onClick={printMarked}
+              className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent"
+            >
+              <Printer className="h-3.5 w-3.5" /> Print Labels
+            </button>
+            <button
+              onClick={bookMarked}
+              disabled={unbookedMarked.length === 0}
+              className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Truck className="h-3.5 w-3.5" /> Book Courier {unbookedMarked.length > 0 ? `(${unbookedMarked.length})` : ""}
+            </button>
+            {bulkNext && (
+              <button
+                disabled={busy}
+                onClick={() => askStatus(marked, bulkNext)}
+                className="btn-brand inline-flex h-9 items-center gap-2 rounded-md px-3 text-xs font-semibold disabled:opacity-50"
+              >
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
+                {marked.length} → {supplierStatusLabel(bulkNext)}
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setMarked([])}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* Desktop: status tabs below filters — identical look to admin */}
       <div className="hidden sm:block">
         <OrderTabs tabs={SUPPLIER_ORDER_TABS} tab={tab} onChange={setTab} count={counts} />
       </div>
-
-
-      {paged.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
-          <button
-            type="button"
-            onClick={() =>
-              setMarked((prev) => (prev.length === paged.length ? [] : paged.map((o) => o.id)))
-            }
-            className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
-          >
-            <CheckSquare className="h-3.5 w-3.5" />
-            {marked.length === paged.length && marked.length > 0 ? "Clear selection" : "Select page"}
-          </button>
-          <span className="text-sm font-medium">{marked.length} marked</span>
-
-          {marked.length > 0 && (
-            <div className="ml-auto flex flex-wrap items-center gap-2">
-              <button
-                onClick={printMarked}
-                className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
-              >
-                <Printer className="h-3.5 w-3.5" />
-                Print labels
-              </button>
-              <button
-                onClick={bookMarked}
-                disabled={unbookedMarked.length === 0}
-                className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
-              >
-                <Truck className="h-3.5 w-3.5" />
-                Book courier {unbookedMarked.length > 0 ? `(${unbookedMarked.length})` : ""}
-              </button>
-              {bulkNext && (
-                <button
-                  disabled={busy}
-                  onClick={() => askStatus(marked, bulkNext)}
-                  className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-xs font-semibold disabled:opacity-50"
-                >
-                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
-                  {marked.length} → {supplierStatusLabel(bulkNext)}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
 
       {filtered.length === 0 ? (
         <EmptyState title="No orders" description="এই ট্যাবে কোনো অর্ডার নেই।" />
