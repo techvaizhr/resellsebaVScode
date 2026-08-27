@@ -171,6 +171,8 @@ function EditProduct() {
           supplier_id: supplierId || null,
           buying_price: Number(buying),
 
+          supplier_price: Number(buying),
+
           reseller_price: Number(resellerPrice),
           packaging_cost: Number(packaging),
           delivery_mode: deliveryMode,
