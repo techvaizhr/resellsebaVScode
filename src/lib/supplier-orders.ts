@@ -123,7 +123,6 @@ export function supplierNextStatus(status: string): string | null {
 /** Supplier flow tabs — same keys/colours as the admin order tabs, minus the admin-only ones. */
 export const SUPPLIER_ORDER_TABS: { key: OrderTabKey; label: string; statuses: string[] }[] = [
   { key: "all", label: "All Orders", statuses: [] },
-  { key: "new", label: "Pending", statuses: ["pending", "forwarded"] },
   { key: "confirmed", label: "Confirmed", statuses: ["confirmed"] },
   { key: "packaging", label: "Packaging", statuses: ["packaging"] },
   { key: "handover", label: "Courier Handover", statuses: ["ready_to_ship"] },
