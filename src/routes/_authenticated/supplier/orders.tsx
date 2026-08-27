@@ -385,14 +385,14 @@ function SupplierOrdersPage() {
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <button
               onClick={printMarked}
-              className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 text-xs font-medium text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
             >
               <Printer className="h-3.5 w-3.5" /> Print Labels
             </button>
             <button
               onClick={bookMarked}
               disabled={unbookedMarked.length === 0}
-              className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-violet-500/40 bg-violet-500/10 px-3 text-xs font-medium text-violet-600 hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50 dark:text-violet-400"
             >
               <Truck className="h-3.5 w-3.5" /> Book Courier {unbookedMarked.length > 0 ? `(${unbookedMarked.length})` : ""}
             </button>
@@ -400,7 +400,7 @@ function SupplierOrdersPage() {
               <button
                 disabled={busy}
                 onClick={() => askStatus(marked, bulkNext)}
-                className="btn-brand inline-flex h-9 items-center gap-2 rounded-md px-3 text-xs font-semibold disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-2 rounded-md border border-blue-500/40 bg-blue-500/10 px-3 text-xs font-semibold text-blue-600 hover:bg-blue-500/20 disabled:opacity-50 dark:text-blue-400"
               >
                 {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
                 {marked.length} → {supplierStatusLabel(bulkNext)}
