@@ -1498,6 +1498,9 @@ export type Database = {
       }
       products: {
         Row: {
+          approval_note: string | null
+          approval_status: string
+          approved_at: string | null
           brand_id: string | null
           buying_price: number
           category_id: string | null
@@ -1517,12 +1520,14 @@ export type Database = {
           name: string
           og_image_url: string | null
           packaging_cost: number
+          pending_changes: Json | null
           product_code: string
           reseller_price: number
           short_description: string | null
           sku: string | null
           slug: string
           stock: number
+          submitted_by: string | null
           suggested_price: number
           supplier_id: string | null
           supplier_price: number
@@ -1530,6 +1535,9 @@ export type Database = {
           weight_grams: number | null
         }
         Insert: {
+          approval_note?: string | null
+          approval_status?: string
+          approved_at?: string | null
           brand_id?: string | null
           buying_price?: number
           category_id?: string | null
@@ -1549,12 +1557,14 @@ export type Database = {
           name: string
           og_image_url?: string | null
           packaging_cost?: number
+          pending_changes?: Json | null
           product_code?: string
           reseller_price?: number
           short_description?: string | null
           sku?: string | null
           slug: string
           stock?: number
+          submitted_by?: string | null
           suggested_price?: number
           supplier_id?: string | null
           supplier_price?: number
@@ -1562,6 +1572,9 @@ export type Database = {
           weight_grams?: number | null
         }
         Update: {
+          approval_note?: string | null
+          approval_status?: string
+          approved_at?: string | null
           brand_id?: string | null
           buying_price?: number
           category_id?: string | null
@@ -1581,12 +1594,14 @@ export type Database = {
           name?: string
           og_image_url?: string | null
           packaging_cost?: number
+          pending_changes?: Json | null
           product_code?: string
           reseller_price?: number
           short_description?: string | null
           sku?: string | null
           slug?: string
           stock?: number
+          submitted_by?: string | null
           suggested_price?: number
           supplier_id?: string | null
           supplier_price?: number
@@ -2826,9 +2841,17 @@ export type Database = {
           reseller_id: string
         }[]
       }
+      admin_review_product: {
+        Args: { _approve: boolean; _id: string; _note?: string }
+        Returns: Json
+      }
       admin_set_phone_verified: {
         Args: { _user_id: string; _verified?: boolean }
         Returns: string
+      }
+      admin_set_product_supplier: {
+        Args: { _id: string; _supplier: string }
+        Returns: Json
       }
       admin_set_user_password: {
         Args: { _password: string; _user_id: string }
@@ -2837,6 +2860,10 @@ export type Database = {
       admin_supplier_overview: {
         Args: { _from?: string; _to?: string }
         Returns: Json
+      }
+      apply_product_patch: {
+        Args: { _id: string; _patch: Json }
+        Returns: undefined
       }
       assert_admin_permission: {
         Args: { _permissions: string[] }
@@ -3065,6 +3092,7 @@ export type Database = {
       order_kept_product_cost: { Args: { _order_id: string }; Returns: number }
       order_visible_to_me: { Args: { _order_id: string }; Returns: boolean }
       panel_bootstrap: { Args: never; Returns: Json }
+      product_slugify: { Args: { _name: string }; Returns: string }
       purge_store_visits: { Args: never; Returns: number }
       recalc_order_packaging: {
         Args: { _order_id: string }
@@ -3186,6 +3214,7 @@ export type Database = {
         }
         Returns: number
       }
+      supplier_products: { Args: never; Returns: Json }
       supplier_report: {
         Args: { _from?: string; _supplier?: string; _to?: string }
         Returns: Json
@@ -3197,6 +3226,10 @@ export type Database = {
           _status: Database["public"]["Enums"]["order_status"]
         }
         Returns: number
+      }
+      supplier_save_product: {
+        Args: { _id: string; _payload: Json }
+        Returns: Json
       }
       sync_supplier_returns: { Args: { _order_id: string }; Returns: undefined }
       transaction_report: {
