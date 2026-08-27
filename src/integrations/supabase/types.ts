@@ -2842,6 +2842,7 @@ export type Database = {
         Args: { _permissions: string[] }
         Returns: undefined
       }
+      bootstrap_current_user: { Args: never; Returns: string }
       calculate_delivery_charge: {
         Args: { _area: string; _product_id: string }
         Returns: number
