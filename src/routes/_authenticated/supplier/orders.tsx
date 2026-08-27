@@ -10,7 +10,7 @@ import {
   Truck,
 } from "lucide-react";
 import { toast } from "sonner";
-import { PageHeader, StatCard, EmptyState } from "@/components/ui-kit";
+import { PageHeader, EmptyState } from "@/components/ui-kit";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { ShipmentBookingModal } from "@/components/ShipmentBookingModal";
 import { CourierLogo, courierLabel } from "@/components/courier-brand";
@@ -285,7 +285,6 @@ function SupplierOrdersPage() {
       <PageHeader
         title="Orders"
         className="flex-row items-center justify-between"
-        description="আপনার প্রোডাক্ট আছে এমন অর্ডার — শুধু নিজের আইটেম ও নিজের হিসাব।"
         actions={
           <button
             onClick={() => void load()}
@@ -295,12 +294,6 @@ function SupplierOrdersPage() {
           </button>
         }
       />
-
-      <div className="mb-4 grid gap-4 sm:grid-cols-3">
-        <StatCard label="Total orders" value={String(totals.orders)} tone="primary" />
-        <StatCard label="My items" value={String(totals.qty)} tone="amber" />
-        <StatCard label="My value" value={bdtNum(totals.value)} tone="emerald" />
-      </div>
 
       <div className="mb-4 space-y-2">
         <div className="flex items-center gap-2">
@@ -375,57 +368,58 @@ function SupplierOrdersPage() {
         </div>
       </div>
 
+      {marked.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
+          <span className="mr-2 text-sm font-medium">{marked.length} marked</span>
+          <button
+            type="button"
+            onClick={() =>
+              setMarked(marked.length === paged.length ? [] : paged.map((x) => x.id))
+            }
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent"
+            title={marked.length === paged.length ? "Deselect all" : "Select all on this page"}
+          >
+            <CheckSquare className="h-3.5 w-3.5" />
+            {marked.length === paged.length ? "Unselect all" : "Select all"}
+          </button>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <button
+              onClick={printMarked}
+              className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent"
+            >
+              <Printer className="h-3.5 w-3.5" /> Print Labels
+            </button>
+            <button
+              onClick={bookMarked}
+              disabled={unbookedMarked.length === 0}
+              className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Truck className="h-3.5 w-3.5" /> Book Courier {unbookedMarked.length > 0 ? `(${unbookedMarked.length})` : ""}
+            </button>
+            {bulkNext && (
+              <button
+                disabled={busy}
+                onClick={() => askStatus(marked, bulkNext)}
+                className="btn-brand inline-flex h-9 items-center gap-2 rounded-md px-3 text-xs font-semibold disabled:opacity-50"
+              >
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
+                {marked.length} → {supplierStatusLabel(bulkNext)}
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setMarked([])}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* Desktop: status tabs below filters — identical look to admin */}
       <div className="hidden sm:block">
         <OrderTabs tabs={SUPPLIER_ORDER_TABS} tab={tab} onChange={setTab} count={counts} />
       </div>
-
-
-      {paged.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
-          <button
-            type="button"
-            onClick={() =>
-              setMarked((prev) => (prev.length === paged.length ? [] : paged.map((o) => o.id)))
-            }
-            className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
-          >
-            <CheckSquare className="h-3.5 w-3.5" />
-            {marked.length === paged.length && marked.length > 0 ? "Clear selection" : "Select page"}
-          </button>
-          <span className="text-sm font-medium">{marked.length} marked</span>
-
-          {marked.length > 0 && (
-            <div className="ml-auto flex flex-wrap items-center gap-2">
-              <button
-                onClick={printMarked}
-                className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
-              >
-                <Printer className="h-3.5 w-3.5" />
-                Print labels
-              </button>
-              <button
-                onClick={bookMarked}
-                disabled={unbookedMarked.length === 0}
-                className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
-              >
-                <Truck className="h-3.5 w-3.5" />
-                Book courier {unbookedMarked.length > 0 ? `(${unbookedMarked.length})` : ""}
-              </button>
-              {bulkNext && (
-                <button
-                  disabled={busy}
-                  onClick={() => askStatus(marked, bulkNext)}
-                  className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-xs font-semibold disabled:opacity-50"
-                >
-                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackageCheck className="h-3.5 w-3.5" />}
-                  {marked.length} → {supplierStatusLabel(bulkNext)}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
 
       {filtered.length === 0 ? (
         <EmptyState title="No orders" description="এই ট্যাবে কোনো অর্ডার নেই।" />
@@ -434,7 +428,14 @@ function SupplierOrdersPage() {
           <div className="surface-card overflow-hidden">
             {/* Desktop header */}
             <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] gap-2 rounded-lg border bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground lg:grid">
-              <div className="flex justify-center" />
+              <div className="flex justify-center">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-[hsl(var(--primary))]"
+                  checked={marked.length > 0 && marked.length === paged.length}
+                  onChange={(e) => setMarked(e.target.checked ? paged.map((x) => x.id) : [])}
+                />
+              </div>
               <div className="text-center">Order</div>
               <div className="text-center">Products</div>
               <div className="text-center">My value</div>
@@ -506,7 +507,7 @@ function SupplierOrdersPage() {
                   </div>
 
                   {/* Desktop row */}
-                  <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-start gap-2 px-4 py-3 text-sm hover:bg-muted/40 lg:grid">
+                  <div className={`hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-start gap-2 px-4 py-3 text-sm hover:bg-muted/40 lg:grid ${marked.includes(o.id) ? "bg-primary/5" : ""}`}>
                     <div className="flex flex-col items-center gap-1.5">
                       <input
                         type="checkbox"
