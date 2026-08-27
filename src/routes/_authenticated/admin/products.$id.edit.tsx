@@ -168,7 +168,9 @@ function EditProduct() {
           description: description || null,
           brand_id: brandId || null,
           category_id: categoryId || null,
+          supplier_id: supplierId || null,
           buying_price: Number(buying),
+
           reseller_price: Number(resellerPrice),
           packaging_cost: Number(packaging),
           delivery_mode: deliveryMode,
