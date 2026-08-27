@@ -170,7 +170,7 @@ function SupplierOrdersPage() {
       />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
-        <StatCard label="Total orders" value={String(totals.orders)} tone="indigo" />
+        <StatCard label="Total orders" value={String(totals.orders)} tone="primary" />
         <StatCard label="My items" value={String(totals.qty)} tone="amber" />
         <StatCard label="My value" value={bdtNum(totals.value)} tone="emerald" />
       </div>
@@ -371,10 +371,11 @@ function SupplierOrdersPage() {
 
       {confirm?.open && (
         <ConfirmModal
-          open
+          isOpen
+          variant="info"
           title={confirm.title}
           description={confirm.description}
-          confirmLabel="Confirm"
+          confirmText="Confirm"
           onConfirm={confirm.onConfirm}
           onClose={() => setConfirm(null)}
         />
