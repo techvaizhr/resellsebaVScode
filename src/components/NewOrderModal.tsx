@@ -507,6 +507,10 @@ export function NewOrderModal({
                                     <span className="text-[10px] text-muted-foreground">
                                       ৳{Number(price).toFixed(0)} · Delivery: ৳{dc.toFixed(0)}
                                     </span>
+                                    <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black uppercase ${Number(p.stock ?? 0) <= 0 ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-600"}`}>
+                                      {Number(p.stock ?? 0) <= 0 ? "Out of stock" : `Stock ${Number(p.stock ?? 0)}`}
+                                    </span>
+
                                   </div>
                                 </div>
                                 <div className={`shrink-0 rounded-full p-1.5 transition-all ${inCart ? 'bg-primary text-primary-foreground scale-110' : 'bg-accent hover:bg-primary/20 hover:text-primary'}`}>
