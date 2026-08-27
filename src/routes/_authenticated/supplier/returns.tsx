@@ -46,24 +46,24 @@ function SupplierReturnsPage() {
         <StatCard label="Handed over" value={bdtNum(sum(handed))} hint={`${handed.length} items`} tone="emerald" />
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-2">
-        {([
-          ["all", `All (${data.returns.length})`],
-          ["pending_handover", `Waiting (${pending.length})`],
-          ["handed_over", `Handed over (${handed.length})`],
-        ] as const).map(([k, label]) => (
-          <button
-            key={k}
-            onClick={() => setTab(k)}
-            className={
-              "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors " +
-              (tab === k ? "border-transparent bg-primary text-primary-foreground" : "hover:bg-muted")
-            }
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <StatusTabs
+        tabs={[
+          { key: "all", label: "All" },
+          { key: "pending_handover", label: "Waiting" },
+          { key: "handed_over", label: "Handed over" },
+        ]}
+        tab={tab}
+        onChange={(k) => setTab(k as typeof tab)}
+        count={(k) =>
+          k === "all"
+            ? data.returns.length
+            : k === "pending_handover"
+              ? pending.length
+              : handed.length
+        }
+        className="mb-3 w-full min-w-0"
+      />
+
 
       <div className="surface-card p-4">
         {rows.length === 0 ? (
