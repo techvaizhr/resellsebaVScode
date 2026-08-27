@@ -2,10 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
-  Copy,
   Loader2,
   PackageCheck,
-  Phone,
   RefreshCw,
   Truck,
 } from "lucide-react";
@@ -134,11 +132,7 @@ function SupplierOrdersPage() {
       if (toTs != null && ts > toTs) return false;
       if (!term) return true;
       if (searchMode === "product") return o.items.some((i) => i.product_name.toLowerCase().includes(term));
-      return (
-        o.order_number.toLowerCase().includes(term) ||
-        o.customer_name.toLowerCase().includes(term) ||
-        o.customer_phone.includes(term)
-      );
+      return o.order_number.toLowerCase().includes(term);
     });
     return [...list].sort((a, b) => {
       if (sort === "high") return b.my_amount - a.my_amount;
@@ -363,10 +357,9 @@ function SupplierOrdersPage() {
         <>
           <div className="surface-card overflow-hidden">
             {/* Desktop header */}
-            <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(140px,1fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] gap-2 border-b bg-muted px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
+            <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] gap-2 border-b bg-muted px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
               <span />
               <span>Order</span>
-              <span>Customer</span>
               <span>Products</span>
               <span>My value</span>
               <span>Courier</span>
@@ -408,27 +401,8 @@ function SupplierOrdersPage() {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/30 p-2">
+                    <div className="grid grid-cols-1 gap-2 rounded-lg bg-muted/30 p-2">
                       <div className="min-w-0 space-y-0.5">
-                        <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Customer</div>
-                        <div className="flex min-w-0 items-center gap-1.5 text-xs font-medium">
-                          <span className="truncate">{o.customer_name}</span>
-                          <a href={`tel:${o.customer_phone}`} className="shrink-0 text-primary">
-                            <Phone className="h-3.5 w-3.5" />
-                          </a>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(o.customer_phone);
-                              toast.success("Copied");
-                            }}
-                            className="shrink-0 text-muted-foreground hover:text-foreground"
-                          >
-                            <Copy className="h-3 w-3" />
-                          </button>
-                        </div>
-                        <div className="text-[11px] tabular-nums text-muted-foreground">{o.customer_phone}</div>
-                      </div>
-                      <div className="min-w-0 space-y-0.5 border-l pl-2">
                         <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">My value</div>
                         <div className="text-sm font-semibold tabular-nums">{bdtNum(o.my_amount)}</div>
                         <div className="text-[11px] text-muted-foreground">{o.my_qty} pcs</div>
@@ -458,7 +432,7 @@ function SupplierOrdersPage() {
                   </div>
 
                   {/* Desktop row */}
-                  <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(140px,1fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-start gap-2 px-4 py-3 text-sm hover:bg-muted/40 lg:grid">
+                  <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-start gap-2 px-4 py-3 text-sm hover:bg-muted/40 lg:grid">
                     <div className="flex flex-col items-center gap-1.5">
                       {next && (
                         <input
@@ -481,20 +455,6 @@ function SupplierOrdersPage() {
                         {new Date(o.created_at).toLocaleDateString()}
                       </div>
                       <div className="text-[11px] capitalize text-muted-foreground">{o.area.replace(/_/g, " ")}</div>
-                    </div>
-
-                    <div className="min-w-0">
-                      <div className="truncate text-xs font-medium">{o.customer_name}</div>
-                      <div className="flex items-center gap-1 text-[11px] tabular-nums text-muted-foreground">
-                        <span className="truncate">{o.customer_phone}</span>
-                        <a href={`tel:${o.customer_phone}`} className="shrink-0 text-primary">
-                          <Phone className="h-3 w-3" />
-                        </a>
-                      </div>
-                      <div className="truncate text-[11px] text-muted-foreground">
-                        {o.address_line}
-                        {o.city ? `, ${o.city}` : ""}
-                      </div>
                     </div>
 
                     <OrderProductCell items={items} expanded={open} onZoom={setZoomImage} onToggle={() => toggleExpand(o.id)} />
