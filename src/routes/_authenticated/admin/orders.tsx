@@ -46,6 +46,7 @@ import { useCan } from "@/lib/use-auth";
 import { NewOrderModal } from "@/components/NewOrderModal";
 import { OrderEditModal } from "@/components/OrderEditModal";
 import { type StripItem, ImageLightbox, OrderItemsList, OrderProductCell } from "@/components/order-items-strip";
+import { orderSupplierTint } from "@/lib/supplier-colors";
 
 import { OrderSettleModal } from "@/components/OrderSettleModal";
 import { ShipmentBookingModal } from "@/components/ShipmentBookingModal";
@@ -748,9 +749,13 @@ function AdminOrdersPage() {
                </div>
                <div className="text-center">Order</div> <div className="text-center">Reseller</div> <div className="text-center">Products</div> <div className="text-center">Customer</div> <div className="text-center">Reseller total</div> <div className="text-center">Admin total</div> <div className="text-center">Status</div> <div className="text-center">Last update</div>
             </div>
-            {paged.map((o) => (
+            {paged.map((o) => {
+              const tint = orderSupplierTint((itemsByOrder.get(o.id) ?? []).map((it) => it.supplier_id));
+              return (
               <div
                 key={o.id}
+                style={tint?.style}
+                title={tint ? (tint.mixed ? "Multiple suppliers" : "Supplier order") : undefined}
                 className={`overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:shadow-md hover:border-primary/40 ${marked.includes(o.id) ? "border-primary ring-1 ring-primary/30" : ""}`}
               >
                 {/* Mobile / tablet card */}
@@ -1191,7 +1196,8 @@ function AdminOrdersPage() {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
         <Pagination

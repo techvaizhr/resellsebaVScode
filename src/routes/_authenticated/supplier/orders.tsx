@@ -35,6 +35,8 @@ import {
   type StripItem,
 } from "@/components/order-items-strip";
 import { bdtNum } from "@/lib/supplier";
+import { useSupplier } from "@/components/supplier-context";
+import { orderSupplierTint } from "@/lib/supplier-colors";
 import { printLabelDocs, type LabelDoc } from "@/lib/labels";
 import { getGlobalSettings } from "@/lib/app-data";
 import {
@@ -65,6 +67,11 @@ export const Route = createFileRoute("/_authenticated/supplier/orders")({
 });
 
 function SupplierOrdersPage() {
+  const { data: supplierData } = useSupplier();
+  const myTint = useMemo(
+    () => orderSupplierTint([supplierData.supplier?.id ?? null]),
+    [supplierData.supplier?.id],
+  );
   const [rows, setRows] = useState<SupplierOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -457,7 +464,7 @@ function SupplierOrdersPage() {
               const open = expanded.includes(o.id);
               const items = stripItems(o);
               return (
-                <div key={o.id} className="border-b last:border-b-0">
+                <div key={o.id} style={myTint?.style} className="border-b last:border-b-0">
                   {/* Mobile card */}
                   <div className="space-y-2.5 p-3 lg:hidden">
                     <div className="flex items-start gap-2">
