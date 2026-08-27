@@ -37,12 +37,15 @@ export function RichTextEditor({
   value,
   onChange,
   placeholder = "Product er bistarito description likhun…",
+  uploadFolder = "descriptions",
 }: {
   value: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  uploadFolder?: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
