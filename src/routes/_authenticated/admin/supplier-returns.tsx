@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, PackageCheck, Undo2, LogIn, ImageIcon, Search } from "lucide-react";
+import { Loader2, PackageCheck, Undo2, LogIn, ImageIcon, Search, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, StatCard, EmptyState } from "@/components/ui-kit";
 import {
@@ -38,6 +38,19 @@ type TabKey = (typeof TABS)[number]["key"];
 
 const value = (r: SupplierReturnRow) => Number(r.quantity) * Number(r.unit_price);
 
+type OrderGroup = { order_id: string; order_number: string; rows: SupplierReturnRow[] };
+
+/** Group one supplier's return rows by order so multi-product orders stay together. */
+function groupByOrder(rows: SupplierReturnRow[]): OrderGroup[] {
+  const map = new Map<string, OrderGroup>();
+  for (const r of rows) {
+    const key = r.order_id;
+    if (!map.has(key)) map.set(key, { order_id: key, order_number: r.order_number, rows: [] });
+    map.get(key)!.rows.push(r);
+  }
+  return [...map.values()];
+}
+
 function AdminSupplierReturnsPage() {
   const nav = useNavigate();
   const impersonateFn = useServerFn(impersonateSupplier);
@@ -47,6 +60,7 @@ function AdminSupplierReturnsPage() {
   const [tab, setTab] = useState<TabKey>("pending_handover");
   const [q, setQ] = useState("");
   const [sel, setSel] = useState<string[]>([]);
+  const [open, setOpen] = useState<string[]>([]);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -88,6 +102,16 @@ function AdminSupplierReturnsPage() {
     }
     return [...map.values()].sort((a, b) => b.rows.length - a.rows.length);
   }, [rows]);
+
+  /** How many distinct suppliers have returns on each order (handover stays per supplier). */
+  const supplierCountByOrder = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const r of all) {
+      if (!m.has(r.order_id)) m.set(r.order_id, new Set());
+      m.get(r.order_id)!.add(r.supplier_id ?? "unknown");
+    }
+    return new Map([...m].map(([k, v]) => [k, v.size]));
+  }, [all]);
 
   const pending = all.filter((r) => r.status === "pending_handover");
   const handed = all.filter((r) => r.status === "handed_over");
