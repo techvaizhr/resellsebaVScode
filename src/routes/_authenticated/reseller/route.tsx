@@ -35,6 +35,7 @@ import { useBrandingTheme } from "@/lib/branding";
 import { getGlobalSettings, getMyReseller } from "@/lib/app-data";
 import { getPanelBootstrapPayload } from "@/lib/panel-bootstrap";
 import { consumeImpersonationReturnTarget } from "@/lib/impersonation";
+import { useOrderNavCount, applyOrderBadge } from "@/lib/use-order-nav-count";
 
 export const Route = createFileRoute("/_authenticated/reseller")({
   component: ResellerLayout,
