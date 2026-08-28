@@ -69,64 +69,64 @@ type LandingContent = {
 
 
 const FALLBACK: LandingContent = {
-  nav: { features: "ফিচার", how: "কীভাবে কাজ করে", categories: "ক্যাটাগরি", faq: "FAQ", signIn: "সাইন ইন", cta: "শুরু করুন" },
+  nav: { features: "Features", how: "How it works", categories: "Categories", faq: "FAQ", signIn: "Sign in", cta: "Get started" },
   hero: {
-    badge: "বাংলাদেশের রিসেলার প্ল্যাটফর্ম",
-    titleStart: "নিজের অনলাইন স্টোর চালু করুন",
-    titleHighlight: "জিরো ইনভেস্টমেন্টে",
-    subtitle: "মাস্টার ক্যাটালগ থেকে প্রোডাক্ট নিয়ে লিস্ট করুন।",
-    ctaPrimary: "সাইনআপ করুন",
-    ctaSecondary: "অ্যাডমিন সাইন ইন",
-    badges: ["সেটআপ ফি নেই"],
+    badge: "Bangladesh's reseller platform",
+    titleStart: "Launch your own online store",
+    titleHighlight: "with zero investment",
+    subtitle: "Pick products from the master catalog and list them.",
+    ctaPrimary: "Sign up",
+    ctaSecondary: "Admin sign in",
+    badges: ["No setup fee"],
     bannerImage: null,
   },
   about: {
     badge: "",
     title: "",
     body:
-      "আপনি শুধু সেল করবেন, বাকি সব আমরা। অর্ডার জেনারেট করা থেকে প্রফিট উইথড্র পর্যন্ত প্রতিটি ধাপ পরিষ্কার ও ট্র্যাকেবল।",
+      "You just sell, we handle the rest. Every step, from generating orders to withdrawing profit, is clear and trackable.",
     points: [],
     flow: [
-      { icon: "ClipboardList", title: "অর্ডার জেনারেট", desc: "রিসেলার নিজের স্টোর থেকে কাস্টমারের অর্ডার প্যানেলে তোলে।" },
-      { icon: "Send", title: "অ্যাডমিনে পাঠানো", desc: "কনফার্ম অর্ডার এক ক্লিকে অ্যাডমিনের কাছে ফরওয়ার্ড হয়।" },
-      { icon: "PackageCheck", title: "প্যাকিং ও কুরিয়ার", desc: "অ্যাডমিন প্রোডাক্ট প্যাক করে কুরিয়ারে বুক ও ডেলিভারি ফলোআপ করে।" },
-      { icon: "Coins", title: "প্রফিট জমা", desc: "ডেলিভারি সফল হলে প্রফিট রিসেলার প্যানেলে অটো যোগ হয়।" },
-      { icon: "BanknoteArrowDown", title: "উইথড্র", desc: "bKash/Nagad/ব্যাংকে উইথড্র রিকোয়েস্ট — পেমেন্ট হিস্ট্রি সহ।" },
+      { icon: "ClipboardList", title: "Generate order", desc: "The reseller submits the customer's order from their own store into the panel." },
+      { icon: "Send", title: "Send to admin", desc: "Confirmed orders are forwarded to the admin with one click." },
+      { icon: "PackageCheck", title: "Packing & courier", desc: "The admin packs the product, books the courier, and follows up on delivery." },
+      { icon: "Coins", title: "Profit credited", desc: "Once delivery succeeds, profit is auto-credited to the reseller's panel." },
+      { icon: "BanknoteArrowDown", title: "Withdraw", desc: "Request a withdrawal to bKash/Nagad/bank — with full payment history." },
     ],
   },
   features: {
-    title: "যেসব সুবিধা পাবেন",
-    subtitle: "প্রোডাক্ট থেকে পেমেন্ট — সবকিছু এক প্যানেলে",
+    title: "Benefits you get",
+    subtitle: "From products to payments — everything in one panel",
     items: [
-      { icon: "Boxes", title: "হাজারো প্রোডাক্ট, এক ক্লিকে লিস্ট", desc: "ভেরিফাইড ক্যাটালগ, HD ছবি, SEO কন্টেন্ট — স্টক কিনতে হবে না।" },
-      { icon: "Wallet", title: "নিজের প্রফিট নিজে ঠিক করুন", desc: "কস্ট দেখেই মার্জিন বসান, পুরো প্রফিট আপনার।" },
-      { icon: "Truck", title: "কুরিয়ার বুকিং আমরা করি", desc: "Steadfast, Pathao, CarryBee — প্যাকেজিং থেকে ট্র্যাকিং পর্যন্ত।" },
-      { icon: "Globe", title: "নিজের ব্র্যান্ডেড স্টোর", desc: "কাস্টম ডোমেইন, লোগো, কালার, থিম — কাস্টমার শুধু আপনাকে দেখবে।" },
-      { icon: "Wallet", title: "পেমেন্ট সবচেয়ে সহজ", desc: "bKash, Nagad, Rocket, SSLCommerz, EPS — COD + অনলাইন।" },
-      { icon: "Megaphone", title: "Ads ট্র্যাকিং অটো", desc: "Facebook Pixel/CAPI + TikTok Events API — কোন অ্যাডে কত সেল।" },
-      { icon: "BarChart3", title: "লাইভ প্রফিট রিপোর্ট", desc: "সেল, রেভিনিউ, ডিউ, রিটার্ন — সব রিয়েল-টাইমে।" },
-      { icon: "ShieldCheck", title: "ডেটা সম্পূর্ণ প্রাইভেট", desc: "প্রতিটি রিসেলারের অর্ডার ও কাস্টমার ডেটা আলাদা।" },
-      { icon: "Sparkles", title: "টিম ও কমিশন সিস্টেম", desc: "স্টাফ পারমিশন, লিডার রিসেলার — ইনকাম বাড়ান।" },
+      { icon: "Boxes", title: "Thousands of products, listed in one click", desc: "Verified catalog, HD images, SEO content — no need to buy stock." },
+      { icon: "Wallet", title: "Set your own profit", desc: "See the cost, set your margin — the full profit is yours." },
+      { icon: "Truck", title: "We handle courier booking", desc: "Steadfast, Pathao, CarryBee — from packaging to tracking." },
+      { icon: "Globe", title: "Your own branded store", desc: "Custom domain, logo, colors, theme — customers only see you." },
+      { icon: "Wallet", title: "Easiest payments", desc: "bKash, Nagad, Rocket, SSLCommerz, EPS — COD + online." },
+      { icon: "Megaphone", title: "Automatic ads tracking", desc: "Facebook Pixel/CAPI + TikTok Events API — see how much each ad sells." },
+      { icon: "BarChart3", title: "Live profit report", desc: "Sales, revenue, due, returns — all in real time." },
+      { icon: "ShieldCheck", title: "Fully private data", desc: "Every reseller's orders and customer data are kept separate." },
+      { icon: "Sparkles", title: "Team & commission system", desc: "Staff permissions, leader resellers — grow your income." },
     ],
   },
-  how: { title: "কীভাবে শুরু করবেন", subtitle: "", steps: [] },
+  how: { title: "How to get started", subtitle: "", steps: [] },
   faq: {
-    title: "সাধারণ প্রশ্ন",
-    subtitle: "রিসেলারদের মনে আসা কিছু প্রশ্ন ও উত্তর",
+    title: "Frequently asked questions",
+    subtitle: "Common questions resellers ask, answered",
     items: [
-      { q: "কীভাবে রিসেলার হতে পারব?", a: "সাইনআপ করে স্টোর সেটআপ করুন, প্রোডাক্ট লিস্ট করুন, আর কাস্টমারের অর্ডার প্যানেলে নিন। অ্যাডমিন অ্যাপ্রুভের পর সম্পূর্ণ অ্যাক্সেস পাবেন।" },
-      { q: "কত টাকা দিয়ে শুরু করতে হয়?", a: "কোনো সেটআপ ফি বা মাসিক ফি নেই। প্রোডাক্ট কিনে স্টক রাখতে হয় না — অর্ডার পেলে অ্যাডমিন প্যাকিং ও ডেলিভারি করে।" },
-      { q: "প্রোডাক্টের দাম কে ঠিক করে?", a: "অ্যাডমিন বেস কস্ট ও ডেলিভারি চার্জ দিয়ে দেয়। রিসেলার সেই কস্টের উপর নিজের মার্জিন/প্রফিট বসিয়ে বিক্রয় মূল্য ঠিক করেন।" },
-      { q: "ডেলিভারি ও কুরিয়ার কে করবে?", a: "Steadfast, Pathao, CarryBee — যেকোনো সক্রিয় কুরিয়ারে অ্যাডমিন বুকিং করে। আপনাকে শুধু ট্র্যাকিং আইডি কাস্টমারকে শেয়ার করতে হবে।" },
-      { q: "প্রফিট কীভাবে পাব?", a: "প্রতিটি ডেলিভারি সম্পন্ন অর্ডার থেকে আপনার প্যানেলে প্রফিট জমা হবে। উইথড্র রিকোয়েস্ট দিলে bKash/Nagad/ব্যাংকে পেমেন্ট করা হয়।" },
-      { q: "কাস্টমার কি আমার স্টোরের বাইরে কিছু দেখতে পাবে?", a: "না। কাস্টমার শুধু আপনার ব্র্যান্ডেড স্টোর, আপনার লিস্টিং ও আপনার দেওয়া তথ্যই দেখবে। অ্যাডমিন বা প্ল্যাটফর্মের কোনো তথ্য লিক হয় না।" },
-      { q: "কাস্টম ডোমেইন কীভাবে সেট করব?", a: "নিজের ডোমেইন কিনে Cloudflare nameserver আমাদের দেওয়া টার্গেটে পয়েন্ট করুন। রিসেলার সেটিংসে ডোমেইন যোগ করে ভেরিফাই করুন — আমরা HTTPS সার্টিফিকেট স্বয়ংক্রিয় করে দেই।" },
-      { q: "রিটার্ন/রিফান্ড কীভাবে হয়?", a: "কাস্টমার রিফান্ড চাইলে রিসেলার অর্ডার প্যানেলে রিকোয়েস্ট তোলেন। অ্যাডমিন কুরিয়ার থেকে প্রোডাক্ট রিসিভ করে যাচাই করার পর রিফান্ড/রিপ্লেসমেন্ট প্রসেস হয়।" },
-      { q: "কাস্টমার সাপোর্ট কে দেবে?", a: "রিসেলার নিজেই কাস্টমারের যোগাযোগ ও সাপোর্ট দেন। অ্যাডমিন শুধু প্যাকিং, কুরিয়ার বুকিং ও ডেলিভারি স্ট্যাটাস হ্যান্ডল করে।" },
-      { q: "মোবাইল অ্যাপ আছে কি?", a: "এখনো পুরো মোবাইল অ্যাপ নেই, তবে স্টোর এবং প্যানেল পুরোপুরি মোবাইল-রেস্পন্সিভ — ফোন থেকেই অর্ডার, ট্র্যাকিং ও প্রফিট দেখা যায়।" },
+      { q: "How can I become a reseller?", a: "Sign up, set up your store, list products, and take customer orders in the panel. You get full access once the admin approves." },
+      { q: "How much money do I need to start?", a: "There is no setup fee or monthly fee. You don't need to buy stock — the admin packs and delivers once an order comes in." },
+      { q: "Who sets the product price?", a: "The admin provides the base cost and delivery charge. The reseller adds their own margin/profit on top of that cost to set the selling price." },
+      { q: "Who handles delivery and courier?", a: "The admin books any active courier — Steadfast, Pathao, CarryBee. You just need to share the tracking ID with the customer." },
+      { q: "How do I receive profit?", a: "Profit is credited to your panel from every successfully delivered order. Submit a withdrawal request and get paid via bKash/Nagad/bank." },
+      { q: "Will customers see anything outside my store?", a: "No. Customers only see your branded store, your listings, and the information you provide. No admin or platform details are ever leaked." },
+      { q: "How do I set up a custom domain?", a: "Buy your own domain and point the Cloudflare nameserver to the target we provide. Add and verify the domain in reseller settings — we handle the HTTPS certificate automatically." },
+      { q: "How do returns/refunds work?", a: "If a customer wants a refund, the reseller raises a request in the order panel. The refund/replacement is processed after the admin receives and verifies the product from the courier." },
+      { q: "Who provides customer support?", a: "The reseller handles all customer communication and support. The admin only handles packing, courier booking, and delivery status." },
+      { q: "Is there a mobile app?", a: "There isn't a full mobile app yet, but the store and panel are fully mobile-responsive — you can view orders, tracking, and profit from your phone." },
     ],
   },
-  cta: { badge: "", title: "শুরু করুন", subtitle: "", button: "সাইনআপ" },
+  cta: { badge: "", title: "Get started", subtitle: "", button: "Sign up" },
   footer: { tagline: "" },
 };
 
@@ -221,10 +221,10 @@ function Landing({
   const customStats = c.stats?.items?.filter((s) => s.value?.trim() || s.label?.trim()) ?? [];
   const autoStats: StatItem[] = stats
     ? [
-        { value: `${stats.totalProducts}+`, label: "প্রোডাক্ট" },
-        { value: `${stats.totalCategories}+`, label: "ক্যাটেগরি" },
-        { value: `${stats.totalSales}+`, label: "টোটাল সেল" },
-        { value: "24/7", label: "সাপোর্ট" },
+        { value: `${stats.totalProducts}+`, label: "Products" },
+        { value: `${stats.totalCategories}+`, label: "Categories" },
+        { value: `${stats.totalSales}+`, label: "Total sales" },
+        { value: "24/7", label: "Support" },
       ]
     : [];
   const statItems = customStats.length ? customStats : autoStats;
@@ -383,7 +383,7 @@ function Landing({
               <ol className="relative flex flex-col gap-6 lg:flex-row lg:justify-between lg:gap-4">
                 {(c.about?.flow ?? []).map((f, i) => {
                   const Icon = ICON_MAP[f.icon] ?? Sparkles;
-                  const stepLabel = ["০১", "০২", "০৩", "০৪", "০৫"][i] ?? String(i + 1).padStart(2, "0");
+                  const stepLabel = ["01", "02", "03", "04", "05"][i] ?? String(i + 1).padStart(2, "0");
                   const iconClass = [
                     "flow-icon-1",
                     "flow-icon-2",
@@ -408,7 +408,7 @@ function Landing({
                       {/* Card — side-by-side with icon on mobile, below icon on desktop */}
                       <div className="flow-card flex-1 px-4 py-4 text-left transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-elegant lg:mt-6 lg:w-full lg:px-5 lg:py-5 lg:text-center">
                         <span className={`mb-1 block text-[11px] font-bold uppercase tracking-wider`} style={{ color: `var(--flow-step-${i + 1})` }}>
-                          ধাপ {stepLabel}
+                          Step {stepLabel}
                         </span>
                         <h3 className="text-sm font-bold leading-tight sm:text-[15px]">{f.title}</h3>
                         <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{f.desc}</p>
@@ -424,7 +424,7 @@ function Landing({
                 {c.hero.ctaPrimary} <ArrowRight className="h-4 w-4" />
               </Link>
               <Link to="/catalog" search={{}} className="btn-live inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-bold hover:bg-muted">
-                Master Catalog দেখুন
+                View Master Catalog
               </Link>
             </div>
           </div>
@@ -457,8 +457,8 @@ function Landing({
         <section id="categories" className="border-y border-border/60 bg-muted/30 py-10 sm:py-14">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-xl font-extrabold sm:text-3xl">ক্যাটাগরি</h2>
-              <p className="mt-2 text-sm text-muted-foreground">আপনার নিশ অনুযায়ী ক্যাটাগরি বেছে নিয়ে প্রোডাক্ট লিস্ট করুন</p>
+              <h2 className="text-xl font-extrabold sm:text-3xl">Categories</h2>
+              <p className="mt-2 text-sm text-muted-foreground">Pick a category that matches your niche and start listing products</p>
             </div>
             <div className="mt-8 grid grid-cols-5 gap-2 sm:grid-cols-6 sm:gap-3 md:grid-cols-8 lg:grid-cols-10">
               {(stats?.categories ?? []).map((cat: any) => (
@@ -497,8 +497,8 @@ function Landing({
         <section id="products" className="border-y border-border/60 bg-muted/30 py-10 sm:py-14">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-xl font-extrabold sm:text-3xl">ফিচার্ড প্রোডাক্টস</h2>
-              <p className="mt-2 text-sm text-muted-foreground">এই মাসের সেরা ও সবচেয়ে বেশি সেল হওয়া প্রোডাক্টস</p>
+              <h2 className="text-xl font-extrabold sm:text-3xl">Featured Products</h2>
+              <p className="mt-2 text-sm text-muted-foreground">The best-selling products of the month</p>
             </div>
             <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {stats.products.map((p: any) => (
@@ -533,7 +533,7 @@ function Landing({
                 search={{}}
                 className="btn-live inline-flex items-center gap-2 rounded-xl border border-border bg-card px-6 py-2.5 text-sm font-bold hover:border-primary/50 hover:text-primary"
               >
-                <ShoppingBag className="h-4 w-4" /> সব প্রোডাক্টস দেখুন
+                <ShoppingBag className="h-4 w-4" /> View all products
               </Link>
             </div>
           </div>
@@ -591,7 +591,7 @@ function Landing({
               search={{}}
               className="btn-live inline-flex items-center gap-2 rounded-xl border border-primary-foreground/30 px-7 py-3.5 text-sm font-bold text-primary-foreground hover:bg-primary-foreground/10 sm:text-base"
             >
-              <Layers className="h-4 w-4" /> প্রোডাক্টস
+              <Layers className="h-4 w-4" /> Products
             </Link>
           </div>
         </div>
@@ -603,24 +603,24 @@ function Landing({
           <div>
             <Brand siteName={siteName} logoUrl={logoUrl} size="sm" />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">{c.footer.tagline}</p>
-            <PwaInstallButton variant="inline" className="mt-4" label="অ্যাপ ইনস্টল করুন" />
+            <PwaInstallButton variant="inline" className="mt-4" label="Install app" />
           </div>
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">প্ল্যাটফর্ম</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Platform</h4>
             <ul className="mt-3 space-y-2 text-sm">
-              <li><a href="#about" className="text-muted-foreground hover:text-primary">কীভাবে কাজ করি</a></li>
+              <li><a href="#about" className="text-muted-foreground hover:text-primary">How we work</a></li>
               <li><a href="#features" className="text-muted-foreground hover:text-primary">{c.nav.features}</a></li>
               <li><a href="#how" className="text-muted-foreground hover:text-primary">{c.nav.how}</a></li>
               <li><a href="#faq" className="text-muted-foreground hover:text-primary">{c.nav.faq || "FAQ"}</a></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">অ্যাকাউন্ট</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Account</h4>
             <ul className="mt-3 space-y-2 text-sm">
               <li><Link to="/login" search={{ mode: "signup" }} className="text-muted-foreground hover:text-primary">{c.nav.cta}</Link></li>
               <li><Link to="/login" className="text-muted-foreground hover:text-primary">{c.nav.signIn}</Link></li>
-              <li><Link to="/catalog" search={{}} className="text-muted-foreground hover:text-primary">প্রোডাক্টস</Link></li>
-              <li><Link to="/tutorials" className="text-muted-foreground hover:text-primary">ভিডিও টিউটোরিয়াল</Link></li>
+              <li><Link to="/catalog" search={{}} className="text-muted-foreground hover:text-primary">Products</Link></li>
+              <li><Link to="/tutorials" className="text-muted-foreground hover:text-primary">Video tutorials</Link></li>
               <li><Link to="/privacy" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
             </ul>
           </div>
