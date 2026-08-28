@@ -26,6 +26,7 @@ type Row = {
   buying_price: number;
   reseller_price: number;
   suggested_price: number;
+  packaging_cost: number;
   stock: number;
   is_active: boolean;
   is_featured: boolean;
@@ -373,6 +374,7 @@ function ProductsPage() {
                   <th className="px-3 py-3">Admin cost</th>
                   <th className="px-3 py-3">Reseller</th>
                   <th className="px-3 py-3">Suggested</th>
+                  <th className="px-3 py-3">Packaging</th>
                   <th className="px-3 py-3">Stock</th>
                   <th className="px-3 py-3">Status</th>
                   <th className="px-3 py-3 text-right">Actions</th>
@@ -443,7 +445,10 @@ function ProductsPage() {
                       <PriceCell row={p} field="reseller_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, reseller_price: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
-                      <PriceCell row={p} field="suggested_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)))} />
+                    <PriceCell row={p} field="suggested_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)))} />
+                    </td>
+                    <td className="px-3 py-3">
+                      <PriceCell row={p} field="packaging_cost" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, packaging_cost: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
                       <StockCell row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
@@ -737,7 +742,7 @@ function StockCell({ row, onSaved }: { row: Row; onSaved: (v: number) => void })
   );
 }
 
-function PriceCell({ row, field, onSaved }: { row: Row; field: "buying_price" | "reseller_price" | "suggested_price"; onSaved: (v: number) => void }) {
+function PriceCell({ row, field, onSaved }: { row: Row; field: "buying_price" | "reseller_price" | "suggested_price" | "packaging_cost"; onSaved: (v: number) => void }) {
   const current = row[field] ?? 0;
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(String(current));
@@ -753,14 +758,14 @@ function PriceCell({ row, field, onSaved }: { row: Row; field: "buying_price" | 
     if (Number.isNaN(n)) return toast.error("Invalid price");
     if (n === current) return setEditing(false);
     setBusy(true);
-    const patch =
-      field === "buying_price" ? { buying_price: n } : field === "reseller_price" ? { reseller_price: n } : { suggested_price: n };
-    const { error } = await supabase.from("products").update(patch).eq("id", row.id);
+    const payload: { buying_price?: number; reseller_price?: number; suggested_price?: number; packaging_cost?: number } = {};
+    payload[field] = n;
+    const { error } = await supabase.from("products").update(payload).eq("id", row.id);
     setBusy(false);
     if (error) return toast.error(error.message);
     onSaved(n);
     setEditing(false);
-    toast.success("Price updated");
+    toast.success(field === "packaging_cost" ? "Packaging cost updated" : "Price updated");
   }
 
   if (!editing) {
