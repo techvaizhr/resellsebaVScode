@@ -121,16 +121,36 @@ export async function pathaoRequest(db: any, conf: Cfg, path: string, init?: Req
 
 /** Merchant stores (store_id needed for booking). */
 export async function pathaoStoreList(db: any, conf: Cfg) {
-  const body = await pathaoRequest(db, conf, "/aladdin/api/v1/stores");
-  return (body?.data?.data ?? []).map((s: any) => ({
-    id: String(s.store_id),
-    name: String(s.store_name ?? ""),
-    address: String(s.store_address ?? ""),
-    isActive: Number(s.is_active ?? 0) === 1,
-    cityId: s.city_id ? Number(s.city_id) : null,
-    zoneId: s.zone_id ? Number(s.zone_id) : null,
-  }));
+  // Pathao paginates stores; different accounts return `data.data`, `data` or a
+  // bare array — walk every page and accept all shapes so no store is missed.
+  const seen = new Map<string, any>();
+  for (let page = 1; page <= 10; page++) {
+    const body = await pathaoRequest(db, conf, `/aladdin/api/v1/stores?page=${page}`);
+    const raw = Array.isArray(body?.data?.data)
+      ? body.data.data
+      : Array.isArray(body?.data)
+        ? body.data
+        : Array.isArray(body)
+          ? body
+          : [];
+    for (const s of raw) {
+      const id = String(s.store_id ?? s.id ?? "");
+      if (!id || seen.has(id)) continue;
+      seen.set(id, {
+        id,
+        name: String(s.store_name ?? s.name ?? `Store ${id}`),
+        address: String(s.store_address ?? s.address ?? ""),
+        isActive: Number(s.is_active ?? 1) === 1,
+        cityId: s.city_id ? Number(s.city_id) : null,
+        zoneId: s.zone_id ? Number(s.zone_id) : null,
+      });
+    }
+    const lastPage = Number(body?.data?.last_page ?? body?.data?.total_pages ?? 1);
+    if (raw.length === 0 || page >= lastPage) break;
+  }
+  return [...seen.values()];
 }
+
 
 export async function pathaoCities(db: any, conf: Cfg) {
   const body = await pathaoRequest(db, conf, "/aladdin/api/v1/city-list");
