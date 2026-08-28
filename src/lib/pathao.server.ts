@@ -14,6 +14,8 @@ type TokenBody = {
   message?: string;
 };
 
+let lastTokenError = "";
+
 async function issueToken(conf: Cfg, body: Record<string, unknown>): Promise<TokenBody> {
   const res = await fetch(`${pathaoBase(conf)}/aladdin/api/v1/issue-token`, {
     method: "POST",
@@ -29,6 +31,7 @@ async function issueToken(conf: Cfg, body: Record<string, unknown>): Promise<Tok
   }
   if (!res.ok || !parsed?.access_token) {
     console.error(`Pathao issue-token failed [${res.status}]: ${text}`);
+    lastTokenError = String(parsed?.message ?? text ?? "").slice(0, 200);
     return {};
   }
   return parsed as TokenBody;
@@ -68,7 +71,10 @@ export async function pathaoAccessToken(db: any, conf: Cfg): Promise<string> {
       password,
     });
   }
-  if (!token.access_token) throw new Response("Pathao auth failed", { status: 502 });
+  if (!token.access_token)
+    throw new Response(`Pathao auth failed: ${lastTokenError || "check Client ID/Secret/Username/Password"}`, {
+      status: 400,
+    });
 
   const nextConfig: Cfg = {
     ...conf,
