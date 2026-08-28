@@ -26,6 +26,7 @@ type Row = {
   buying_price: number;
   reseller_price: number;
   suggested_price: number;
+  packaging_cost: number;
   stock: number;
   is_active: boolean;
   is_featured: boolean;
