@@ -18,12 +18,12 @@ export type PublicHeaderContent = {
 
 const FALLBACK: PublicHeaderContent = {
   nav: {
-    features: "ফিচার",
-    how: "কীভাবে কাজ করে",
-    categories: "ক্যাটাগরি",
+    features: "Features",
+    how: "How it works",
+    categories: "Categories",
     faq: "FAQ",
-    signIn: "সাইন ইন",
-    cta: "শুরু করুন",
+    signIn: "Sign in",
+    cta: "Get started",
   },
 };
 
@@ -92,15 +92,15 @@ export function PublicHeader({
 
   const navLinks: Array<{ href?: string; to?: string; label?: string; icon?: ReactNode }> = isCatalog
     ? [
-        { to: "/tutorials", label: "টিউটোরিয়াল" },
-        { to: "/", label: "হোমে ফিরুন", icon: <Home className="h-4 w-4" /> },
+        { to: "/tutorials", label: "Tutorials" },
+        { to: "/", label: "Back to home", icon: <Home className="h-4 w-4" /> },
       ]
     : [
         { href: "#features", label: c.nav.features },
         { href: "#about", label: c.nav.how },
-        { href: "#categories", label: c.nav.categories || "ক্যাটাগরি" },
-        { to: "/catalog", label: "প্রোডাক্টস" },
-        { to: "/tutorials", label: "টিউটোরিয়াল" },
+        { href: "#categories", label: c.nav.categories || "Categories" },
+        { to: "/catalog", label: "Products" },
+        { to: "/tutorials", label: "Tutorials" },
         { href: "#faq", label: c.nav.faq || "FAQ" },
       ];
 

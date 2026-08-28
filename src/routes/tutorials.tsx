@@ -7,15 +7,15 @@ export const Route = createFileRoute("/tutorials")({
   component: TutorialsPage,
   head: () => ({
     meta: [
-      { title: "Video Tutorial — শিখুন ধাপে ধাপে" },
+      { title: "Video Tutorial — Learn step by step" },
       {
         name: "description",
-        content: "রিসেলিং শুরু থেকে অর্ডার, কুরিয়ার ও পেমেন্ট — টপিক অনুযায়ী সাজানো ফ্রি ভিডিও টিউটোরিয়াল লাইব্রেরি।",
+        content: "From starting reselling to orders, courier, and payments — a free video tutorial library organized by topic.",
       },
-      { property: "og:title", content: "Video Tutorial — শিখুন ধাপে ধাপে" },
+      { property: "og:title", content: "Video Tutorial — Learn step by step" },
       {
         property: "og:description",
-        content: "টপিক অনুযায়ী সাজানো ভিডিও টিউটোরিয়াল — রিসেলিং, অর্ডার, কুরিয়ার ও পেমেন্ট গাইড।",
+        content: "Video tutorials organized by topic — reselling, orders, courier, and payment guides.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -32,9 +32,9 @@ function TutorialsPage() {
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
             <GraduationCap className="h-4 w-4" /> Video Tutorial
           </span>
-          <h1 className="mt-3 text-3xl font-black sm:text-4xl">ধাপে ধাপে শিখুন</h1>
+          <h1 className="mt-3 text-3xl font-black sm:text-4xl">Learn step by step</h1>
           <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
-            টপিক অনুযায়ী সাজানো ভিডিও টিউটোরিয়াল — যেকোনো ভিডিওতে ক্লিক করলেই এখানেই দেখতে পারবেন।
+            Video tutorials organized by topic — click any video to watch it right here.
           </p>
         </header>
         <TutorialLibrary />

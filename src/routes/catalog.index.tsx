@@ -20,13 +20,13 @@ export const Route = createFileRoute("/catalog/")({
   }),
   head: () => ({
     meta: [
-      { title: "Master Catalog — সব প্রোডাক্ট এক জায়গায়" },
+      { title: "Master Catalog — All products in one place" },
       {
         name: "description",
-        content: "ক্যাটাগরি অনুযায়ী সম্পূর্ণ প্রোডাক্ট ক্যাটালগ — ছবি, বিবরণ ও রিসেল প্রাইস সহ।",
+        content: "Complete product catalog by category — with images, descriptions, and resell prices.",
       },
-      { property: "og:title", content: "Master Catalog — সব প্রোডাক্ট এক জায়গায়" },
-      { property: "og:description", content: "ক্যাটাগরি অনুযায়ী সম্পূর্ণ প্রোডাক্ট ক্যাটালগ, ছবি ও রিসেল প্রাইস সহ।" },
+      { property: "og:title", content: "Master Catalog — All products in one place" },
+      { property: "og:description", content: "Complete product catalog by category, with images and resell prices." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -56,7 +56,7 @@ function CatalogIndex() {
   const fetchCatalog = useServerFn(getCatalog);
   const [data, setData] = useState<{ categories: Cat[]; brands: { id: string; name: string; slug: string }[]; products: Prod[] } | null>(null);
   const [term, setTerm] = useState(q ?? "");
-  // Price/profit শুধু admin/staff/reseller/leader লগইন থাকলে দেখাবে।
+  // Price/profit shown only when logged in as admin/staff/reseller/leader.
   const showPrices = useCatalogPrices();
   const perPage = 100;
   const currentPage = page ?? 1;
@@ -105,12 +105,12 @@ function CatalogIndex() {
             className={`mt-4 text-balance text-3xl font-extrabold tracking-tight sm:text-5xl ${banner ? "text-white" : ""}`}
             style={banner ? { textShadow: "0 2px 20px rgba(0,0,0,.55)" } : undefined}
           >
-            {activeCat ? activeCat.name : `${siteName} প্রোডাক্ট ক্যাটালগ`}
+            {activeCat ? activeCat.name : `${siteName} Product Catalog`}
           </h1>
           <p className={`mx-auto mt-3 max-w-xl text-sm sm:text-base ${banner ? "text-white/90" : "text-muted-foreground"}`}>
             {activeCat
-              ? `${rows.length} টি প্রোডাক্ট এই ক্যাটাগরিতে`
-              : "ছবি, বিবরণ ও রিসেল প্রাইস দেখুন — লিস্ট করার আগেই সম্পূর্ণ ধারণা নিন।"}
+              ? `${rows.length} products in this category`
+              : "See images, descriptions, and resell prices — get the full picture before you list."}
           </p>
 
           <form
@@ -125,7 +125,7 @@ function CatalogIndex() {
               <input
                 value={term}
                 onChange={(e) => setTerm(e.target.value)}
-                placeholder="প্রোডাক্ট খুঁজুন…"
+                placeholder="Search products…"
                 aria-label="Search products"
                 className="w-full rounded-xl border bg-card/95 py-2.5 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/40"
               />
@@ -159,7 +159,7 @@ function CatalogIndex() {
                   !category ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
                 }`}
               >
-                সব ({data.products.length})
+                All ({data.products.length})
               </Link>
               {data.categories.map((c) => (
                 <Link
@@ -179,7 +179,7 @@ function CatalogIndex() {
           <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
             {rows.length === 0 ? (
               <div className="surface-card grid place-items-center p-16 text-center text-sm text-muted-foreground">
-                কোনো প্রোডাক্ট পাওয়া যায়নি।
+                No products found.
               </div>
             ) : (
               <>
@@ -233,7 +233,7 @@ function CatalogIndex() {
                           </div>
                         ) : (
                           <div className="mt-3 rounded-xl border border-dashed bg-muted/30 p-2.5 text-[11px] font-semibold text-muted-foreground">
-                            প্রাইস দেখতে রিসেলার হিসেবে লগইন করুন
+                            Log in as a reseller to see prices
                           </div>
                         )}
                         <div className="mt-3 flex flex-wrap gap-1.5 border-t pt-3">

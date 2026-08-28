@@ -92,7 +92,7 @@ function PrivacyPage() {
           to="/"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-primary"
         >
-          <ArrowLeft className="h-4 w-4" /> হোমে ফিরুন
+          <ArrowLeft className="h-4 w-4" /> Back to home
         </Link>
 
         <article className="mt-8">
@@ -121,7 +121,7 @@ function PrivacyPage() {
           </div>
           <div className="flex items-center gap-4">
             <Link to="/" className="hover:text-primary">Home</Link>
-            <Link to="/catalog" search={{}} className="hover:text-primary">প্রোডাক্টস</Link>
+            <Link to="/catalog" search={{}} className="hover:text-primary">Products</Link>
             <Link to="/privacy" className="font-semibold text-primary">Privacy Policy</Link>
           </div>
         </div>

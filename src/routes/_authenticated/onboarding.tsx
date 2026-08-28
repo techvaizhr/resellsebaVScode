@@ -155,16 +155,16 @@ function Onboarding() {
       status === "pending"
         ? {
             title: "Approval pending",
-            text: "আপনার রেজিস্ট্রেশন সফল হয়েছে। সুপার অ্যাডমিন আপনার স্টোর চেক করে অনুমোদন দিলে আপনি রিসেলার প্যানেলে অ্যাক্সেস পাবেন।",
+            text: "Your registration was successful. You will get access to the reseller panel once the super admin reviews and approves your store.",
           }
         : status === "suspended"
           ? {
               title: "Account deactivated",
-              text: "আপনার রিসেলার অ্যাকাউন্ট বর্তমানে ডিঅ্যাক্টিভেট করা আছে। পুনরায় সক্রিয় করতে অ্যাডমিনের সাথে যোগাযোগ করুন।",
+              text: "Your reseller account is currently deactivated. Contact the admin to reactivate it.",
             }
           : {
               title: "Application rejected",
-              text: "আপনার রিসেলার আবেদনটি এই মুহূর্তে অনুমোদন করা সম্ভব হয়নি। বিস্তারিত জানতে সাপোর্টে যোগাযোগ করুন।",
+              text: "Your reseller application could not be approved at this time. Contact support for details.",
             };
 
     return (
