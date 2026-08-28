@@ -443,7 +443,7 @@ function SupplierOrdersPage() {
         <>
           <div className="surface-card overflow-hidden">
             {/* Desktop header */}
-            <div className="hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] gap-2 rounded-lg border bg-muted/40 px-3 py-2.5 text-xs font-medium text-muted-foreground lg:grid">
+            <div className="hidden grid-cols-[30px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] gap-2 rounded-lg border bg-muted/40 px-2 py-2.5 text-xs font-medium text-muted-foreground lg:grid">
               <div className="flex justify-center">
                 <input
                   type="checkbox"
@@ -523,7 +523,7 @@ function SupplierOrdersPage() {
                   </div>
 
                   {/* Desktop row */}
-                  <div className={`hidden grid-cols-[44px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-center gap-2 px-3 py-3 text-sm hover:bg-muted/40 lg:grid ${marked.includes(o.id) ? "bg-primary/5" : ""}`}>
+                  <div className={`hidden grid-cols-[30px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-center gap-2 px-2 py-3 text-sm hover:bg-muted/40 lg:grid ${marked.includes(o.id) ? "bg-primary/5" : ""}`}>
                     <div className="flex flex-col items-center gap-1.5">
                       <input
                         type="checkbox"
