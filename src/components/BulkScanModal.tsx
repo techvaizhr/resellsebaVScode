@@ -79,10 +79,14 @@ function beepSuccess() {
   chime(1046.5, 0.38, 0.7, 0.6);
 }
 function beepError() {
-  // ~1s descending "wrong" tone — low, warm but clearly negative
-  chime(392, 0, 0.4, 0.6);
-  chime(311.13, 0.22, 0.45, 0.6);
-  chime(233.08, 0.45, 0.6, 0.65);
+  // ~800ms hard "buzz" — two harsh descending low tones, square + sawtooth
+  const t = 0;
+  tone(220, t, 0.38, "square", 0.5);
+  tone(207, t, 0.38, "sawtooth", 0.35);
+  tone(110, t, 0.38, "sine", 0.4);
+  tone(175, t + 0.42, 0.38, "square", 0.5);
+  tone(165, t + 0.42, 0.38, "sawtooth", 0.35);
+  tone(82, t + 0.42, 0.38, "sine", 0.4);
 }
 
 /* ---------------- helpers ---------------- */
