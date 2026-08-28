@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -301,7 +301,19 @@ function AdminLayout() {
   return (
     <AppShell
       title={isSuperAdmin ? "Super Admin" : "Staff Panel"}
-      headerRight={<BulkScanButton compact />}
+      headerRight={
+        <>
+          <Link
+            to="/admin/products"
+            title="Catalog"
+            className="inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
+          >
+            <Store className="h-4 w-4" />
+            <span className="hidden sm:inline">Catalog</span>
+          </Link>
+          <BulkScanButton compact />
+        </>
+      }
       brand={{ name: brand.name, sub: isSuperAdmin ? "Admin panel" : "Staff panel", logoUrl: brand.logoUrl }}
       nav={filterNav(NAV, permissions, isSuperAdmin)}
       user={{
