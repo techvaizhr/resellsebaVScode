@@ -493,7 +493,7 @@ function ResellersPage() {
             const phone = (r.contact_phone ?? "").trim();
             const waPhone = phone.replace(/[^0-9]/g, "").replace(/^0/, "880");
             return (
-              <div key={r.id} className="surface-card p-4 shadow-sm transition hover:shadow-md">
+              <div key={r.id} className="surface-card p-3 shadow-sm transition hover:shadow-md sm:p-4">
                 <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
                   <ResellerAvatar url={r.avatar_url} name={r.business_name} size={40} />
                   <div className="min-w-0">

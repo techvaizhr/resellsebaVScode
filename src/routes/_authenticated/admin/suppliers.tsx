@@ -248,7 +248,7 @@ function AdminSuppliersPage() {
             const phone = (s.contact_phone ?? "").trim();
             const waPhone = (s.whatsapp || phone).replace(/[^0-9]/g, "").replace(/^0/, "880");
             return (
-              <div key={s.id} className="surface-card p-4 shadow-sm transition hover:shadow-md">
+              <div key={s.id} className="surface-card p-3 shadow-sm transition hover:shadow-md sm:p-4">
                 <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
                   <ResellerAvatar url={null} name={s.display_name} size={40} />
                   <div className="min-w-0">
