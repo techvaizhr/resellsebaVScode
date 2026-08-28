@@ -267,7 +267,9 @@ function AdminDashboard() {
                       ? "rose"
                       : t.key === "pending_return"
                         ? "amber"
-                        : undefined
+                        : t.key === "forwarded"
+                          ? "sky"
+                          : undefined
                 }
               />
             );
