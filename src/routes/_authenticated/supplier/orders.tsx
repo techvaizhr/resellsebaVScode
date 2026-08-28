@@ -56,7 +56,7 @@ export const Route = createFileRoute("/_authenticated/supplier/orders")({
       { title: "Supplier orders · manage your product orders" },
       {
         name: "description",
-        content: "নিজের প্রোডাক্টের অর্ডার দেখুন, কনফার্ম–প্যাকেজিং করুন এবং কুরিয়ার বুকিং দিন।",
+        content: "View your product orders, confirm and package them, and book courier shipments.",
       },
       { property: "og:title", content: "Supplier orders" },
       { property: "og:description", content: "Track and process the orders that contain your products." },
@@ -228,8 +228,8 @@ function SupplierOrdersPage() {
       title: `Move to ${supplierStatusLabel(next)}?`,
       description:
         next === "ready_to_ship"
-          ? `${ids.length} order(s) কুরিয়ার হ্যান্ডওভার হবে।`
-          : `${ids.length} order(s) ${supplierStatusLabel(next)} করা হবে।`,
+          ? `${ids.length} order(s) will be handed over to the courier.`
+          : `${ids.length} order(s) will be moved to ${supplierStatusLabel(next)}.`,
       onConfirm: async () => {
         setConfirm(null);
         await applyStatus(ids, next);
@@ -438,7 +438,7 @@ function SupplierOrdersPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState title="No orders" description="এই ট্যাবে কোনো অর্ডার নেই।" />
+        <EmptyState title="No orders" description="There are no orders in this tab." />
       ) : (
         <>
           <div className="surface-card overflow-hidden">

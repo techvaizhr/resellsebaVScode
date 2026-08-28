@@ -96,12 +96,12 @@ function SupplierLayout() {
             <ShieldAlert className="h-6 w-6" />
           </div>
           <h1 className="text-lg font-semibold">
-            {supplier.status === "pending" ? "অ্যাকাউন্ট অনুমোদনের অপেক্ষায়" : "অ্যাকাউন্ট বন্ধ আছে"}
+            {supplier.status === "pending" ? "Account pending approval" : "Account suspended"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {supplier.status === "pending"
-              ? "আপনার সাপ্লায়ার অ্যাকাউন্ট রিভিউ করা হচ্ছে। অ্যাডমিন অনুমোদন দিলেই ড্যাশবোর্ড চালু হবে।"
-              : "আপনার সাপ্লায়ার অ্যাকাউন্টটি বর্তমানে নিষ্ক্রিয়। অ্যাডমিনের সাথে যোগাযোগ করুন।"}
+              ? "Your supplier account is under review. The dashboard will be enabled once the admin approves it."
+              : "Your supplier account is currently inactive. Please contact the admin."}
           </p>
           <p className="mt-3 text-xs text-muted-foreground">Supplier code: {supplier.code}</p>
           <button

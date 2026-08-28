@@ -62,7 +62,7 @@ export function usePwaInstall() {
 export function PwaInstallButton({
   className,
   variant = "icon",
-  label = "অ্যাপ ইনস্টল",
+  label = "Install App",
 }: {
   className?: string;
   variant?: "icon" | "inline";
@@ -74,7 +74,7 @@ export function PwaInstallButton({
     if (variant === "inline") {
       return (
         <span className={cn("inline-flex items-center gap-1.5 text-sm text-muted-foreground", className)}>
-          <CheckCircle2 className="h-4 w-4" /> ইনস্টল করা আছে
+          <CheckCircle2 className="h-4 w-4" /> Installed
         </span>
       );
     }

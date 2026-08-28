@@ -76,8 +76,8 @@ export function ProductFormModal({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!v.name.trim()) return toast.error("Product name দিন");
-    if (!(Number(v.price) > 0)) return toast.error(role === "supplier" ? "Supplier price দিন" : "Price দিন");
+    if (!v.name.trim()) return toast.error("Please enter a product name");
+    if (!(Number(v.price) > 0)) return toast.error(role === "supplier" ? "Please enter a supplier price" : "Please enter a price");
     setBusy(true);
     try {
       await onSubmit({ ...v, name: v.name.trim() });
@@ -177,7 +177,7 @@ export function ProductFormModal({
             Pricing & stock
             {role === "supplier" && (
               <Hint side="right">
-                আপনি প্রতি ইউনিটে যত পাবেন সেটাই <b>Supplier price</b>। কাস্টমার প্রাইস, ডেলিভারি ও প্যাকেজিং অ্যাডমিন ঠিক করবেন।
+                The amount you receive per unit is the <b>Supplier price</b>. Customer price, delivery, and packaging will be set by the admin.
               </Hint>
             )}
           </h3>
@@ -185,7 +185,7 @@ export function ProductFormModal({
             <Field
               label={role === "supplier" ? "Supplier price (৳)" : "Buying price (৳)"}
               required
-              hint={role === "supplier" ? "প্রতি ডেলিভার্ড ইউনিটে আপনার প্রাপ্য।" : undefined}
+              hint={role === "supplier" ? "Your earning per delivered unit." : undefined}
             >
               <input
                 required

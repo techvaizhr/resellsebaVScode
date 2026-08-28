@@ -12,9 +12,9 @@ export const Route = createFileRoute("/catalog/$slug")({
   head: ({ params }) => ({
     meta: [
       { title: `${params.slug.replace(/-/g, " ")} — Catalog details` },
-      { name: "description", content: `${params.slug.replace(/-/g, " ")} — ছবি, বিবরণ ও রিসেল প্রাইস।` },
+      { name: "description", content: `${params.slug.replace(/-/g, " ")} — images, description, and resell price.` },
       { property: "og:title", content: `${params.slug.replace(/-/g, " ")} — Catalog details` },
-      { property: "og:description", content: `${params.slug.replace(/-/g, " ")} — ছবি, বিবরণ ও রিসেল প্রাইস।` },
+      { property: "og:description", content: `${params.slug.replace(/-/g, " ")} — images, description, and resell price.` },
       { property: "og:type", content: "product" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -30,7 +30,7 @@ function CatalogDetails() {
   const [state, setState] = useState<"loading" | "done">("loading");
   const [p, setP] = useState<P>(null);
   const [idx, setIdx] = useState(0);
-  // Price/profit/delivery শুধু admin/staff/reseller/leader লগইন থাকলে দেখাবে।
+  // Price/profit/delivery shown only when logged in as admin/staff/reseller/leader.
   const showPrices = useCatalogPrices();
 
   useEffect(() => {
@@ -52,9 +52,9 @@ function CatalogDetails() {
   if (!p)
     return (
       <div className="mx-auto max-w-2xl px-4 py-24 text-center">
-        <h1 className="text-2xl font-bold">প্রোডাক্ট পাওয়া যায়নি</h1>
+        <h1 className="text-2xl font-bold">Product not found</h1>
         <Link to="/catalog" search={{}} className="mt-4 inline-block text-sm font-semibold text-primary hover:underline">
-          ← ক্যাটালগে ফিরে যান
+          ← Back to catalog
         </Link>
       </div>
     );
@@ -165,16 +165,16 @@ function CatalogDetails() {
             </>
           ) : (
             <div className="surface-card mt-6 p-5">
-              <p className="text-sm font-semibold">প্রাইস ও ডেলিভারি চার্জ দেখতে লগইন করুন</p>
+              <p className="text-sm font-semibold">Log in to see prices and delivery charges</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                রিসেলার অ্যাকাউন্ট দিয়ে সাইন ইন করলে Admin price, Sale price, Profit ও ডেলিভারি চার্জ দেখতে পাবেন।
+                Sign in with a reseller account to see the admin price, sale price, profit, and delivery charge.
               </p>
               <Link
                 to="/login"
                 search={{ mode: "signup" }}
                 className="btn-brand mt-4 inline-flex rounded-lg px-5 py-2.5 text-sm font-semibold"
               >
-                রিসেলার সাইনআপ / লগইন
+                Reseller signup / login
               </Link>
             </div>
           )}
@@ -189,14 +189,14 @@ function CatalogDetails() {
           </div>
 
           <div className="surface-card mt-6 p-5 text-sm">
-            <p className="font-semibold">এই প্রোডাক্ট বিক্রি করতে চান?</p>
-            <p className="mt-1 text-muted-foreground">রিসেলার হিসেবে সাইনআপ করে নিজের স্টোরে লিস্ট করুন।</p>
+            <p className="font-semibold">Want to sell this product?</p>
+            <p className="mt-1 text-muted-foreground">Sign up as a reseller and list it in your own store.</p>
             <Link
               to="/login"
               search={{ mode: "signup" }}
               className="btn-brand mt-4 inline-flex rounded-lg px-5 py-2.5 text-sm font-semibold"
             >
-              রিসেলার সাইনআপ
+              Reseller signup
             </Link>
           </div>
         </div>

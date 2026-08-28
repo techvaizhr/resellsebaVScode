@@ -246,7 +246,7 @@ function ProductPage() {
               borderc,
             )}
           >
-            এই প্রোডাক্ট বিক্রি করতে চান?
+            Want to sell this product?
           </Link>
         </div>
       </div>

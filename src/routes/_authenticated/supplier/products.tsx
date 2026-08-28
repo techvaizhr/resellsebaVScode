@@ -157,7 +157,7 @@ function SupplierProductsPage_() {
     <div>
       <PageHeader
         title="Products"
-        description="আপনার সাবমিট করা প্রোডাক্ট — অ্যাডমিন অ্যাপ্রুভ করলেই লাইভ হবে।"
+        description="Products you have submitted — they go live once approved by admin."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -197,7 +197,7 @@ function SupplierProductsPage_() {
       {rows.length === 0 ? (
         <EmptyState
           title="No products match"
-          description="ফিল্টার বদলান অথবা নতুন প্রোডাক্ট যোগ করুন — অ্যাডমিন অ্যাপ্রুভ করলে রিসেলাররা বিক্রি করতে পারবে।"
+          description="Change filters or add a new product — once approved by admin, resellers will be able to sell it."
           action={
             <button
               onClick={() => {
@@ -268,8 +268,8 @@ function SupplierProductsPage_() {
                           const res = await supplierQuickUpdate(p.id, { price: val });
                           toast.success(
                             res.price_pending
-                              ? "Price change অ্যাডমিন অ্যাপ্রুভালের জন্য পাঠানো হয়েছে"
-                              : "Price আপডেট হয়েছে — অ্যাপ্রুভালের অপেক্ষায়",
+                              ? "Price change sent for admin approval"
+                              : "Price updated — awaiting approval",
                           );
                           await load();
                         }}
@@ -285,7 +285,7 @@ function SupplierProductsPage_() {
                         value={Number(p.stock)}
                         onSave={async (val) => {
                           await supplierQuickUpdate(p.id, { stock: val });
-                          toast.success("Stock আপডেট হয়েছে");
+                          toast.success("Stock updated");
                           await load();
                         }}
                       />
@@ -447,7 +447,7 @@ function SupplierProductDetail({
         </div>
         {product.pending_changes && (
           <div className="rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
-            একটি এডিট অ্যাডমিন অ্যাপ্রুভালের অপেক্ষায় আছে।
+            An edit is pending admin approval.
           </div>
         )}
         {product.approval_note && (
@@ -574,14 +574,14 @@ function ImportModal({
     if (busy) return;
     setBusy(true);
     try {
-      setStep("লিংক পড়া হচ্ছে…");
+      setStep("Reading link…");
       const data = await runImport({ data: { url: url.trim() } });
-      setStep("ছবি ডাউনলোড হচ্ছে…");
+      setStep("Downloading images…");
       const images = await importImagesToStorage(
         data.images,
         pullImage,
         6,
-        (d, t) => setStep(`ছবি ${d}/${t}…`),
+        (d, t) => setStep(`Image ${d}/${t}…`),
         `suppliers/${supplierId}`,
       );
       onReady({
@@ -590,7 +590,7 @@ function ImportModal({
         description: data.description ?? data.shortDescription ?? "",
         images,
       });
-      toast.success("ডাটা রেডি — আপনার সাপ্লাই প্রাইস দিয়ে সাবমিট করুন।");
+      toast.success("Data ready — submit with your supply price.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Import failed");
     } finally {
@@ -604,7 +604,7 @@ function ImportModal({
       open
       onClose={onClose}
       title="Import product from link"
-      subtitle="যেকোনো প্রোডাক্ট পেজের লিংক দিন — নাম, বর্ণনা ও ছবি স্বয়ংক্রিয়ভাবে আসবে।"
+      subtitle="Enter any product page link — name, description and images will be fetched automatically."
       footer={
         <div className="flex justify-end gap-2">
           <button onClick={onClose} className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted">
@@ -674,7 +674,7 @@ function ProductForm({
     <ProductFormModal
       role="supplier"
       title={product ? "Edit product" : "New product"}
-      subtitle="অ্যাডমিন অ্যাপ্রুভ করার পরেই পরিবর্তন লাইভ হবে।"
+      subtitle="Changes go live only after admin approval."
       submitLabel="Submit for approval"
       imageFolder={`suppliers/${supplierId}`}
       brands={brands}
@@ -697,8 +697,8 @@ function ProductForm({
         });
         toast.success(
           product
-            ? "Edit সাবমিট হয়েছে — অ্যাডমিন অ্যাপ্রুভালের অপেক্ষায়"
-            : "প্রোডাক্ট সাবমিট হয়েছে — অ্যাপ্রুভালের অপেক্ষায়",
+            ? "Edit submitted — awaiting admin approval"
+            : "Product submitted — awaiting approval",
         );
         onSaved();
       }}

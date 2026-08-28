@@ -82,9 +82,9 @@ function SupportPage() {
   const copy = async (v: string, label: string) => {
     try {
       await navigator.clipboard.writeText(v);
-      toast.success(`${label} কপি হয়েছে`);
+      toast.success(`${label} copied`);
     } catch {
-      toast.error("কপি করা যায়নি");
+      toast.error("Failed to copy");
     }
   };
 
@@ -99,37 +99,37 @@ function SupportPage() {
   const phone = s?.contact_phone?.trim() || "";
   const email = s?.contact_email?.trim() || "";
   const brand = s?.site_name?.trim() || "Admin";
-  const waText = encodeURIComponent("আসসালামু আলাইকুম, আমি একজন reseller. আমার সহায়তা প্রয়োজন।");
+  const waText = encodeURIComponent("Assalamu Alaikum, I am a reseller. I need assistance.");
 
   const cards = [
     phone && {
       key: "call",
       icon: <Phone className="h-5 w-5" />,
-      title: "ফোন কল",
-      desc: "অফিস সময়ে সরাসরি কথা বলুন",
+      title: "Phone Call",
+      desc: "Talk directly during office hours",
       value: phone,
       href: `tel:${digits(phone)}`,
-      action: "কল করুন",
+      action: "Call",
       tone: "from-primary/15 to-primary/5 text-primary",
     },
     phone && {
       key: "wa",
       icon: <MessageCircle className="h-5 w-5" />,
       title: "WhatsApp",
-      desc: "অর্ডার, পেমেন্ট বা প্রোডাক্ট সংক্রান্ত মেসেজ",
+      desc: "Message about orders, payments, or products",
       value: phone,
       href: `https://wa.me/${waNumber(phone)}?text=${waText}`,
-      action: "মেসেজ পাঠান",
+      action: "Send Message",
       tone: "from-emerald-500/15 to-emerald-500/5 text-emerald-600",
     },
     email && {
       key: "mail",
       icon: <Mail className="h-5 w-5" />,
-      title: "ইমেইল",
-      desc: "বিস্তারিত সমস্যা বা ডকুমেন্ট পাঠাতে",
+      title: "Email",
+      desc: "For detailed issues or sending documents",
       value: email,
       href: `mailto:${email}?subject=${encodeURIComponent("Reseller support")}`,
-      action: "মেইল করুন",
+      action: "Send Email",
       tone: "from-sky-500/15 to-sky-500/5 text-sky-600",
     },
   ].filter(Boolean) as Array<{
@@ -147,7 +147,7 @@ function SupportPage() {
     <div className="space-y-6">
       <PageHeader
         title="Support & Contact"
-        description={`${brand} টিমের সাথে যেকোনো প্রয়োজনে সরাসরি যোগাযোগ করুন`}
+        description={`Get in touch with the ${brand} team directly for any need`}
       />
 
       {agent && (
@@ -215,7 +215,7 @@ function SupportPage() {
       {cards.length === 0 ? (
         <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
           <Headphones className="mx-auto mb-3 h-6 w-6" />
-          এখনো কোনো যোগাযোগের তথ্য যোগ করা হয়নি। অনুগ্রহ করে পরে চেষ্টা করুন।
+          No contact information has been added yet. Please check back later.
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -245,7 +245,7 @@ function SupportPage() {
                   type="button"
                   onClick={() => copy(c.value, c.title)}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-md border transition hover:bg-muted"
-                  aria-label={`${c.title} কপি করুন`}
+                  aria-label={`Copy ${c.title}`}
                 >
                   <Copy className="h-3.5 w-3.5" />
                 </button>
@@ -256,10 +256,9 @@ function SupportPage() {
       )}
 
       <div className="rounded-xl border bg-muted/30 p-4 text-xs leading-relaxed text-muted-foreground">
-        <p className="font-medium text-foreground">দ্রুত সহায়তা পেতে</p>
+        <p className="font-medium text-foreground">For faster support</p>
         <p className="mt-1">
-          মেসেজ করার সময় আপনার reseller কোড, অর্ডার নাম্বার বা পেমেন্ট TrxID উল্লেখ করুন — এতে সমস্যা
-          দ্রুত সমাধান হবে।
+          When messaging, please mention your reseller code, order number, or payment TrxID — this helps resolve issues faster.
         </p>
       </div>
     </div>

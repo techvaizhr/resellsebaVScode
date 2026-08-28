@@ -103,15 +103,15 @@ function DashboardRouter() {
     return (
       <div className="grid min-h-screen place-items-center px-4">
         <div className="surface-card max-w-sm p-8 text-center">
-          <h1 className="text-lg font-semibold">অ্যাকাউন্ট লোড করা যায়নি</h1>
+          <h1 className="text-lg font-semibold">Could not load your account</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            নেটওয়ার্ক সমস্যার কারণে আপনার প্যানেল খুঁজে পাওয়া যাচ্ছে না। আবার চেষ্টা করুন।
+            We couldn't find your panel due to a network issue. Please try again.
           </p>
           <button
             onClick={() => window.location.reload()}
             className="btn-brand mt-5 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
           >
-            <RefreshCw className="h-4 w-4" /> আবার চেষ্টা করুন
+            <RefreshCw className="h-4 w-4" /> Try again
           </button>
         </div>
       </div>

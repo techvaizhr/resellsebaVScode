@@ -45,8 +45,8 @@ function SupplierDashboard() {
   return (
     <div>
       <PageHeader
-        title={`স্বাগতম, ${data.supplier?.display_name ?? "Supplier"}`}
-        description="আপনার প্রোডাক্টের ডেলিভারি হওয়া বিক্রি, রিটার্ন ও পেআউট এক জায়গায়।"
+        title={`Welcome, ${data.supplier?.display_name ?? "Supplier"}`}
+        description="All your delivered sales, returns, and payouts in one place."
         actions={
           <div className="flex flex-wrap items-center gap-3">
             <Link
@@ -146,9 +146,9 @@ function SupplierDashboard() {
 
       {t.returns_pending_handover > 0 && (
         <div className="mt-6 rounded-lg border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm">
-          <b>{t.returns_pending_handover}</b> টি রিটার্ন আইটেম আপনাকে হ্যান্ডওভারের অপেক্ষায় আছে।{" "}
+          <b>{t.returns_pending_handover}</b> return item(s) are waiting for you to hand over.{" "}
           <Link to="/supplier/returns" className="font-medium text-primary hover:underline">
-            রিটার্ন দেখুন
+            View returns
           </Link>
         </div>
       )}
@@ -165,7 +165,7 @@ function SupplierDashboard() {
             </Link>
           }
         >
-          <ItemTable rows={recent} qtyKey="kept_qty" empty="এখনো কোনো ডেলিভারি হওয়া বিক্রি নেই।" />
+          <ItemTable rows={recent} qtyKey="kept_qty" empty="No delivered sales yet." />
         </ReportCard>
 
         <ReportCard
@@ -179,7 +179,7 @@ function SupplierDashboard() {
             </Link>
           }
         >
-          <ItemTable rows={upcoming} qtyKey="quantity" empty="পাইপলাইনে কোনো অর্ডার নেই।" />
+          <ItemTable rows={upcoming} qtyKey="quantity" empty="No orders in the pipeline." />
         </ReportCard>
       </div>
     </div>

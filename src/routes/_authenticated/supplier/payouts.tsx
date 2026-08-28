@@ -54,10 +54,10 @@ function SupplierPayoutsPage() {
 
   async function request(e: React.FormEvent) {
     e.preventDefault();
-    if (!hasAccount) return toast.error("প্রোফাইলে পেআউট তথ্য আগে সেভ করুন।");
+    if (!hasAccount) return toast.error("Please save your payout details in your profile first.");
     const amt = Number(amount);
-    if (!amt || amt <= 0) return toast.error("সঠিক পরিমাণ দিন");
-    if (amt > available) return toast.error(`সর্বোচ্চ ${bdtNum(available)} তোলা যাবে`);
+    if (!amt || amt <= 0) return toast.error("Please enter a valid amount");
+    if (amt > available) return toast.error(`Maximum withdrawable is ${bdtNum(available)}`);
     setBusy(true);
     const reference =
       supplier.payout_method === "bank"
@@ -82,7 +82,7 @@ function SupplierPayoutsPage() {
     <div>
       <PageHeader
         title="Payouts"
-        description="ডেলিভারি হওয়া আইটেমের টাকা এখান থেকে উইথড্র করুন।"
+        description="Withdraw money earned from delivered items here."
       />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -128,14 +128,14 @@ function SupplierPayoutsPage() {
       </div>
 
       <p className="mb-4 rounded-lg border bg-muted/30 px-4 py-2 text-[11px] leading-relaxed text-muted-foreground">
-        হিসাব: মোট আর্নিং ({bdtNum(t.earning)}) − পরিশোধিত ({bdtNum(t.paid)}) − অপেক্ষমান রিকোয়েস্ট
+        Calculation: Total earning ({bdtNum(t.earning)}) − Paid ({bdtNum(t.paid)}) − Pending request
         ({bdtNum(t.pending_payout)}) ={" "}
-        <span className="font-bold text-foreground">{bdtNum(available)}</span> উইথড্র করা যাবে।
+        <span className="font-bold text-foreground">{bdtNum(available)}</span> is withdrawable.
       </p>
 
       {!hasAccount && (
         <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-xs">
-          পেআউট রিকোয়েস্ট করার আগে <b>My profile</b> পেজে ব্যাংক/মোবাইল অ্যাকাউন্ট তথ্য সেভ করুন।
+          Please save your bank/mobile account details on the <b>My profile</b> page before requesting a payout.
         </div>
       )}
 

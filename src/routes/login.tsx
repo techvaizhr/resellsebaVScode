@@ -15,10 +15,10 @@ export const Route = createFileRoute("/login")({
   }),
   head: () => ({
     meta: [
-      { title: "লগইন / রেজিস্টার" },
-      { name: "description", content: "আপনার রিসেলার অ্যাকাউন্টে সাইন ইন করুন অথবা নতুন করে রেজিস্টার করুন।" },
-      { property: "og:title", content: "লগইন / রেজিস্টার" },
-      { property: "og:description", content: "রিসেলার অ্যাকাউন্ট তৈরি করে নিজের স্টোর চালু করুন।" },
+      { title: "Login / Register" },
+      { name: "description", content: "Sign in to your reseller account or register a new one." },
+      { property: "og:title", content: "Login / Register" },
+      { property: "og:description", content: "Create a reseller account and launch your own store." },
     ],
   }),
   component: AuthPage,
@@ -90,10 +90,10 @@ function AuthPage() {
             // Fire the codes off, then let /verify collect them.
             if (adv.verifyEmail) await sendCode({ data: { channel: "email" } }).catch(() => null);
             if (adv.verifySms) await sendCode({ data: { channel: "sms" } }).catch(() => null);
-            toast.success("অ্যাকাউন্ট তৈরি হয়েছে — এখন ভেরিফাই করুন");
+            toast.success("Account created — now verify it");
             nav({ to: "/verify", replace: true });
           } else {
-            toast.success("অ্যাকাউন্ট তৈরি হয়েছে!");
+            toast.success("Account created!");
             nav({ to: "/dashboard", replace: true });
           }
         }
@@ -101,7 +101,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         await ensureAccount();
-        toast.success("স্বাগতম!");
+        toast.success("Welcome!");
         const target =
           search.redirect && search.redirect.startsWith("/") && !search.redirect.startsWith("/login")
             ? search.redirect
@@ -109,7 +109,7 @@ function AuthPage() {
         nav({ to: target, replace: true });
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "কিছু একটা সমস্যা হয়েছে");
+      toast.error(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setBusy(false);
     }
@@ -123,13 +123,13 @@ function AuthPage() {
             <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
               <Mail className="h-6 w-6" />
             </div>
-            <h1 className="text-2xl font-semibold">ইমেইল ভেরিফাই করুন</h1>
+            <h1 className="text-2xl font-semibold">Verify your email</h1>
             <p className="mt-3 text-sm text-muted-foreground">
-              আমরা <span className="font-medium text-foreground">{sentEmail}</span> এ একটি ভেরিফিকেশন লিংক পাঠিয়েছি।
-              ইমেইল খুলে লিংকে ক্লিক করুন, তারপর এখানে ফিরে এসে লগইন করুন।
+              We sent a verification link to <span className="font-medium text-foreground">{sentEmail}</span>.
+              Open the email and click the link, then come back here to log in.
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              (ইমেইল না পেলে স্প্যাম / প্রোমোশন ফোল্ডার চেক করুন)
+              (If you don't see it, check your spam / promotions folder)
             </p>
             <button
               onClick={() => {
@@ -138,7 +138,7 @@ function AuthPage() {
               }}
               className="btn-brand mt-6 inline-flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-medium"
             >
-              লগইন পেজে যান
+              Go to login page
             </button>
           </div>
         </div>
@@ -152,28 +152,28 @@ function AuthPage() {
     <div className="grid min-h-screen place-items-center px-4" style={{ background: "var(--gradient-hero)" }}>
       <div className="w-full max-w-md">
         <Link to="/" className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> হোমপেজে ফিরে যান
+          <ArrowLeft className="h-4 w-4" /> Back to homepage
         </Link>
 
         <div className="surface-card p-8">
           <h1 className="text-2xl font-semibold tracking-tight">
-            {isSignup ? "নতুন অ্যাকাউন্ট তৈরি করুন" : "লগইন করুন"}
+            {isSignup ? "Create a new account" : "Log in"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {isSignup
-              ? "নিচের তথ্য দিয়ে রেজিস্টার করুন — কয়েক সেকেন্ডেই হয়ে যাবে।"
-              : "আপনার ইমেইল ও পাসওয়ার্ড দিয়ে সাইন ইন করুন।"}
+              ? "Register with the details below — it only takes a few seconds."
+              : "Sign in with your email and password."}
           </p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-3">
             {isSignup && (
               <>
-                <Field label="অ্যাকাউন্টের ধরন">
+                <Field label="Account type">
                   <div className="grid grid-cols-2 gap-2">
                     {(
                       [
-                        ["reseller", "রিসেলার", "নিজের স্টোর চালাবো"],
-                        ["supplier", "সাপ্লায়ার", "প্রোডাক্ট সাপ্লাই দিবো"],
+                        ["reseller", "Reseller", "I will run my own store"],
+                        ["supplier", "Supplier", "I will supply products"],
                       ] as const
                     ).map(([key, label, hint]) => (
                       <button
@@ -194,16 +194,16 @@ function AuthPage() {
                   </div>
                 </Field>
 
-                <Field label="আপনার নাম">
+                <Field label="Your name">
                   <input
                     className={inp}
-                    placeholder="যেমনঃ রফিকুল ইসলাম"
+                    placeholder="e.g. John Doe"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
                   />
                 </Field>
-                <Field label="ফোন নাম্বার">
+                <Field label="Phone number">
                   <input
                     className={inp}
                     placeholder="01XXXXXXXXX"
@@ -214,7 +214,7 @@ function AuthPage() {
                 </Field>
               </>
             )}
-            <Field label="ইমেইল">
+            <Field label="Email">
               <input
                 type="email"
                 className={inp}
@@ -224,7 +224,7 @@ function AuthPage() {
                 required
               />
             </Field>
-            <Field label="পাসওয়ার্ড" hint={isSignup ? "কমপক্ষে ৬ অক্ষর" : undefined}>
+            <Field label="Password" hint={isSignup ? "At least 6 characters" : undefined}>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -239,7 +239,7 @@ function AuthPage() {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  aria-label={showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখান"}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -252,22 +252,22 @@ function AuthPage() {
               className="btn-brand flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium disabled:opacity-50"
             >
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isSignup ? "রেজিস্টার করুন" : "লগইন করুন"}
+              {isSignup ? "Register" : "Log in"}
             </button>
           </form>
 
           <p className="mt-5 text-center text-sm text-muted-foreground">
-            {isSignup ? "আগে থেকে অ্যাকাউন্ট আছে?" : "নতুন এখানে?"}{" "}
+            {isSignup ? "Already have an account?" : "New here?"}{" "}
             <button
               onClick={() => setMode(isSignup ? "signin" : "signup")}
               className="font-medium text-primary hover:underline"
             >
-              {isSignup ? "লগইন করুন" : "রেজিস্টার করুন"}
+              {isSignup ? "Log in" : "Register"}
             </button>
           </p>
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          সাইন ইন করলেই আপনি আমাদের শর্তাবলি ও প্রাইভেসি পলিসিতে সম্মত হচ্ছেন।
+          By signing in, you agree to our terms and privacy policy.
         </p>
       </div>
     </div>

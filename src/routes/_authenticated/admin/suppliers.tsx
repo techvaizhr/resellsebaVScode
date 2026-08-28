@@ -192,7 +192,7 @@ function AdminSuppliersPage() {
     <div>
       <PageHeader
         title="Supplier Network"
-        description="সাপ্লায়ার অ্যাকাউন্ট, তাদের বিক্রির হিসাব, রিটার্ন ও পেআউট এক জায়গায়।"
+        description="Supplier accounts, their sales, returns, and payouts in one place."
       />
 
       <div className="mb-3 flex flex-wrap gap-2">
@@ -507,7 +507,7 @@ function SupplierEditModal({
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.display_name.trim()) return toast.error("নাম দিন");
+    if (!form.display_name.trim()) return toast.error("Please enter a name");
     setBusy(true);
     const patch: Record<string, unknown> = {
       display_name: form.display_name.trim(),

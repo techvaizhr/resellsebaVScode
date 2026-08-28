@@ -133,9 +133,9 @@ function AdminSupplierPayoutsPage() {
 
   async function createPayout(e: React.FormEvent) {
     e.preventDefault();
-    if (!supplierId) return toast.error("Supplier select করুন");
+    if (!supplierId) return toast.error("Please select a supplier");
     const amt = Number(amount);
-    if (!amt || amt <= 0) return toast.error("সঠিক পরিমাণ দিন");
+    if (!amt || amt <= 0) return toast.error("Please enter a valid amount");
     setCreating(true);
     const { error } = await supabase.from("supplier_payouts").insert({
       supplier_id: supplierId,
@@ -171,7 +171,7 @@ function AdminSupplierPayoutsPage() {
     <div>
       <PageHeader
         title="Supplier payouts"
-        description="সাপ্লায়ারের উইথড্র রিকোয়েস্ট অ্যাপ্রুভ/পে করুন, বা সরাসরি পেমেন্ট রেকর্ড করুন।"
+        description="Approve/pay supplier withdrawal requests, or record a payment directly."
       />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -297,7 +297,7 @@ function AdminSupplierPayoutsPage() {
       />
 
       {rows.length === 0 ? (
-        <EmptyState title="No payouts" description="কোনো পেআউট রেকর্ড নেই।" />
+        <EmptyState title="No payouts" description="No payout records." />
       ) : (
         <>
           {/* Mobile cards */}
