@@ -178,9 +178,11 @@ function ResellerLayout() {
             href={`/s/${storeCode}`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-sm font-medium transition hover:bg-muted"
+            title="Visit store"
+            className="inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
           >
-            <ExternalLink className="h-4 w-4" /> Visit store
+            <ExternalLink className="h-4 w-4" />
+            <span className="hidden sm:inline">Visit store</span>
           </a>
         ) : null
       }
