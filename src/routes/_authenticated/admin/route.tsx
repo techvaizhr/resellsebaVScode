@@ -214,6 +214,10 @@ function AdminLayout() {
   const nav = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
   const isSuperAdmin = roles.includes("super_admin");
+  const navWithBadge = useMemo(
+    () => applyOrderBadge(filterNav(NAV, permissions, isSuperAdmin), "/admin/orders", orderNavCount),
+    [orderNavCount, permissions, isSuperAdmin],
+  );
   const isStaff = roles.includes("staff");
   const canEnter = isSuperAdmin || isStaff;
   const routePermission = Object.entries(ROUTE_PERMISSIONS)
@@ -306,7 +310,7 @@ function AdminLayout() {
       homeTo="/admin"
       bottomNav={{
         homeTo: "/admin",
-        left: { label: "Orders", to: "/admin/orders", icon: ShoppingCart },
+        left: { label: "Orders", to: "/admin/orders", icon: ShoppingCart, badge: orderNavCount },
         right: { label: "Catalog", to: "/admin/products", icon: Package },
       }}
       headerRight={
@@ -323,7 +327,7 @@ function AdminLayout() {
         </>
       }
       brand={{ name: brand.name, sub: isSuperAdmin ? "Admin panel" : "Staff panel", logoUrl: brand.logoUrl }}
-      nav={filterNav(NAV, permissions, isSuperAdmin)}
+      nav={navWithBadge}
       user={{
         name: user.user_metadata?.full_name ?? (isSuperAdmin ? "Admin" : "Staff"),
         email: user.email ?? "",
