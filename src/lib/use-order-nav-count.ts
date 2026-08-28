@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { NavEntry } from "@/components/AppShell";
 
 /**
  * Live "actionable orders" badge for the panel nav (sidebar + bottom nav).
@@ -31,4 +32,18 @@ export function useOrderNavCount(enabled = true) {
   }, [enabled, load]);
 
   return count;
+}
+
+/** Returns a copy of the nav with the count badge attached to the orders entry. */
+export function applyOrderBadge(nav: NavEntry[], ordersTo: string, count: number): NavEntry[] {
+  if (!count) return nav;
+  return nav.map((entry) => {
+    if ("items" in entry) {
+      return {
+        ...entry,
+        items: entry.items.map((it) => (it.to === ordersTo ? { ...it, badge: count } : it)),
+      };
+    }
+    return entry.to === ordersTo ? { ...entry, badge: count } : entry;
+  });
 }
