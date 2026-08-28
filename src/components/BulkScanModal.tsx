@@ -44,27 +44,31 @@ function ctx() {
   if (audioCtx.state === "suspended") void audioCtx.resume();
   return audioCtx;
 }
-function tone(freq: number, start: number, dur: number, type: OscillatorType = "sine", gain = 0.16) {
+function tone(freq: number, start: number, dur: number, type: OscillatorType = "sine", gain = 0.5) {
   const ac = ctx();
   if (!ac) return;
   const osc = ac.createOscillator();
   const g = ac.createGain();
   osc.type = type;
   osc.frequency.value = freq;
-  g.gain.setValueAtTime(0, ac.currentTime + start);
-  g.gain.linearRampToValueAtTime(gain, ac.currentTime + start + 0.01);
+  g.gain.setValueAtTime(0.0001, ac.currentTime + start);
+  g.gain.linearRampToValueAtTime(gain, ac.currentTime + start + 0.012);
   g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + start + dur);
   osc.connect(g).connect(ac.destination);
   osc.start(ac.currentTime + start);
-  osc.stop(ac.currentTime + start + dur + 0.02);
+  osc.stop(ac.currentTime + start + dur + 0.03);
 }
 function beepSuccess() {
-  tone(1180, 0, 0.09, "sine", 0.18);
-  tone(1560, 0.08, 0.1, "sine", 0.14);
+  // bright rising double-beep, loud
+  tone(1180, 0, 0.12, "square", 0.45);
+  tone(1560, 0.11, 0.16, "square", 0.5);
+  tone(1560, 0.11, 0.16, "sine", 0.3);
 }
 function beepError() {
-  tone(220, 0, 0.18, "square", 0.12);
-  tone(160, 0.2, 0.28, "square", 0.12);
+  // low harsh descending buzz, loud
+  tone(220, 0, 0.22, "sawtooth", 0.5);
+  tone(160, 0.22, 0.32, "sawtooth", 0.5);
+  tone(160, 0.22, 0.32, "square", 0.25);
 }
 
 /* ---------------- helpers ---------------- */
