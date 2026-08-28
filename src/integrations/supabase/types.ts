@@ -3105,6 +3105,7 @@ export type Database = {
         Returns: number
       }
       order_kept_product_cost: { Args: { _order_id: string }; Returns: number }
+      order_nav_count: { Args: never; Returns: number }
       order_visible_to_me: { Args: { _order_id: string }; Returns: boolean }
       panel_bootstrap: { Args: never; Returns: Json }
       product_slugify: { Args: { _name: string }; Returns: string }
