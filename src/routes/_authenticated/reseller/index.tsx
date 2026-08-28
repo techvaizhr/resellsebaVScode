@@ -176,10 +176,10 @@ function ResellerDashboard() {
               <Plus className="h-4 w-4" /> Add order
             </button>
             <Link
-              to="/reseller/transactions"
+              to="/reseller/catalog"
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-elegant transition-all hover:opacity-90 active:scale-95"
             >
-              <Wallet className="h-4 w-4" /> Reports
+              <Package className="h-4 w-4" /> Catalog
             </Link>
           </div>
         }

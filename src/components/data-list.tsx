@@ -66,7 +66,7 @@ export function DataToolbar({
       key={f.key}
       value={f.value}
       onChange={(e) => f.onChange(e.target.value)}
-      className="min-w-[120px] rounded-md border bg-background px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+      className="w-full min-w-0 rounded-md border bg-background px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-ring md:min-w-[120px] md:w-auto"
       title={f.label}
     >
       <option value="">{f.label}: All</option>
@@ -83,9 +83,9 @@ export function DataToolbar({
       <div className="mb-4">
         <div className="flex flex-col gap-2 md:grid md:grid-cols-[40%_1fr] md:items-center">
           {searchInput}
-          <div className="flex flex-wrap items-center gap-2 md:justify-end">
+          <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center md:justify-end">
             {filterSelects.map((s) => (
-              <div key={s.key} className="min-w-[120px] flex-1">
+              <div key={s.key} className="md:min-w-[120px] md:flex-1">
                 {s}
               </div>
             ))}
