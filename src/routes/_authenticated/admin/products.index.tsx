@@ -130,8 +130,8 @@ function ProductsPage() {
       !(await confirmAction({
         title: approve ? "Approve submission" : "Reject submission",
         description: approve
-          ? "সাপ্লায়ারের সাবমিট করা তথ্য লাইভ হবে।"
-          : "সাবমিশন রিজেক্ট হবে, লাইভ ডেটা অপরিবর্তিত থাকবে।",
+          ? "The information submitted by the supplier will go live."
+          : "The submission will be rejected; live data will remain unchanged.",
         detail: p.name,
         confirmText: approve ? "Approve" : "Reject",
       }))
@@ -882,7 +882,7 @@ function AssignSupplierModal({
         ))}
       </select>
       <p className="mt-2 text-[11px] text-muted-foreground">
-        সাপ্লায়ার সিলেক্ট করলে admin cost-ই তার প্রাপ্য ধরা হবে। Remove করলে প্রোডাক্টটি অ্যাডমিনের নিজের হয়ে যাবে।
+        If you select a supplier, the admin cost will be treated as their due amount. Removing it will make the product the admin's own.
       </p>
     </AppModal>
   );

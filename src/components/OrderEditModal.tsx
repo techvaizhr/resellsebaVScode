@@ -457,7 +457,7 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
                     </div>
                     {!shipTouched && (
                       <p className="text-[11px] text-muted-foreground">
-                        এরিয়া বদলালে ডেলিভারি চার্জ অটো আপডেট হবে (৳{autoShipping.toFixed(0)})।
+                        Delivery charge will auto-update when the area changes (৳{autoShipping.toFixed(0)}).
                       </p>
                     )}
                   </div>
@@ -649,7 +649,7 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
                   )}
                 </div>
                 <p className="text-[12px] leading-relaxed text-muted-foreground">
-                  খালি রাখলে ডিফল্ট বসবে। ডেলিভারি চার্জ = কাস্টমার দিবে, কুরিয়ার কস্ট = অ্যাডমিনের খরচ।
+                  Leave empty to use the default. Delivery charge = paid by customer, courier cost = admin's expense.
                   <br />
                   {packagingModeHint(packagingSum)}
                 </p>
@@ -668,7 +668,7 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
                     <AdvanceByToggle value={advanceBy} onChange={setAdvanceBy} />
                   </div>
                   <p className="text-[12px] leading-relaxed text-muted-foreground">
-                    অ্যাডমিন নিলে রিসেলারের হিসাব থেকে কাটে না, রিসেলার নিলে ফাইনাল অ্যামাউন্ট থেকে বাদ যাবে।
+                    If taken by admin, it is not deducted from the reseller's account; if taken by the reseller, it will be deducted from the final amount.
                   </p>
                 </div>
 

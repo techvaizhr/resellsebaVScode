@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/admin/supplier-returns")({
   head: () => ({
     meta: [
       { title: "Supplier returns handover · Admin" },
-      { name: "description", content: "সাপ্লায়ার অনুযায়ী রিটার্ন আইটেম হ্যান্ডওভার করুন — একসাথে বা একটি করে।" },
+      { name: "description", content: "Hand over returned items to each supplier — in bulk or one at a time." },
       { property: "og:title", content: "Supplier returns handover" },
       { property: "og:description", content: "Hand returned items back to each supplier." },
       { property: "og:type", content: "website" },
@@ -147,8 +147,8 @@ function AdminSupplierReturnsPage() {
       await handoverSupplierReturns(ids, undo);
       toast.success(
         undo
-          ? `${ids.length}টি আইটেমের হ্যান্ডওভার বাতিল হয়েছে — আবার "Waiting handover" এ গেছে`
-          : `${ids.length}টি আইটেম সাপ্লায়ারকে হ্যান্ডওভার করা হয়েছে`,
+          ? `Handover of ${ids.length} item(s) cancelled — back to "Waiting handover"`
+          : `${ids.length} item(s) handed over to the supplier`,
       );
       setSel([]);
       await load(true);
@@ -162,7 +162,7 @@ function AdminSupplierReturnsPage() {
   const loginAs = async (supplierId: string, name: string) => {
     const s = data?.suppliers.find((x) => x.id === supplierId);
     if (!s?.user_id) {
-      toast.error("এই সাপ্লায়ারের অ্যাকাউন্ট পাওয়া যায়নি");
+      toast.error("Could not find an account for this supplier");
       return;
     }
     setBusy(true);
@@ -194,7 +194,7 @@ function AdminSupplierReturnsPage() {
     <div>
       <PageHeader
         title="Return handover"
-        description="সাপ্লায়ার অনুযায়ী ফেরত আসা আইটেম — একসাথে বা একটি করে হ্যান্ডওভার করুন।"
+        description="Items returned per supplier — hand over in bulk or one at a time."
       />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
@@ -268,7 +268,7 @@ function AdminSupplierReturnsPage() {
       )}
 
       {groups.length === 0 ? (
-        <EmptyState title="No returns" description="এই ফিল্টারে কোনো রিটার্ন নেই।" />
+        <EmptyState title="No returns" description="No returns match this filter." />
       ) : (
         <div className="space-y-4">
           {groups.map((g) => {
@@ -416,7 +416,7 @@ function AdminSupplierReturnsPage() {
                                   onClick={() => setUndoTarget([r.id])}
                                   disabled={busy}
                                   className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50"
-                                  title="ক্লিক করলে হ্যান্ডওভার বাতিল করা যাবে"
+                                  title="Click to cancel the handover"
                                 >
                                   <PackageCheck className="h-3 w-3" /> Handed over
                                 </button>
@@ -445,16 +445,16 @@ function AdminSupplierReturnsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-destructive">
-              হ্যান্ডওভার বাতিল করবেন? ({undoTarget?.length ?? 0}টি আইটেম)
+              Cancel handover? ({undoTarget?.length ?? 0} item(s))
             </AlertDialogTitle>
             <AlertDialogDescription>
-              এই আইটেমগুলো সাপ্লায়ারকে ইতিমধ্যে বুঝিয়ে দেওয়া হিসেবে চিহ্নিত আছে। বাতিল করলে সেগুলো আবার
-              &ldquo;Waiting handover&rdquo; অবস্থায় ফিরে যাবে এবং সাপ্লায়ারের প্যানেলেও Received স্ট্যাটাস মুছে যাবে।
-              প্রোডাক্ট ফিজিক্যালি ফেরত না নিয়ে থাকলে এটি করবেন না। শুধু এই সাপ্লায়ারের সিলেক্ট করা আইটেমেই প্রভাব পড়বে।
+              These items are currently marked as handed over to the supplier. Cancelling will move them back to
+              &ldquo;Waiting handover&rdquo; status and clear the Received status on the supplier's panel as well.
+              Do not do this unless the product has not actually been returned physically. This only affects the selected items for this supplier.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>না, থাক</AlertDialogCancel>
+            <AlertDialogCancel>No, keep it</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
@@ -463,7 +463,7 @@ function AdminSupplierReturnsPage() {
                 void act(ids, true);
               }}
             >
-              হ্যাঁ, হ্যান্ডওভার বাতিল করুন
+              Yes, cancel handover
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

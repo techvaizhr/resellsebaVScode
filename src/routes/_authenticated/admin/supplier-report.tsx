@@ -98,7 +98,7 @@ function AdminSupplierReportPage() {
 
   return (
     <div>
-      <PageHeader title="Supplier report" description="প্রতি সাপ্লায়ারের বিক্রি, রিটার্ন, পরিশোধিত ও বকেয়া হিসাব।" />
+      <PageHeader title="Supplier report" description="Sales, returns, paid, and outstanding amounts per supplier." />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Sold qty" value={totals.sold} icon={<PackageCheck className="h-4 w-4" />} />
@@ -163,7 +163,7 @@ function AdminSupplierReportPage() {
 
       {!supplierId ? (
         listed.length === 0 ? (
-          <EmptyState title="No suppliers" description="কোনো সাপ্লায়ার পাওয়া যায়নি।" />
+          <EmptyState title="No suppliers" description="No suppliers found." />
         ) : (
           <div className="surface-card overflow-x-auto p-4">
             <table className="w-full text-xs">
@@ -230,7 +230,7 @@ function AdminSupplierReportPage() {
 
           {tab === "returns" ? (
             (detail?.returns.length ?? 0) === 0 ? (
-              <EmptyState title="No returns" description="কোনো রিটার্ন নেই।" />
+              <EmptyState title="No returns" description="No returns." />
             ) : (
               <div className="overflow-x-auto rounded-md border">
                 <table className="w-full text-xs">
@@ -262,7 +262,7 @@ function AdminSupplierReportPage() {
               </div>
             )
           ) : rows.length === 0 ? (
-            <EmptyState title="No records" description="এই ফিল্টারে কিছু পাওয়া যায়নি।" />
+            <EmptyState title="No records" description="No records match this filter." />
           ) : (
             <div className="overflow-x-auto rounded-md border">
               <table className="w-full text-xs">

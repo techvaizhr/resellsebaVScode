@@ -36,7 +36,7 @@ function SupplierProfilePage() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.display_name.trim()) return toast.error("নাম দিন");
+    if (!form.display_name.trim()) return toast.error("Please enter a name");
     setBusy(true);
     const { error } = await supabase
       .from("suppliers")
@@ -61,7 +61,7 @@ function SupplierProfilePage() {
 
   return (
     <div>
-      <PageHeader title="My profile" description="আপনার যোগাযোগ ও পেআউট তথ্য।" />
+      <PageHeader title="My profile" description="Your contact and payout information." />
 
       <form onSubmit={save} className="space-y-4">
         <div className="surface-card p-5">

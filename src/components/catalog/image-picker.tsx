@@ -65,7 +65,7 @@ export function ImagePickerButton({
     try {
       const urls = (await loadImages()).filter(Boolean);
       if (urls.length === 0) {
-        toast.error("কোনো ছবি পাওয়া যায়নি");
+        toast.error("No images found");
         return;
       }
       setLazy(urls);
@@ -129,7 +129,7 @@ function ImagePickerModal({
   async function download() {
     const picked = [...sel].sort((a, b) => a - b);
     if (picked.length === 0) {
-      toast.error("অন্তত ১টি ছবি সিলেক্ট করুন");
+      toast.error("Select at least 1 image");
       return;
     }
     setBusy(true);
@@ -156,7 +156,7 @@ function ImagePickerModal({
       >
         <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
           <div className="flex items-center gap-2 text-sm font-bold">
-            <Images className="h-4 w-4 text-primary" /> ছবি সিলেক্ট করুন ({sel.size}/{images.length})
+            <Images className="h-4 w-4 text-primary" /> Select images ({sel.size}/{images.length})
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1 hover:bg-muted">
             <X className="h-4 w-4" />

@@ -188,7 +188,7 @@ export function ListingPricingModal({
                 </div>
               </dl>
               <p className="mt-2 text-xs text-muted-foreground">
-                Delivery charge customer আলাদা করে দেয় — আপনার profit থেকে কাটে না।
+                The customer pays the delivery charge separately — it is not deducted from your profit.
               </p>
             </div>
 
@@ -222,7 +222,7 @@ export function ListingPricingModal({
               </div>
               {calc.valid && calc.sell < calc.cost && (
                 <p className="mt-2 text-xs font-medium text-destructive">
-                  Selling price cost এর নিচে — save করা যাবে না।
+                  Selling price is below cost — cannot save.
                 </p>
               )}
             </div>

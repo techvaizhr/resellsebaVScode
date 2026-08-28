@@ -129,7 +129,7 @@ function LandingEditor() {
             </div>
           ))}
           {(c.stats?.items?.length ?? 0) < 4 && (
-            <button type="button" onClick={() => update((d) => { d.stats = { items: [...(d.stats?.items ?? []), { value: "10,000+", label: "প্রোডাক্ট" }] }; })} className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs hover:bg-muted">
+            <button type="button" onClick={() => update((d) => { d.stats = { items: [...(d.stats?.items ?? []), { value: "10,000+", label: "Products" }] }; })} className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs hover:bg-muted">
               <Plus className="h-3.5 w-3.5" /> Stat add
             </button>
           )}
@@ -157,13 +157,13 @@ function LandingEditor() {
               <F label="Description"><T value={f.desc} onChange={(v) => update((d) => { d.features.items[i].desc = v; })} /></F>
             </div>
           ))}
-          <button type="button" onClick={() => update((d) => { d.features.items.push({ icon: "Sparkles", title: "নতুন ফিচার", desc: "বর্ণনা" }); })} className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs hover:bg-muted">
+          <button type="button" onClick={() => update((d) => { d.features.items.push({ icon: "Sparkles", title: "New feature", desc: "Description" }); })} className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs hover:bg-muted">
             <Plus className="h-3.5 w-3.5" /> Feature add
           </button>
         </div>
       </Section>
 
-      <Section title="5. আমরা কীভাবে কাজ করি (flow section)">
+      <Section title="5. How we work (flow section)">
         <Grid>
           <F label="Badge"><I value={c.about?.badge ?? ""} onChange={(v) => update((d) => { d.about = { ...(d.about ?? { badge: "", title: "", body: "", points: [] }), badge: v }; })} /></F>
           <F label="Title"><I value={c.about?.title ?? ""} onChange={(v) => update((d) => { d.about = { ...(d.about ?? { badge: "", title: "", body: "", points: [] }), title: v }; })} /></F>
@@ -218,7 +218,7 @@ function LandingEditor() {
               <F label="Description"><T value={s.desc} onChange={(v) => update((d) => { d.how.steps[i].desc = v; })} /></F>
             </div>
           ))}
-          <button type="button" onClick={() => update((d) => { d.how.steps.push({ title: "নতুন স্টেপ", desc: "বর্ণনা" }); })} className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs hover:bg-muted">
+          <button type="button" onClick={() => update((d) => { d.how.steps.push({ title: "New step", desc: "Description" }); })} className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs hover:bg-muted">
             <Plus className="h-3.5 w-3.5" /> Step add
           </button>
         </div>

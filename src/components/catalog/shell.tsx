@@ -114,7 +114,7 @@ export function DownloadBtn({ url }: { url: string }) {
 
 /**
  * Master catalog price visibility.
- * Admin/staff/reseller/leader দেখতে পাবে — গেস্ট ও সাপ্লায়ার পাবে না।
+ * Visible to admin/staff/reseller/leader — not visible to guests or suppliers.
  */
 export function useCatalogPrices() {
   const { roles, loading } = useAuth();

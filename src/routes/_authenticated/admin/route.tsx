@@ -274,7 +274,7 @@ function AdminLayout() {
         <div className="surface-card max-w-sm p-8 text-center">
           <h1 className="text-lg font-semibold">No panel access</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            আপনার অ্যাকাউন্টে এখনো কোনো পেজের পারমিশন দেওয়া হয়নি। সুপার অ্যাডমিনের সাথে যোগাযোগ করুন।
+            Your account does not have permission for any page yet. Please contact the super admin.
           </p>
           <button
             onClick={async () => {

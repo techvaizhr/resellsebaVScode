@@ -668,7 +668,7 @@ export function NewOrderModal({
                       )}
                     </div>
                     <p className="text-[12px] leading-relaxed text-muted-foreground">
-                      খালি রাখলে ডিফল্ট বসবে। ডেলিভারি চার্জ = কাস্টমার দিবে, কুরিয়ার কস্ট = অ্যাডমিনের খরচ।
+                      Leave empty to use the default. Delivery charge = paid by customer, courier cost = admin's expense.
                       <br />
                       {packagingModeHint(packagingSum)}
                     </p>
@@ -699,7 +699,7 @@ export function NewOrderModal({
                       <AdvanceByToggle value={advanceBy} onChange={setAdvanceBy} />
                     </div>
                     <p className="text-[12px] leading-relaxed text-muted-foreground">
-                      অ্যাডমিন নিলে রিসেলারের হিসাব থেকে কাটে না, রিসেলার নিলে ফাইনাল অ্যামাউন্ট থেকে বাদ যাবে।
+                      If taken by admin, it is not deducted from the reseller's account; if taken by the reseller, it will be deducted from the final amount.
                     </p>
                   </div>
 
