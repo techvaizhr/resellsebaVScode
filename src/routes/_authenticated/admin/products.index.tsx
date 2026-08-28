@@ -281,6 +281,7 @@ function ProductsPage() {
       <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} onSaved={() => load()} />
 
       <DataToolbar
+        inline
         search={q}
         onSearch={setQ}
         searchPlaceholder="Search by name or ID…"
