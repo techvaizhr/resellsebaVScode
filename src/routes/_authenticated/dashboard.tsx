@@ -54,33 +54,43 @@ function DashboardRouter() {
     // we are guarding against. Confirm against the resellers table first.
     done.current = true;
     void (async () => {
-      if (!accessError) {
-        // Self-heal: create the reseller/supplier record + role if signup never did.
-        await (supabase.rpc as unknown as (fn: string) => Promise<unknown>)(
-          "bootstrap_current_user",
-        ).catch(() => null);
-        const { data: sup } = await supabase
-          .from("suppliers")
-          .select("id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (sup) {
-          nav({ to: "/supplier", replace: true });
-          return;
-        }
-        const { data, error } = await supabase
-          .from("resellers")
-          .select("status")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (!error) {
-          if (data?.status === "active") {
-            nav({ to: "/reseller", replace: true });
-          } else {
-            nav({ to: "/onboarding", replace: true });
+      try {
+        if (!accessError) {
+          // Self-heal: create the reseller/supplier record + role if signup never did.
+          // NOTE: supabase.rpc() returns a thenable builder, not a real Promise —
+          // it has no .catch(), so it must be awaited inside try/catch.
+          try {
+            await (supabase.rpc as unknown as (fn: string) => PromiseLike<unknown>)(
+              "bootstrap_current_user",
+            );
+          } catch {
+            /* non-fatal */
           }
-          return;
+          const { data: sup } = await supabase
+            .from("suppliers")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (sup) {
+            nav({ to: "/supplier", replace: true });
+            return;
+          }
+          const { data, error } = await supabase
+            .from("resellers")
+            .select("status")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (!error) {
+            if (data?.status === "active") {
+              nav({ to: "/reseller", replace: true });
+            } else {
+              nav({ to: "/onboarding", replace: true });
+            }
+            return;
+          }
         }
+      } catch {
+        /* fall through to the retry screen */
       }
 
       // Lookup failed — never guess. Offer a retry instead.

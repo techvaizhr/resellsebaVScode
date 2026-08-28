@@ -233,8 +233,15 @@ export const pathaoStores = createServerFn({ method: "POST" })
     const { pathaoStoreList } = await import("@/lib/pathao.server");
     const { persistCourierStores } = await import("@/lib/couriers.server");
     const conf = await getCourierConfig(supabase, "pathao");
-    const stores = await pathaoStoreList(supabase, conf);
+    const all = await pathaoStoreList(supabase, conf);
+    // Deactivated stores cannot receive parcels — never offer them for booking.
+    const stores = all.filter((s: any) => s.isActive !== false);
     const defaultStoreId = await persistCourierStores(supabase, "pathao", conf, stores);
+    if (stores.length === 0)
+      throw new Response(
+        "Pathao account e kono active pickup store nei. Pathao panel e store add/active korun.",
+        { status: 400 },
+      );
     return { stores, defaultStoreId };
   });
 
@@ -277,10 +284,11 @@ export const bookPathao = createServerFn({ method: "POST" })
     const { userId } = context;
     const supabase = await courierActorClient(context.supabase, userId, data.orderId);
     const { pathaoRequest } = await import("@/lib/pathao.server");
-    const { courierStoreName } = await import("@/lib/couriers.server");
+    const { courierStoreName, assertCourierStore } = await import("@/lib/couriers.server");
     const conf = await getCourierConfig(supabase, "pathao");
     const storeId = data.storeId || conf.store_id;
     if (!storeId) throw new Response("Pathao store select korun", { status: 400 });
+    assertCourierStore(conf, "Pathao", storeId);
     const order = await getOrderForBooking(supabase, data.orderId);
 
     const { data: existing } = await supabase
@@ -436,8 +444,14 @@ export const carrybeeStores = createServerFn({ method: "POST" })
       isActive: Boolean(s.is_active),
       isDefaultPickup: Boolean(s.is_default_pickup_store),
     })).filter((s: any) => s.id);
-    const defaultStoreId = await persistCourierStores(supabase, "carrybee", conf, stores);
-    return { stores, defaultStoreId };
+    const usable = stores.filter((s: any) => s.isActive !== false);
+    const defaultStoreId = await persistCourierStores(supabase, "carrybee", conf, usable);
+    if (usable.length === 0)
+      throw new Response(
+        "Carrybee account e kono active pickup store nei. Carrybee panel e store add/active korun.",
+        { status: 400 },
+      );
+    return { stores: usable, defaultStoreId };
   });
 
 
@@ -460,10 +474,11 @@ export const bookCarrybee = createServerFn({ method: "POST" })
     const { userId } = context;
     const supabase = await courierActorClient(context.supabase, userId, data.orderId);
     const { carrybeeRequest, carrybeeResolveLocation } = await import("@/lib/carrybee.server");
-    const { courierStoreName } = await import("@/lib/couriers.server");
+    const { courierStoreName, assertCourierStore } = await import("@/lib/couriers.server");
     const conf = await getCourierConfig(supabase, "carrybee");
     const storeId = data.storeId || conf.store_id;
     if (!storeId) throw new Response("Carrybee store select korun", { status: 400 });
+    assertCourierStore(conf, "Carrybee", storeId);
     const order = await getOrderForBooking(supabase, data.orderId);
 
     const { data: existing } = await supabase
