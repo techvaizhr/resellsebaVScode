@@ -3227,6 +3227,7 @@ export type Database = {
       }
       supplier_bootstrap: { Args: never; Returns: Json }
       supplier_can_book_order: { Args: { _order: string }; Returns: boolean }
+      supplier_can_note: { Args: { _order_id: string }; Returns: boolean }
       supplier_kept_qty: {
         Args: {
           _qty: number
