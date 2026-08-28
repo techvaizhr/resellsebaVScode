@@ -494,89 +494,11 @@ function ResellersPage() {
             const waPhone = phone.replace(/[^0-9]/g, "").replace(/^0/, "880");
             return (
               <div key={r.id} className="surface-card p-4 shadow-sm transition hover:shadow-md">
-                <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3">
+                <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
                   <ResellerAvatar url={r.avatar_url} name={r.business_name} size={40} />
-
                   <div className="min-w-0">
                     <div className="truncate font-medium">{r.business_name}</div>
-                    <div className="mt-1 flex flex-nowrap items-center gap-1.5">
-                      <StatusBadge status={r.status} />
-                      <VerifyBadges {...vf} />
-                    </div>
-                    {(r.deposit_required && Number(r.deposit_required_amount) > 0) || Number(r.frozen_amount) > 0 ? (
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                        {r.deposit_required && Number(r.deposit_required_amount) > 0 && (
-                          (s?.deposit_balance ?? 0) >= Number(r.deposit_required_amount) ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success">
-                              <ShieldCheck className="h-3 w-3" /> Deposit ok
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-medium text-destructive">
-                              <AlertTriangle className="h-3 w-3" /> Deposit due ৳
-                              {(Number(r.deposit_required_amount) - (s?.deposit_balance ?? 0)).toLocaleString()}
-                            </span>
-                          )
-                        )}
-                        {Number(r.frozen_amount) > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            <Lock className="h-3 w-3" /> Frozen ৳{Number(r.frozen_amount).toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                    ) : null}
-                    <div className="mt-1.5 flex flex-nowrap items-center gap-1.5 overflow-x-auto">
-                      <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
-                        <IdCard className="h-3 w-3 text-primary" />
-                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">ID</span>
-                        <span className="font-mono text-[11px] font-bold tracking-wider text-primary">{r.code}</span>
-                        <button
-                          type="button"
-                          title="Copy reseller ID"
-                          onClick={() => {
-                            navigator.clipboard.writeText(r.code);
-                            toast.success("Reseller ID copied");
-                          }}
-                          className="text-muted-foreground transition hover:text-foreground"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </button>
-                      </span>
-                      {phone ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5">
-                          <Phone className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-mono text-[11px] font-medium">{phone}</span>
-                          <button
-                            type="button"
-                            title="Copy phone"
-                            onClick={() => {
-                              navigator.clipboard.writeText(phone);
-                              toast.success("Phone copied");
-                            }}
-                            className="text-muted-foreground transition hover:text-foreground"
-                          >
-                            <Copy className="h-3 w-3" />
-                          </button>
-                          <a href={`tel:${phone}`} title="Call" className="text-muted-foreground transition hover:text-primary">
-                            <PhoneCall className="h-3 w-3" />
-                          </a>
-                          <a
-                            href={`https://wa.me/${waPhone}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            title="WhatsApp"
-                            className="text-muted-foreground transition hover:text-success"
-                          >
-                            <MessageCircle className="h-3 w-3" />
-                          </a>
-                        </span>
-                      ) : (
-                        <span className="rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">
-                          no phone
-                        </span>
-                      )}
-                    </div>
                   </div>
-
                   <div className="flex shrink-0 items-center gap-1.5">
                     <Link
                       to="/admin/transactions"
@@ -606,85 +528,160 @@ function ResellersPage() {
                     </button>
                     <DropdownMenu>
                       <DropdownMenuTrigger className="grid h-8 w-8 shrink-0 place-items-center rounded-md border hover:bg-muted">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuLabel>{r.business_name}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {resellerStatusActions(r.status, autoApprove).map((a) => (
-                        <DropdownMenuItem
-                          key={a.status}
-                          onClick={() => setStatus(r, a.status)}
-                          className={a.tone === "danger" ? "text-destructive focus:text-destructive" : ""}
-                        >
-                          {a.status === "active" ? (
-                            <Play className="mr-2 h-4 w-4" />
-                          ) : a.status === "rejected" ? (
-                            <X className="mr-2 h-4 w-4" />
-                          ) : a.status === "suspended" ? (
-                            <ShieldOff className="mr-2 h-4 w-4" />
-                          ) : (
-                            <Check className="mr-2 h-4 w-4" />
-                          )}
-                          {a.label}
-                        </DropdownMenuItem>
-                      ))}
-                      <DropdownMenuSeparator />
-
-                      {!emailVerified && (
-                        <DropdownMenuItem onClick={() => confirmEmail(r)}>
-                          <MailCheck className="mr-2 h-4 w-4" /> Confirm email
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => void setPhoneVerified(r, !vf.phoneVerified)}>
-                        {vf.phoneVerified ? (
-                          <>
-                            <SmartphoneNfc className="mr-2 h-4 w-4" /> Clear mobile verification
-                          </>
-                        ) : (
-                          <>
-                            <SmartphoneNfc className="mr-2 h-4 w-4" /> Mark mobile verified
-                          </>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel>{r.business_name}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {resellerStatusActions(r.status, autoApprove).map((a) => (
+                          <DropdownMenuItem
+                            key={a.status}
+                            onClick={() => setStatus(r, a.status)}
+                            className={a.tone === "danger" ? "text-destructive focus:text-destructive" : ""}
+                          >
+                            {a.status === "active" ? (
+                              <Play className="mr-2 h-4 w-4" />
+                            ) : a.status === "rejected" ? (
+                              <X className="mr-2 h-4 w-4" />
+                            ) : a.status === "suspended" ? (
+                              <ShieldOff className="mr-2 h-4 w-4" />
+                            ) : (
+                              <Check className="mr-2 h-4 w-4" />
+                            )}
+                            {a.label}
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                        {!emailVerified && (
+                          <DropdownMenuItem onClick={() => confirmEmail(r)}>
+                            <MailCheck className="mr-2 h-4 w-4" /> Confirm email
+                          </DropdownMenuItem>
                         )}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setProfileFor(r)}>
-                        <UserCircle className="mr-2 h-4 w-4" /> View profile
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setEditing(r)}>
-                        <Pencil className="mr-2 h-4 w-4" /> Edit details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setDepositFor(r)}>
-                        <Wallet className="mr-2 h-4 w-4" /> Deposit & freeze
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setResetFor(r)}>
-                        <KeyRound className="mr-2 h-4 w-4" /> Reset password
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => void loginAsReseller(r)}>
-                        <LogIn className="mr-2 h-4 w-4" /> Login as reseller
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => copyStoreLink(r)}>
-                        <Copy className="mr-2 h-4 w-4" /> Copy store link
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <a href={`/s/${r.code}`} target="_blank" rel="noreferrer">
-                          <ExternalLink className="mr-2 h-4 w-4" /> Visit storefront
-                        </a>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => remove(r)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete reseller
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => void setPhoneVerified(r, !vf.phoneVerified)}>
+                          {vf.phoneVerified ? (
+                            <>
+                              <SmartphoneNfc className="mr-2 h-4 w-4" /> Clear mobile verification
+                            </>
+                          ) : (
+                            <>
+                              <SmartphoneNfc className="mr-2 h-4 w-4" /> Mark mobile verified
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setProfileFor(r)}>
+                          <UserCircle className="mr-2 h-4 w-4" /> View profile
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditing(r)}>
+                          <Pencil className="mr-2 h-4 w-4" /> Edit details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setDepositFor(r)}>
+                          <Wallet className="mr-2 h-4 w-4" /> Deposit & freeze
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setResetFor(r)}>
+                          <KeyRound className="mr-2 h-4 w-4" /> Reset password
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => void loginAsReseller(r)}>
+                          <LogIn className="mr-2 h-4 w-4" /> Login as reseller
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => copyStoreLink(r)}>
+                          <Copy className="mr-2 h-4 w-4" /> Copy store link
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <a href={`/s/${r.code}`} target="_blank" rel="noreferrer">
+                            <ExternalLink className="mr-2 h-4 w-4" /> Visit storefront
+                          </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => remove(r)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete reseller
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                 </div>
 
+                <div className="mt-2 flex flex-nowrap items-center gap-1.5">
+                  <StatusBadge status={r.status} />
+                  <VerifyBadges {...vf} />
+                </div>
+                {(r.deposit_required && Number(r.deposit_required_amount) > 0) || Number(r.frozen_amount) > 0 ? (
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    {r.deposit_required && Number(r.deposit_required_amount) > 0 && (
+                      (s?.deposit_balance ?? 0) >= Number(r.deposit_required_amount) ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success">
+                          <ShieldCheck className="h-3 w-3" /> Deposit ok
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-medium text-destructive">
+                          <AlertTriangle className="h-3 w-3" /> Deposit due ৳
+                          {(Number(r.deposit_required_amount) - (s?.deposit_balance ?? 0)).toLocaleString()}
+                        </span>
+                      )
+                    )}
+                    {Number(r.frozen_amount) > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        <Lock className="h-3 w-3" /> Frozen ৳{Number(r.frozen_amount).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                ) : null}
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
+                    <IdCard className="h-3 w-3 text-primary" />
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">ID</span>
+                    <span className="font-mono text-[11px] font-bold tracking-wider text-primary">{r.code}</span>
+                    <button
+                      type="button"
+                      title="Copy reseller ID"
+                      onClick={() => {
+                        navigator.clipboard.writeText(r.code);
+                        toast.success("Reseller ID copied");
+                      }}
+                      className="text-muted-foreground transition hover:text-foreground"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  </span>
+                  {phone ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5">
+                      <Phone className="h-3 w-3 text-muted-foreground" />
+                      <span className="font-mono text-[11px] font-medium">{phone}</span>
+                      <button
+                        type="button"
+                        title="Copy phone"
+                        onClick={() => {
+                          navigator.clipboard.writeText(phone);
+                          toast.success("Phone copied");
+                        }}
+                        className="text-muted-foreground transition hover:text-foreground"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </button>
+                      <a href={`tel:${phone}`} title="Call" className="text-muted-foreground transition hover:text-primary">
+                        <PhoneCall className="h-3 w-3" />
+                      </a>
+                      <a
+                        href={`https://wa.me/${waPhone}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="WhatsApp"
+                        className="text-muted-foreground transition hover:text-success"
+                      >
+                        <MessageCircle className="h-3 w-3" />
+                      </a>
+                    </span>
+                  ) : (
+                    <span className="rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">
+                      no phone
+                    </span>
+                  )}
+                </div>
 
-                <div className="mt-3 grid grid-cols-3 gap-2 lg:grid-cols-4 xl:grid-cols-8">
+                <div className="mt-3 grid grid-cols-4 gap-2 lg:grid-cols-4 xl:grid-cols-8">
                   <Metric label="Orders" value={orderCounts[r.id] ?? 0} plain />
                   <Metric label="Delivered profit" value={s?.delivered_profit} accent />
                   <Metric label="Available" value={s?.available} />
