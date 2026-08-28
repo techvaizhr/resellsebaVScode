@@ -66,7 +66,7 @@ function SupplierDashboard() {
       />
 
       <section className="mb-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
           <StatCard
             label="Total earning"
             to="/supplier/report"
@@ -110,7 +110,7 @@ function SupplierDashboard() {
         </div>
       </section>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Returned value"
           to="/supplier/returns"

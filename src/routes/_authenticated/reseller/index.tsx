@@ -191,7 +191,7 @@ function ResellerDashboard() {
       <AdminNoticePopup notices={adminNotices} onDismiss={dismissNotice} />
 
       <section className="mb-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
           <StatCard
             label="Total Profit"
             to="/reseller/transactions"
@@ -245,7 +245,7 @@ function ResellerDashboard() {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label="Orders"
               to="/reseller/orders" search={{ tab: "all" }}
@@ -276,7 +276,7 @@ function ResellerDashboard() {
             />
           </div>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label="On the way (courier)"
               to="/reseller/orders" search={{ tab: "courier" }}
@@ -308,7 +308,7 @@ function ResellerDashboard() {
           </div>
 
           {commissionLifetime > 0 && (
-            <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 label="Team commission (range)"
                 to="/reseller/commissions"
