@@ -78,7 +78,7 @@ function CouriersPage() {
     <div>
       <PageHeader title="Courier providers" description="Save credentials to enable direct booking from the admin panel." />
       <div className="grid gap-4 lg:grid-cols-2">
-        {rows.map((r, idx) => {
+        {(rows ?? []).map((r, idx) => {
           const fields = FIELDS[r.provider] ?? [];
           return (
             <div key={r.id} className="surface-card p-5">
@@ -234,7 +234,7 @@ function SteadfastExtras({ token, onToken }: { token: string; onToken: (t: strin
             setBusy(true);
             try {
               const r = await getBalance();
-              setBalance(r.balance);
+              setBalance(r?.balance ?? 0);
             } catch (e) {
               toast.error(e instanceof Error ? e.message : "Balance fetch failed");
             } finally {
@@ -265,7 +265,7 @@ function CarrybeeExtras({
   const [busy, setBusy] = useState(false);
   const loadStores = useServerFn(carrybeeStores);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const secret = config.webhook_secret ?? "";
+  const secret = config?.webhook_secret ?? "";
   const webhookUrl = `${origin}/api/public/courier/carrybee`;
 
   function generate() {
@@ -332,8 +332,8 @@ function CarrybeeExtras({
             setBusy(true);
             try {
               const r = await loadStores();
-              setStores(r.stores);
-              if (r.stores.length === 0) toast.info("No stores — create one in the Carrybee panel");
+              setStores(r?.stores ?? []);
+              if ((r?.stores ?? []).length === 0) toast.info("No stores — create one in the Carrybee panel");
             } catch (e) {
               toast.error(e instanceof Error ? e.message : "Failed to load store list");
             } finally {
@@ -346,9 +346,9 @@ function CarrybeeExtras({
           Load pickup stores
         </button>
       </div>
-      {stores.length > 0 && (
+      {(stores ?? []).length > 0 && (
         <div className="divide-y rounded-md border bg-background">
-          {stores.map((s) => (
+          {(stores ?? []).map((s) => (
             <div key={s.id} className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs">
               <div className="min-w-0">
                 <div className="truncate font-medium">{s.name}</div>
@@ -389,7 +389,7 @@ function PathaoExtras({
   const [busy, setBusy] = useState(false);
   const loadStores = useServerFn(pathaoStores);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const secret = config.webhook_secret ?? "";
+  const secret = config?.webhook_secret ?? "";
   const webhookUrl = `${origin}/api/public/courier/pathao`;
 
   function generate() {
@@ -456,8 +456,8 @@ function PathaoExtras({
             setBusy(true);
             try {
               const r = await loadStores();
-              setStores(r.stores);
-              if (r.stores.length === 0) toast.info("No stores — create one in the Pathao panel");
+              setStores(r?.stores ?? []);
+              if ((r?.stores ?? []).length === 0) toast.info("No stores — create one in the Pathao panel");
             } catch (e) {
               toast.error(e instanceof Error ? e.message : "Failed to load store list");
             } finally {
@@ -470,9 +470,9 @@ function PathaoExtras({
           Load stores
         </button>
       </div>
-      {stores.length > 0 && (
+      {(stores ?? []).length > 0 && (
         <div className="divide-y rounded-md border bg-background">
-          {stores.map((s) => (
+          {(stores ?? []).map((s) => (
             <div key={s.id} className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs">
               <div className="min-w-0">
                 <div className="truncate font-medium">{s.name}</div>
