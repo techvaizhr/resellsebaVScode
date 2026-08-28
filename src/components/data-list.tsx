@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { MoreHorizontal, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
