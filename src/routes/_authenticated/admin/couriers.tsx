@@ -374,18 +374,14 @@ function CarrybeeExtras({
               const list = r?.stores ?? [];
               setStores(list);
               const saved = list.map((s: any) => ({ id: String(s.id), name: String(s.name) }));
-              // auto-pick a default when none is set yet (or the saved one disappeared)
-              const keepDefault = saved.some((s: any) => s.id === config?.store_id);
-              const autoDefault =
-                saved.find((s: any) => (list.find((l: any) => String(l.id) === s.id) as any)?.isDefaultPickup)?.id ??
-                saved[0]?.id ??
-                "";
+              // the server already persisted these — just mirror them locally
               onConfig({
                 stores_json: JSON.stringify(saved),
-                ...(keepDefault || !autoDefault ? {} : { store_id: autoDefault }),
+                ...(r?.defaultStoreId ? { store_id: String(r.defaultStoreId) } : {}),
               });
               if (list.length === 0) toast.info("No stores — create one in the Carrybee panel");
-              else toast.success(`${list.length} store saved — remember to save`);
+              else toast.success(`${list.length} store saved`);
+
             } catch (e) {
               toast.error(await errText(e, "Failed to load store list"));
             } finally {
