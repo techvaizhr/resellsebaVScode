@@ -43,12 +43,14 @@ export type OrderNote = {
 function roleBadge(role: string) {
   if (role === "reseller") return "bg-primary/10 text-primary";
   if (role === "admin" || role === "super_admin") return "bg-emerald-500/10 text-emerald-600";
+  if (role === "supplier") return "bg-amber-500/10 text-amber-600";
   return "bg-muted text-muted-foreground";
 }
 
 function roleLabel(role: string) {
   if (role === "reseller") return "Reseller";
   if (role === "super_admin" || role === "admin") return "Admin";
+  if (role === "supplier") return "Supplier";
   return "Staff";
 }
 
@@ -63,7 +65,7 @@ export function OrderNotes({
   orderId: string;
   /** Whether the current viewer may add / edit notes on this order. */
   canWrite: boolean;
-  authorRole: "reseller" | "admin" | "staff";
+  authorRole: "reseller" | "admin" | "staff" | "supplier";
   authorName?: string | null;
   /** Message shown when notes are read-only. */
   lockedHint?: string;
@@ -120,7 +122,8 @@ export function OrderNotes({
   }, [load]);
 
   const canEdit = (n: OrderNote) =>
-    canWrite && (authorRole !== "reseller" || n.author_id === user?.id);
+    canWrite &&
+    (authorRole === "admin" || authorRole === "staff" || n.author_id === user?.id);
 
   async function add() {
     const body = draft.trim();

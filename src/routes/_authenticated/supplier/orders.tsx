@@ -16,6 +16,7 @@ import { ShipmentBookingModal } from "@/components/ShipmentBookingModal";
 import { CourierLogo, courierLabel } from "@/components/courier-brand";
 import { OrderSearch, type OrderSearchMode } from "@/components/order-search";
 import { OrderTabs } from "@/components/OrderTabs";
+import { OrderNotePreview, OrderNotesModal, useOrderMeta } from "@/components/order-last-update";
 import { BulkScanButton, type ScanOrder } from "@/components/BulkScanModal";
 import type { OrderTabKey } from "@/lib/courier-status";
 
@@ -90,6 +91,7 @@ function SupplierOrdersPage() {
   const [marked, setMarked] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<string[]>([]);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [notesModal, setNotesModal] = useState<{ orderId: string; orderNumber: string } | null>(null);
   const [booking, setBooking] = useState<{ open: boolean; orderIds: string[] }>({ open: false, orderIds: [] });
   const [pendingStatus, setPendingStatus] = useState<{ ids: string[]; next: string } | null>(null);
   const [confirm, setConfirm] = useState<{
@@ -159,6 +161,7 @@ function SupplierOrdersPage() {
 
 
   const paged = usePaginated(filtered, page, perPage);
+  const { meta, refresh: refreshMeta } = useOrderMeta(paged.map((o) => o.id));
   const markedRows = rows.filter((o) => marked.includes(o.id));
   const bulkNext = useMemo(() => {
     if (!markedRows.length) return null;
@@ -477,7 +480,7 @@ function SupplierOrdersPage() {
         <>
           <div className="surface-card overflow-hidden">
             {/* Desktop header */}
-            <div className="hidden grid-cols-[30px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] gap-2 rounded-lg border bg-muted/40 px-2 py-2.5 text-xs font-medium text-muted-foreground lg:grid">
+            <div className="hidden grid-cols-[30px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(100px,0.7fr)_minmax(110px,0.8fr)_minmax(120px,0.85fr)_minmax(130px,0.9fr)] gap-2 rounded-lg border bg-muted/40 px-2 py-2.5 text-xs font-medium text-muted-foreground lg:grid">
               <div className="flex justify-center">
                 <input
                   type="checkbox"
@@ -489,6 +492,7 @@ function SupplierOrdersPage() {
               <div className="text-center">Order</div>
               <div className="text-center">Products</div>
               <div className="text-center">My value</div>
+              <div className="text-center">Notes</div>
               <div className="text-center">Courier</div>
               <div className="text-center">Status</div>
             </div>
@@ -539,6 +543,15 @@ function SupplierOrdersPage() {
                       <OrderProductCell items={items} expanded={open} onZoom={setZoomImage} onToggle={() => toggleExpand(o.id)} />
                     </div>
 
+                    <div className="space-y-0.5">
+                      <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Notes</div>
+                      <OrderNotePreview
+                        meta={meta[o.id]}
+                        align="left"
+                        onOpenNotes={() => setNotesModal({ orderId: o.id, orderNumber: o.order_number })}
+                      />
+                    </div>
+
                     <div className="flex items-center justify-between gap-2">
                       <CourierCell shipment={o.shipment} />
                       {next ? (
@@ -557,7 +570,7 @@ function SupplierOrdersPage() {
                   </div>
 
                   {/* Desktop row */}
-                  <div className={`hidden grid-cols-[30px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(110px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)] items-center gap-2 px-2 py-3 text-sm hover:bg-muted/40 lg:grid ${marked.includes(o.id) ? "bg-primary/5" : ""}`}>
+                  <div className={`hidden grid-cols-[30px_minmax(110px,0.8fr)_minmax(150px,1.1fr)_minmax(100px,0.7fr)_minmax(110px,0.8fr)_minmax(120px,0.85fr)_minmax(130px,0.9fr)] items-center gap-2 px-2 py-3 text-sm hover:bg-muted/40 lg:grid ${marked.includes(o.id) ? "bg-primary/5" : ""}`}>
                     <div className="flex flex-col items-center gap-1.5">
                       <input
                         type="checkbox"
@@ -587,6 +600,13 @@ function SupplierOrdersPage() {
                     <div className="min-w-0 text-center">
                       <div className="text-sm font-semibold tabular-nums">{bdtNum(o.my_amount)}</div>
                       <div className="text-[11px] text-muted-foreground">{o.my_qty} pcs</div>
+                    </div>
+
+                    <div className="min-w-0 px-1">
+                      <OrderNotePreview
+                        meta={meta[o.id]}
+                        onOpenNotes={() => setNotesModal({ orderId: o.id, orderNumber: o.order_number })}
+                      />
                     </div>
 
                     <div className="flex justify-center">
@@ -626,6 +646,21 @@ function SupplierOrdersPage() {
       )}
 
       {zoomImage && <ImageLightbox src={zoomImage} onClose={() => setZoomImage(null)} />}
+
+      {notesModal && (
+        <OrderNotesModal
+          orderId={notesModal.orderId}
+          orderNumber={notesModal.orderNumber}
+          authorRole="supplier"
+          authorName={supplierData.supplier?.display_name ?? null}
+          canWrite
+          onClose={() => {
+            const id = notesModal.orderId;
+            setNotesModal(null);
+            void refreshMeta([id]);
+          }}
+        />
+      )}
 
       <ShipmentBookingModal
         isOpen={booking.open}

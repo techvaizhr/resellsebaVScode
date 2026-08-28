@@ -78,6 +78,7 @@ export async function fetchOrderMeta(ids: string[]): Promise<Record<string, Orde
 function roleTag(role: string | null) {
   if (role === "reseller") return "Reseller";
   if (role === "admin" || role === "super_admin") return "Admin";
+  if (role === "supplier") return "Supplier";
   if (role) return "Staff";
   return "";
 }
@@ -182,7 +183,7 @@ export function OrderNotesModal({
 }: {
   orderId: string;
   orderNumber?: string | null;
-  authorRole: "reseller" | "admin" | "staff";
+  authorRole: "reseller" | "admin" | "staff" | "supplier";
   authorName?: string | null;
   canWrite: boolean;
   lockedHint?: string;
