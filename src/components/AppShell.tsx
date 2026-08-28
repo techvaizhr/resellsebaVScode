@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { clearImpersonation } from "@/lib/impersonation";
 import { PwaInstallButton } from "@/components/pwa-install";
+import { BottomNav, type BottomNavProps } from "@/components/BottomNav";
 
 export interface NavItem {
   label: string;
@@ -36,6 +37,7 @@ export function AppShell({
   user,
   headerRight,
   homeTo = "/dashboard",
+  bottomNav,
   children,
 }: {
   title: string;
@@ -45,6 +47,8 @@ export function AppShell({
   headerRight?: ReactNode;
   /** Panel dashboard URL — logo and user name link here. */
   homeTo?: string;
+  /** Optional mobile bottom navigation bar (3 items: left, center home, right). */
+  bottomNav?: BottomNavProps;
   children: ReactNode;
 }) {
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
@@ -263,9 +267,13 @@ export function AppShell({
               {headerRight}
             </div>
           </header>
-          <div className="p-4 md:p-6">{children}</div>
+          {/* Bottom padding on mobile so content clears the bottom nav. */}
+          <div className="p-4 pb-24 md:p-6 md:pb-6">{children}</div>
         </main>
       </div>
+      {bottomNav && (
+        <BottomNav homeTo={bottomNav.homeTo} left={bottomNav.left} right={bottomNav.right} />
+      )}
     </div>
   );
 }
