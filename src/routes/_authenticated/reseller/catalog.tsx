@@ -11,7 +11,9 @@ import { toast } from "sonner";
 import { Hint } from "@/components/Hint";
 import { ResellerProductCalc } from "@/components/price-breakdown";
 import { DataToolbar, Pagination, usePaginated, type FilterDef } from "@/components/data-list";
-import { CopyButton, ImageDownloadTools, stripHtml } from "@/components/store/reseller-tools";
+import { CopyButton, stripHtml } from "@/components/store/reseller-tools";
+import { ImagePickerButton } from "@/components/catalog/image-picker";
+
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { ProductCodeChip } from "@/components/product-code";
 
