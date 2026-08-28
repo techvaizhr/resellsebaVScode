@@ -47,8 +47,8 @@ export function BottomNav({ homeTo, left, right }: BottomNavProps) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 md:hidden">
       {/* safe-area padding for notched phones */}
-      <div className="border-t border-border bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
-        <div className="relative mx-auto flex h-16 max-w-md items-stretch justify-between px-6">
+        <div className="border-t border-border bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+        <div className="relative mx-auto flex h-12 max-w-md items-stretch justify-between px-6">
           {/* Left item */}
           <Link
             to={left.to}
@@ -84,12 +84,12 @@ export function BottomNav({ homeTo, left, right }: BottomNavProps) {
           >
             <span
               className={cn(
-                "absolute -top-5 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg ring-4 ring-background transition-transform",
+                "absolute -top-4 grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg ring-4 ring-background transition-transform",
                 homeActive ? "scale-105" : "scale-100",
               )}
               style={{ boxShadow: "0 6px 18px -4px color-mix(in oklab, var(--primary) 55%, transparent)" }}
             >
-              <Home className="h-6 w-6" />
+              <Home className="h-5 w-5" />
             </span>
           </Link>
 
