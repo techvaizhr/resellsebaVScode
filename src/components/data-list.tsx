@@ -165,19 +165,19 @@ export function Pagination({
   };
 
   return (
-    <div className="mt-4 flex flex-nowrap items-center justify-between gap-2 overflow-x-auto text-sm text-muted-foreground">
+    <div className="mt-3 flex flex-nowrap items-center justify-between gap-1.5 text-xs text-muted-foreground">
       <span className="whitespace-nowrap">
         {from}–{to} of {total}
       </span>
       {!showAll && pages > 1 && (
-        <div className="flex flex-nowrap items-center gap-1">
+        <div className="flex flex-nowrap items-center gap-0.5">
           <button
             onClick={() => go(current - 1)}
             disabled={current <= 1}
             title="Previous"
-            className="inline-flex h-7 shrink-0 items-center rounded-md border px-1.5 disabled:opacity-40"
+            className="inline-flex h-6 shrink-0 items-center rounded border px-1 disabled:opacity-40"
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <ChevronLeft className="h-3 w-3" />
           </button>
           {pageWindow(current, pages).map((p, i) =>
             p === "…" ? (
@@ -191,8 +191,8 @@ export function Pagination({
                 aria-current={p === current ? "page" : undefined}
                 className={
                   p === current
-                    ? "inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-md border border-primary bg-primary px-1.5 text-xs font-medium text-primary-foreground"
-                    : "inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-md border px-1.5 text-xs hover:bg-muted"
+                    ? "inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded border border-primary bg-primary px-1 text-[11px] font-medium text-primary-foreground"
+                    : "inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded border px-1 text-[11px] hover:bg-muted"
                 }
               >
                 {p}
@@ -203,11 +203,11 @@ export function Pagination({
             onClick={() => go(current + 1)}
             disabled={current >= pages}
             title="Next"
-            className="inline-flex h-7 shrink-0 items-center rounded-md border px-1.5 disabled:opacity-40"
+            className="inline-flex h-6 shrink-0 items-center rounded border px-1 disabled:opacity-40"
           >
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="h-3 w-3" />
           </button>
-          <div className="flex flex-nowrap items-center gap-1 pl-1">
+          <div className="flex flex-nowrap items-center gap-0.5 pl-1">
             <input
               type="number"
               min={1}
@@ -222,12 +222,12 @@ export function Pagination({
               }}
               placeholder={String(current)}
               aria-label="Go to page"
-              className="h-7 w-12 shrink-0 rounded-md border bg-background px-1 text-center text-xs text-foreground"
+              className="h-6 w-9 shrink-0 rounded border bg-background px-1 text-center text-[11px] text-foreground"
             />
             <button
               onClick={submitGoTo}
               disabled={!goTo}
-              className="inline-flex h-7 shrink-0 items-center rounded-md border px-1.5 text-xs hover:bg-muted disabled:opacity-40"
+              className="inline-flex h-6 shrink-0 items-center rounded border px-1 text-[11px] hover:bg-muted disabled:opacity-40"
             >
               Go
             </button>
