@@ -24,7 +24,6 @@ export function DataToolbar({
   onPerPage,
   perPageOptions = [10, 20, 50, 100],
   right,
-  inline = false,
 }: {
   search: string;
   onSearch: (v: string) => void;
@@ -34,6 +33,7 @@ export function DataToolbar({
   onPerPage: (n: number) => void;
   perPageOptions?: number[];
   right?: ReactNode;
+  /** @deprecated layout is now global */
   inline?: boolean;
 }) {
   const searchInput = (
