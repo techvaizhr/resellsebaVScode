@@ -302,14 +302,25 @@ function SupplierOrdersPage() {
         title="Orders"
         className="flex-row items-center justify-between"
         actions={
-          <button
-            onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
-          >
-            <RefreshCw className="h-4 w-4" /> Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <BulkScanButton
+              compact
+              mode="handover"
+              modes={["handover"]}
+              resolve={scanResolve}
+              apply={scanApply}
+              onDone={() => void load()}
+            />
+            <button
+              onClick={() => void load()}
+              className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+            >
+              <RefreshCw className="h-4 w-4" /> Refresh
+            </button>
+          </div>
         }
       />
+
 
       <div className="mb-4 space-y-2">
         <div className="flex items-center gap-2">
