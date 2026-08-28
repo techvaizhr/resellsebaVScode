@@ -198,7 +198,6 @@ function OrdersPage() {
   const [filters, setFilters] = useState<OrderFilterState>({ ...DEFAULT_ORDER_FILTERS, q: qParam ?? "" });
 
   const [searchMode, setSearchMode] = useState<OrderSearchMode>("order");
-  const [showFilters, setShowFilters] = useState(false);
   const [pickOpen, setPickOpen] = useState(false);
   const [pickScope, setPickScope] = useState<"filtered" | "marked">("filtered");
   const [marked, setMarked] = useState<string[]>([]);
