@@ -106,6 +106,13 @@ function ResellerDashboard() {
         paidOut: Number(s?.paid_out ?? 0),
         available: Number(s?.available ?? 0),
       });
+      // Current "To Courier" count (shipped/processing) — independent of the date range.
+      const { count } = await supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("reseller_id", data.reseller.id)
+        .in("status", ["shipped", "processing"]);
+      setToCourierCount(count ?? 0);
       setLoading(false);
     },
     [uid],
@@ -235,6 +242,15 @@ function ResellerDashboard() {
             value={listingsReport.active}
             icon={<ShoppingBag className="h-4 w-4" />}
             hint="Active listings"
+          />
+          <StatCard
+            label="To Courier"
+            to="/reseller/orders"
+            search={{ tab: "courier" }}
+            tone="sky"
+            value={toCourierCount}
+            icon={<Truck className="h-4 w-4" />}
+            hint="Orders with courier"
           />
         </div>
       </section>
