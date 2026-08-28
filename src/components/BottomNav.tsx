@@ -47,8 +47,8 @@ export function BottomNav({ homeTo, left, right }: BottomNavProps) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 md:hidden">
       {/* safe-area padding for notched phones */}
-      <div className="border-t border-border bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
-        <div className="relative mx-auto flex h-16 max-w-md items-stretch justify-between px-6">
+        <div className="border-t border-border bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+        <div className="relative mx-auto flex h-12 max-w-md items-stretch justify-between px-6">
           {/* Left item */}
           <Link
             to={left.to}
