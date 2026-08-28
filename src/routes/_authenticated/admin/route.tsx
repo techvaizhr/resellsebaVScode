@@ -42,6 +42,7 @@ import { useAuth } from "@/lib/use-auth";
 import { useBrandingTheme } from "@/lib/branding";
 import { getGlobalSettings } from "@/lib/app-data";
 import { Loader2 } from "lucide-react";
+import { useOrderNavCount, applyOrderBadge } from "@/lib/use-order-nav-count";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminLayout,
@@ -210,10 +211,6 @@ function firstAllowedRoute(nav: NavEntry[], permissions: string[]): string | nul
 function AdminLayout() {
   const { user, roles, permissions, loading } = useAuth();
   const orderNavCount = useOrderNavCount();
-  const navWithBadge = useMemo(
-    () => applyOrderBadge(filterNav(NAV, permissions, isSuperAdmin), "/admin/orders", orderNavCount),
-    [orderNavCount, permissions, isSuperAdmin],
-  );
   const nav = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
   const isSuperAdmin = roles.includes("super_admin");
