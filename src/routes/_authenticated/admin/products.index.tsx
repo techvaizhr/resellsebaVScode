@@ -758,8 +758,9 @@ function PriceCell({ row, field, onSaved }: { row: Row; field: "buying_price" | 
     if (Number.isNaN(n)) return toast.error("Invalid price");
     if (n === current) return setEditing(false);
     setBusy(true);
-    const updates: Partial<Record<typeof field, number>> = { [field]: n } as Partial<Record<typeof field, number>>;
-    const { error } = await supabase.from("products").update({ buying_price: field === "buying_price" ? n : undefined, reseller_price: field === "reseller_price" ? n : undefined, suggested_price: field === "suggested_price" ? n : undefined, packaging_cost: field === "packaging_cost" ? n : undefined }).eq("id", row.id);
+    const payload: { buying_price?: number; reseller_price?: number; suggested_price?: number; packaging_cost?: number } = {};
+    payload[field] = n;
+    const { error } = await supabase.from("products").update(payload).eq("id", row.id);
     setBusy(false);
     if (error) return toast.error(error.message);
     onSaved(n);
