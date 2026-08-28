@@ -221,7 +221,6 @@ function SupplierProductsPage_() {
                   <th className="px-3 py-3">Stock</th>
                   <th className="px-3 py-3">Status</th>
                   <th className="px-3 py-3">Submitted</th>
-                  <th className="px-3 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -237,7 +236,7 @@ function SupplierProductsPage_() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div
-                            className="w-2/5 max-w-[40%] cursor-pointer font-medium leading-snug line-clamp-2 transition-colors hover:text-primary"
+                            className="cursor-pointer font-medium leading-snug line-clamp-2 transition-colors hover:text-primary"
                             onClick={() => setDetail(p)}
                             title={p.name}
                           >
@@ -292,35 +291,30 @@ function SupplierProductsPage_() {
                       />
                     </td>
                     <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-                          p.is_active
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        <span className={`h-1.5 w-1.5 rounded-full ${p.is_active ? "bg-emerald-500" : "bg-muted-foreground"}`} />
-                        {p.is_active ? "Live" : "Hidden"}
-                      </span>
-                      <div
-                        className={
-                          "mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium capitalize " +
-                          (APPROVAL_TONE[p.approval_status] ?? "bg-muted")
-                        }
-                      >
-                        {p.approval_status}
-                      </div>
-                      {p.pending_changes && <div className="mt-1 text-[10px] text-amber-600">Edit waiting</div>}
-                      {p.approval_note && (
-                        <div className="mt-1 text-[10px] text-muted-foreground">{p.approval_note}</div>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">
-                      {new Date(p.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex justify-end">
-                        <ActionMenu>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                            p.is_active
+                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${p.is_active ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                          {p.is_active ? "Live" : "Hidden"}
+                        </span>
+                        <div
+                          className={
+                            "inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium capitalize " +
+                            (APPROVAL_TONE[p.approval_status] ?? "bg-muted")
+                          }
+                        >
+                          {p.approval_status}
+                        </div>
+                        {p.pending_changes && <div className="text-[10px] text-amber-600">Edit waiting</div>}
+                        {p.approval_note && (
+                          <div className="text-[10px] text-muted-foreground">{p.approval_note}</div>
+                        )}
+                        <ActionMenu vertical>
                           <DropdownMenuItem onSelect={() => setDetail(p)}>
                             <Eye className="mr-2 h-4 w-4" /> View details
                           </DropdownMenuItem>
@@ -334,6 +328,9 @@ function SupplierProductsPage_() {
                           </DropdownMenuItem>
                         </ActionMenu>
                       </div>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">
+                      {new Date(p.created_at).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { MoreHorizontal, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -223,7 +223,8 @@ export function Pagination({
 }
 
 
-export function ActionMenu({ children }: { children: ReactNode }) {
+export function ActionMenu({ children, vertical = false }: { children: ReactNode; vertical?: boolean }) {
+  const Icon = vertical ? MoreVertical : MoreHorizontal;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -231,7 +232,7 @@ export function ActionMenu({ children }: { children: ReactNode }) {
           className="rounded-md p-2 text-muted-foreground hover:bg-muted"
           title="Actions"
         >
-          <MoreHorizontal className="h-4 w-4" />
+          <Icon className="h-4 w-4" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[160px]">

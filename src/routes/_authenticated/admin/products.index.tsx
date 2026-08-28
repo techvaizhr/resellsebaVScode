@@ -378,7 +378,6 @@ function ProductsPage() {
                   <th className="px-3 py-3">Packaging</th>
                   <th className="px-3 py-3">Stock</th>
                   <th className="px-3 py-3">Status</th>
-                  <th className="px-3 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -413,7 +412,7 @@ function ProductsPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div
-                            className="w-2/5 max-w-[40%] font-medium leading-snug line-clamp-2 cursor-pointer hover:text-primary transition-colors"
+                            className="font-medium leading-snug line-clamp-2 cursor-pointer hover:text-primary transition-colors"
                             onClick={() => setDetailId(p.id)}
                             title={p.name}
                           >
@@ -456,33 +455,31 @@ function ProductsPage() {
                       <StockCell row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-                          p.is_active
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        <span className={`h-1.5 w-1.5 rounded-full ${p.is_active ? "bg-emerald-500" : "bg-muted-foreground"}`} />
-                        {p.is_active ? "Active" : "Hidden"}
-                      </span>
-                      {(p.approval_status ?? "approved") !== "approved" && (
-                        <div
-                          className={
-                            "mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium capitalize " +
-                            (APPROVAL_TONE[p.approval_status] ?? "bg-muted")
-                          }
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                            p.is_active
+                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                              : "bg-muted text-muted-foreground"
+                          }`}
                         >
-                          {p.approval_status}
-                        </div>
-                      )}
-                      {p.pending_changes && (
-                        <div className="mt-1 text-[10px] text-amber-600">Edit waiting</div>
-                      )}
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex justify-end">
-                        <ActionMenu>
+                          <span className={`h-1.5 w-1.5 rounded-full ${p.is_active ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                          {p.is_active ? "Active" : "Hidden"}
+                        </span>
+                        {(p.approval_status ?? "approved") !== "approved" && (
+                          <div
+                            className={
+                              "inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium capitalize " +
+                              (APPROVAL_TONE[p.approval_status] ?? "bg-muted")
+                            }
+                          >
+                            {p.approval_status}
+                          </div>
+                        )}
+                        {p.pending_changes && (
+                          <div className="text-[10px] text-amber-600">Edit waiting</div>
+                        )}
+                        <ActionMenu vertical>
                           <DropdownMenuItem onSelect={() => setDetailId(p.id)}>
                             <Eye className="mr-2 h-4 w-4" /> View Details
                           </DropdownMenuItem>
