@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { canAccessResellerPanel } from "@/lib/reseller-status";
 
 import {
@@ -90,6 +90,7 @@ const NAV: NavEntry[] = [
 
 function ResellerLayout() {
   const { user, roles, loading } = useAuth();
+  const orderNavCount = useOrderNavCount();
   const { required: needsVerify, loading: verifyLoading } = useVerification();
   const nav = useNavigate();
   const [storeName, setStoreName] = useState("My store");
