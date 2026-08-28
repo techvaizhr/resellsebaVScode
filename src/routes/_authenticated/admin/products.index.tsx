@@ -264,6 +264,19 @@ function ProductsPage() {
           <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            onClick={() => setInlineEdit((v) => !v)}
+            title={inlineEdit ? "Inline editing is ON — click to lock" : "Inline editing is locked — click to enable"}
+            className={`inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
+              inlineEdit
+                ? "border-amber-500/60 bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                : "hover:bg-muted"
+            }`}
+          >
+            {inlineEdit ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+            {inlineEdit ? "Inline edit: ON" : "Inline edit: OFF"}
+          </button>
+          <button
+            type="button"
             onClick={() => setImportOpen(true)}
             className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
           >
