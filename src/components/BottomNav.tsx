@@ -7,6 +7,17 @@ export interface BottomNavItem {
   to: string;
   icon: LucideIcon;
   end?: boolean;
+  /** Optional count badge shown on the icon. */
+  badge?: number;
+}
+
+function Badge({ count }: { count: number }) {
+  if (!count) return null;
+  return (
+    <span className="absolute -right-1.5 -top-1.5 grid min-w-4 place-items-center rounded-full bg-destructive px-1 text-[9px] font-bold leading-4 text-destructive-foreground shadow">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
 }
 
 export interface BottomNavProps {
@@ -46,13 +57,14 @@ export function BottomNav({ homeTo, left, right }: BottomNavProps) {
           >
             <span
               className={cn(
-                "grid h-8 w-8 place-items-center rounded-lg transition-colors",
+                "relative grid h-8 w-8 place-items-center rounded-lg transition-colors",
                 leftActive
                   ? "bg-primary/15 text-primary"
                   : "text-muted-foreground",
               )}
             >
               <LeftIcon className="h-5 w-5" />
+              <Badge count={left.badge ?? 0} />
             </span>
             <span
               className={cn(
@@ -89,13 +101,14 @@ export function BottomNav({ homeTo, left, right }: BottomNavProps) {
           >
             <span
               className={cn(
-                "grid h-8 w-8 place-items-center rounded-lg transition-colors",
+                "relative grid h-8 w-8 place-items-center rounded-lg transition-colors",
                 rightActive
                   ? "bg-primary/15 text-primary"
                   : "text-muted-foreground",
               )}
             >
               <RightIcon className="h-5 w-5" />
+              <Badge count={right.badge ?? 0} />
             </span>
             <span
               className={cn(

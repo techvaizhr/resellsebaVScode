@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { canAccessResellerPanel } from "@/lib/reseller-status";
 
 import {
@@ -35,6 +35,7 @@ import { useBrandingTheme } from "@/lib/branding";
 import { getGlobalSettings, getMyReseller } from "@/lib/app-data";
 import { getPanelBootstrapPayload } from "@/lib/panel-bootstrap";
 import { consumeImpersonationReturnTarget } from "@/lib/impersonation";
+import { useOrderNavCount, applyOrderBadge } from "@/lib/use-order-nav-count";
 
 export const Route = createFileRoute("/_authenticated/reseller")({
   component: ResellerLayout,
@@ -90,6 +91,11 @@ const NAV: NavEntry[] = [
 
 function ResellerLayout() {
   const { user, roles, loading } = useAuth();
+  const orderNavCount = useOrderNavCount();
+  const navWithBadge = useMemo(
+    () => applyOrderBadge(NAV, "/reseller/orders", orderNavCount),
+    [orderNavCount],
+  );
   const { required: needsVerify, loading: verifyLoading } = useVerification();
   const nav = useNavigate();
   const [storeName, setStoreName] = useState("My store");
@@ -168,11 +174,11 @@ function ResellerLayout() {
       homeTo="/reseller"
       bottomNav={{
         homeTo: "/reseller",
-        left: { label: "Orders", to: "/reseller/orders", icon: ClipboardList },
+        left: { label: "Orders", to: "/reseller/orders", icon: ClipboardList, badge: orderNavCount },
         right: { label: "Catalog", to: "/reseller/catalog", icon: Package },
       }}
       brand={{ name: storeName, sub: storeCode ? `/${storeCode}` : "Reseller", logoUrl }}
-      nav={NAV}
+      nav={navWithBadge}
       user={{
         name: storeName || (user.user_metadata?.full_name ?? "Reseller"),
         email: user.email ?? "",
