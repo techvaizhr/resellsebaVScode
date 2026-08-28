@@ -7,6 +7,17 @@ export interface BottomNavItem {
   to: string;
   icon: LucideIcon;
   end?: boolean;
+  /** Optional count badge shown on the icon. */
+  badge?: number;
+}
+
+function Badge({ count }: { count: number }) {
+  if (!count) return null;
+  return (
+    <span className="absolute -right-1.5 -top-1.5 grid min-w-4 place-items-center rounded-full bg-destructive px-1 text-[9px] font-bold leading-4 text-destructive-foreground shadow">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
 }
 
 export interface BottomNavProps {

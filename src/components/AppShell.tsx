@@ -16,6 +16,8 @@ export interface NavItem {
   end?: boolean;
   /** Open in a new browser tab instead of client-side navigation. */
   external?: boolean;
+  /** Optional count badge shown next to the label (e.g. actionable orders). */
+  badge?: number;
 }
 
 export interface NavGroup {
