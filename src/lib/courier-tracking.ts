@@ -2,7 +2,7 @@
  * External (courier website) tracking links.
  * Steadfast : https://steadfast.com.bd/t/<tracking_code>
  * Pathao    : https://merchant.pathao.com/tracking?consignment_id=<id>&phone=<customer phone>
- * Carrybee  : https://merchant.carrybee.com/tracking?consignment_id=<id>
+ * Carrybee  : https://merchant.carrybee.com/order-track/<tracking_id>
  */
 export function courierTrackingUrl(
   provider: string | null | undefined,
@@ -26,8 +26,8 @@ export function courierTrackingUrl(
       return `https://merchant.pathao.com/tracking?${qs.toString()}`;
     }
     case "carrybee": {
-      const id = consignment || tracking;
-      return `https://merchant.carrybee.com/tracking?consignment_id=${encodeURIComponent(id)}`;
+      const id = tracking || consignment;
+      return `https://merchant.carrybee.com/order-track/${encodeURIComponent(id)}`;
     }
     default:
       return null;
