@@ -57,13 +57,14 @@ export function BottomNav({ homeTo, left, right }: BottomNavProps) {
           >
             <span
               className={cn(
-                "grid h-8 w-8 place-items-center rounded-lg transition-colors",
+                "relative grid h-8 w-8 place-items-center rounded-lg transition-colors",
                 leftActive
                   ? "bg-primary/15 text-primary"
                   : "text-muted-foreground",
               )}
             >
               <LeftIcon className="h-5 w-5" />
+              <Badge count={left.badge ?? 0} />
             </span>
             <span
               className={cn(
@@ -100,13 +101,14 @@ export function BottomNav({ homeTo, left, right }: BottomNavProps) {
           >
             <span
               className={cn(
-                "grid h-8 w-8 place-items-center rounded-lg transition-colors",
+                "relative grid h-8 w-8 place-items-center rounded-lg transition-colors",
                 rightActive
                   ? "bg-primary/15 text-primary"
                   : "text-muted-foreground",
               )}
             >
               <RightIcon className="h-5 w-5" />
+              <Badge count={right.badge ?? 0} />
             </span>
             <span
               className={cn(
