@@ -62,6 +62,7 @@ function ResellerDashboard() {
   const [range, setRange] = useState<DateRangeState>(DEFAULT_DATE_RANGE);
   const [loading, setLoading] = useState(true);
   const [rid, setRid] = useState<string | null>(null);
+  const [bizName, setBizName] = useState<string | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [orderOpen, setOrderOpen] = useState(false);
@@ -88,6 +89,7 @@ function ResellerDashboard() {
         return;
       }
       setRid(data.reseller.id);
+      setBizName(data.reseller.business_name);
       setOrders((data.orders ?? []) as ReportOrder[]);
       setItems((data.items ?? []) as ReportItem[]);
       setListingsReport({ total: data.listings_total ?? 0, active: data.listings_active ?? 0 });
@@ -165,7 +167,7 @@ function ResellerDashboard() {
   return (
     <div>
       <PageHeader
-        title="Store Dashboard"
+        title={`Welcome, ${bizName ?? user?.user_metadata?.full_name ?? "Reseller"}`}
         description="Track your earnings, orders, and business growth."
         actions={
           <div className="flex flex-wrap items-center gap-3">
