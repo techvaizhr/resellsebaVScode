@@ -56,6 +56,32 @@ export function courierStoreName(conf: Cfg, storeId?: string | number | null): s
   }
 }
 
+/**
+ * Save a freshly loaded pickup-store list into courier_configs so booking can use
+ * it without the admin pressing Save (and it survives a page reload).
+ * Returns the default store id that ended up saved.
+ */
+export async function persistCourierStores(
+  db: any,
+  provider: string,
+  conf: Cfg,
+  stores: { id: string; name?: string; isDefaultPickup?: boolean }[],
+): Promise<string> {
+  const saved = stores.map((s) => ({ id: String(s.id), name: String(s.name ?? s.id) }));
+  const keep = saved.some((s) => s.id === String(conf.store_id ?? ""));
+  const defaultStoreId = keep
+    ? String(conf.store_id)
+    : String(stores.find((s) => s.isDefaultPickup)?.id ?? saved[0]?.id ?? "");
+  const nextConfig: Cfg = {
+    ...conf,
+    stores_json: JSON.stringify(saved),
+    ...(defaultStoreId ? { store_id: defaultStoreId } : {}),
+  };
+  await db.from("courier_configs").update({ config: nextConfig }).eq("provider", provider);
+  return defaultStoreId;
+}
+
+
 export function steadfastBase(conf: Cfg) {
   return (conf.base_url || "https://portal.packzy.com/api/v1").replace(/\/+$/, "");
 }
