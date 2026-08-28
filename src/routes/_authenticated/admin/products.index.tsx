@@ -755,7 +755,7 @@ function StockCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =>
   );
 }
 
-function PriceCell({ row, field, onSaved }: { row: Row; field: "buying_price" | "reseller_price" | "suggested_price" | "packaging_cost"; onSaved: (v: number) => void }) {
+function PriceCell({ row, field, onSaved, locked }: { row: Row; field: "buying_price" | "reseller_price" | "suggested_price" | "packaging_cost"; onSaved: (v: number) => void; locked?: boolean }) {
   const current = row[field] ?? 0;
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(String(current));
