@@ -16,7 +16,9 @@ import { ShipmentBookingModal } from "@/components/ShipmentBookingModal";
 import { CourierLogo, courierLabel } from "@/components/courier-brand";
 import { OrderSearch, type OrderSearchMode } from "@/components/order-search";
 import { OrderTabs } from "@/components/OrderTabs";
+import { BulkScanButton, type ScanOrder } from "@/components/BulkScanModal";
 import type { OrderTabKey } from "@/lib/courier-status";
+
 
 import {
   AREA_FILTER_OPTIONS,
