@@ -20,6 +20,29 @@ async function errText(e: unknown, fallback: string) {
   return e instanceof Error && e.message ? e.message : fallback;
 }
 
+/** Pickup stores already saved in courier_configs.config.stores_json. */
+function savedStores(config: Record<string, string> | undefined) {
+  try {
+    const raw = config?.stores_json;
+    const list = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((s: any) => ({
+        id: String(s?.id ?? ""),
+        name: String(s?.name ?? s?.id ?? ""),
+        address: "",
+        isActive: true,
+        isApproved: true,
+        isDefaultPickup: false,
+      }))
+      .filter((s) => s.id);
+  } catch {
+    return [];
+  }
+}
+
+
+
 
 export const Route = createFileRoute("/_authenticated/admin/couriers")({
   component: CouriersPage,
@@ -275,6 +298,11 @@ function CarrybeeExtras({
   >([]);
   const [busy, setBusy] = useState(false);
   const loadStores = useServerFn(carrybeeStores);
+  // show the stores already saved in config, so a reload keeps the list
+  useEffect(() => {
+    if (stores.length === 0) setStores(savedStores(config) as any);
+  }, [config?.stores_json]);
+
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const secret = config?.webhook_secret ?? "";
   const webhookUrl = `${origin}/api/public/courier/carrybee`;
@@ -346,18 +374,14 @@ function CarrybeeExtras({
               const list = r?.stores ?? [];
               setStores(list);
               const saved = list.map((s: any) => ({ id: String(s.id), name: String(s.name) }));
-              // auto-pick a default when none is set yet (or the saved one disappeared)
-              const keepDefault = saved.some((s: any) => s.id === config?.store_id);
-              const autoDefault =
-                saved.find((s: any) => (list.find((l: any) => String(l.id) === s.id) as any)?.isDefaultPickup)?.id ??
-                saved[0]?.id ??
-                "";
+              // the server already persisted these — just mirror them locally
               onConfig({
                 stores_json: JSON.stringify(saved),
-                ...(keepDefault || !autoDefault ? {} : { store_id: autoDefault }),
+                ...(r?.defaultStoreId ? { store_id: String(r.defaultStoreId) } : {}),
               });
               if (list.length === 0) toast.info("No stores — create one in the Carrybee panel");
-              else toast.success(`${list.length} store saved — remember to save`);
+              else toast.success(`${list.length} store saved`);
+
             } catch (e) {
               toast.error(await errText(e, "Failed to load store list"));
             } finally {
@@ -414,6 +438,11 @@ function PathaoExtras({
   >([]);
   const [busy, setBusy] = useState(false);
   const loadStores = useServerFn(pathaoStores);
+  // show the stores already saved in config, so a reload keeps the list
+  useEffect(() => {
+    if (stores.length === 0) setStores(savedStores(config) as any);
+  }, [config?.stores_json]);
+
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const secret = config?.webhook_secret ?? "";
   const webhookUrl = `${origin}/api/public/courier/pathao`;
@@ -485,18 +514,14 @@ function PathaoExtras({
               const list = r?.stores ?? [];
               setStores(list);
               const saved = list.map((s: any) => ({ id: String(s.id), name: String(s.name) }));
-              // auto-pick a default when none is set yet (or the saved one disappeared)
-              const keepDefault = saved.some((s: any) => s.id === config?.store_id);
-              const autoDefault =
-                saved.find((s: any) => (list.find((l: any) => String(l.id) === s.id) as any)?.isDefaultPickup)?.id ??
-                saved[0]?.id ??
-                "";
+              // the server already persisted these — just mirror them locally
               onConfig({
                 stores_json: JSON.stringify(saved),
-                ...(keepDefault || !autoDefault ? {} : { store_id: autoDefault }),
+                ...(r?.defaultStoreId ? { store_id: String(r.defaultStoreId) } : {}),
               });
               if (list.length === 0) toast.info("No stores — create one in the Pathao panel");
-              else toast.success(`${list.length} store saved — remember to save`);
+              else toast.success(`${list.length} store saved`);
+
             } catch (e) {
               toast.error(await errText(e, "Failed to load store list"));
             } finally {
