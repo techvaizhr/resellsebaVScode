@@ -556,51 +556,20 @@ function OrdersPage() {
 
 
       {/* Merged search: mode select inside the box */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="w-full sm:w-auto sm:min-w-[18rem] sm:flex-1">
+      <div className="mb-4 space-y-2">
+        <div className="flex items-center gap-2">
           <OrderSearch
             mode={searchMode}
             onMode={setSearchMode}
             value={filters.q}
             onChange={(v) => setFilters({ ...filters, q: v })}
+            className="min-w-0 flex-1"
           />
-        </div>
-
-
-
-
-        <button
-          type="button"
-          onClick={() => setShowFilters((v) => !v)}
-          className={`inline-flex h-10 items-center gap-2 rounded-md border px-3 text-sm hover:bg-accent ${activeFilterCount(filters) > 0 ? "border-primary/50 bg-primary/5" : ""}`}
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          Filters
-          {activeFilterCount(filters) > 0 && (
-            <span className="rounded-full bg-primary px-1.5 text-[10px] font-bold leading-4 text-primary-foreground">
-              {activeFilterCount(filters)}
-            </span>
-          )}
-          <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setPickScope("filtered");
-            setPickOpen(true);
-          }}
-          className="inline-flex h-10 items-center gap-2 rounded-md border px-3 text-sm hover:bg-accent"
-        >
-          <ListChecks className="h-4 w-4" />
-          Pick list
-        </button>
-
-        <div className="ml-auto flex items-center gap-2">
-          <span className="hidden text-xs font-medium text-muted-foreground sm:inline">Per page:</span>
           <select
             value={filters.perPage}
             onChange={(e) => setFilters({ ...filters, perPage: Number(e.target.value) })}
-            className="h-9 w-[68px] shrink-0 rounded-md border bg-background px-1 text-xs font-medium outline-none focus:ring-1 focus:ring-primary"
+            className="h-10 w-[76px] shrink-0 rounded-md border bg-background px-1 text-xs font-medium outline-none focus:ring-1 focus:ring-primary"
+            title="Per page"
           >
             {[10, 20, 50, 100].map((n) => (
               <option key={n} value={n}>{n}</option>
@@ -608,34 +577,88 @@ function OrdersPage() {
             <option value={-1}>All</option>
           </select>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {visible.length} of {orders.length}
-        </span>
+        <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
+          <select
+            value={filters.area}
+            onChange={(e) => setFilters({ ...filters, area: e.target.value })}
+            className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
+            title="Delivery area"
+          >
+            {AREA_FILTER_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <select
+            value={filters.courier}
+            onChange={(e) => setFilters({ ...filters, courier: e.target.value })}
+            className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
+            title="Courier"
+          >
+            {COURIER_FILTER_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <select
+            value={filters.datePreset}
+            onChange={(e) => {
+              const v = e.target.value as DatePreset;
+              setFilters(
+                v === "custom"
+                  ? { ...filters, datePreset: "custom" }
+                  : { ...filters, datePreset: v, from: "", to: "" },
+              );
+            }}
+            className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
+            title="Date range"
+          >
+            {DATE_PRESET_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <select
+            value={filters.sort}
+            onChange={(e) => setFilters({ ...filters, sort: e.target.value as OrderFilterState["sort"] })}
+            className="h-10 w-full rounded-md border bg-background px-2 text-xs font-medium outline-none focus:ring-1 focus:ring-primary lg:w-[150px]"
+            title="Sort"
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="updated">Last updated</option>
+            <option value="high">Amount: high → low</option>
+            <option value="low">Amount: low → high</option>
+          </select>
+          {/* Mobile: status filter — last cell, after Sort */}
+          <div className="sm:hidden">
+            <OrderTabs
+              tab={tab}
+              onChange={setTab}
+              highlight
+              count={(key) => {
+                const sts = ORDER_TABS.find((t) => t.key === key)?.statuses ?? [];
+                return sts.length === 0 ? orders.length : orders.filter((o) => (sts as string[]).includes(o.status)).length;
+              }}
+              className="w-full min-w-0"
+            />
+          </div>
+          {activeFilterCount(filters) > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                setFilters({
+                  ...DEFAULT_ORDER_FILTERS,
+                  q: filters.q,
+                  perPage: filters.perPage,
+                  reseller: filters.reseller,
+                  supplier: filters.supplier,
+                })
+              }
+              className="inline-flex h-10 items-center gap-1.5 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent lg:w-[150px]"
+            >
+              <X className="h-3.5 w-3.5" /> Clear filters
+            </button>
+          )}
+        </div>
       </div>
-
-      {showFilters && (
-        <OrderFilterBar
-          value={filters}
-          onChange={setFilters}
-          total={orders.length}
-          shown={visible.length}
-          hideSearch
-          trailing={
-            <div className="sm:hidden">
-              <OrderTabs
-                tab={tab}
-                onChange={setTab}
-                highlight
-                count={(key) => {
-                  const sts = ORDER_TABS.find((t) => t.key === key)?.statuses ?? [];
-                  return sts.length === 0 ? orders.length : orders.filter((o) => (sts as string[]).includes(o.status)).length;
-                }}
-                className="w-full min-w-0"
-              />
-            </div>
-          }
-        />
-      )}
 
       {marked.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
