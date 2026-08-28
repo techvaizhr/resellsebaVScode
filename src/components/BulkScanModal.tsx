@@ -44,31 +44,45 @@ function ctx() {
   if (audioCtx.state === "suspended") void audioCtx.resume();
   return audioCtx;
 }
-function tone(freq: number, start: number, dur: number, type: OscillatorType = "sine", gain = 0.5) {
+function tone(
+  freq: number,
+  start: number,
+  dur: number,
+  type: OscillatorType = "sine",
+  gain = 0.5,
+) {
   const ac = ctx();
   if (!ac) return;
+  const t0 = ac.currentTime + start;
   const osc = ac.createOscillator();
   const g = ac.createGain();
   osc.type = type;
-  osc.frequency.value = freq;
-  g.gain.setValueAtTime(0.0001, ac.currentTime + start);
-  g.gain.linearRampToValueAtTime(gain, ac.currentTime + start + 0.012);
-  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + start + dur);
+  osc.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(gain, t0 + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   osc.connect(g).connect(ac.destination);
-  osc.start(ac.currentTime + start);
-  osc.stop(ac.currentTime + start + dur + 0.03);
+  osc.start(t0);
+  osc.stop(t0 + dur + 0.05);
+}
+/** Note + soft octave shimmer so it sounds like a chime, not a beep. */
+function chime(freq: number, start: number, dur: number, gain = 0.5) {
+  tone(freq, start, dur, "triangle", gain);
+  tone(freq * 2, start, dur * 0.7, "sine", gain * 0.35);
+  tone(freq / 2, start, dur * 0.5, "sine", gain * 0.2);
 }
 function beepSuccess() {
-  // bright rising double-beep, loud
-  tone(1180, 0, 0.12, "square", 0.45);
-  tone(1560, 0.11, 0.16, "square", 0.5);
-  tone(1560, 0.11, 0.16, "sine", 0.3);
+  // pleasant ~1s rising chime arpeggio (C5 → E5 → G5 → C6)
+  chime(523.25, 0, 0.45, 0.55);
+  chime(659.25, 0.12, 0.45, 0.55);
+  chime(783.99, 0.24, 0.5, 0.55);
+  chime(1046.5, 0.38, 0.7, 0.6);
 }
 function beepError() {
-  // low harsh descending buzz, loud
-  tone(220, 0, 0.22, "sawtooth", 0.5);
-  tone(160, 0.22, 0.32, "sawtooth", 0.5);
-  tone(160, 0.22, 0.32, "square", 0.25);
+  // ~1s descending "wrong" tone — low, warm but clearly negative
+  chime(392, 0, 0.4, 0.6);
+  chime(311.13, 0.22, 0.45, 0.6);
+  chime(233.08, 0.45, 0.6, 0.65);
 }
 
 /* ---------------- helpers ---------------- */
