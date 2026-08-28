@@ -16,6 +16,7 @@ import {
 } from "@/components/report-blocks";
 import { buildFinanceReport, bdt, type ReportItem, type ReportOrder } from "@/lib/finance-report";
 import { NewOrderModal } from "@/components/NewOrderModal";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ShoppingBag,
   TrendingUp,
@@ -72,6 +73,7 @@ function ResellerDashboard() {
   const [payouts, setPayouts] = useState<PayoutRow[]>([]);
   const [commissions, setCommissions] = useState<CommissionRow[]>([]);
   const [lifetime, setLifetime] = useState({ delivered: 0, pendingPayout: 0, paidOut: 0, available: 0 });
+  const [toCourierCount, setToCourierCount] = useState(0);
   const { status: deposit } = useDepositStatus(rid);
   const { notices: adminNotices, dismiss: dismissNotice } = useLiveNotices(user?.id, rid);
 
@@ -104,6 +106,13 @@ function ResellerDashboard() {
         paidOut: Number(s?.paid_out ?? 0),
         available: Number(s?.available ?? 0),
       });
+      // Current "To Courier" count (shipped/processing) — independent of the date range.
+      const { count } = await supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("reseller_id", data.reseller.id)
+        .in("status", ["shipped", "processing"]);
+      setToCourierCount(count ?? 0);
       setLoading(false);
     },
     [uid],
@@ -193,7 +202,7 @@ function ResellerDashboard() {
       <AdminNoticePopup notices={adminNotices} onDismiss={dismissNotice} />
 
       <section className="mb-6">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6">
           <StatCard
             label="Total Profit"
             to="/reseller/transactions"
@@ -233,6 +242,15 @@ function ResellerDashboard() {
             value={listingsReport.active}
             icon={<ShoppingBag className="h-4 w-4" />}
             hint="Active listings"
+          />
+          <StatCard
+            label="To Courier"
+            to="/reseller/orders"
+            search={{ tab: "courier" }}
+            tone="sky"
+            value={toCourierCount}
+            icon={<Truck className="h-4 w-4" />}
+            hint="Orders with courier"
           />
         </div>
       </section>
