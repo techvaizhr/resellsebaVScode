@@ -92,6 +92,10 @@ const NAV: NavEntry[] = [
 function ResellerLayout() {
   const { user, roles, loading } = useAuth();
   const orderNavCount = useOrderNavCount();
+  const navWithBadge = useMemo(
+    () => applyOrderBadge(NAV, "/reseller/orders", orderNavCount),
+    [orderNavCount],
+  );
   const { required: needsVerify, loading: verifyLoading } = useVerification();
   const nav = useNavigate();
   const [storeName, setStoreName] = useState("My store");
@@ -170,11 +174,11 @@ function ResellerLayout() {
       homeTo="/reseller"
       bottomNav={{
         homeTo: "/reseller",
-        left: { label: "Orders", to: "/reseller/orders", icon: ClipboardList },
+        left: { label: "Orders", to: "/reseller/orders", icon: ClipboardList, badge: orderNavCount },
         right: { label: "Catalog", to: "/reseller/catalog", icon: Package },
       }}
       brand={{ name: storeName, sub: storeCode ? `/${storeCode}` : "Reseller", logoUrl }}
-      nav={NAV}
+      nav={navWithBadge}
       user={{
         name: storeName || (user.user_metadata?.full_name ?? "Reseller"),
         email: user.email ?? "",
