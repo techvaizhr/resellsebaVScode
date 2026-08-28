@@ -408,8 +408,9 @@ function BulkScanModal({
           <div className="space-y-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Scan mode</label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["handover", "return"] as ScanMode[]).map((m) => (
+              <div className={cn("grid gap-2", modeList.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
+                {modeList.map((m) => (
+
                   <button
                     key={m}
                     type="button"
