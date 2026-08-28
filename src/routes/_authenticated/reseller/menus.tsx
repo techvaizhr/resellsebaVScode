@@ -185,7 +185,7 @@ function MenusPage() {
   if (!rid)
     return (
       <div className="surface-card p-8 text-center text-sm text-muted-foreground">
-        Store profile পাওয়া যায়নি।
+        Store profile not found.
       </div>
     );
 
