@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/supplier/returns")({
   head: () => ({
     meta: [
       { title: "Supplier returns · handover tracking" },
-      { name: "description", content: "ফেরত আসা আইটেম ও অ্যাডমিন হ্যান্ডওভারের অবস্থা দেখুন।" },
+      { name: "description", content: "View returned items and admin handover status." },
       { property: "og:title", content: "Supplier returns" },
       { property: "og:description", content: "Track returned items and handover status." },
       { property: "og:type", content: "website" },
@@ -45,7 +45,7 @@ function SupplierReturnsPage() {
     setBusy(true);
     try {
       await receiveSupplierReturns(ids);
-      toast.success(`${ids.length}টি রিটার্ন receive হয়েছে`);
+      toast.success(`${ids.length} return(s) received`);
       setSel([]);
       await reload();
     } catch (e) {
@@ -60,7 +60,7 @@ function SupplierReturnsPage() {
     <div>
       <PageHeader
         title="Returns"
-        description="ফেরত আসা আইটেম — অ্যাডমিন হ্যান্ডওভার করলে এখানে 'Handed over' দেখাবে।"
+        description="Returned items — once handed over by admin, they will show as 'Handed over' here."
       />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
@@ -107,7 +107,7 @@ function SupplierReturnsPage() {
       <div className="surface-card p-4">
         {rows.length === 0 ? (
           <div className="rounded-lg border border-dashed p-8 text-center text-xs text-muted-foreground">
-            কোনো রিটার্ন নেই।
+            No returns found.
           </div>
         ) : (
           <div className="overflow-x-auto rounded-md border">

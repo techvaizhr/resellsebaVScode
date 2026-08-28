@@ -185,10 +185,10 @@ export const GATEWAYS: GatewaySpec[] = [
         label: "API key (Brand key)",
         secret: true,
         required: true,
-        hint: "ePaySeba প্যানেল → Brand Setting → আপনার ব্র্যান্ডের Brand Key কপি করে বসান",
+        hint: "ePaySeba panel → Brand Setting → copy your brand’s Brand Key and paste it here",
       },
-      { path: "merchant_id", label: "Account Api Key (optional)", hint: "প্যানেলের Api Key — না দিলেও চলবে" },
-      { path: "api_secret", label: "Secret key (optional)", secret: true, hint: "শুধু webhook signature-এর জন্য" },
+      { path: "merchant_id", label: "Account Api Key (optional)", hint: "The panel’s Api Key — optional, not required" },
+      { path: "api_secret", label: "Secret key (optional)", secret: true, hint: "Only used for webhook signature verification" },
     ],
 
     callbacks: [

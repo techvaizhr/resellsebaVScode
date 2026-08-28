@@ -501,7 +501,7 @@ async function epaysebaCall(
 function epaysebaError(r: Record<string, any>): string {
   const msg = String((r.message ?? r.error ?? "") || "");
   if (/invalid api request/i.test(msg) || r.__status === 404)
-    return "ePaySeba: Invalid API Request — ePaySeba প্যানেলের Brand Setting থেকে ব্র্যান্ডের **Brand Key** কপি করে API key ফিল্ডে বসান (account Api Key কাজ করে না)।";
+    return "ePaySeba: Invalid API Request — copy the **Brand Key** from Brand Setting in the ePaySeba panel and paste it into the API key field (the account Api Key will not work).";
   return msg;
 }
 

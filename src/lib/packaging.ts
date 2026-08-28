@@ -17,6 +17,6 @@ export function packagingTotal(lines: PackagingLine[], sumMode: boolean): number
 
 export function packagingModeHint(sumMode: boolean): string {
   return sumMode
-    ? "Sum mode: প্রতিটি প্রোডাক্টের প্যাকেজিং চার্জ × কোয়ান্টিটি যোগ হয়ে যাচ্ছে।"
-    : "Highest mode: একাধিক প্রোডাক্ট থাকলে সবগুলোর মধ্যে সবচেয়ে বেশি প্যাকেজিং চার্জটাই একবার ধরা হচ্ছে।";
+    ? "Sum mode: each product's packaging charge × quantity is added together."
+    : "Highest mode: when there are multiple products, only the highest packaging charge among them is applied once.";
 }

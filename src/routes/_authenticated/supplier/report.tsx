@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/supplier/report")({
   head: () => ({
     meta: [
       { title: "Supplier sales report · earnings breakdown" },
-      { name: "description", content: "ডেলিভারি হওয়া আইটেমের আয় ও চলমান অর্ডারের হিসাব দেখুন।" },
+      { name: "description", content: "View earnings from delivered items and in-progress order values." },
       { property: "og:title", content: "Supplier sales report" },
       { property: "og:description", content: "Delivered earnings and in-progress order values." },
       { property: "og:type", content: "website" },
@@ -68,7 +68,7 @@ function SupplierReportPage() {
     <div>
       <PageHeader
         title="Sales report"
-        description="ডেলিভারি হওয়া (kept) আইটেমের হিসাব — এটাই আপনার প্রাপ্য।"
+        description="Accounting of delivered (kept) items — this is your due earning."
       />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -117,7 +117,7 @@ function SupplierReportPage() {
       <div className="surface-card p-4">
         {rows.length === 0 ? (
           <div className="rounded-lg border border-dashed p-8 text-center text-xs text-muted-foreground">
-            কোনো রেকর্ড পাওয়া যায়নি।
+            No records found.
           </div>
         ) : (
           <div className="overflow-x-auto rounded-md border">
