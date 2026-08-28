@@ -168,7 +168,11 @@ export function AppShell({
       </nav>
       <div className={cn("border-t border-sidebar-border", collapsed ? "p-2" : "p-3")}>
         {!collapsed && (
-          <div className="mb-2 flex items-center gap-2 px-2">
+          <Link
+            to={homeTo}
+            title="Go to dashboard"
+            className="mb-2 flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-sidebar-accent"
+          >
             <ResellerAvatar url={user.avatarUrl} name={user.name} size={32} />
             <div className="min-w-0">
               <div className="truncate text-sm font-medium text-sidebar-foreground">
@@ -176,7 +180,7 @@ export function AppShell({
               </div>
               <div className="truncate text-xs text-muted-foreground">{user.email}</div>
             </div>
-          </div>
+          </Link>
         )}
         <Button
           variant="ghost"
@@ -247,6 +251,14 @@ export function AppShell({
                 {desktopCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
               </button>
               <h1 className="truncate text-base font-bold tracking-tight sm:text-lg">{title}</h1>
+              <Link
+                to={homeTo}
+                title="Go to dashboard"
+                className="ml-1 hidden min-w-0 items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-muted sm:flex"
+              >
+                <ResellerAvatar url={user.avatarUrl} name={user.name} size={24} />
+                <span className="max-w-40 truncate text-sm font-medium text-muted-foreground">{user.name}</span>
+              </Link>
             </div>
             <div className="flex items-center gap-2">
               <PwaInstallButton />
