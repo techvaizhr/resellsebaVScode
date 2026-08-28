@@ -100,7 +100,7 @@ function AdminSupplierReportPage() {
     <div>
       <PageHeader title="Supplier report" description="Sales, returns, paid, and outstanding amounts per supplier." />
 
-      <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Sold qty" value={totals.sold} icon={<PackageCheck className="h-4 w-4" />} />
         <StatCard label="Supplier earning" value={bdtNum(totals.earning)} tone="emerald" icon={<TrendingUp className="h-4 w-4" />} />
         <StatCard label="Returned value" value={bdtNum(totals.returned)} tone="rose" icon={<Undo2 className="h-4 w-4" />} />

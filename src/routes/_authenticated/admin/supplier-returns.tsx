@@ -197,7 +197,7 @@ function AdminSupplierReturnsPage() {
         description="Items returned per supplier — hand over in bulk or one at a time."
       />
 
-      <div className="mb-4 grid gap-4 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
         <StatCard label="Waiting handover" value={bdtNum(sum(pending))} hint={`${pending.length} items`} tone="amber" />
         <StatCard label="Handed over" value={bdtNum(sum(handed))} hint={`${handed.length} items`} tone="emerald" />
         <StatCard label="Suppliers involved" value={groups.length} hint="in current view" tone="violet" />
