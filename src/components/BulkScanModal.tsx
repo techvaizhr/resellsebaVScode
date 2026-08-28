@@ -110,17 +110,31 @@ function nextStatus(mode: ScanMode, current: string): { to: string } | { error: 
 
 /* ---------------- component ---------------- */
 
+export type ScanOrder = { id: string; order_number: string; status: string; customer_name?: string | null };
+
+export type ScanHooks = {
+  /** Custom lookup (e.g. supplier scope, no direct table access). */
+  resolve?: (code: string) => Promise<ScanOrder | null> | ScanOrder | null;
+  /** Custom status apply (e.g. supplier RPC). */
+  apply?: (order: ScanOrder, to: string) => Promise<void>;
+  /** Restrict the mode switcher. */
+  modes?: ScanMode[];
+};
+
 export function BulkScanButton({
   compact = false,
   mode = "handover",
   onDone,
   className,
+  resolve,
+  apply,
+  modes,
 }: {
   compact?: boolean;
   mode?: ScanMode;
   onDone?: () => void;
   className?: string;
-}) {
+} & ScanHooks) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -145,6 +159,9 @@ export function BulkScanButton({
         ? createPortal(
             <BulkScanModal
               mode={mode}
+              resolve={resolve}
+              apply={apply}
+              modes={modes}
               onClose={() => {
                 setOpen(false);
                 onDone?.();
@@ -157,9 +174,17 @@ export function BulkScanButton({
   );
 }
 
-function BulkScanModal({ mode: initialMode, onClose }: { mode: ScanMode; onClose: () => void }) {
+function BulkScanModal({
+  mode: initialMode,
+  onClose,
+  resolve,
+  apply,
+  modes,
+}: { mode: ScanMode; onClose: () => void } & ScanHooks) {
   const [mode, setMode] = useState<ScanMode>(initialMode);
   const cfg = MODES[mode];
+  const modeList = modes && modes.length ? modes : (["handover", "return"] as ScanMode[]);
+
   const [sound, setSound] = useState(true);
   const [camOn, setCamOn] = useState(false);
   const [camError, setCamError] = useState<string | null>(null);
