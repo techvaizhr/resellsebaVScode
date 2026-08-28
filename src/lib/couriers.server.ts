@@ -56,6 +56,39 @@ export function courierStoreName(conf: Cfg, storeId?: string | number | null): s
   }
 }
 
+/** Saved pickup stores of a provider (empty when never loaded). */
+export function savedCourierStores(conf: Cfg): { id: string; name: string }[] {
+  try {
+    const raw = (conf as any).stores_json;
+    const list = typeof raw === "string" ? JSON.parse(raw || "[]") : raw;
+    if (!Array.isArray(list)) return [];
+    return list
+      .filter((s: any) => s && s.id != null && String(s.id) !== "")
+      .map((s: any) => ({ id: String(s.id), name: String(s.name ?? s.id) }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * A pickup store can be deactivated or deleted from the courier's own panel at
+ * any time. Fail with a clear, actionable message instead of letting the
+ * provider API answer with a cryptic validation error.
+ */
+export function assertCourierStore(conf: Cfg, provider: string, storeId: string | number) {
+  const id = String(storeId ?? "");
+  const saved = savedCourierStores(conf);
+  if (!id) throw new Response(`${provider} pickup store select korun`, { status: 400 });
+  // Never loaded a list yet — let the provider validate it.
+  if (saved.length === 0) return;
+  if (!saved.some((s) => s.id === id)) {
+    throw new Response(
+      `Ei pickup store ta ${provider} panel e ar nei (inactive ba delete kora hoyeche). Admin → Couriers e "Load stores" chepe notun store select korun.`,
+      { status: 400 },
+    );
+  }
+}
+
 /**
  * Save a freshly loaded pickup-store list into courier_configs so booking can use
  * it without the admin pressing Save (and it survives a page reload).
@@ -65,18 +98,22 @@ export async function persistCourierStores(
   db: any,
   provider: string,
   conf: Cfg,
-  stores: { id: string; name?: string; isDefaultPickup?: boolean }[],
+  stores: { id: string; name?: string; isDefaultPickup?: boolean; isActive?: boolean }[],
 ): Promise<string> {
-  const saved = stores.map((s) => ({ id: String(s.id), name: String(s.name ?? s.id) }));
+  // Inactive stores can't accept parcels — keep them out of the saved list.
+  const usable = stores.filter((s) => s.isActive !== false);
+  const saved = usable.map((s) => ({ id: String(s.id), name: String(s.name ?? s.id) }));
   const keep = saved.some((s) => s.id === String(conf.store_id ?? ""));
   const defaultStoreId = keep
     ? String(conf.store_id)
-    : String(stores.find((s) => s.isDefaultPickup)?.id ?? saved[0]?.id ?? "");
+    : String(usable.find((s) => s.isDefaultPickup)?.id ?? saved[0]?.id ?? "");
   const nextConfig: Cfg = {
     ...conf,
     stores_json: JSON.stringify(saved),
-    ...(defaultStoreId ? { store_id: defaultStoreId } : {}),
+    // A store that disappeared upstream must not stay as the saved default.
+    store_id: defaultStoreId,
   };
+  if (!defaultStoreId) delete (nextConfig as any).store_id;
   await db.from("courier_configs").update({ config: nextConfig }).eq("provider", provider);
   return defaultStoreId;
 }
