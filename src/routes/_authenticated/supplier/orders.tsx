@@ -161,6 +161,7 @@ function SupplierOrdersPage() {
 
 
   const paged = usePaginated(filtered, page, perPage);
+  const { meta, refresh: refreshMeta } = useOrderMeta(paged.map((o) => o.id));
   const markedRows = rows.filter((o) => marked.includes(o.id));
   const bulkNext = useMemo(() => {
     if (!markedRows.length) return null;
