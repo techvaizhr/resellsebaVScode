@@ -419,17 +419,27 @@ export const carrybeeStores = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
     const { carrybeeRequest } = await import("@/lib/carrybee.server");
+    const { persistCourierStores } = await import("@/lib/couriers.server");
     const conf = await getCourierConfig(supabase, "carrybee");
     const body = await carrybeeRequest(conf, "/api/v2/stores");
-    const stores = (body?.data?.stores ?? []).map((s: any) => ({
-      id: String(s.id),
-      name: String(s.name ?? ""),
+    const raw = Array.isArray(body?.data?.stores)
+      ? body.data.stores
+      : Array.isArray(body?.data?.items)
+        ? body.data.items
+        : Array.isArray(body?.data)
+          ? body.data
+          : [];
+    const stores = raw.map((s: any) => ({
+      id: String(s.id ?? s.store_id ?? ""),
+      name: String(s.name ?? s.store_name ?? ""),
       isApproved: Boolean(s.is_approved),
       isActive: Boolean(s.is_active),
       isDefaultPickup: Boolean(s.is_default_pickup_store),
-    }));
-    return { stores };
+    })).filter((s: any) => s.id);
+    const defaultStoreId = await persistCourierStores(supabase, "carrybee", conf, stores);
+    return { stores, defaultStoreId };
   });
+
 
 export const bookCarrybee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
