@@ -69,6 +69,7 @@ function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [inlineEdit, setInlineEdit] = useState(false);
 
   const [q, setQ] = useState("");
   const [brand, setBrand] = useState(search.brand ?? "");
