@@ -9,6 +9,17 @@ import { steadfastBalance, carrybeeStores, pathaoStores } from "@/lib/couriers.f
 import { Switch } from "@/components/ui/switch";
 import { CourierLogo, courierLabel } from "@/components/courier-brand";
 
+/** Server fns reject with a raw Response; read its body so the toast is useful. */
+async function errText(e: unknown, fallback: string) {
+  if (e instanceof Response) {
+    try {
+      const t = await e.text();
+      if (t) return t;
+    } catch {}
+  }
+  return e instanceof Error && e.message ? e.message : fallback;
+}
+
 
 export const Route = createFileRoute("/_authenticated/admin/couriers")({
   component: CouriersPage,
@@ -236,7 +247,7 @@ function SteadfastExtras({ token, onToken }: { token: string; onToken: (t: strin
               const r = await getBalance();
               setBalance(r?.balance ?? 0);
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Balance fetch failed");
+              toast.error(await errText(e, "Balance fetch failed"));
             } finally {
               setBusy(false);
             }
@@ -348,7 +359,7 @@ function CarrybeeExtras({
               if (list.length === 0) toast.info("No stores — create one in the Carrybee panel");
               else toast.success(`${list.length} store saved — remember to save`);
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Failed to load store list");
+              toast.error(await errText(e, "Failed to load store list"));
             } finally {
               setBusy(false);
             }
@@ -487,7 +498,7 @@ function PathaoExtras({
               if (list.length === 0) toast.info("No stores — create one in the Pathao panel");
               else toast.success(`${list.length} store saved — remember to save`);
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Failed to load store list");
+              toast.error(await errText(e, "Failed to load store list"));
             } finally {
               setBusy(false);
             }
