@@ -122,6 +122,7 @@ function SupplierLayout() {
     <SupplierProvider value={{ data, reload, reloading }}>
       <AppShell
         title="Supplier panel"
+        homeTo="/supplier"
         brand={{
           name: data.settings?.site_name ?? "Supplier",
           sub: supplier.code,
