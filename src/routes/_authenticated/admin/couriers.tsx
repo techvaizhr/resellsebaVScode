@@ -20,6 +20,29 @@ async function errText(e: unknown, fallback: string) {
   return e instanceof Error && e.message ? e.message : fallback;
 }
 
+/** Pickup stores already saved in courier_configs.config.stores_json. */
+function savedStores(config: Record<string, string> | undefined) {
+  try {
+    const raw = config?.stores_json;
+    const list = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((s: any) => ({
+        id: String(s?.id ?? ""),
+        name: String(s?.name ?? s?.id ?? ""),
+        address: "",
+        isActive: true,
+        isApproved: true,
+        isDefaultPickup: false,
+      }))
+      .filter((s) => s.id);
+  } catch {
+    return [];
+  }
+}
+
+
+
 
 export const Route = createFileRoute("/_authenticated/admin/couriers")({
   component: CouriersPage,
