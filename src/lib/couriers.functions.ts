@@ -264,6 +264,7 @@ export const bookPathao = createServerFn({ method: "POST" })
         orderId: z.string().uuid(),
         deliveryType: z.union([z.literal(48), z.literal(12)]).optional(),
         itemWeight: z.number().min(0.5).max(10).optional(),
+        storeId: z.string().min(1).optional(),
         note: z.string().max(250).optional(),
       })
       .parse(d),
@@ -273,7 +274,8 @@ export const bookPathao = createServerFn({ method: "POST" })
     const supabase = await courierActorClient(context.supabase, userId, data.orderId);
     const { pathaoRequest } = await import("@/lib/pathao.server");
     const conf = await getCourierConfig(supabase, "pathao");
-    if (!conf.store_id) throw new Response("Pathao store id set korun", { status: 400 });
+    const storeId = data.storeId || conf.store_id;
+    if (!storeId) throw new Response("Pathao store select korun", { status: 400 });
     const order = await getOrderForBooking(supabase, data.orderId);
 
     const { data: existing } = await supabase
@@ -294,7 +296,7 @@ export const bookPathao = createServerFn({ method: "POST" })
     // recipient_city/zone/area are intentionally omitted — Pathao resolves them
     // from the address, and sending nulls is rejected by the API.
     const payload: Record<string, unknown> = {
-      store_id: Number(conf.store_id),
+      store_id: Number(storeId),
       merchant_order_id: order.order_number,
       recipient_name: String(order.customer_name).slice(0, 100),
       recipient_phone: normalizePhone(order.customer_phone),
@@ -433,6 +435,7 @@ export const bookCarrybee = createServerFn({ method: "POST" })
         deliveryType: z.union([z.literal(1), z.literal(2)]).optional(),
         productType: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
         itemWeight: z.number().int().min(1).max(25000).optional(),
+        storeId: z.string().min(1).optional(),
         isExchange: z.boolean().optional(),
         note: z.string().max(250).optional(),
       })
@@ -443,7 +446,8 @@ export const bookCarrybee = createServerFn({ method: "POST" })
     const supabase = await courierActorClient(context.supabase, userId, data.orderId);
     const { carrybeeRequest, carrybeeResolveLocation } = await import("@/lib/carrybee.server");
     const conf = await getCourierConfig(supabase, "carrybee");
-    if (!conf.store_id) throw new Response("Carrybee store id set korun", { status: 400 });
+    const storeId = data.storeId || conf.store_id;
+    if (!storeId) throw new Response("Carrybee store select korun", { status: 400 });
     const order = await getOrderForBooking(supabase, data.orderId);
 
     const { data: existing } = await supabase
@@ -469,7 +473,7 @@ export const bookCarrybee = createServerFn({ method: "POST" })
 
     const codAmount = order.payment_method === "cod" ? Math.round(Number(order.total)) : 0;
     const payload: Record<string, unknown> = {
-      store_id: conf.store_id,
+      store_id: storeId,
       merchant_order_id: order.order_number,
       delivery_type: data.deliveryType ?? 1,
       product_type: data.productType ?? 1,
