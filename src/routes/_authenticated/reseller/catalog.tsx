@@ -333,15 +333,21 @@ function CatalogPage() {
                 >
                   {isPicked ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
                 </button>
-                <div 
-                  className="aspect-square bg-muted cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => setDetailId(p.id)}
-                >
-                  {p.og_image_url && (
-                    <img src={p.og_image_url} className="h-full w-full object-cover" alt="" />
-                  )}
+                <div className="relative">
+                  <div
+                    className="aspect-square bg-muted cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setDetailId(p.id)}
+                  >
+                    {p.og_image_url && (
+                      <img src={p.og_image_url} className="h-full w-full object-cover" alt="" />
+                    )}
+                  </div>
+                  <div className="absolute bottom-2 right-2 z-10">
+                    <ImagePickerButton baseName={p.name} loadImages={() => loadProductImages(p)} />
+                  </div>
                 </div>
-                <div className="p-4">
+                <div className="p-3 sm:p-4">
+
                   <div className="mb-1.5">
                     <ProductCodeChip code={p.product_code} />
                   </div>
