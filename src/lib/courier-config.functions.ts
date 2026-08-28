@@ -43,9 +43,9 @@ async function loadConfigs(supabase: any) {
 
 export const getActiveCouriers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<string[]> => {
     const rows = await loadConfigs(context.supabase);
-    return rows.map((c: any) => c.provider as string);
+    return rows.map((c: any) => String(c.provider));
   });
 
 /** Active providers plus their saved pickup stores (multi-store booking). */
