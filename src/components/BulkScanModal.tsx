@@ -253,25 +253,37 @@ function BulkScanModal({
           push({ code: order.order_number, ok: false, message: step.error });
           return;
         }
-        const { error } = await supabase
-          .from("orders")
-          .update(
-            mode === "return"
-              ? ({ status: step.to, received_amount: 0, settled_at: new Date().toISOString() } as any)
-              : ({ status: step.to } as any),
-          )
-          .eq("id", order.id);
-        if (error) {
-          if (sound) beepError();
-          setLast({ ok: false, text: error.message, sub: order.order_number });
-          push({ code: order.order_number, ok: false, message: error.message });
-          return;
+        if (apply) {
+          try {
+            await apply(order, step.to);
+          } catch (e: any) {
+            const msg = e?.message ?? "Status change failed";
+            if (sound) beepError();
+            setLast({ ok: false, text: msg, sub: order.order_number });
+            push({ code: order.order_number, ok: false, message: msg });
+            return;
+          }
+        } else {
+          const { error } = await supabase
+            .from("orders")
+            .update(
+              mode === "return"
+                ? ({ status: step.to, received_amount: 0, settled_at: new Date().toISOString() } as any)
+                : ({ status: step.to } as any),
+            )
+            .eq("id", order.id);
+          if (error) {
+            if (sound) beepError();
+            setLast({ ok: false, text: error.message, sub: order.order_number });
+            push({ code: order.order_number, ok: false, message: error.message });
+            return;
+          }
+          await supabase.from("order_status_history").insert({
+            order_id: order.id,
+            status: step.to as any,
+            note: cfg.note,
+          });
         }
-        await supabase.from("order_status_history").insert({
-          order_id: order.id,
-          status: step.to as any,
-          note: cfg.note,
-        });
         doneRef.current.set(order.id, orderStatusLabel(step.to));
         if (sound) beepSuccess();
 
@@ -286,7 +298,8 @@ function BulkScanModal({
         setBusy(false);
       }
     },
-    [push, sound, mode, cfg.note],
+    [push, sound, mode, cfg.note, resolve, apply],
+
   );
 
   // keep the scan box focused for hardware scanners, but never steal focus
