@@ -753,7 +753,9 @@ function PriceCell({ row, field, onSaved }: { row: Row; field: "buying_price" | 
     if (Number.isNaN(n)) return toast.error("Invalid price");
     if (n === current) return setEditing(false);
     setBusy(true);
-    const { error } = await supabase.from("products").update({ [field]: n }).eq("id", row.id);
+    const patch =
+      field === "buying_price" ? { buying_price: n } : field === "reseller_price" ? { reseller_price: n } : { suggested_price: n };
+    const { error } = await supabase.from("products").update(patch).eq("id", row.id);
     setBusy(false);
     if (error) return toast.error(error.message);
     onSaved(n);
