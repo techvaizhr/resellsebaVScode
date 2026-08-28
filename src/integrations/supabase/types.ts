@@ -3220,6 +3220,10 @@ export type Database = {
           visits: number
         }[]
       }
+      supplier_available: {
+        Args: { _exclude?: string; _supplier: string }
+        Returns: number
+      }
       supplier_bootstrap: { Args: never; Returns: Json }
       supplier_can_book_order: { Args: { _order: string }; Returns: boolean }
       supplier_kept_qty: {
