@@ -173,18 +173,28 @@ function ResellerLayout() {
         avatarUrl,
       }}
       headerRight={
-        storeCode ? (
-          <a
-            href={`/s/${storeCode}`}
-            target="_blank"
-            rel="noreferrer"
-            title="Visit store"
+        <>
+          <Link
+            to="/reseller/catalog"
+            title="Catalog"
             className="inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
           >
-            <ExternalLink className="h-4 w-4" />
-            <span className="hidden sm:inline">Visit store</span>
-          </a>
-        ) : null
+            <Package className="h-4 w-4" />
+            <span className="hidden sm:inline">Catalog</span>
+          </Link>
+          {storeCode ? (
+            <a
+              href={`/s/${storeCode}`}
+              target="_blank"
+              rel="noreferrer"
+              title="Visit store"
+              className="inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
+            >
+              <ExternalLink className="h-4 w-4" />
+              <span className="hidden sm:inline">Visit store</span>
+            </a>
+          ) : null}
+        </>
       }
     >
       <ImpersonationBanner />
