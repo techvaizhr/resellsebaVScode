@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sliders,
@@ -209,6 +209,11 @@ function firstAllowedRoute(nav: NavEntry[], permissions: string[]): string | nul
 
 function AdminLayout() {
   const { user, roles, permissions, loading } = useAuth();
+  const orderNavCount = useOrderNavCount();
+  const navWithBadge = useMemo(
+    () => applyOrderBadge(filterNav(NAV, permissions, isSuperAdmin), "/admin/orders", orderNavCount),
+    [orderNavCount, permissions, isSuperAdmin],
+  );
   const nav = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
   const isSuperAdmin = roles.includes("super_admin");
