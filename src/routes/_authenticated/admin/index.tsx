@@ -409,10 +409,10 @@ function MiniCard({
     <Link
       to={to}
       search={search as never}
-      className={`surface-card p-4 text-center transition hover:-translate-y-0.5 hover:border-primary/50 ${tone ? TONES[tone] : ""}`}
+      className={`surface-card px-3 py-2.5 text-center transition hover:-translate-y-0.5 hover:border-primary/50 ${tone ? TONES[tone] : ""}`}
     >
-      <div className={`text-2xl font-black ${tone ? "" : "text-primary"}`}>{value}</div>
-      <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">{label}</div>
+      <div className={`text-lg font-black leading-tight break-words sm:text-2xl ${tone ? "" : "text-primary"}`}>{value}</div>
+      <div className="mt-0.5 text-[10px] font-bold uppercase leading-tight tracking-widest text-muted-foreground/70">{label}</div>
       {hint && <div className="mt-0.5 text-[11px] font-semibold text-muted-foreground">{hint}</div>}
     </Link>
   );
