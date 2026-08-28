@@ -252,9 +252,9 @@ function AdminSuppliersPage() {
                 <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3">
                   <ResellerAvatar url={null} name={s.display_name} size={40} />
 
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="truncate font-medium">{s.display_name}</span>
+                    <div className="min-w-0">
+                    <div className="truncate font-medium">{s.display_name}</div>
+                    <div className="mt-1 flex flex-nowrap items-center gap-1.5">
                       <span
                         className={
                           "rounded-full px-2 py-0.5 text-[10px] font-medium capitalize " +
@@ -269,7 +269,7 @@ function AdminSuppliersPage() {
                         </span>
                       )}
                     </div>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <div className="mt-1.5 flex flex-nowrap items-center gap-1.5 overflow-x-auto">
                       <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
                         <IdCard className="h-3 w-3 text-primary" />
                         <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -328,7 +328,7 @@ function AdminSuppliersPage() {
                         </span>
                       )}
                       {s.email && (
-                        <span className="truncate rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">
+                        <span className="min-w-0 truncate rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">
                           {s.email}
                         </span>
                       )}
@@ -407,7 +407,7 @@ function AdminSuppliersPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+                <div className="mt-3 grid grid-cols-3 gap-2 lg:grid-cols-4 xl:grid-cols-7">
                   <Metric label="Products" value={s.products} plain />
                   <Metric label="Sold qty" value={s.sold_qty} plain />
                   <Metric label="Earning" value={s.earning} accent />
