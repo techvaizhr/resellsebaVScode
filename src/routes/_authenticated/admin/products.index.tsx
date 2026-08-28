@@ -691,7 +691,7 @@ function ProductDetailModal({
   );
 }
 
-function StockCell({ row, onSaved }: { row: Row; onSaved: (v: number) => void }) {
+function StockCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) => void; locked?: boolean }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(String(row.stock));
   const [busy, setBusy] = useState(false);
