@@ -329,6 +329,9 @@ function SupplierProductsPage_() {
                         </ActionMenu>
                       </div>
                     </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">
+                      {new Date(p.created_at).toLocaleDateString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
