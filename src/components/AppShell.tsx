@@ -255,8 +255,7 @@ export function AppShell({
                 title="Go to dashboard"
                 className="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-muted"
               >
-                <ResellerAvatar url={user.avatarUrl} name={user.name} size={26} />
-                <span className="truncate text-base font-bold tracking-tight sm:text-lg">{user.name}</span>
+                <span className="truncate text-base font-bold tracking-tight sm:text-lg">{title}</span>
               </Link>
             </div>
             <div className="flex items-center gap-2">
