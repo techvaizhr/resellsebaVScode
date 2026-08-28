@@ -714,6 +714,17 @@ function StockCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =>
     toast.success("Stock updated");
   }
 
+  if (locked) {
+    return (
+      <span
+        className={`px-2 py-0.5 text-xs ${row.stock === 0 ? "text-destructive" : row.stock <= 5 ? "text-warning" : ""}`}
+        title="Turn on Inline edit to change stock"
+      >
+        {row.stock}
+      </span>
+    );
+  }
+
   if (!editing) {
     return (
       <button
