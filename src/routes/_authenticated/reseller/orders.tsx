@@ -65,7 +65,7 @@ import {
   type OrderFilterState,
   type DatePreset,
 } from "@/components/order-filters";
-import { Check, Ban, Search, ListChecks, SlidersHorizontal, ChevronDown, Printer, CheckSquare } from "lucide-react";
+import { Check, Ban, Search, ListChecks, ChevronDown, Printer, CheckSquare } from "lucide-react";
 import { CourierLogo, courierLabel } from "@/components/courier-brand";
 import { printShippingLabels } from "@/lib/labels";
 
