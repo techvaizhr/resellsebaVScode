@@ -334,8 +334,16 @@ function CarrybeeExtras({
               const r = await loadStores();
               const list = r?.stores ?? [];
               setStores(list);
+              const saved = list.map((s: any) => ({ id: String(s.id), name: String(s.name) }));
+              // auto-pick a default when none is set yet (or the saved one disappeared)
+              const keepDefault = saved.some((s: any) => s.id === config?.store_id);
+              const autoDefault =
+                saved.find((s: any) => (list.find((l: any) => String(l.id) === s.id) as any)?.isDefaultPickup)?.id ??
+                saved[0]?.id ??
+                "";
               onConfig({
-                stores_json: JSON.stringify(list.map((s: any) => ({ id: String(s.id), name: String(s.name) }))),
+                stores_json: JSON.stringify(saved),
+                ...(keepDefault || !autoDefault ? {} : { store_id: autoDefault }),
               });
               if (list.length === 0) toast.info("No stores — create one in the Carrybee panel");
               else toast.success(`${list.length} store saved — remember to save`);
@@ -465,8 +473,16 @@ function PathaoExtras({
               const r = await loadStores();
               const list = r?.stores ?? [];
               setStores(list);
+              const saved = list.map((s: any) => ({ id: String(s.id), name: String(s.name) }));
+              // auto-pick a default when none is set yet (or the saved one disappeared)
+              const keepDefault = saved.some((s: any) => s.id === config?.store_id);
+              const autoDefault =
+                saved.find((s: any) => (list.find((l: any) => String(l.id) === s.id) as any)?.isDefaultPickup)?.id ??
+                saved[0]?.id ??
+                "";
               onConfig({
-                stores_json: JSON.stringify(list.map((s: any) => ({ id: String(s.id), name: String(s.name) }))),
+                stores_json: JSON.stringify(saved),
+                ...(keepDefault || !autoDefault ? {} : { store_id: autoDefault }),
               });
               if (list.length === 0) toast.info("No stores — create one in the Pathao panel");
               else toast.success(`${list.length} store saved — remember to save`);
