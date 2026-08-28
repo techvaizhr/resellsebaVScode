@@ -57,9 +57,22 @@ export function ShipmentBookingModal({
 
   useEffect(() => {
     if (!current) return;
-    const fallback = current.defaultStoreId || current.stores[0]?.id || "";
+    const remembered =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem(`courier-store:${current.provider}`) ?? ""
+        : "";
+    const fallback =
+      (current.stores.some((s) => s.id === remembered) && remembered) ||
+      current.defaultStoreId ||
+      current.stores[0]?.id ||
+      "";
     setStoreId(current.stores.some((s) => s.id === storeId) ? storeId : fallback);
   }, [current]);
+
+  const pickStore = (id: string) => {
+    setStoreId(id);
+    if (typeof window !== "undefined") window.localStorage.setItem(`courier-store:${provider}`, id);
+  };
 
   const doSteadfast = useServerFn(bookSteadfast);
   const doPathao = useServerFn(bookPathao);
@@ -159,10 +172,13 @@ export function ShipmentBookingModal({
             <div className="mt-4">
               <label className="mb-1 flex items-center gap-1.5 text-xs font-medium">
                 <Store className="h-3.5 w-3.5" /> Pickup store
+                {stores.length > 1 && (
+                  <span className="text-muted-foreground">({stores.length} saved)</span>
+                )}
               </label>
               <select
                 value={storeId}
-                onChange={(e) => setStoreId(e.target.value)}
+                onChange={(e) => pickStore(e.target.value)}
                 className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               >
                 {stores.map((s) => (
