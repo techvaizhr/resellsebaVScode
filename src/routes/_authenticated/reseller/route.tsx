@@ -166,6 +166,11 @@ function ResellerLayout() {
     <AppShell
       title="Reseller panel"
       homeTo="/reseller"
+      bottomNav={{
+        homeTo: "/reseller",
+        left: { label: "Orders", to: "/reseller/orders", icon: ClipboardList },
+        right: { label: "Catalog", to: "/reseller/catalog", icon: Package },
+      }}
       brand={{ name: storeName, sub: storeCode ? `/${storeCode}` : "Reseller", logoUrl }}
       nav={NAV}
       user={{

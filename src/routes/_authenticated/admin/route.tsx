@@ -302,6 +302,11 @@ function AdminLayout() {
     <AppShell
       title={isSuperAdmin ? "Super Admin" : "Staff Panel"}
       homeTo="/admin"
+      bottomNav={{
+        homeTo: "/admin",
+        left: { label: "Orders", to: "/admin/orders", icon: ShoppingCart },
+        right: { label: "Catalog", to: "/admin/products", icon: Package },
+      }}
       headerRight={
         <>
           <Link
