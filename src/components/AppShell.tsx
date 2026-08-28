@@ -270,7 +270,7 @@ export function AppShell({
             </div>
           </header>
           {/* Bottom padding on mobile so content clears the bottom nav. */}
-          <div className="p-4 pb-28 md:p-6 md:pb-6">{children}</div>
+          <div className="p-4 pb-24 md:p-6 md:pb-6">{children}</div>
         </main>
       </div>
       {bottomNav && (
