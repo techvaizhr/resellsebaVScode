@@ -374,6 +374,7 @@ function ProductsPage() {
                   <th className="px-3 py-3">Admin cost</th>
                   <th className="px-3 py-3">Reseller</th>
                   <th className="px-3 py-3">Suggested</th>
+                  <th className="px-3 py-3">Packaging</th>
                   <th className="px-3 py-3">Stock</th>
                   <th className="px-3 py-3">Status</th>
                   <th className="px-3 py-3 text-right">Actions</th>
@@ -444,8 +445,10 @@ function ProductsPage() {
                       <PriceCell row={p} field="reseller_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, reseller_price: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
-                      <PriceCell row={p} field="suggested_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)))} />
+                    <PriceCell row={p} field="suggested_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)))} />
                     </td>
+                    <td className="px-3 py-3">
+                      <PriceCell row={p} field="packaging_cost" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, packaging_cost: v } : i)))} />
                     <td className="px-3 py-3">
                       <StockCell row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
                     </td>
