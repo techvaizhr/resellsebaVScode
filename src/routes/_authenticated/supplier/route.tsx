@@ -123,6 +123,11 @@ function SupplierLayout() {
       <AppShell
         title="Supplier panel"
         homeTo="/supplier"
+        bottomNav={{
+          homeTo: "/supplier",
+          left: { label: "Orders", to: "/supplier/orders", icon: ShoppingCart },
+          right: { label: "Products", to: "/supplier/products", icon: Package },
+        }}
         brand={{
           name: data.settings?.site_name ?? "Supplier",
           sub: supplier.code,
