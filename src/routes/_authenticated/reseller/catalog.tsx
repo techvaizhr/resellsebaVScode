@@ -11,7 +11,9 @@ import { toast } from "sonner";
 import { Hint } from "@/components/Hint";
 import { ResellerProductCalc } from "@/components/price-breakdown";
 import { DataToolbar, Pagination, usePaginated, type FilterDef } from "@/components/data-list";
-import { CopyButton, ImageDownloadTools, stripHtml } from "@/components/store/reseller-tools";
+import { CopyButton, stripHtml } from "@/components/store/reseller-tools";
+import { ImagePickerButton } from "@/components/catalog/image-picker";
+
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { ProductCodeChip } from "@/components/product-code";
 
@@ -35,9 +37,22 @@ type P = {
 };
 type Opt = { id: string; name: string };
 
+/** Card image picker needs every image of one product — fetched only on click. */
+async function loadProductImages(p: P) {
+  const { data } = await supabase
+    .from("product_images")
+    .select("url, is_primary, sort_order")
+    .eq("product_id", p.id);
+  const urls = [...((data ?? []) as any[])]
+    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order)
+    .map((i) => i.url as string);
+  return [...new Set([...(p.og_image_url ? [p.og_image_url] : []), ...urls])];
+}
+
 export const Route = createFileRoute("/_authenticated/reseller/catalog")({
   component: CatalogPage,
 });
+
 
 function CatalogPage() {
   const { user } = useAuth();
@@ -309,7 +324,7 @@ function CatalogPage() {
             Select page
           </button>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
           {paged.map((p) => {
             const myCost = p.reseller_price + p.packaging_cost;
             const isListed = listed.has(p.id);
@@ -331,15 +346,21 @@ function CatalogPage() {
                 >
                   {isPicked ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
                 </button>
-                <div 
-                  className="aspect-square bg-muted cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => setDetailId(p.id)}
-                >
-                  {p.og_image_url && (
-                    <img src={p.og_image_url} className="h-full w-full object-cover" alt="" />
-                  )}
+                <div className="relative">
+                  <div
+                    className="aspect-square bg-muted cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setDetailId(p.id)}
+                  >
+                    {p.og_image_url && (
+                      <img src={p.og_image_url} className="h-full w-full object-cover" alt="" />
+                    )}
+                  </div>
+                  <div className="absolute bottom-2 right-2 z-10">
+                    <ImagePickerButton baseName={p.name} loadImages={() => loadProductImages(p)} />
+                  </div>
                 </div>
-                <div className="p-4">
+                <div className="p-3 sm:p-4">
+
                   <div className="mb-1.5">
                     <ProductCodeChip code={p.product_code} />
                   </div>
@@ -520,8 +541,9 @@ function ProductDetailModal({ id, onClose, brands, categories }: { id: string; o
                   <div className="grid h-full w-full place-items-center text-muted-foreground">No image</div>
                 )}
                 <div className="absolute right-3 top-3 flex flex-col gap-2">
-                  <ImageDownloadTools compact images={imageUrls} activeUrl={activeUrl} baseName={p.name} />
+                  <ImagePickerButton images={imageUrls} baseName={p.name} />
                 </div>
+
               </div>
               {imageUrls.length > 1 && (
                 <div className="flex flex-wrap gap-2">
