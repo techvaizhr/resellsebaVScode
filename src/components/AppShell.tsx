@@ -250,14 +250,13 @@ export function AppShell({
               >
                 {desktopCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
               </button>
-              <h1 className="truncate text-base font-bold tracking-tight sm:text-lg">{title}</h1>
               <Link
                 to={homeTo}
                 title="Go to dashboard"
-                className="ml-1 hidden min-w-0 items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-muted sm:flex"
+                className="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-muted"
               >
-                <ResellerAvatar url={user.avatarUrl} name={user.name} size={24} />
-                <span className="max-w-40 truncate text-sm font-medium text-muted-foreground">{user.name}</span>
+                <ResellerAvatar url={user.avatarUrl} name={user.name} size={26} />
+                <span className="truncate text-base font-bold tracking-tight sm:text-lg">{user.name}</span>
               </Link>
             </div>
             <div className="flex items-center gap-2">
