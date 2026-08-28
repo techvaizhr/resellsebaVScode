@@ -37,9 +37,22 @@ type P = {
 };
 type Opt = { id: string; name: string };
 
+/** Card image picker needs every image of one product — fetched only on click. */
+async function loadProductImages(p: P) {
+  const { data } = await supabase
+    .from("product_images")
+    .select("url, is_primary, sort_order")
+    .eq("product_id", p.id);
+  const urls = [...((data ?? []) as any[])]
+    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order)
+    .map((i) => i.url as string);
+  return [...new Set([...(p.og_image_url ? [p.og_image_url] : []), ...urls])];
+}
+
 export const Route = createFileRoute("/_authenticated/reseller/catalog")({
   component: CatalogPage,
 });
+
 
 function CatalogPage() {
   const { user } = useAuth();
