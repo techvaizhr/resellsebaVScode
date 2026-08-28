@@ -84,12 +84,12 @@ export function BottomNav({ homeTo, left, right }: BottomNavProps) {
           >
             <span
               className={cn(
-                "absolute -top-5 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg ring-4 ring-background transition-transform",
+                "absolute -top-4 grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg ring-4 ring-background transition-transform",
                 homeActive ? "scale-105" : "scale-100",
               )}
               style={{ boxShadow: "0 6px 18px -4px color-mix(in oklab, var(--primary) 55%, transparent)" }}
             >
-              <Home className="h-6 w-6" />
+              <Home className="h-5 w-5" />
             </span>
           </Link>
 
