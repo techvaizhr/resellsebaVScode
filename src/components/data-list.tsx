@@ -162,52 +162,49 @@ export function Pagination({
   };
 
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-      <span>
+    <div className="mt-4 flex flex-nowrap items-center justify-between gap-2 overflow-x-auto text-sm text-muted-foreground">
+      <span className="whitespace-nowrap">
         {from}–{to} of {total}
       </span>
       {!showAll && pages > 1 && (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => go(current - 1)}
-              disabled={current <= 1}
-              title="Previous"
-              className="inline-flex h-8 items-center rounded-md border px-2 disabled:opacity-40"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            {pageWindow(current, pages).map((p, i) =>
-              p === "…" ? (
-                <span key={`gap-${i}`} className="px-1 text-muted-foreground">
-                  …
-                </span>
-              ) : (
-                <button
-                  key={p}
-                  onClick={() => go(p)}
-                  aria-current={p === current ? "page" : undefined}
-                  className={
-                    p === current
-                      ? "inline-flex h-8 min-w-8 items-center justify-center rounded-md border border-primary bg-primary px-2 font-medium text-primary-foreground"
-                      : "inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 hover:bg-muted"
-                  }
-                >
-                  {p}
-                </button>
-              ),
-            )}
-            <button
-              onClick={() => go(current + 1)}
-              disabled={current >= pages}
-              title="Next"
-              className="inline-flex h-8 items-center rounded-md border px-2 disabled:opacity-40"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="whitespace-nowrap">Go to</span>
+        <div className="flex flex-nowrap items-center gap-1">
+          <button
+            onClick={() => go(current - 1)}
+            disabled={current <= 1}
+            title="Previous"
+            className="inline-flex h-7 shrink-0 items-center rounded-md border px-1.5 disabled:opacity-40"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          {pageWindow(current, pages).map((p, i) =>
+            p === "…" ? (
+              <span key={`gap-${i}`} className="px-0.5 text-muted-foreground">
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                onClick={() => go(p)}
+                aria-current={p === current ? "page" : undefined}
+                className={
+                  p === current
+                    ? "inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-md border border-primary bg-primary px-1.5 text-xs font-medium text-primary-foreground"
+                    : "inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-md border px-1.5 text-xs hover:bg-muted"
+                }
+              >
+                {p}
+              </button>
+            ),
+          )}
+          <button
+            onClick={() => go(current + 1)}
+            disabled={current >= pages}
+            title="Next"
+            className="inline-flex h-7 shrink-0 items-center rounded-md border px-1.5 disabled:opacity-40"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+          <div className="flex flex-nowrap items-center gap-1 pl-1">
             <input
               type="number"
               min={1}
@@ -221,12 +218,13 @@ export function Pagination({
                 }
               }}
               placeholder={String(current)}
-              className="h-8 w-16 rounded-md border bg-background px-2 text-center text-foreground"
+              aria-label="Go to page"
+              className="h-7 w-12 shrink-0 rounded-md border bg-background px-1 text-center text-xs text-foreground"
             />
             <button
               onClick={submitGoTo}
               disabled={!goTo}
-              className="inline-flex h-8 items-center rounded-md border px-2 hover:bg-muted disabled:opacity-40"
+              className="inline-flex h-7 shrink-0 items-center rounded-md border px-1.5 text-xs hover:bg-muted disabled:opacity-40"
             >
               Go
             </button>
