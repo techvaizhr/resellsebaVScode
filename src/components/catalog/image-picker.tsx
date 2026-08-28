@@ -38,18 +38,42 @@ async function downloadOne(url: string, name: string) {
 /** Click → popup with every product image → select → direct download (no navigation). */
 export function ImagePickerButton({
   images,
+  loadImages,
   baseName,
   className,
   compact,
 }: {
-  images: string[];
+  images?: string[];
+  /** Optional lazy loader used when the full image list isn't in memory yet. */
+  loadImages?: () => Promise<string[]>;
   baseName: string;
   className?: string;
   compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const list = images.filter(Boolean);
-  if (list.length === 0) return null;
+  const [loading, setLoading] = useState(false);
+  const [lazy, setLazy] = useState<string[] | null>(null);
+  const list = (lazy ?? images ?? []).filter(Boolean);
+  if (list.length === 0 && !loadImages) return null;
+
+  async function openPicker() {
+    if (list.length > 0 || !loadImages) {
+      setOpen(true);
+      return;
+    }
+    setLoading(true);
+    try {
+      const urls = (await loadImages()).filter(Boolean);
+      if (urls.length === 0) {
+        toast.error("কোনো ছবি পাওয়া যায়নি");
+        return;
+      }
+      setLazy(urls);
+      setOpen(true);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <>
@@ -59,19 +83,21 @@ export function ImagePickerButton({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          setOpen(true);
+          void openPicker();
         }}
         className={
           className ??
           "inline-flex items-center gap-1 rounded-lg border bg-card/90 px-2 py-1.5 text-[11px] font-semibold shadow-sm backdrop-blur hover:border-primary/50 hover:text-primary"
         }
       >
-        <Download className="h-3.5 w-3.5" /> {compact ? null : "Image"}
+        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+        {compact ? null : "Image"}
       </button>
       {open && <ImagePickerModal images={list} baseName={baseName} onClose={() => setOpen(false)} />}
     </>
   );
 }
+
 
 function ImagePickerModal({
   images,
