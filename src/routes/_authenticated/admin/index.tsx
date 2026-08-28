@@ -409,7 +409,7 @@ function MiniCard({
   label: string;
   value: number | string;
   hint?: string;
-  tone?: "emerald" | "rose" | "amber" | "violet";
+  tone?: "emerald" | "rose" | "amber" | "violet" | "sky";
 }) {
   return (
     <Link
