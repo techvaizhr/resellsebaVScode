@@ -737,6 +737,70 @@ function StockCell({ row, onSaved }: { row: Row; onSaved: (v: number) => void })
   );
 }
 
+function PriceCell({ row, field, onSaved }: { row: Row; field: "buying_price" | "reseller_price" | "suggested_price"; onSaved: (v: number) => void }) {
+  const current = row[field] ?? 0;
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(String(current));
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) inputRef.current?.select();
+  }, [editing]);
+
+  async function save() {
+    const n = Math.max(0, Number(val));
+    if (Number.isNaN(n)) return toast.error("Invalid price");
+    if (n === current) return setEditing(false);
+    setBusy(true);
+    const { error } = await supabase.from("products").update({ [field]: n }).eq("id", row.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    onSaved(n);
+    setEditing(false);
+    toast.success("Price updated");
+  }
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => {
+          setVal(String(current));
+          setEditing(true);
+        }}
+        className="rounded-md border border-dashed px-2 py-0.5 text-xs hover:border-primary hover:text-primary"
+        title="Click to edit price"
+      >
+        ৳{current}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        ref={inputRef}
+        type="number"
+        min={0}
+        step="any"
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") save();
+          if (e.key === "Escape") setEditing(false);
+        }}
+        className="w-20 rounded-md border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
+      />
+      <button onClick={save} disabled={busy} className="rounded-md p-1 text-primary hover:bg-primary/10">
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+      </button>
+      <button onClick={() => setEditing(false)} className="rounded-md p-1 text-muted-foreground hover:bg-muted">
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
 function SupplierCell({ row, suppliers }: { row: Row; suppliers: SupplierOpt[] }) {
   const s = row.supplier_id ? suppliers.find((x) => x.id === row.supplier_id) : null;
   if (!row.supplier_id) return <span className="text-xs text-muted-foreground">Admin&apos;s own</span>;
