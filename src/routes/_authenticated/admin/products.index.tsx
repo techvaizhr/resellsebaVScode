@@ -742,7 +742,7 @@ function StockCell({ row, onSaved }: { row: Row; onSaved: (v: number) => void })
   );
 }
 
-function PriceCell({ row, field, onSaved }: { row: Row; field: "buying_price" | "reseller_price" | "suggested_price"; onSaved: (v: number) => void }) {
+function PriceCell({ row, field, onSaved }: { row: Row; field: "buying_price" | "reseller_price" | "suggested_price" | "packaging_cost"; onSaved: (v: number) => void }) {
   const current = row[field] ?? 0;
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(String(current));
@@ -758,14 +758,13 @@ function PriceCell({ row, field, onSaved }: { row: Row; field: "buying_price" | 
     if (Number.isNaN(n)) return toast.error("Invalid price");
     if (n === current) return setEditing(false);
     setBusy(true);
-    const patch =
-      field === "buying_price" ? { buying_price: n } : field === "reseller_price" ? { reseller_price: n } : { suggested_price: n };
+    const patch = { [field]: n };
     const { error } = await supabase.from("products").update(patch).eq("id", row.id);
     setBusy(false);
     if (error) return toast.error(error.message);
     onSaved(n);
     setEditing(false);
-    toast.success("Price updated");
+    toast.success(field === "packaging_cost" ? "Packaging cost updated" : "Price updated");
   }
 
   if (!editing) {
