@@ -57,9 +57,22 @@ export function ShipmentBookingModal({
 
   useEffect(() => {
     if (!current) return;
-    const fallback = current.defaultStoreId || current.stores[0]?.id || "";
+    const remembered =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem(`courier-store:${current.provider}`) ?? ""
+        : "";
+    const fallback =
+      (current.stores.some((s) => s.id === remembered) && remembered) ||
+      current.defaultStoreId ||
+      current.stores[0]?.id ||
+      "";
     setStoreId(current.stores.some((s) => s.id === storeId) ? storeId : fallback);
   }, [current]);
+
+  const pickStore = (id: string) => {
+    setStoreId(id);
+    if (typeof window !== "undefined") window.localStorage.setItem(`courier-store:${provider}`, id);
+  };
 
   const doSteadfast = useServerFn(bookSteadfast);
   const doPathao = useServerFn(bookPathao);
