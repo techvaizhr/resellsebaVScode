@@ -71,7 +71,10 @@ export async function pathaoAccessToken(db: any, conf: Cfg): Promise<string> {
       password,
     });
   }
-  if (!token.access_token) throw new Response("Pathao auth failed", { status: 502 });
+  if (!token.access_token)
+    throw new Response(`Pathao auth failed: ${lastTokenError || "check Client ID/Secret/Username/Password"}`, {
+      status: 400,
+    });
 
   const nextConfig: Cfg = {
     ...conf,
