@@ -792,6 +792,14 @@ function PriceCell({ row, field, onSaved, locked }: { row: Row; field: "buying_p
     toast.success(field === "packaging_cost" ? "Packaging cost updated" : "Price updated");
   }
 
+  if (locked) {
+    return (
+      <span className="px-2 py-0.5 text-xs" title="Turn on Inline edit to change price">
+        ৳{current}
+      </span>
+    );
+  }
+
   if (!editing) {
     return (
       <button
