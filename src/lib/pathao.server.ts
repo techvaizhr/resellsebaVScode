@@ -31,6 +31,7 @@ async function issueToken(conf: Cfg, body: Record<string, unknown>): Promise<Tok
   }
   if (!res.ok || !parsed?.access_token) {
     console.error(`Pathao issue-token failed [${res.status}]: ${text}`);
+    lastTokenError = String(parsed?.message ?? text ?? "").slice(0, 200);
     return {};
   }
   return parsed as TokenBody;
