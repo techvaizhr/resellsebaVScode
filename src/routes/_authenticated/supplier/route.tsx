@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard,
   Package,
@@ -37,6 +37,11 @@ const NAV: NavEntry[] = [
 
 function SupplierLayout() {
   const { user, roles, loading } = useAuth();
+  const orderNavCount = useOrderNavCount();
+  const navWithBadge = useMemo(
+    () => applyOrderBadge(NAV, "/supplier/orders", orderNavCount),
+    [orderNavCount],
+  );
   const { required: needsVerify, loading: verifyLoading } = useVerification();
   const nav = useNavigate();
   const [data, setData] = useState<SupplierReport | null>(null);
@@ -125,7 +130,7 @@ function SupplierLayout() {
         homeTo="/supplier"
         bottomNav={{
           homeTo: "/supplier",
-          left: { label: "Orders", to: "/supplier/orders", icon: ShoppingCart },
+          left: { label: "Orders", to: "/supplier/orders", icon: ShoppingCart, badge: orderNavCount },
           right: { label: "Products", to: "/supplier/products", icon: Package },
         }}
         brand={{
@@ -133,7 +138,7 @@ function SupplierLayout() {
           sub: supplier.code,
           logoUrl: data.settings?.logo_url ?? null,
         }}
-        nav={NAV}
+        nav={navWithBadge}
         user={{ name: supplier.display_name, email: user.email ?? "" }}
       >
         <ImpersonationBanner />
