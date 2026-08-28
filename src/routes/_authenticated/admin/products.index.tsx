@@ -454,19 +454,19 @@ function ProductsPage() {
                       <SupplierCell row={p} suppliers={suppliers} />
                     </td>
                     <td className="px-3 py-3">
-                      <PriceCell row={p} field="buying_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, buying_price: v } : i)))} />
+                      <PriceCell locked={!inlineEdit} row={p} field="buying_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, buying_price: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
-                      <PriceCell row={p} field="reseller_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, reseller_price: v } : i)))} />
+                      <PriceCell locked={!inlineEdit} row={p} field="reseller_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, reseller_price: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
-                    <PriceCell row={p} field="suggested_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)))} />
+                    <PriceCell locked={!inlineEdit} row={p} field="suggested_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
-                      <PriceCell row={p} field="packaging_cost" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, packaging_cost: v } : i)))} />
+                      <PriceCell locked={!inlineEdit} row={p} field="packaging_cost" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, packaging_cost: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
-                      <StockCell row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
+                      <StockCell locked={!inlineEdit} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
