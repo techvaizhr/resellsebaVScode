@@ -221,7 +221,6 @@ function SupplierProductsPage_() {
                   <th className="px-3 py-3">Stock</th>
                   <th className="px-3 py-3">Status</th>
                   <th className="px-3 py-3">Submitted</th>
-                  <th className="px-3 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
