@@ -413,7 +413,7 @@ function ProductsPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div
-                            className="w-2/5 max-w-[40%] font-medium leading-snug line-clamp-2 cursor-pointer hover:text-primary transition-colors"
+                            className="font-medium leading-snug line-clamp-2 cursor-pointer hover:text-primary transition-colors"
                             onClick={() => setDetailId(p.id)}
                             title={p.name}
                           >
