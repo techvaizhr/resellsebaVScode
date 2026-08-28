@@ -397,6 +397,7 @@ const TONES: Record<string, string> = {
   rose: "border-rose-500/25 bg-rose-500/5 text-rose-600 dark:text-rose-400",
   amber: "border-amber-500/25 bg-amber-500/5 text-amber-600 dark:text-amber-400",
   violet: "border-violet-500/25 bg-violet-500/5 text-violet-600 dark:text-violet-400",
+  sky: "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300",
 };
 
 /** Small clickable report tile — always links to the page (with filter) it reports on. */
