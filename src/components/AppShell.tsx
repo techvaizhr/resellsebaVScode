@@ -310,10 +310,15 @@ function LeafLink({ item, nested = false, collapsed = false }: { item: NavItem; 
         to={item.to}
         activeOptions={{ exact: item.end }}
         title={item.label}
-        className="mb-1 flex items-center justify-center rounded-md p-2 text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        className="relative mb-1 flex items-center justify-center rounded-md p-2 text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         activeProps={{ className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
       >
         {item.icon}
+        {!!item.badge && (
+          <span className="absolute right-1 top-1 grid min-w-4 place-items-center rounded-full bg-destructive px-1 text-[9px] font-bold leading-4 text-destructive-foreground shadow">
+            {item.badge > 99 ? "99+" : item.badge}
+          </span>
+        )}
       </Link>
     );
   }
@@ -331,6 +336,11 @@ function LeafLink({ item, nested = false, collapsed = false }: { item: NavItem; 
     >
       <span className="text-current">{item.icon}</span>
       <span className="flex-1">{item.label}</span>
+      {!!item.badge && (
+        <span className="grid min-w-5 place-items-center rounded-full bg-destructive px-1.5 text-[10px] font-bold leading-5 text-destructive-foreground shadow-sm">
+          {item.badge > 99 ? "99+" : item.badge}
+        </span>
+      )}
       <ChevronRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-60" />
     </Link>
   );
