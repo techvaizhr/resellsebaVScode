@@ -261,7 +261,14 @@ export function AppShell({
                 title="Go to dashboard"
                 className="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-muted"
               >
-                <span className="truncate text-base font-bold tracking-tight sm:text-lg">{title}</span>
+                {brand.logoUrl ? (
+                  <img
+                    src={brand.logoUrl}
+                    alt={brand.name}
+                    className="md:hidden h-7 w-auto max-w-[140px] object-contain"
+                  />
+                ) : null}
+                <span className="truncate text-base font-bold tracking-tight sm:text-lg md:hidden">{title}</span>
               </Link>
             </div>
             <div className="flex items-center gap-2">
