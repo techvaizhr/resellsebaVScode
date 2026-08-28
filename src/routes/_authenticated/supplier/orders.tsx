@@ -16,7 +16,9 @@ import { ShipmentBookingModal } from "@/components/ShipmentBookingModal";
 import { CourierLogo, courierLabel } from "@/components/courier-brand";
 import { OrderSearch, type OrderSearchMode } from "@/components/order-search";
 import { OrderTabs } from "@/components/OrderTabs";
+import { BulkScanButton, type ScanOrder } from "@/components/BulkScanModal";
 import type { OrderTabKey } from "@/lib/courier-status";
+
 
 import {
   AREA_FILTER_OPTIONS,
@@ -254,7 +256,28 @@ function SupplierOrdersPage() {
     if (pending) await applyStatus(pending.ids, pending.next);
   };
 
+  /** Scan lookup stays inside the supplier's own orders (order no / tracking / consignment). */
+  const scanResolve = useCallback(
+    (code: string): ScanOrder | null => {
+      const c = code.trim().replace(/^#/, "").toLowerCase();
+      const hit = rows.find(
+        (o) =>
+          o.order_number.toLowerCase() === c ||
+          (o.shipment?.tracking_id ?? "").toLowerCase() === c ||
+          (o.shipment?.consignment_id ?? "").toLowerCase() === c,
+      );
+      if (!hit) return null;
+      return { id: hit.id, order_number: hit.order_number, status: hit.status, customer_name: null };
+    },
+    [rows],
+  );
+
+  const scanApply = useCallback(async (order: ScanOrder, to: string) => {
+    await setSupplierOrderStatus(order.id, to);
+  }, []);
+
   const printMarked = async () => {
+
     if (!markedRows.length) return;
     let siteName = "Shipping label";
     try {
@@ -302,14 +325,25 @@ function SupplierOrdersPage() {
         title="Orders"
         className="flex-row items-center justify-between"
         actions={
-          <button
-            onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
-          >
-            <RefreshCw className="h-4 w-4" /> Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <BulkScanButton
+              compact
+              mode="handover"
+              modes={["handover"]}
+              resolve={scanResolve}
+              apply={scanApply}
+              onDone={() => void load()}
+            />
+            <button
+              onClick={() => void load()}
+              className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+            >
+              <RefreshCw className="h-4 w-4" /> Refresh
+            </button>
+          </div>
         }
       />
+
 
       <div className="mb-4 space-y-2">
         <div className="flex items-center gap-2">

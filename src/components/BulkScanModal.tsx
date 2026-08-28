@@ -110,17 +110,31 @@ function nextStatus(mode: ScanMode, current: string): { to: string } | { error: 
 
 /* ---------------- component ---------------- */
 
+export type ScanOrder = { id: string; order_number: string; status: string; customer_name?: string | null };
+
+export type ScanHooks = {
+  /** Custom lookup (e.g. supplier scope, no direct table access). */
+  resolve?: (code: string) => Promise<ScanOrder | null> | ScanOrder | null;
+  /** Custom status apply (e.g. supplier RPC). */
+  apply?: (order: ScanOrder, to: string) => Promise<void>;
+  /** Restrict the mode switcher. */
+  modes?: ScanMode[];
+};
+
 export function BulkScanButton({
   compact = false,
   mode = "handover",
   onDone,
   className,
+  resolve,
+  apply,
+  modes,
 }: {
   compact?: boolean;
   mode?: ScanMode;
   onDone?: () => void;
   className?: string;
-}) {
+} & ScanHooks) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -145,6 +159,9 @@ export function BulkScanButton({
         ? createPortal(
             <BulkScanModal
               mode={mode}
+              resolve={resolve}
+              apply={apply}
+              modes={modes}
               onClose={() => {
                 setOpen(false);
                 onDone?.();
@@ -157,9 +174,17 @@ export function BulkScanButton({
   );
 }
 
-function BulkScanModal({ mode: initialMode, onClose }: { mode: ScanMode; onClose: () => void }) {
+function BulkScanModal({
+  mode: initialMode,
+  onClose,
+  resolve,
+  apply,
+  modes,
+}: { mode: ScanMode; onClose: () => void } & ScanHooks) {
   const [mode, setMode] = useState<ScanMode>(initialMode);
   const cfg = MODES[mode];
+  const modeList = modes && modes.length ? modes : (["handover", "return"] as ScanMode[]);
+
   const [sound, setSound] = useState(true);
   const [camOn, setCamOn] = useState(false);
   const [camError, setCamError] = useState<string | null>(null);
@@ -201,7 +226,7 @@ function BulkScanModal({ mode: initialMode, onClose }: { mode: ScanMode; onClose
       busyRef.current = true;
       setBusy(true);
       try {
-        const order = await findOrder(code);
+        const order = resolve ? await resolve(code) : await findOrder(code);
         if (!order) {
           if (sound) beepError();
           setLast({ ok: false, text: "Order not found", sub: code });
@@ -228,25 +253,37 @@ function BulkScanModal({ mode: initialMode, onClose }: { mode: ScanMode; onClose
           push({ code: order.order_number, ok: false, message: step.error });
           return;
         }
-        const { error } = await supabase
-          .from("orders")
-          .update(
-            mode === "return"
-              ? ({ status: step.to, received_amount: 0, settled_at: new Date().toISOString() } as any)
-              : ({ status: step.to } as any),
-          )
-          .eq("id", order.id);
-        if (error) {
-          if (sound) beepError();
-          setLast({ ok: false, text: error.message, sub: order.order_number });
-          push({ code: order.order_number, ok: false, message: error.message });
-          return;
+        if (apply) {
+          try {
+            await apply(order, step.to);
+          } catch (e: any) {
+            const msg = e?.message ?? "Status change failed";
+            if (sound) beepError();
+            setLast({ ok: false, text: msg, sub: order.order_number });
+            push({ code: order.order_number, ok: false, message: msg });
+            return;
+          }
+        } else {
+          const { error } = await supabase
+            .from("orders")
+            .update(
+              mode === "return"
+                ? ({ status: step.to, received_amount: 0, settled_at: new Date().toISOString() } as any)
+                : ({ status: step.to } as any),
+            )
+            .eq("id", order.id);
+          if (error) {
+            if (sound) beepError();
+            setLast({ ok: false, text: error.message, sub: order.order_number });
+            push({ code: order.order_number, ok: false, message: error.message });
+            return;
+          }
+          await supabase.from("order_status_history").insert({
+            order_id: order.id,
+            status: step.to as any,
+            note: cfg.note,
+          });
         }
-        await supabase.from("order_status_history").insert({
-          order_id: order.id,
-          status: step.to as any,
-          note: cfg.note,
-        });
         doneRef.current.set(order.id, orderStatusLabel(step.to));
         if (sound) beepSuccess();
 
@@ -261,7 +298,8 @@ function BulkScanModal({ mode: initialMode, onClose }: { mode: ScanMode; onClose
         setBusy(false);
       }
     },
-    [push, sound, mode, cfg.note],
+    [push, sound, mode, cfg.note, resolve, apply],
+
   );
 
   // keep the scan box focused for hardware scanners, but never steal focus
@@ -370,8 +408,9 @@ function BulkScanModal({ mode: initialMode, onClose }: { mode: ScanMode; onClose
           <div className="space-y-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Scan mode</label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["handover", "return"] as ScanMode[]).map((m) => (
+              <div className={cn("grid gap-2", modeList.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
+                {modeList.map((m) => (
+
                   <button
                     key={m}
                     type="button"
