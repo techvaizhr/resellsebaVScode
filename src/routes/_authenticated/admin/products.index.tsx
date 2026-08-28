@@ -449,6 +449,7 @@ function ProductsPage() {
                     </td>
                     <td className="px-3 py-3">
                       <PriceCell row={p} field="packaging_cost" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, packaging_cost: v } : i)))} />
+                    </td>
                     <td className="px-3 py-3">
                       <StockCell row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
                     </td>
