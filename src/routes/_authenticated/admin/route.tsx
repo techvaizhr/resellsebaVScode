@@ -301,6 +301,7 @@ function AdminLayout() {
   return (
     <AppShell
       title={isSuperAdmin ? "Super Admin" : "Staff Panel"}
+      homeTo="/admin"
       headerRight={
         <>
           <Link

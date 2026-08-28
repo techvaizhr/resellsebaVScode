@@ -35,6 +35,7 @@ export function AppShell({
   nav,
   user,
   headerRight,
+  homeTo = "/dashboard",
   children,
 }: {
   title: string;
@@ -42,6 +43,8 @@ export function AppShell({
   nav: NavEntry[];
   user: { name: string; email: string; avatarUrl?: string | null };
   headerRight?: ReactNode;
+  /** Panel dashboard URL — logo and user name link here. */
+  homeTo?: string;
   children: ReactNode;
 }) {
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
@@ -78,24 +81,24 @@ export function AppShell({
 
   const renderSidebar = (collapsed: boolean) => (
     <>
-      <div className={cn("flex min-h-24 items-center gap-3 border-b border-sidebar-border py-4", collapsed ? "px-3 justify-center" : "px-5")}>
-        {brand.logoUrl ? (
-          <img src={brand.logoUrl} alt={brand.name} className={cn("shrink-0 object-contain", collapsed ? "h-10 w-10" : "h-12 max-w-28")} />
-        ) : (
-          <div className={cn("grid shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-primary/70 font-bold text-primary-foreground", collapsed ? "h-10 w-10 text-base" : "h-14 w-14 text-xl")}>
-            {brand.name.charAt(0)}
-          </div>
-        )}
-        {!collapsed && (
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-base font-semibold leading-tight text-sidebar-foreground">
-              {brand.name}
+      <div className={cn("flex h-16 items-center gap-2 border-b border-sidebar-border", collapsed ? "px-2 justify-center" : "px-4")}>
+        <Link
+          to={homeTo}
+          title={brand.name}
+          className={cn("flex min-w-0 flex-1 items-center", collapsed && "justify-center")}
+        >
+          {brand.logoUrl ? (
+            <img
+              src={brand.logoUrl}
+              alt={brand.name}
+              className={cn("object-contain", collapsed ? "h-9 w-9" : "h-10 w-full max-w-full")}
+            />
+          ) : (
+            <div className={cn("grid shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-primary/70 font-bold text-primary-foreground", collapsed ? "h-9 w-9 text-sm" : "h-10 w-full text-lg")}>
+              {brand.name.charAt(0)}
             </div>
-            {brand.sub && (
-              <div className="mt-0.5 truncate text-xs text-muted-foreground">{brand.sub}</div>
-            )}
-          </div>
-        )}
+          )}
+        </Link>
         {!collapsed && (
           <button
             type="button"
@@ -165,7 +168,11 @@ export function AppShell({
       </nav>
       <div className={cn("border-t border-sidebar-border", collapsed ? "p-2" : "p-3")}>
         {!collapsed && (
-          <div className="mb-2 flex items-center gap-2 px-2">
+          <Link
+            to={homeTo}
+            title="Go to dashboard"
+            className="mb-2 flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-sidebar-accent"
+          >
             <ResellerAvatar url={user.avatarUrl} name={user.name} size={32} />
             <div className="min-w-0">
               <div className="truncate text-sm font-medium text-sidebar-foreground">
@@ -173,7 +180,7 @@ export function AppShell({
               </div>
               <div className="truncate text-xs text-muted-foreground">{user.email}</div>
             </div>
-          </div>
+          </Link>
         )}
         <Button
           variant="ghost"
@@ -244,6 +251,14 @@ export function AppShell({
                 {desktopCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
               </button>
               <h1 className="truncate text-base font-bold tracking-tight sm:text-lg">{title}</h1>
+              <Link
+                to={homeTo}
+                title="Go to dashboard"
+                className="ml-1 hidden min-w-0 items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-muted sm:flex"
+              >
+                <ResellerAvatar url={user.avatarUrl} name={user.name} size={24} />
+                <span className="max-w-40 truncate text-sm font-medium text-muted-foreground">{user.name}</span>
+              </Link>
             </div>
             <div className="flex items-center gap-2">
               <PwaInstallButton />

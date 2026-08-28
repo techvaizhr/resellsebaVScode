@@ -165,6 +165,7 @@ function ResellerLayout() {
   return (
     <AppShell
       title="Reseller panel"
+      homeTo="/reseller"
       brand={{ name: storeName, sub: storeCode ? `/${storeCode}` : "Reseller", logoUrl }}
       nav={NAV}
       user={{
