@@ -16,6 +16,7 @@ import {
 } from "@/components/report-blocks";
 import { buildFinanceReport, bdt, type ReportItem, type ReportOrder } from "@/lib/finance-report";
 import { NewOrderModal } from "@/components/NewOrderModal";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ShoppingBag,
   TrendingUp,
@@ -72,6 +73,7 @@ function ResellerDashboard() {
   const [payouts, setPayouts] = useState<PayoutRow[]>([]);
   const [commissions, setCommissions] = useState<CommissionRow[]>([]);
   const [lifetime, setLifetime] = useState({ delivered: 0, pendingPayout: 0, paidOut: 0, available: 0 });
+  const [toCourierCount, setToCourierCount] = useState(0);
   const { status: deposit } = useDepositStatus(rid);
   const { notices: adminNotices, dismiss: dismissNotice } = useLiveNotices(user?.id, rid);
 
