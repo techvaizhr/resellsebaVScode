@@ -273,6 +273,7 @@ export const bookPathao = createServerFn({ method: "POST" })
     const { userId } = context;
     const supabase = await courierActorClient(context.supabase, userId, data.orderId);
     const { pathaoRequest } = await import("@/lib/pathao.server");
+    const { courierStoreName } = await import("@/lib/couriers.server");
     const conf = await getCourierConfig(supabase, "pathao");
     const storeId = data.storeId || conf.store_id;
     if (!storeId) throw new Response("Pathao store select korun", { status: 400 });
@@ -355,7 +356,7 @@ export const bookPathao = createServerFn({ method: "POST" })
       tracking_code: consignmentId,
       cod_amount: codAmount,
       delivery_charge: deliveryFee,
-      note: "Consignment created",
+      note: `Consignment created${courierStoreName(conf, storeId) ? ` · Pickup: ${courierStoreName(conf, storeId)}` : ""}`,
       payload: body,
       event_at: nowIso,
     });
@@ -365,7 +366,7 @@ export const bookPathao = createServerFn({ method: "POST" })
     await supabase.from("order_status_history").insert({
       order_id: order.id,
       status: (order as { status: Database["public"]["Enums"]["order_status"] }).status,
-      note: `Pathao booked · ${consignmentId}`,
+      note: `Pathao booked · ${consignmentId}${courierStoreName(conf, storeId) ? ` · ${courierStoreName(conf, storeId)}` : ""}`,
       changed_by: userId,
     });
 
@@ -445,6 +446,7 @@ export const bookCarrybee = createServerFn({ method: "POST" })
     const { userId } = context;
     const supabase = await courierActorClient(context.supabase, userId, data.orderId);
     const { carrybeeRequest, carrybeeResolveLocation } = await import("@/lib/carrybee.server");
+    const { courierStoreName } = await import("@/lib/couriers.server");
     const conf = await getCourierConfig(supabase, "carrybee");
     const storeId = data.storeId || conf.store_id;
     if (!storeId) throw new Response("Carrybee store select korun", { status: 400 });
@@ -534,7 +536,7 @@ export const bookCarrybee = createServerFn({ method: "POST" })
       tracking_code: consignmentId,
       cod_amount: Number(o.collectable_amount ?? codAmount),
       delivery_charge: o.delivery_fee != null ? Number(o.delivery_fee) : null,
-      note: "Consignment created",
+      note: `Consignment created${courierStoreName(conf, storeId) ? ` · Pickup: ${courierStoreName(conf, storeId)}` : ""}`,
       payload: body,
       event_at: nowIso,
     });
@@ -544,7 +546,7 @@ export const bookCarrybee = createServerFn({ method: "POST" })
     await supabase.from("order_status_history").insert({
       order_id: order.id,
       status: (order as { status: Database["public"]["Enums"]["order_status"] }).status,
-      note: `Carrybee booked · ${consignmentId}`,
+      note: `Carrybee booked · ${consignmentId}${courierStoreName(conf, storeId) ? ` · ${courierStoreName(conf, storeId)}` : ""}`,
       changed_by: userId,
     });
 
