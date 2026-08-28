@@ -172,10 +172,13 @@ export function ShipmentBookingModal({
             <div className="mt-4">
               <label className="mb-1 flex items-center gap-1.5 text-xs font-medium">
                 <Store className="h-3.5 w-3.5" /> Pickup store
+                {stores.length > 1 && (
+                  <span className="text-muted-foreground">({stores.length} saved)</span>
+                )}
               </label>
               <select
                 value={storeId}
-                onChange={(e) => setStoreId(e.target.value)}
+                onChange={(e) => pickStore(e.target.value)}
                 className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               >
                 {stores.map((s) => (
