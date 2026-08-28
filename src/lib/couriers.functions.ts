@@ -231,9 +231,13 @@ export const pathaoStores = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
     const { pathaoStoreList } = await import("@/lib/pathao.server");
+    const { persistCourierStores } = await import("@/lib/couriers.server");
     const conf = await getCourierConfig(supabase, "pathao");
-    return { stores: await pathaoStoreList(supabase, conf) };
+    const stores = await pathaoStoreList(supabase, conf);
+    const defaultStoreId = await persistCourierStores(supabase, "pathao", conf, stores);
+    return { stores, defaultStoreId };
   });
+
 
 export const pathaoPricePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
