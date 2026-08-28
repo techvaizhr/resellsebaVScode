@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { X, Loader2, Truck, AlertTriangle } from "lucide-react";
+import { Loader2, Truck, AlertTriangle, Store } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { bookSteadfast, bookPathao, bookCarrybee } from "@/lib/couriers.functions";
-import { getActiveCouriers } from "@/lib/courier-config.functions";
+import { getCourierBookingOptions } from "@/lib/courier-config.functions";
 import { COURIER_BRANDS, CourierLogo } from "@/components/courier-brand";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -28,24 +28,38 @@ export function ShipmentBookingModal({
 }: BookingModalProps) {
   const [loading, setLoading] = useState(false);
   const [provider, setProvider] = useState<"steadfast" | "pathao" | "carrybee">("steadfast");
-  
-  const fetchActive = useServerFn(getActiveCouriers);
-  const { data: activeProviders = [], isLoading: loadingActive } = useQuery({
-    queryKey: ["active-couriers"],
-    queryFn: () => fetchActive(),
+  const [storeId, setStoreId] = useState<string>("");
+
+  const fetchOptions = useServerFn(getCourierBookingOptions);
+  const { data: options = [] } = useQuery({
+    queryKey: ["courier-booking-options"],
+    queryFn: () => fetchOptions(),
   });
 
-  const activeCourierList = useMemo(() => {
-    return activeProviders
-      .map((id) => (COURIER_BRANDS as any)[id])
-      .filter(Boolean);
-  }, [activeProviders]);
+  const activeProviders = useMemo(() => options.map((o) => o.provider), [options]);
+  const activeCourierList = useMemo(
+    () => activeProviders.map((id) => (COURIER_BRANDS as any)[id]).filter(Boolean),
+    [activeProviders],
+  );
+
+  const current = useMemo(
+    () => options.find((o) => o.provider === provider) ?? null,
+    [options, provider],
+  );
+  const stores = current?.stores ?? [];
+  const needsStoreChoice = stores.length > 1;
 
   useEffect(() => {
     if (activeProviders.length > 0 && !activeProviders.includes(provider)) {
       setProvider(activeProviders[0] as any);
     }
   }, [activeProviders]);
+
+  useEffect(() => {
+    if (!current) return;
+    const fallback = current.defaultStoreId || current.stores[0]?.id || "";
+    setStoreId(current.stores.some((s) => s.id === storeId) ? storeId : fallback);
+  }, [current]);
 
   const doSteadfast = useServerFn(bookSteadfast);
   const doPathao = useServerFn(bookPathao);
@@ -62,9 +76,9 @@ export function ShipmentBookingModal({
         if (provider === "steadfast") {
           await doSteadfast({ data: { orderId: id } });
         } else if (provider === "pathao") {
-          await doPathao({ data: { orderId: id } });
+          await doPathao({ data: { orderId: id, ...(storeId ? { storeId } : {}) } });
         } else if (provider === "carrybee") {
-          await doCarrybee({ data: { orderId: id } });
+          await doCarrybee({ data: { orderId: id, ...(storeId ? { storeId } : {}) } });
         }
         successCount++;
       } catch (err: any) {
@@ -84,24 +98,24 @@ export function ShipmentBookingModal({
     setLoading(false);
   };
 
-  // Logic: if only 1 active, we'll auto-book or show a simplified state.
-  // The user said: "if active 1ti hoi tahole popup asbe na sorasori booking"
-  // But usually we need to call handleBook. 
-  // However, the component is rendered as a modal controlled by state.
-  // We can trigger handleBook in a useEffect if activeProviders.length === 1 and it's open.
+  // Single active courier with no store choice → book straight away, no popup.
+  const autoBook = activeProviders.length === 1 && !needsStoreChoice;
+
   useEffect(() => {
-    if (isOpen && !loading && activeProviders.length === 1 && orderIds.length > 0) {
+    if (isOpen && !loading && autoBook && orderIds.length > 0) {
       handleBook();
     }
-  }, [isOpen, activeProviders, orderIds]);
+  }, [isOpen, autoBook, orderIds]);
 
-  if (activeProviders.length === 1 && isOpen) {
+  if (autoBook && isOpen) {
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !loading && !open && onClose()}>
         <DialogContent className="max-w-sm">
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-            <p className="text-sm font-medium">Booking {orderIds.length} order(s) with {activeCourierList[0]?.label}...</p>
+            <p className="text-sm font-medium">
+              Booking {orderIds.length} order(s) with {activeCourierList[0]?.label}...
+            </p>
           </div>
         </DialogContent>
       </Dialog>
@@ -141,10 +155,30 @@ export function ShipmentBookingModal({
             ))}
           </div>
 
+          {stores.length > 0 && (
+            <div className="mt-4">
+              <label className="mb-1 flex items-center gap-1.5 text-xs font-medium">
+                <Store className="h-3.5 w-3.5" /> Pickup store
+              </label>
+              <select
+                value={storeId}
+                onChange={(e) => setStoreId(e.target.value)}
+                className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name || s.id}
+                    {current?.defaultStoreId === s.id ? " (default)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="mt-6 flex items-start gap-3 rounded-lg bg-amber-50 p-3 text-amber-800 border border-amber-200">
             <AlertTriangle className="h-5 w-5 shrink-0" />
             <p className="text-xs leading-relaxed">
-              Booking will create live consignments in the courier panel. 
+              Booking will create live consignments in the courier panel.
               Ensure store configurations are correct before proceeding.
             </p>
           </div>
