@@ -65,7 +65,7 @@ export function VerifyBadges({
 }: VerifyFlags) {
   const allDone = emailVerified && (phoneVerified || !hasPhone);
   return (
-    <span className="inline-flex flex-wrap items-center gap-1.5">
+    <span className="inline-flex flex-nowrap items-center gap-1.5">
       <Chip
         verified={emailVerified}
         required={requireEmail}

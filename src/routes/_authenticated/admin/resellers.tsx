@@ -498,29 +498,33 @@ function ResellersPage() {
                   <ResellerAvatar url={r.avatar_url} name={r.business_name} size={40} />
 
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="truncate font-medium">{r.business_name}</span>
+                    <div className="truncate font-medium">{r.business_name}</div>
+                    <div className="mt-1 flex flex-nowrap items-center gap-1.5">
                       <StatusBadge status={r.status} />
                       <VerifyBadges {...vf} />
-                      {r.deposit_required && Number(r.deposit_required_amount) > 0 && (
-                        (s?.deposit_balance ?? 0) >= Number(r.deposit_required_amount) ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success">
-                            <ShieldCheck className="h-3 w-3" /> Deposit ok
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-medium text-destructive">
-                            <AlertTriangle className="h-3 w-3" /> Deposit due ৳
-                            {(Number(r.deposit_required_amount) - (s?.deposit_balance ?? 0)).toLocaleString()}
-                          </span>
-                        )
-                      )}
-                      {Number(r.frozen_amount) > 0 && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                          <Lock className="h-3 w-3" /> Frozen ৳{Number(r.frozen_amount).toLocaleString()}
-                        </span>
-                      )}
                     </div>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    {(r.deposit_required && Number(r.deposit_required_amount) > 0) || Number(r.frozen_amount) > 0 ? (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        {r.deposit_required && Number(r.deposit_required_amount) > 0 && (
+                          (s?.deposit_balance ?? 0) >= Number(r.deposit_required_amount) ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success">
+                              <ShieldCheck className="h-3 w-3" /> Deposit ok
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-medium text-destructive">
+                              <AlertTriangle className="h-3 w-3" /> Deposit due ৳
+                              {(Number(r.deposit_required_amount) - (s?.deposit_balance ?? 0)).toLocaleString()}
+                            </span>
+                          )
+                        )}
+                        {Number(r.frozen_amount) > 0 && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            <Lock className="h-3 w-3" /> Frozen ৳{Number(r.frozen_amount).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    ) : null}
+                    <div className="mt-1.5 flex flex-nowrap items-center gap-1.5 overflow-x-auto">
                       <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
                         <IdCard className="h-3 w-3 text-primary" />
                         <span className="text-[10px] uppercase tracking-wide text-muted-foreground">ID</span>
@@ -680,7 +684,7 @@ function ResellersPage() {
                 </div>
 
 
-                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
+                <div className="mt-3 grid grid-cols-3 gap-2 lg:grid-cols-4 xl:grid-cols-8">
                   <Metric label="Orders" value={orderCounts[r.id] ?? 0} plain />
                   <Metric label="Delivered profit" value={s?.delivered_profit} accent />
                   <Metric label="Available" value={s?.available} />
