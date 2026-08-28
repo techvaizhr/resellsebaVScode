@@ -256,7 +256,28 @@ function SupplierOrdersPage() {
     if (pending) await applyStatus(pending.ids, pending.next);
   };
 
+  /** Scan lookup stays inside the supplier's own orders (order no / tracking / consignment). */
+  const scanResolve = useCallback(
+    (code: string): ScanOrder | null => {
+      const c = code.trim().replace(/^#/, "").toLowerCase();
+      const hit = rows.find(
+        (o) =>
+          o.order_number.toLowerCase() === c ||
+          (o.shipment?.tracking_id ?? "").toLowerCase() === c ||
+          (o.shipment?.consignment_id ?? "").toLowerCase() === c,
+      );
+      if (!hit) return null;
+      return { id: hit.id, order_number: hit.order_number, status: hit.status, customer_name: null };
+    },
+    [rows],
+  );
+
+  const scanApply = useCallback(async (order: ScanOrder, to: string) => {
+    await setSupplierOrderStatus(order.id, to);
+  }, []);
+
   const printMarked = async () => {
+
     if (!markedRows.length) return;
     let siteName = "Shipping label";
     try {
