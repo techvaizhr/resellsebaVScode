@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, EmptyState } from "@/components/ui-kit";
-import { Plus, Loader2, Pencil, Trash2, Eye, EyeOff, Check, X, CheckSquare, Square, Copy, Download, CloudDownload } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, Eye, EyeOff, Check, X, CheckSquare, Square, Copy, Download, CloudDownload, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import {
   DataToolbar,
@@ -69,6 +69,7 @@ function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [inlineEdit, setInlineEdit] = useState(false);
 
   const [q, setQ] = useState("");
   const [brand, setBrand] = useState(search.brand ?? "");
@@ -263,6 +264,19 @@ function ProductsPage() {
           <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            onClick={() => setInlineEdit((v) => !v)}
+            title={inlineEdit ? "Inline editing is ON — click to lock" : "Inline editing is locked — click to enable"}
+            className={`inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
+              inlineEdit
+                ? "border-amber-500/60 bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                : "hover:bg-muted"
+            }`}
+          >
+            {inlineEdit ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+            {inlineEdit ? "Inline edit: ON" : "Inline edit: OFF"}
+          </button>
+          <button
+            type="button"
             onClick={() => setImportOpen(true)}
             className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
           >
@@ -440,19 +454,19 @@ function ProductsPage() {
                       <SupplierCell row={p} suppliers={suppliers} />
                     </td>
                     <td className="px-3 py-3">
-                      <PriceCell row={p} field="buying_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, buying_price: v } : i)))} />
+                      <PriceCell locked={!inlineEdit} row={p} field="buying_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, buying_price: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
-                      <PriceCell row={p} field="reseller_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, reseller_price: v } : i)))} />
+                      <PriceCell locked={!inlineEdit} row={p} field="reseller_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, reseller_price: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
-                    <PriceCell row={p} field="suggested_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)))} />
+                    <PriceCell locked={!inlineEdit} row={p} field="suggested_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
-                      <PriceCell row={p} field="packaging_cost" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, packaging_cost: v } : i)))} />
+                      <PriceCell locked={!inlineEdit} row={p} field="packaging_cost" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, packaging_cost: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
-                      <StockCell row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
+                      <StockCell locked={!inlineEdit} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
@@ -677,7 +691,7 @@ function ProductDetailModal({
   );
 }
 
-function StockCell({ row, onSaved }: { row: Row; onSaved: (v: number) => void }) {
+function StockCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) => void; locked?: boolean }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(String(row.stock));
   const [busy, setBusy] = useState(false);
@@ -698,6 +712,17 @@ function StockCell({ row, onSaved }: { row: Row; onSaved: (v: number) => void })
     onSaved(n);
     setEditing(false);
     toast.success("Stock updated");
+  }
+
+  if (locked) {
+    return (
+      <span
+        className={`px-2 py-0.5 text-xs ${row.stock === 0 ? "text-destructive" : row.stock <= 5 ? "text-warning" : ""}`}
+        title="Turn on Inline edit to change stock"
+      >
+        {row.stock}
+      </span>
+    );
   }
 
   if (!editing) {
@@ -741,7 +766,7 @@ function StockCell({ row, onSaved }: { row: Row; onSaved: (v: number) => void })
   );
 }
 
-function PriceCell({ row, field, onSaved }: { row: Row; field: "buying_price" | "reseller_price" | "suggested_price" | "packaging_cost"; onSaved: (v: number) => void }) {
+function PriceCell({ row, field, onSaved, locked }: { row: Row; field: "buying_price" | "reseller_price" | "suggested_price" | "packaging_cost"; onSaved: (v: number) => void; locked?: boolean }) {
   const current = row[field] ?? 0;
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(String(current));
@@ -765,6 +790,14 @@ function PriceCell({ row, field, onSaved }: { row: Row; field: "buying_price" | 
     onSaved(n);
     setEditing(false);
     toast.success(field === "packaging_cost" ? "Packaging cost updated" : "Price updated");
+  }
+
+  if (locked) {
+    return (
+      <span className="px-2 py-0.5 text-xs" title="Turn on Inline edit to change price">
+        ৳{current}
+      </span>
+    );
   }
 
   if (!editing) {
