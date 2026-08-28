@@ -226,7 +226,7 @@ function BulkScanModal({
       busyRef.current = true;
       setBusy(true);
       try {
-        const order = await findOrder(code);
+        const order = resolve ? await resolve(code) : await findOrder(code);
         if (!order) {
           if (sound) beepError();
           setLast({ ok: false, text: "Order not found", sub: code });
