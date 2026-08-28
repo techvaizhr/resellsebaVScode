@@ -66,7 +66,7 @@ export function DataToolbar({
       key={f.key}
       value={f.value}
       onChange={(e) => f.onChange(e.target.value)}
-      className="min-w-[120px] rounded-md border bg-background px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+      className="w-full min-w-0 rounded-md border bg-background px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-ring md:min-w-[120px] md:w-auto"
       title={f.label}
     >
       <option value="">{f.label}: All</option>
