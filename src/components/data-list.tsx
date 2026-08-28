@@ -80,19 +80,23 @@ export function DataToolbar({
 
   if (inline) {
     return (
-      <div className="mb-4">
-        <div className="flex flex-col gap-2 md:grid md:grid-cols-[40%_1fr] md:items-center">
+      <div className="mb-4 space-y-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
           {searchInput}
-          <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center md:justify-end">
+          <div className="flex shrink-0 items-center gap-2">
+            {perPageSelect}
+            {right}
+          </div>
+        </div>
+        {filters.length > 0 && (
+          <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
             {filterSelects.map((s) => (
               <div key={s.key} className="md:min-w-[120px] md:flex-1">
                 {s}
               </div>
             ))}
-            {perPageSelect}
-            {right}
           </div>
-        </div>
+        )}
       </div>
     );
   }
