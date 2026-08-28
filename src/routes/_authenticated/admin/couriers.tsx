@@ -34,7 +34,7 @@ const FIELDS: Record<string, { key: string; label: string; type?: string; hint?:
     { key: "client_secret", label: "Client Secret" },
     { key: "username", label: "Username" },
     { key: "password", label: "Password" },
-    { key: "store_id", label: "Default Store ID" },
+    { key: "store_id", label: "Default Store ID", hint: "Load stores, then set default" },
   ],
   carrybee: [
     { key: "client_id", label: "Client ID" },
@@ -332,8 +332,13 @@ function CarrybeeExtras({
             setBusy(true);
             try {
               const r = await loadStores();
-              setStores(r?.stores ?? []);
-              if ((r?.stores ?? []).length === 0) toast.info("No stores — create one in the Carrybee panel");
+              const list = r?.stores ?? [];
+              setStores(list);
+              onConfig({
+                stores_json: JSON.stringify(list.map((s: any) => ({ id: String(s.id), name: String(s.name) }))),
+              });
+              if (list.length === 0) toast.info("No stores — create one in the Carrybee panel");
+              else toast.success(`${list.length} store saved — remember to save`);
             } catch (e) {
               toast.error(e instanceof Error ? e.message : "Failed to load store list");
             } finally {
@@ -361,11 +366,13 @@ function CarrybeeExtras({
                   type="button"
                   onClick={() => {
                     onConfig({ store_id: s.id });
-                    toast.success("Store ID set — remember to save");
+                    toast.success("Default store set — remember to save");
                   }}
-                  className="rounded-md border px-2 py-0.5 text-[10px] hover:bg-accent"
+                  className={`rounded-md border px-2 py-0.5 text-[10px] hover:bg-accent ${
+                    config?.store_id === s.id ? "border-primary bg-primary/10 text-primary" : ""
+                  }`}
                 >
-                  Use
+                  {config?.store_id === s.id ? "Default" : "Set default"}
                 </button>
               </div>
             </div>
@@ -456,8 +463,13 @@ function PathaoExtras({
             setBusy(true);
             try {
               const r = await loadStores();
-              setStores(r?.stores ?? []);
-              if ((r?.stores ?? []).length === 0) toast.info("No stores — create one in the Pathao panel");
+              const list = r?.stores ?? [];
+              setStores(list);
+              onConfig({
+                stores_json: JSON.stringify(list.map((s: any) => ({ id: String(s.id), name: String(s.name) }))),
+              });
+              if (list.length === 0) toast.info("No stores — create one in the Pathao panel");
+              else toast.success(`${list.length} store saved — remember to save`);
             } catch (e) {
               toast.error(e instanceof Error ? e.message : "Failed to load store list");
             } finally {
@@ -484,11 +496,13 @@ function PathaoExtras({
                   type="button"
                   onClick={() => {
                     onConfig({ store_id: s.id });
-                    toast.success("Store ID set — remember to save");
+                    toast.success("Default store set — remember to save");
                   }}
-                  className="rounded-md border px-2 py-0.5 text-[10px] hover:bg-accent"
+                  className={`rounded-md border px-2 py-0.5 text-[10px] hover:bg-accent ${
+                    config?.store_id === s.id ? "border-primary bg-primary/10 text-primary" : ""
+                  }`}
                 >
-                  Use
+                  {config?.store_id === s.id ? "Default" : "Set default"}
                 </button>
               </div>
             </div>
