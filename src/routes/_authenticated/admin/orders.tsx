@@ -738,7 +738,7 @@ function AdminOrdersPage() {
         
         {loading ? <div className="py-12 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></div> : (
           <div className="space-y-3">
-            <div className="hidden grid-cols-[44px_minmax(66px,0.6fr)_minmax(110px,0.9fr)_minmax(110px,0.9fr)_minmax(110px,1fr)_96px_104px_124px_minmax(112px,0.9fr)] items-start gap-2 rounded-lg border bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground lg:grid">
+            <div className="hidden grid-cols-[44px_minmax(66px,0.6fr)_minmax(110px,0.9fr)_minmax(110px,0.9fr)_minmax(110px,1fr)_96px_104px_124px_minmax(112px,0.9fr)] items-start gap-2 rounded-lg border bg-muted/40 px-3 py-2.5 text-xs font-medium text-muted-foreground lg:grid">
                <div className="flex justify-center">
                  <input
                    type="checkbox"
@@ -955,7 +955,7 @@ function AdminOrdersPage() {
 
 
                 {/* Desktop row */}
-                <div className="hidden grid-cols-[44px_minmax(66px,0.6fr)_minmax(110px,0.9fr)_minmax(110px,0.9fr)_minmax(110px,1fr)_96px_104px_124px_minmax(112px,0.9fr)] items-start gap-2 border-b bg-muted/30 px-4 py-3 text-sm lg:grid">
+                <div className="hidden grid-cols-[44px_minmax(66px,0.6fr)_minmax(110px,0.9fr)_minmax(110px,0.9fr)_minmax(110px,1fr)_96px_104px_124px_minmax(112px,0.9fr)] items-start gap-2 border-b bg-muted/30 px-3 py-3 text-sm lg:grid">
 
                   <div className="flex flex-col items-center gap-1.5">
                     <input
