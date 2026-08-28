@@ -520,8 +520,9 @@ function ProductDetailModal({ id, onClose, brands, categories }: { id: string; o
                   <div className="grid h-full w-full place-items-center text-muted-foreground">No image</div>
                 )}
                 <div className="absolute right-3 top-3 flex flex-col gap-2">
-                  <ImageDownloadTools compact images={imageUrls} activeUrl={activeUrl} baseName={p.name} />
+                  <ImagePickerButton images={imageUrls} baseName={p.name} />
                 </div>
+
               </div>
               {imageUrls.length > 1 && (
                 <div className="flex flex-wrap gap-2">
