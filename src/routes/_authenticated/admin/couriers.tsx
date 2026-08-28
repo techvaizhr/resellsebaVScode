@@ -438,6 +438,11 @@ function PathaoExtras({
   >([]);
   const [busy, setBusy] = useState(false);
   const loadStores = useServerFn(pathaoStores);
+  // show the stores already saved in config, so a reload keeps the list
+  useEffect(() => {
+    if (stores.length === 0) setStores(savedStores(config) as any);
+  }, [config?.stores_json]);
+
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const secret = config?.webhook_secret ?? "";
   const webhookUrl = `${origin}/api/public/courier/pathao`;
