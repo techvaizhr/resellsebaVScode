@@ -24,7 +24,6 @@ export function DataToolbar({
   onPerPage,
   perPageOptions = [10, 20, 50, 100],
   right,
-  inline = false,
 }: {
   search: string;
   onSearch: (v: string) => void;
@@ -34,6 +33,7 @@ export function DataToolbar({
   onPerPage: (n: number) => void;
   perPageOptions?: number[];
   right?: ReactNode;
+  /** @deprecated layout is now global */
   inline?: boolean;
 }) {
   const searchInput = (
@@ -78,29 +78,8 @@ export function DataToolbar({
     </select>
   ));
 
-  if (inline) {
-    return (
-      <div className="mb-4 space-y-2">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-          {searchInput}
-          <div className="flex shrink-0 items-center gap-2">
-            {perPageSelect}
-            {right}
-          </div>
-        </div>
-        {filters.length > 0 && (
-          <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
-            {filterSelects.map((s) => (
-              <div key={s.key} className="md:min-w-[120px] md:flex-1">
-                {s}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
+  // One global toolbar layout everywhere: search + per-page on the first row,
+  // filters in a 2-column grid on mobile, inline row from md up.
   return (
     <div className="mb-4 space-y-2">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
@@ -111,13 +90,18 @@ export function DataToolbar({
         </div>
       </div>
       {filters.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {filterSelects}
+        <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
+          {filterSelects.map((s) => (
+            <div key={s.key} className="min-w-0 md:min-w-[120px] md:flex-1">
+              {s}
+            </div>
+          ))}
         </div>
       )}
     </div>
   );
 }
+
 
 function pageWindow(page: number, pages: number): (number | "…")[] {
   if (pages <= 7) return Array.from({ length: pages }, (_, i) => i + 1);
