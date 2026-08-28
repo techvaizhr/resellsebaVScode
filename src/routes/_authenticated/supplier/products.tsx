@@ -237,8 +237,9 @@ function SupplierProductsPage_() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div
-                            className="cursor-pointer truncate font-medium transition-colors hover:text-primary"
+                            className="w-2/5 max-w-[40%] cursor-pointer font-medium leading-snug line-clamp-2 transition-colors hover:text-primary"
                             onClick={() => setDetail(p)}
+                            title={p.name}
                           >
                             {p.name}
                           </div>
