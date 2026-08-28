@@ -14,6 +14,8 @@ type TokenBody = {
   message?: string;
 };
 
+let lastTokenError = "";
+
 async function issueToken(conf: Cfg, body: Record<string, unknown>): Promise<TokenBody> {
   const res = await fetch(`${pathaoBase(conf)}/aladdin/api/v1/issue-token`, {
     method: "POST",
