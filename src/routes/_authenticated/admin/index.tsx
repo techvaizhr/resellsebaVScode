@@ -6,6 +6,7 @@ import { DateRangeBar, DEFAULT_DATE_RANGE, resolveRange, type DateRangeState } f
 import { bdt, buildFinanceReport, isRealizedStatus, orderProfit, PROFIT_FORMULA_HINT, type FinanceReport, type ReportOrder } from "@/lib/finance-report";
 import { ORDER_TABS } from "@/lib/courier-status";
 import { Package, Users, ShoppingCart, Tag, TrendingUp, Wallet, Loader2, RefreshCw, Award, Clock, Plus } from "lucide-react";
+import { useAuth } from "@/lib/use-auth";
 import { NewOrderModal } from "@/components/NewOrderModal";
 import {
   ResponsiveContainer,
@@ -37,6 +38,8 @@ type OrderRow = {
 };
 
 function AdminDashboard() {
+  const { user } = useAuth();
+  const welcomeName = (user?.user_metadata?.full_name as string | undefined) ?? "Admin";
   const [range, setRange] = useState<DateRangeState>(DEFAULT_DATE_RANGE);
   const [orderOpen, setOrderOpen] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
@@ -181,7 +184,7 @@ function AdminDashboard() {
   return (
     <div>
       <PageHeader
-        title="Admin Overview"
+        title={`Welcome, ${welcomeName}`}
         description="Monitor platform performance, resellers, and financial health."
         actions={
           <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
