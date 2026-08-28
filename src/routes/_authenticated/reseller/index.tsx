@@ -165,7 +165,7 @@ function ResellerDashboard() {
   return (
     <div>
       <PageHeader
-        title="Store Dashboard"
+        title={`Welcome, ${rid ? (data?.reseller?.business_name ?? user?.user_metadata?.full_name ?? "Reseller") : "Reseller"}`}
         description="Track your earnings, orders, and business growth."
         actions={
           <div className="flex flex-wrap items-center gap-3">
