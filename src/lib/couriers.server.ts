@@ -41,6 +41,21 @@ export async function getCourierConfig(supabase: any, provider: string): Promise
   return (cfg.config ?? {}) as Cfg;
 }
 
+/** Human readable name of a saved pickup store (multi-store setups). */
+export function courierStoreName(conf: Cfg, storeId?: string | number | null): string | null {
+  const id = storeId != null ? String(storeId) : "";
+  if (!id) return null;
+  try {
+    const raw = (conf as any).stores_json;
+    const list = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(list)) return null;
+    const hit = list.find((s: any) => String(s?.id) === id);
+    return hit?.name ? String(hit.name) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function steadfastBase(conf: Cfg) {
   return (conf.base_url || "https://portal.packzy.com/api/v1").replace(/\/+$/, "");
 }
