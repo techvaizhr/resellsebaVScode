@@ -72,13 +72,13 @@ export function StatCard({
       {...wrapperProps}
       title={hint}
       className={cn(
-        "group relative block rounded-xl border bg-card px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg",
+        "group relative block rounded-xl border bg-card px-3 py-2.5 text-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg",
         t.ring,
       )}
     >
       {/* watermark icon */}
       {icon && (
-        <div className={cn("pointer-events-none absolute -right-2 top-1/2 -translate-y-1/2 opacity-[0.07] [&_svg]:h-16 [&_svg]:w-16", t.text)}>
+        <div className={cn("pointer-events-none absolute -right-1 top-1/2 -translate-y-1/2 opacity-[0.06] [&_svg]:h-12 [&_svg]:w-12", t.text)}>
           {icon}
         </div>
       )}
@@ -88,8 +88,8 @@ export function StatCard({
           t.glow,
         )}
       />
-      <div className="relative flex items-start justify-between gap-2">
-        <span className="text-[10px] font-black uppercase leading-snug tracking-[0.14em] text-muted-foreground/70">
+      <div className="relative flex items-center justify-center gap-1.5">
+        <span className="text-[10px] font-black uppercase leading-tight tracking-[0.14em] text-muted-foreground/70">
           {label}
         </span>
         {trend && (
@@ -98,7 +98,7 @@ export function StatCard({
           </span>
         )}
       </div>
-      <div className={cn("relative mt-1 truncate text-xl font-black leading-tight tracking-tight sm:text-2xl", t.text)}>
+      <div className={cn("relative mt-0.5 text-lg font-black leading-tight tracking-tight break-words sm:text-2xl", t.text)}>
         {value}
       </div>
     </Wrapper>
