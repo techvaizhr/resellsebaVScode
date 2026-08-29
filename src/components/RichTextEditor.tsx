@@ -2,7 +2,7 @@ import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   Bold, Italic, Strikethrough, List, ListOrdered, Quote,
   Heading2, Heading3, Link as LinkIcon, Image as ImageIcon,
@@ -67,6 +67,15 @@ export function RichTextEditor({
     },
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
   });
+
+  /** Keep the editor in sync when `value` arrives/changes from outside (duplicate, async prefill). */
+  useEffect(() => {
+    if (!editor) return;
+    const next = value || "";
+    if (next !== editor.getHTML()) {
+      editor.commands.setContent(next, { emitUpdate: false });
+    }
+  }, [value, editor]);
 
   if (!editor) return null;
 
