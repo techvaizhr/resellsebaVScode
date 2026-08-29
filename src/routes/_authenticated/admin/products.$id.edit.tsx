@@ -105,7 +105,7 @@ function EditProduct() {
       setDeliverySub(String((p as any).delivery_sub ?? p.delivery_outside ?? 0));
       setSuggested(String(p.suggested_price ?? 0));
       setStock(String(p.stock ?? 0));
-      setWeight(p.weight_grams == null ? "" : String(p.weight_grams));
+      setWeight(p.weight_grams == null ? "" : String(p.weight_grams / 1000));
       setIsActive(!!p.is_active);
       setMetaTitle(p.meta_title ?? "");
       setMetaDesc(p.meta_description ?? "");
@@ -184,7 +184,7 @@ function EditProduct() {
           delivery_sub: deliveryMode === "area" ? Number(deliverySub) || 0 : 0,
           suggested_price: Number(suggested),
           stock: Number(stock),
-          weight_grams: weight === "" ? null : Math.max(0, Math.floor(Number(weight) || 0)),
+          weight_grams: weight === "" ? null : Math.max(0, Math.round((Number(weight) || 0) * 1000)),
           is_active: isActive,
           og_image_url: images[0]?.url ?? null,
           meta_title: metaTitle || null,
@@ -383,8 +383,8 @@ function EditProduct() {
             <Field label="Stock">
               <input type="number" min={0} value={stock} onChange={(e) => setStock(e.target.value)} className={inputCls} />
             </Field>
-            <Field label="Weight (grams)" hint="Used for courier booking weight.">
-              <input type="number" min={0} value={weight} onChange={(e) => setWeight(e.target.value)} className={inputCls} placeholder="e.g. 500" />
+            <Field label="Weight (kg)" hint="Used for courier booking weight. Decimals allowed, e.g. 0.5 = 500 g.">
+              <input type="number" min={0} step={0.1} value={weight} onChange={(e) => setWeight(e.target.value)} className={inputCls} placeholder="e.g. 0.5" />
             </Field>
             <Field label="Suggested sell price (৳)" required hint="Suggested to resellers, at least reseller price + packaging.">
               <input required type="number" min={0} value={suggested} onChange={(e) => setSuggested(e.target.value)} className={inputCls} />

@@ -16,7 +16,7 @@ const LABELS: Record<string, string> = {
   category_id: "Category",
   supplier_price: "Supplier price",
   stock: "Stock",
-  weight_grams: "Weight (g)",
+  weight_grams: "Weight (kg)",
   meta_title: "Meta title",
   meta_description: "Meta description",
   keywords: "Keywords",

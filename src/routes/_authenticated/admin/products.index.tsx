@@ -799,8 +799,9 @@ function StockCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =>
 
 function WeightCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) => void; locked?: boolean }) {
   const current = row.weight_grams ?? 0;
+  const currentKg = current / 1000;
   const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(String(current));
+  const [val, setVal] = useState(String(currentKg));
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -809,8 +810,9 @@ function WeightCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =
   }, [editing]);
 
   async function save() {
-    const n = Math.max(0, Math.floor(Number(val)));
-    if (Number.isNaN(n)) return toast.error("Invalid weight");
+    const kg = Number(val);
+    if (Number.isNaN(kg) || kg < 0) return toast.error("Invalid weight");
+    const n = Math.round(kg * 1000);
     if (n === current) return setEditing(false);
     setBusy(true);
     const { error } = await supabase.from("products").update({ weight_grams: n }).eq("id", row.id);
@@ -824,7 +826,7 @@ function WeightCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =
   if (locked) {
     return (
       <span className="px-2 py-0.5 text-xs" title="Turn on Inline edit to change weight">
-        {current ? `${current} g` : "—"}
+        {current ? `${currentKg} kg` : "—"}
       </span>
     );
   }
@@ -833,13 +835,13 @@ function WeightCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =
     return (
       <button
         onClick={() => {
-          setVal(String(current));
+          setVal(String(currentKg));
           setEditing(true);
         }}
         className="rounded-md border border-dashed px-2 py-0.5 text-xs hover:border-primary hover:text-primary"
-        title="Click to edit weight (grams)"
+        title="Click to edit weight (kg)"
       >
-        {current ? `${current} g` : "—"}
+        {current ? `${currentKg} kg` : "—"}
       </button>
     );
   }
