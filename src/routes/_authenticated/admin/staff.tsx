@@ -1,15 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
-import { Shield, UserPlus, Key, Trash2, MoreHorizontal, Loader2, Mail, Plus, Check, Eye, EyeOff, Pencil, Save } from "lucide-react";
+import { Shield, UserPlus, Trash2, MoreHorizontal, Loader2, Mail, Plus, Check, Eye, EyeOff, Pencil, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/use-auth";
 import {
   createAdminUser,
   updateAdminUserAccount,
-  updateAdminUserPassword,
-  updateAdminUserRole,
 } from "@/lib/user-management.functions";
 import { deleteAuthUser, listStaffUsers, type StaffUser } from "@/lib/admin-users.functions";
 import { getRoles, getPermissions, saveRole, deleteRole } from "@/lib/roles-permissions.functions";
