@@ -18,6 +18,7 @@ import { confirmAction } from "@/lib/confirm";
 import { Truck } from "lucide-react";
 import { APPROVAL_TONE, reviewProduct, setProductSupplier } from "@/lib/supplier";
 import { AppModal } from "@/components/ui-kit/AppModal";
+import { PendingChangesModal } from "@/components/PendingChangesModal";
 
 type Row = {
   id: string;
@@ -71,6 +72,7 @@ function ProductsPage() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [inlineEdit, setInlineEdit] = useState(false);
+  const [reviewFor, setReviewFor] = useState<Row | null>(null);
 
   const [q, setQ] = useState("");
   const [brand, setBrand] = useState(search.brand ?? "");
@@ -495,8 +497,15 @@ function ProductsPage() {
                             {p.approval_status}
                           </div>
                         )}
-                        {p.pending_changes && (
-                          <div className="text-[10px] text-amber-600">Edit waiting</div>
+                        {p.pending_changes && Object.keys(p.pending_changes).length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setReviewFor(p)}
+                            className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 hover:bg-amber-500/25 dark:text-amber-400"
+                          >
+                            {Object.keys(p.pending_changes).length} change
+                            {Object.keys(p.pending_changes).length === 1 ? "" : "s"} to review
+                          </button>
                         )}
                         <ActionMenu vertical>
                           <DropdownMenuItem onSelect={() => setDetailId(p.id)}>
@@ -508,8 +517,11 @@ function ProductsPage() {
                           <DropdownMenuItem onSelect={() => setAssignFor(p)}>
                             <Truck className="mr-2 h-4 w-4" /> {p.supplier_id ? "Change / remove supplier" : "Assign supplier"}
                           </DropdownMenuItem>
-                          {((p.approval_status ?? "approved") !== "approved" || p.pending_changes) && (
-                            <>
+                           {((p.approval_status ?? "approved") !== "approved" || p.pending_changes) && (
+                             <>
+                               <DropdownMenuItem onSelect={() => setReviewFor(p)}>
+                                 <Eye className="mr-2 h-4 w-4" /> Review changes
+                               </DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => review(p, true)}>
                                 <Check className="mr-2 h-4 w-4" /> Approve submission
                               </DropdownMenuItem>
@@ -554,6 +566,20 @@ function ProductsPage() {
           onClose={() => setAssignFor(null)}
           onSaved={() => {
             setAssignFor(null);
+            load();
+          }}
+        />
+      )}
+      {reviewFor && (
+        <PendingChangesModal
+          productId={reviewFor.id}
+          productName={reviewFor.name}
+          pendingChanges={reviewFor.pending_changes}
+          brands={brands}
+          categories={categories}
+          onClose={() => setReviewFor(null)}
+          onReviewed={() => {
+            setReviewFor(null);
             load();
           }}
         />
