@@ -203,44 +203,38 @@ function StaffPage() {
                   </div>
                 </div>
                 {isSuperAdmin && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="p-1 hover:bg-muted rounded-md">
-                      <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setNewPassword("");
-                          setIsPassModalOpen(true);
-                        }}
-                      >
-                        <Key className="mr-2 h-4 w-4" /> Change Password
-                      </DropdownMenuItem>
-                      {user.role !== "super_admin" && (
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setNewRole(user.custom_role_id ?? "");
-                            setIsRoleModalOpen(true);
-                          }}
-                        >
-                          <Shield className="mr-2 h-4 w-4" /> Change Role
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(user)}
+                      title="Edit user"
+                      aria-label="Edit user"
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="p-1 hover:bg-muted rounded-md">
+                        <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEdit(user)}>
+                          <Pencil className="mr-2 h-4 w-4" /> Edit user
                         </DropdownMenuItem>
-                      )}
-                      {user.id !== currentUser?.id && user.role !== "super_admin" && (
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setIsDeleteModalOpen(true);
-                          }}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete User
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        {user.id !== currentUser?.id && user.role !== "super_admin" && (
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setIsDeleteModalOpen(true);
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete User
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 )}
               </div>
             </div>
