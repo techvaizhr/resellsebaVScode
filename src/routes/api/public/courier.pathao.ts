@@ -41,6 +41,10 @@ export const Route = createFileRoute("/api/public/courier/pathao")({
           .maybeSingle();
         const secret = String((cfg?.config as any)?.webhook_secret ?? "");
         if (!secret) return json({ error: true, message: "Webhook secret not configured" }, 401);
+        // Pathao's merchant panel shows a generated "integration secret" that must
+        // be echoed in the response header during the verification handshake.
+        const echoSecret =
+          String((cfg?.config as any)?.integration_secret ?? "") || secret;
 
         const signature = (request.headers.get(SIGNATURE_HEADER) ?? "").trim();
         const raw = await request.text();
@@ -56,7 +60,7 @@ export const Route = createFileRoute("/api/public/courier/pathao")({
         // Pathao's integration check sends {"event":"webhook_integration"} with no
         // signature; it must receive HTTP 202 with the integration-secret header echoed.
         if (events.some((e) => String(e?.event ?? "") === "webhook_integration")) {
-          return json({ error: false, message: "webhook_integration acknowledged" }, 202, secret);
+          return json({ error: false, message: "webhook_integration acknowledged" }, 202, echoSecret);
         }
 
         const url = new URL(request.url);
