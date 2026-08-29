@@ -852,6 +852,7 @@ function WeightCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =
         ref={inputRef}
         type="number"
         min={0}
+        step={0.1}
         value={val}
         onChange={(e) => setVal(e.target.value)}
         onKeyDown={(e) => {

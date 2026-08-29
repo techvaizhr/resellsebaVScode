@@ -78,6 +78,7 @@ export function PendingChangesModal({
       const arr = Array.isArray(value) ? value : [];
       return `${arr.length} image${arr.length === 1 ? "" : "s"}`;
     }
+    if (key === "weight_grams") return `${Number(value) / 1000} kg`;
     return String(value);
   }
 
