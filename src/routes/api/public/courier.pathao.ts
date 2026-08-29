@@ -47,10 +47,37 @@ export const Route = createFileRoute("/api/public/courier/pathao")({
         const envIntegration = String(process.env["PATHAO_INTEGRATION_SECRET"] ?? "");
         const envSecret = String(process.env["PATHAO_WEBHOOK_SECRET"] ?? "");
         if (events.some((e) => String(e?.event ?? "") === "webhook_integration")) {
+          let integrationSecret = envIntegration || envSecret;
+
+          // Runtime secrets are not guaranteed to be injected on every custom-domain
+          // request. Use the public, read-only handshake RPC as a reliable fallback.
+          if (!integrationSecret) {
+            const backendUrl = String(process.env["SUPABASE_URL"] ?? "");
+            const publishableKey = String(process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "");
+            if (backendUrl && publishableKey) {
+              try {
+                const response = await fetch(`${backendUrl}/rest/v1/rpc/pathao_webhook_handshake_secret`, {
+                  method: "POST",
+                  headers: {
+                    apikey: publishableKey,
+                    "Content-Type": "application/json",
+                  },
+                  body: "{}",
+                });
+                if (response.ok) {
+                  const value: unknown = await response.json();
+                  if (typeof value === "string") integrationSecret = value.trim();
+                }
+              } catch {
+                // Keep the webhook acknowledgement fast even if the fallback is unavailable.
+              }
+            }
+          }
+
           return json(
             { error: false, message: "webhook_integration acknowledged" },
             202,
-            envIntegration || envSecret || undefined,
+            integrationSecret || undefined,
           );
         }
 
