@@ -207,6 +207,16 @@ export function ProductFormModal({
                 className={inputCls}
               />
             </Field>
+            <Field label="Weight (grams)" hint="Used for courier booking weight.">
+              <input
+                type="number"
+                min={0}
+                value={v.weight}
+                onChange={(e) => set("weight", e.target.value)}
+                className={inputCls}
+                placeholder="e.g. 500"
+              />
+            </Field>
           </div>
         </div>
 
