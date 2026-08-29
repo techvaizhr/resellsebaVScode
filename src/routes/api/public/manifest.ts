@@ -11,6 +11,8 @@ export const Route = createFileRoute("/api/public/manifest")({
       GET: async () => {
         let siteName = "Reseller Platform";
         let faviconUrl: string | null = null;
+
+        // 1) Preferred: service-role client (Lovable Cloud / full self-host).
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { data } = await supabaseAdmin
@@ -21,7 +23,22 @@ export const Route = createFileRoute("/api/public/manifest")({
           if (data?.site_name) siteName = data.site_name;
           faviconUrl = data?.favicon_url ?? null;
         } catch {
-          // fall through to defaults
+          // 2) Fallback: public REST read (self-hosted builds without the
+          // service-role key — global_settings allows anon SELECT).
+          try {
+            const base = import.meta.env.VITE_SUPABASE_URL as string;
+            const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+            const res = await fetch(
+              `${base}/rest/v1/global_settings?id=eq.1&select=site_name,favicon_url`,
+              { headers: { apikey: key, accept: "application/json" } },
+            );
+            const rows = (await res.json()) as { site_name?: string; favicon_url?: string }[];
+            const row = rows?.[0];
+            if (row?.site_name) siteName = row.site_name;
+            faviconUrl = row?.favicon_url ?? null;
+          } catch {
+            // fall through to defaults
+          }
         }
 
         const icons = faviconUrl
