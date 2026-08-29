@@ -31,6 +31,29 @@ export const Route = createFileRoute("/api/public/courier/pathao")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const raw = await request.text();
+        let payload: any;
+        try {
+          payload = raw ? JSON.parse(raw) : null;
+        } catch {
+          return json({ error: true, message: "Invalid JSON" }, 400);
+        }
+        const events = Array.isArray(payload) ? payload : payload ? [payload] : [];
+
+        // Pathao's integration check sends {"event":"webhook_integration"} with no
+        // signature and must get HTTP 202 with the integration secret echoed back.
+        // It runs BEFORE any database access so the handshake also succeeds where
+        // the privileged client is unavailable (custom domains).
+        const envIntegration = String(process.env["PATHAO_INTEGRATION_SECRET"] ?? "");
+        const envSecret = String(process.env["PATHAO_WEBHOOK_SECRET"] ?? "");
+        if (events.some((e) => String(e?.event ?? "") === "webhook_integration")) {
+          return json(
+            { error: false, message: "webhook_integration acknowledged" },
+            202,
+            envIntegration || envSecret || undefined,
+          );
+        }
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { applyCourierUpdate } = await import("@/lib/couriers.server");
 
@@ -39,29 +62,11 @@ export const Route = createFileRoute("/api/public/courier/pathao")({
           .select("config")
           .eq("provider", "pathao")
           .maybeSingle();
-        const secret = String((cfg?.config as any)?.webhook_secret ?? "");
+        const secret = String((cfg?.config as any)?.webhook_secret ?? "") || envSecret;
         if (!secret) return json({ error: true, message: "Webhook secret not configured" }, 401);
-        // Pathao's merchant panel shows a generated "integration secret" that must
-        // be echoed in the response header during the verification handshake.
-        const echoSecret =
-          String((cfg?.config as any)?.integration_secret ?? "") || secret;
 
         const signature = (request.headers.get(SIGNATURE_HEADER) ?? "").trim();
-        const raw = await request.text();
 
-        let payload: any;
-        try {
-          payload = raw ? JSON.parse(raw) : null;
-        } catch {
-          return json({ error: true, message: "Invalid JSON" }, 400, secret);
-        }
-        const events = Array.isArray(payload) ? payload : payload ? [payload] : [];
-
-        // Pathao's integration check sends {"event":"webhook_integration"} with no
-        // signature; it must receive HTTP 202 with the integration-secret header echoed.
-        if (events.some((e) => String(e?.event ?? "") === "webhook_integration")) {
-          return json({ error: false, message: "webhook_integration acknowledged" }, 202, echoSecret);
-        }
 
         const url = new URL(request.url);
         const tokenOk = (url.searchParams.get("token") ?? "") === secret;
