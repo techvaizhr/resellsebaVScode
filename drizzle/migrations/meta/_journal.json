@@ -71,6 +71,13 @@
       "when": 1788007911603,
       "tag": "0009_supplier_product_numeric_slug",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788008985099,
+      "tag": "0010_add_pathao_webhook_handshake_secret_rpc",
+      "breakpoints": true
     }
   ]
 }
