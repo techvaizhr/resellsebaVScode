@@ -2868,6 +2868,10 @@ export type Database = {
         Args: { _from?: string; _to?: string }
         Returns: Json
       }
+      admin_update_staff_account: {
+        Args: { _email: string; _full_name: string; _user_id: string }
+        Returns: undefined
+      }
       apply_product_patch: {
         Args: { _id: string; _patch: Json }
         Returns: undefined
