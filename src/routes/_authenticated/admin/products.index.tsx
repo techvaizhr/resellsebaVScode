@@ -471,7 +471,7 @@ function ProductsPage() {
                       <StockCell locked={!inlineEdit} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
                     </td>
                     <td className="px-3 py-3 tabular-nums text-muted-foreground">
-                      {p.weight_grams ? `${p.weight_grams} g` : "—"}
+                      <WeightCell locked={!inlineEdit} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, weight_grams: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
