@@ -15,6 +15,13 @@
       "when": 1787976461035,
       "tag": "0001_expose_weight_grams_in_product_rpcs",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787976867577,
+      "tag": "0002_supplier_quick_update_weight",
+      "breakpoints": true
     }
   ]
 }
