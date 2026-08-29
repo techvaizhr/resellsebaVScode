@@ -21,6 +21,7 @@ export type ProductFormValues = {
   category_id: string;
   price: string;
   stock: string;
+  weight: string;
   meta_title: string;
   meta_description: string;
   keywords: string;
@@ -35,6 +36,7 @@ export const emptyProductForm: ProductFormValues = {
   category_id: "",
   price: "",
   stock: "0",
+  weight: "",
   meta_title: "",
   meta_description: "",
   keywords: "",
@@ -203,6 +205,16 @@ export function ProductFormModal({
                 value={v.stock}
                 onChange={(e) => set("stock", e.target.value)}
                 className={inputCls}
+              />
+            </Field>
+            <Field label="Weight (grams)" hint="Used for courier booking weight.">
+              <input
+                type="number"
+                min={0}
+                value={v.weight}
+                onChange={(e) => set("weight", e.target.value)}
+                className={inputCls}
+                placeholder="e.g. 500"
               />
             </Field>
           </div>

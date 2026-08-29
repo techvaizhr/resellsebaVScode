@@ -219,6 +219,7 @@ function SupplierProductsPage_() {
                   <th className="min-w-[240px] px-3 py-3">Product</th>
                   <th className="px-3 py-3">Supply price</th>
                   <th className="px-3 py-3">Stock</th>
+                  <th className="px-3 py-3">Weight</th>
                   <th className="px-3 py-3">Status</th>
                   <th className="px-3 py-3">Submitted</th>
                 </tr>
@@ -289,6 +290,9 @@ function SupplierProductsPage_() {
                           await load();
                         }}
                       />
+                    </td>
+                    <td className="px-3 py-3 tabular-nums text-muted-foreground">
+                      {p.weight_grams ? `${p.weight_grams} g` : "—"}
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
@@ -660,6 +664,7 @@ function ProductForm({
     category_id: v("category_id", product?.category_id ?? "") ?? "",
     price: String(v("supplier_price", product?.supplier_price ?? "")),
     stock: String(v("stock", product?.stock ?? 0)),
+    weight: (() => { const w = v<number | null>("weight_grams", product?.weight_grams ?? null); return w == null ? "" : String(w); })(),
     meta_title: v("meta_title", product?.meta_title ?? "") ?? "",
     meta_description: v("meta_description", product?.meta_description ?? "") ?? "",
     keywords: v("keywords", product?.keywords ?? "") ?? "",
@@ -688,6 +693,7 @@ function ProductForm({
           category_id: values.category_id || null,
           supplier_price: Number(values.price),
           stock: Number(values.stock) || 0,
+          weight_grams: values.weight === "" ? null : Number(values.weight) || 0,
           meta_title: values.meta_title || null,
           meta_description: values.meta_description || null,
           keywords: values.keywords || null,

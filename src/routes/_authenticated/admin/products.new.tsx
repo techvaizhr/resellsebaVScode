@@ -35,6 +35,7 @@ function NewProduct() {
   const [deliverySub, setDeliverySub] = useState("90");
   const [suggested, setSuggested] = useState("");
   const [stock, setStock] = useState("0");
+  const [weight, setWeight] = useState("");
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDesc, setMetaDesc] = useState("");
@@ -145,6 +146,7 @@ function NewProduct() {
           delivery_sub: deliveryMode === "area" ? Number(deliverySub) || 0 : 0,
           suggested_price: Number(suggested),
           stock: Number(stock),
+          weight_grams: weight === "" ? null : Math.max(0, Math.floor(Number(weight) || 0)),
           og_image_url: images[0]?.url ?? null,
           meta_title: metaTitle || null,
           meta_description: metaDesc || null,
@@ -329,6 +331,9 @@ function NewProduct() {
             )}
             <Field label="Stock">
               <input type="number" min={0} value={stock} onChange={(e) => setStock(e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Weight (grams)" hint="Used for courier booking weight.">
+              <input type="number" min={0} value={weight} onChange={(e) => setWeight(e.target.value)} className={inputCls} placeholder="e.g. 500" />
             </Field>
             <Field label="Suggested sell price (৳)" required hint="Suggested to resellers. Must be at least reseller price + packaging.">
               <input required type="number" min={0} value={suggested} onChange={(e) => setSuggested(e.target.value)} className={inputCls} />
