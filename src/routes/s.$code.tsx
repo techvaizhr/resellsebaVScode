@@ -5,24 +5,26 @@ import { useStoreVisitLog } from "@/lib/store-visits";
 import { storeThemeStyle } from "@/lib/store-theme";
 import { useStoreLoader } from "@/components/store/store-context";
 import { StoreFooter, StoreHeader } from "@/components/store/chrome";
+import { getStoreSeo } from "@/lib/seo.functions";
+import { seoLinks, seoMeta } from "@/lib/seo-meta";
 
 
 export const Route = createFileRoute("/s/$code")({
   component: StoreLayout,
-  head: ({ params }) => ({
-    meta: [
-      { title: `${params.code} — Online Store` },
-      {
-        name: "description",
-        content: `Shop from ${params.code} — genuine products with cash-on-delivery across Bangladesh.`,
-      },
-      { property: "og:title", content: `${params.code} — Online Store` },
-      { property: "og:description", content: `Shop from ${params.code} — cash on delivery nationwide.` },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
+  loader: ({ params }) => getStoreSeo({ data: { code: params.code } }),
+  head: ({ params, loaderData }) => ({
+    meta: seoMeta(loaderData, {
+      title: `${params.code} — Online Store`,
+      description: `Shop from ${params.code} — genuine products with cash-on-delivery across Bangladesh.`,
+      image: null,
+      url: null,
+      type: "website",
+      siteName: null,
+    }),
+    links: seoLinks(loaderData),
   }),
 });
+
 
 function StoreLayout() {
   const { code } = Route.useParams();
