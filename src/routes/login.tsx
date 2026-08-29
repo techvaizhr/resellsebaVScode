@@ -7,6 +7,7 @@ import { sendVerificationCode } from "@/lib/verification.functions";
 import { fetchAdvancedSettings } from "@/lib/advanced-settings";
 import { toast } from "sonner";
 import { Loader2, Mail, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Brand } from "@/components/public-header";
 
 export const Route = createFileRoute("/login")({
   validateSearch: z.object({
@@ -45,8 +46,24 @@ function AuthPage() {
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [sentEmail, setSentEmail] = useState<string | null>(null);
+  const [brand, setBrand] = useState<{ siteName: string; logoUrl: string | null }>({
+    siteName: "Reseller",
+    logoUrl: null,
+  });
   const sendCode = useServerFn(sendVerificationCode);
 
+
+  useEffect(() => {
+    // Login screen shows the platform logo from admin branding settings.
+    supabase
+      .from("global_settings")
+      .select("site_name, logo_url")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setBrand({ siteName: data.site_name ?? "Reseller", logoUrl: data.logo_url ?? null });
+      });
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -156,6 +173,9 @@ function AuthPage() {
         </Link>
 
         <div className="surface-card p-8">
+          <div className="mb-5 flex justify-center">
+            <Brand siteName={brand.siteName} logoUrl={brand.logoUrl} />
+          </div>
           <h1 className="text-2xl font-semibold tracking-tight">
             {isSignup ? "Create a new account" : "Log in"}
           </h1>
