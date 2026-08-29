@@ -66,7 +66,7 @@ export function DataToolbar({
       key={f.key}
       value={f.value}
       onChange={(e) => f.onChange(e.target.value)}
-      className="w-full min-w-0 rounded-md border bg-background px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-ring md:min-w-[120px] md:w-auto"
+      className="w-full rounded-md border bg-background px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
       title={f.label}
     >
       <option value="">{f.label}: All</option>
@@ -79,7 +79,7 @@ export function DataToolbar({
   ));
 
   // One global toolbar layout everywhere: search + per-page on the first row,
-  // filters in a 2-column grid on mobile, inline row from md up.
+  // filters in an equal-width grid — 2 per row on mobile, 3 on tablet, 6 on desktop.
   return (
     <div className="mb-4 space-y-2">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
@@ -90,12 +90,8 @@ export function DataToolbar({
         </div>
       </div>
       {filters.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
-          {filterSelects.map((s) => (
-            <div key={s.key} className="min-w-0 md:min-w-[120px] md:flex-1">
-              {s}
-            </div>
-          ))}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          {filterSelects}
         </div>
       )}
     </div>
