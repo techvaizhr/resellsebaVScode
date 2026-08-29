@@ -44,10 +44,6 @@ export const Route = createFileRoute("/api/public/courier/pathao")({
 
         const signature = (request.headers.get(SIGNATURE_HEADER) ?? "").trim();
         const raw = await request.text();
-        const url = new URL(request.url);
-        const tokenOk = (url.searchParams.get("token") ?? "") === secret;
-        if (signature !== secret && !tokenOk)
-          return json({ error: true, message: "Invalid signature" }, 401, secret);
 
         let payload: any;
         try {
@@ -56,6 +52,18 @@ export const Route = createFileRoute("/api/public/courier/pathao")({
           return json({ error: true, message: "Invalid JSON" }, 400, secret);
         }
         const events = Array.isArray(payload) ? payload : payload ? [payload] : [];
+
+        // Pathao's integration check sends {"event":"webhook_integration"} with no
+        // signature; it must receive HTTP 202 with the integration-secret header echoed.
+        if (events.some((e) => String(e?.event ?? "") === "webhook_integration")) {
+          return json({ error: false, message: "webhook_integration acknowledged" }, 202, secret);
+        }
+
+        const url = new URL(request.url);
+        const tokenOk = (url.searchParams.get("token") ?? "") === secret;
+        if (signature !== secret && !tokenOk)
+          return json({ error: true, message: "Invalid signature" }, 401, secret);
+
         if (events.length === 0) return json({ error: true, message: "Empty payload" }, 400, secret);
 
         let matched = 0;
