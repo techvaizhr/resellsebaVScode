@@ -131,6 +131,10 @@ function RootComponent() {
 
 
   useEffect(() => {
+    registerPwa();
+  }, []);
+
+  useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         queryClient.clear();
