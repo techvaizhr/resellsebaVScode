@@ -115,34 +115,38 @@ function StaffPage() {
     }
   };
 
-  const handlePassword = async (e: React.FormEvent) => {
+  const openEdit = (user: StaffUser) => {
+    setSelectedUser(user);
+    setEditData({
+      fullName: user.full_name ?? "",
+      email: user.email ?? "",
+      role: user.custom_role_id ?? "",
+      password: "",
+    });
+    setShowNewPassword(false);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
     setIsSubmitting(true);
     try {
-      await passwordMutation({ data: { userId: selectedUser.id, password: newPassword } });
-      toast.success("Password updated");
-      setIsPassModalOpen(false);
-      setNewPassword("");
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to update password");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleRoleChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser || !newRole) return;
-    setIsSubmitting(true);
-    try {
-      await roleMutation({ data: { userId: selectedUser.id, role: newRole } });
-      toast.success("Role updated");
-      setIsRoleModalOpen(false);
-      setNewRole("");
+      await updateAccountMutation({
+        data: {
+          userId: selectedUser.id,
+          email: editData.email.trim(),
+          fullName: editData.fullName.trim(),
+          // Super admin role is never reassigned from here.
+          role: selectedUser.role === "super_admin" || !editData.role ? undefined : editData.role,
+          password: editData.password ? editData.password : undefined,
+        },
+      });
+      toast.success("User updated");
+      setIsEditModalOpen(false);
       loadUsers();
     } catch (error: any) {
-      toast.error(error?.message || "Failed to update role");
+      toast.error(error?.message || "Failed to update user");
     } finally {
       setIsSubmitting(false);
     }
