@@ -22,6 +22,13 @@
       "when": 1787976867577,
       "tag": "0002_supplier_quick_update_weight",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787977059303,
+      "tag": "0003_supplier_save_product_diff_only",
+      "breakpoints": true
     }
   ]
 }
