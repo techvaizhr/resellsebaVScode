@@ -19,6 +19,7 @@ import {
   Receipt,
   PackageSearch,
   Wallet,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, EmptyState } from "@/components/ui-kit";
@@ -179,6 +180,26 @@ function AdminSuppliersPage() {
     }
   }
 
+  async function removeSupplier(s: AdminSupplierRow) {
+    const ok = await confirmAction({
+      title: `Delete ${s.display_name}?`,
+      description:
+        "The supplier account and login will be permanently deleted. Order history and products stay, but lose the supplier link. This cannot be undone.",
+      confirmText: "Delete supplier",
+    });
+    if (!ok) return;
+    setBusyId(s.id);
+    try {
+      await deleteFn({ data: { supplierId: s.id } });
+      toast.success(`${s.display_name} deleted`);
+      void load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function loginAsSupplier(s: AdminSupplierRow) {
     setBusyId(s.id);
     try {
@@ -331,6 +352,13 @@ function AdminSuppliersPage() {
                               <LogIn className="mr-2 h-4 w-4" /> Login as supplier
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => void removeSupplier(s)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete supplier
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
