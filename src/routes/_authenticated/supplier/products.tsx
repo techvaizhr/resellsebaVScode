@@ -219,6 +219,7 @@ function SupplierProductsPage_() {
                   <th className="min-w-[240px] px-3 py-3">Product</th>
                   <th className="px-3 py-3">Supply price</th>
                   <th className="px-3 py-3">Stock</th>
+                  <th className="px-3 py-3">Weight</th>
                   <th className="px-3 py-3">Status</th>
                   <th className="px-3 py-3">Submitted</th>
                 </tr>
