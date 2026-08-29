@@ -30,16 +30,16 @@ async function loadConfigs(supabase: any) {
   if (data && data.length) return data;
 
   // Suppliers have no row access to courier configs, but they book couriers for
-  // their own orders — expose only what booking needs in that case.
-  const { data: supplierId } = await supabase.rpc("current_supplier_id");
-  if (!supplierId) return [];
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: rows } = await supabaseAdmin
-    .from("courier_configs")
-    .select("provider, is_active, config")
-    .eq("is_active", true);
-  return rows ?? [];
+  // their own orders — a security-definer RPC exposes only what booking needs.
+  const { data: opts } = await supabase.rpc("courier_booking_options");
+  const list = Array.isArray(opts) ? opts : [];
+  return list.map((o: any) => ({
+    provider: o.provider,
+    is_active: true,
+    config: { stores_json: o.stores ?? [], ...(o.defaultStoreId ? { store_id: o.defaultStoreId } : {}) },
+  }));
 }
+
 
 export const getActiveCouriers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

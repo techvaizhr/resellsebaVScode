@@ -553,7 +553,17 @@ function SupplierOrdersPage() {
                     </div>
 
                     <div className="flex items-center justify-between gap-2">
-                      <CourierCell shipment={o.shipment} />
+                      {isBooked(o) ? (
+                        <CourierCell shipment={o.shipment} />
+                      ) : (
+                        <button
+                          onClick={() => setBooking({ open: true, orderIds: [o.id] })}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-violet-500/40 bg-violet-500/10 px-3 py-1.5 text-[11px] font-medium text-violet-600 hover:bg-violet-500/20 dark:text-violet-400"
+                        >
+                          <Truck className="h-3.5 w-3.5" /> Book courier
+                        </button>
+                      )}
+
                       {next ? (
                         <button
                           disabled={busy}
@@ -610,8 +620,18 @@ function SupplierOrdersPage() {
                     </div>
 
                     <div className="flex justify-center">
-                      <CourierCell shipment={o.shipment} />
+                      {isBooked(o) ? (
+                        <CourierCell shipment={o.shipment} />
+                      ) : (
+                        <button
+                          onClick={() => setBooking({ open: true, orderIds: [o.id] })}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-violet-500/40 bg-violet-500/10 px-2.5 py-1 text-[11px] font-medium text-violet-600 hover:bg-violet-500/20 dark:text-violet-400"
+                        >
+                          <Truck className="h-3 w-3" /> Book
+                        </button>
+                      )}
                     </div>
+
 
                     <div className="flex flex-col items-center gap-1.5">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${supplierStatusTone(o.status)}`}>

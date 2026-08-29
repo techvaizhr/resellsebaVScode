@@ -57,6 +57,13 @@
       "when": 1787999885116,
       "tag": "0007_reseller_dashboard_stock",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788006561498,
+      "tag": "0008_courier_booking_options_fn",
+      "breakpoints": true
     }
   ]
 }

@@ -3004,6 +3004,7 @@ export type Database = {
           rows: number
         }[]
       }
+      courier_booking_options: { Args: never; Returns: Json }
       create_public_order: {
         Args: {
           _address_line: string
