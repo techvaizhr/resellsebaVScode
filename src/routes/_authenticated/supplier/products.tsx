@@ -292,7 +292,15 @@ function SupplierProductsPage_() {
                       />
                     </td>
                     <td className="px-3 py-3 tabular-nums text-muted-foreground">
-                      {p.weight_grams ? `${p.weight_grams} g` : "—"}
+                      <InlineNumber
+                        value={Number(p.weight_grams ?? 0)}
+                        suffix=" g"
+                        onSave={async (val) => {
+                          await supplierQuickUpdate(p.id, { weight: val });
+                          toast.success("Weight updated");
+                          await load();
+                        }}
+                      />
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
@@ -470,10 +478,12 @@ function SupplierProductDetail({
 function InlineNumber({
   value,
   prefix,
+  suffix,
   onSave,
 }: {
   value: number;
   prefix?: string;
+  suffix?: string;
   onSave: (val: number) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
