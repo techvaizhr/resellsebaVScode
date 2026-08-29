@@ -471,7 +471,7 @@ function ProductsPage() {
                       <StockCell locked={!inlineEdit} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
                     </td>
                     <td className="px-3 py-3 tabular-nums text-muted-foreground">
-                      {p.weight_grams ? `${p.weight_grams} g` : "—"}
+                      <WeightCell locked={!inlineEdit} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, weight_grams: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
@@ -743,6 +743,77 @@ function StockCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =>
         title="Click to edit stock"
       >
         {row.stock}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        ref={inputRef}
+        type="number"
+        min={0}
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") save();
+          if (e.key === "Escape") setEditing(false);
+        }}
+        className="w-20 rounded-md border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
+      />
+      <button onClick={save} disabled={busy} className="rounded-md p-1 text-primary hover:bg-primary/10">
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+      </button>
+      <button onClick={() => setEditing(false)} className="rounded-md p-1 text-muted-foreground hover:bg-muted">
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+function WeightCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) => void; locked?: boolean }) {
+  const current = row.weight_grams ?? 0;
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(String(current));
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) inputRef.current?.select();
+  }, [editing]);
+
+  async function save() {
+    const n = Math.max(0, Math.floor(Number(val)));
+    if (Number.isNaN(n)) return toast.error("Invalid weight");
+    if (n === current) return setEditing(false);
+    setBusy(true);
+    const { error } = await supabase.from("products").update({ weight_grams: n }).eq("id", row.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    onSaved(n);
+    setEditing(false);
+    toast.success("Weight updated");
+  }
+
+  if (locked) {
+    return (
+      <span className="px-2 py-0.5 text-xs" title="Turn on Inline edit to change weight">
+        {current ? `${current} g` : "—"}
+      </span>
+    );
+  }
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => {
+          setVal(String(current));
+          setEditing(true);
+        }}
+        className="rounded-md border border-dashed px-2 py-0.5 text-xs hover:border-primary hover:text-primary"
+        title="Click to edit weight (grams)"
+      >
+        {current ? `${current} g` : "—"}
       </button>
     );
   }
