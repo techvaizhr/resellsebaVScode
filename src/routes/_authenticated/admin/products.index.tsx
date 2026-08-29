@@ -496,8 +496,15 @@ function ProductsPage() {
                             {p.approval_status}
                           </div>
                         )}
-                        {p.pending_changes && (
-                          <div className="text-[10px] text-amber-600">Edit waiting</div>
+                        {p.pending_changes && Object.keys(p.pending_changes).length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setReviewFor(p)}
+                            className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 hover:bg-amber-500/25 dark:text-amber-400"
+                          >
+                            {Object.keys(p.pending_changes).length} change
+                            {Object.keys(p.pending_changes).length === 1 ? "" : "s"} to review
+                          </button>
                         )}
                         <ActionMenu vertical>
                           <DropdownMenuItem onSelect={() => setDetailId(p.id)}>
