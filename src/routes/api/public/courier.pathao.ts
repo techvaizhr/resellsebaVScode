@@ -41,13 +41,13 @@ export const Route = createFileRoute("/api/public/courier/pathao")({
           .maybeSingle();
         const secret = String((cfg?.config as any)?.webhook_secret ?? "");
         if (!secret) return json({ error: true, message: "Webhook secret not configured" }, 401);
+        // Pathao's merchant panel shows a generated "integration secret" that must
+        // be echoed in the response header during the verification handshake.
+        const echoSecret =
+          String((cfg?.config as any)?.integration_secret ?? "") || secret;
 
         const signature = (request.headers.get(SIGNATURE_HEADER) ?? "").trim();
         const raw = await request.text();
-        const url = new URL(request.url);
-        const tokenOk = (url.searchParams.get("token") ?? "") === secret;
-        if (signature !== secret && !tokenOk)
-          return json({ error: true, message: "Invalid signature" }, 401, secret);
 
         let payload: any;
         try {
@@ -56,6 +56,18 @@ export const Route = createFileRoute("/api/public/courier/pathao")({
           return json({ error: true, message: "Invalid JSON" }, 400, secret);
         }
         const events = Array.isArray(payload) ? payload : payload ? [payload] : [];
+
+        // Pathao's integration check sends {"event":"webhook_integration"} with no
+        // signature; it must receive HTTP 202 with the integration-secret header echoed.
+        if (events.some((e) => String(e?.event ?? "") === "webhook_integration")) {
+          return json({ error: false, message: "webhook_integration acknowledged" }, 202, echoSecret);
+        }
+
+        const url = new URL(request.url);
+        const tokenOk = (url.searchParams.get("token") ?? "") === secret;
+        if (signature !== secret && !tokenOk)
+          return json({ error: true, message: "Invalid signature" }, 401, secret);
+
         if (events.length === 0) return json({ error: true, message: "Empty payload" }, 400, secret);
 
         let matched = 0;
