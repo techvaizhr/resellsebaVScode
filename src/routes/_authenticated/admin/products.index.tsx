@@ -516,8 +516,11 @@ function ProductsPage() {
                           <DropdownMenuItem onSelect={() => setAssignFor(p)}>
                             <Truck className="mr-2 h-4 w-4" /> {p.supplier_id ? "Change / remove supplier" : "Assign supplier"}
                           </DropdownMenuItem>
-                          {((p.approval_status ?? "approved") !== "approved" || p.pending_changes) && (
-                            <>
+                           {((p.approval_status ?? "approved") !== "approved" || p.pending_changes) && (
+                             <>
+                               <DropdownMenuItem onSelect={() => setReviewFor(p)}>
+                                 <Eye className="mr-2 h-4 w-4" /> Review changes
+                               </DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => review(p, true)}>
                                 <Check className="mr-2 h-4 w-4" /> Approve submission
                               </DropdownMenuItem>
