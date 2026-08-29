@@ -16,7 +16,7 @@ const LABELS: Record<string, string> = {
   category_id: "Category",
   supplier_price: "Supplier price",
   stock: "Stock",
-  weight_grams: "Weight (g)",
+  weight_grams: "Weight (kg)",
   meta_title: "Meta title",
   meta_description: "Meta description",
   keywords: "Keywords",
@@ -78,6 +78,7 @@ export function PendingChangesModal({
       const arr = Array.isArray(value) ? value : [];
       return `${arr.length} image${arr.length === 1 ? "" : "s"}`;
     }
+    if (key === "weight_grams") return `${Number(value) / 1000} kg`;
     return String(value);
   }
 
