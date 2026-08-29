@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getCatalogProduct } from "@/lib/catalog.functions";
+import { getCatalogProductSeo } from "@/lib/seo.functions";
+import { seoLinks, seoMeta } from "@/lib/seo-meta";
 import { CopyBtn, useCatalogPrices } from "@/components/catalog/shell";
 import { ImagePickerButton } from "@/components/catalog/image-picker";
 import { bdt } from "@/lib/finance-report";
@@ -9,18 +11,21 @@ import { areaLabel } from "@/lib/delivery";
 import { ArrowLeft, Loader2, Truck } from "lucide-react";
 
 export const Route = createFileRoute("/catalog/$slug")({
-  head: ({ params }) => ({
-    meta: [
-      { title: `${params.slug.replace(/-/g, " ")} — Catalog details` },
-      { name: "description", content: `${params.slug.replace(/-/g, " ")} — images, description, and resell price.` },
-      { property: "og:title", content: `${params.slug.replace(/-/g, " ")} — Catalog details` },
-      { property: "og:description", content: `${params.slug.replace(/-/g, " ")} — images, description, and resell price.` },
-      { property: "og:type", content: "product" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
+  loader: ({ params }) => getCatalogProductSeo({ data: { slug: params.slug } }),
+  head: ({ params, loaderData }) => ({
+    meta: seoMeta(loaderData, {
+      title: `${params.slug.replace(/-/g, " ")} — Catalog details`,
+      description: `${params.slug.replace(/-/g, " ")} — images, description, and resell price.`,
+      image: null,
+      url: null,
+      type: "product",
+      siteName: null,
+    }),
+    links: seoLinks(loaderData),
   }),
   component: CatalogDetails,
 });
+
 
 type P = Awaited<ReturnType<typeof getCatalogProduct>>;
 
