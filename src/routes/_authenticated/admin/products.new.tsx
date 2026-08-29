@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui-kit";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader, type UploadedImage } from "@/components/ImageUploader";
+import { SearchableSelect } from "@/components/searchable-select";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { uniqueProductSlug } from "@/lib/slug";
 import { Hint } from "@/components/Hint";
