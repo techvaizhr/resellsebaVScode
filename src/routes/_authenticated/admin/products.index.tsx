@@ -569,6 +569,20 @@ function ProductsPage() {
           }}
         />
       )}
+      {reviewFor && (
+        <PendingChangesModal
+          productId={reviewFor.id}
+          productName={reviewFor.name}
+          pendingChanges={reviewFor.pending_changes}
+          brands={brands}
+          categories={categories}
+          onClose={() => setReviewFor(null)}
+          onReviewed={() => {
+            setReviewFor(null);
+            load();
+          }}
+        />
+      )}
       {detailId && (
         <ProductDetailModal 
           id={detailId} 
