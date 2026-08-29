@@ -5,6 +5,7 @@ import { AppModal } from "@/components/ui-kit/AppModal";
 import { Hint } from "@/components/Hint";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { ImageUploader, type UploadedImage } from "@/components/ImageUploader";
+import { SearchableSelect } from "@/components/searchable-select";
 
 /**
  * Global product form modal — same sections/layout as the admin product page
@@ -133,24 +134,22 @@ export function ProductFormModal({
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <Field label="Brand">
-                <select value={v.brand_id} onChange={(e) => set("brand_id", e.target.value)} className={inputCls}>
-                  <option value="">— None —</option>
-                  {brands.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  options={brands.map((b) => ({ value: b.id, label: b.name }))}
+                  value={v.brand_id}
+                  onChange={(id) => set("brand_id", id)}
+                  placeholder="— None —"
+                  searchPlaceholder="Search brand…"
+                />
               </Field>
               <Field label="Category">
-                <select value={v.category_id} onChange={(e) => set("category_id", e.target.value)} className={inputCls}>
-                  <option value="">— None —</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                  value={v.category_id}
+                  onChange={(id) => set("category_id", id)}
+                  placeholder="— None —"
+                  searchPlaceholder="Search category…"
+                />
               </Field>
             </div>
             <Field label="Description">

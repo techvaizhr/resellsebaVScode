@@ -237,16 +237,22 @@ function NewProduct() {
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <Field label="Brand">
-                <select value={brandId} onChange={(e) => setBrandId(e.target.value)} className={inputCls}>
-                  <option value="">— None —</option>
-                  {brands.map((b) => (<option key={b.id} value={b.id}>{b.name}</option>))}
-                </select>
+                <SearchableSelect
+                  options={brands.map((b) => ({ value: b.id, label: b.name }))}
+                  value={brandId}
+                  onChange={setBrandId}
+                  placeholder="— None —"
+                  searchPlaceholder="Search brand…"
+                />
               </Field>
               <Field label="Category">
-                <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={inputCls}>
-                  <option value="">— None —</option>
-                  {cats.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-                </select>
+                <SearchableSelect
+                  options={cats.map((c) => ({ value: c.id, label: c.name }))}
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  placeholder="— None —"
+                  searchPlaceholder="Search category…"
+                />
               </Field>
             </div>
             <Field label="Description">
@@ -284,14 +290,13 @@ function NewProduct() {
               label="Supplier"
               hint="Supplier select korle buying price = oi supplier er prapya. Admin er nijer product hole — None — rakhun."
             >
-              <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className={inputCls}>
-                <option value="">— None (admin's own product) —</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.display_name} ({s.code})
-                  </option>
-                ))}
-              </select>
+              <SearchableSelect
+                options={suppliers.map((s) => ({ value: s.id, label: `${s.display_name} (${s.code})` }))}
+                value={supplierId}
+                onChange={setSupplierId}
+                placeholder="— None (admin's own product) —"
+                searchPlaceholder="Search supplier…"
+              />
             </Field>
             <Field
               label={supplierId ? "Supplier price / Admin cost (৳)" : "Buying price / Admin cost (৳)"}
