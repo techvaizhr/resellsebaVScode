@@ -518,13 +518,13 @@ function InlineNumber({
         type="button"
         disabled={busy}
         onClick={() => setEditing(true)}
-        className="inline-flex items-center gap-1 rounded border border-transparent px-1.5 py-0.5 text-sm hover:border-border hover:bg-muted disabled:opacity-50"
+        className="inline-flex items-center gap-1 whitespace-nowrap rounded border border-transparent px-1.5 py-0.5 text-sm hover:border-border hover:bg-muted disabled:opacity-50"
       >
         {busy && <Loader2 className="h-3 w-3 animate-spin" />}
         {prefix}
         {value}
         {suffix}
-        <Pencil className="h-3 w-3 text-muted-foreground" />
+        <Pencil className="h-3 w-3 shrink-0 text-muted-foreground" />
       </button>
     );
   }
