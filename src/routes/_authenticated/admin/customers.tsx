@@ -3,12 +3,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/ui-kit";
 import { CustomersReport } from "@/components/customers-report";
+import { useCan } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/customers")({
   component: AdminCustomersPage,
 });
 
 function AdminCustomersPage() {
+  const can = useCan();
+  const canExport = can("customers.view", "orders.view");
   const [names, setNames] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
@@ -28,7 +31,7 @@ function AdminCustomersPage() {
         title="Customers"
         description="Every customer across all stores — order history, value and contact. Export to Excel or CSV anytime."
       />
-      <CustomersReport resellerNames={names} showStore allowExport />
+      <CustomersReport resellerNames={names} showStore allowExport={canExport} />
     </div>
   );
 }

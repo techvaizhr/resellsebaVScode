@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { PERMISSION_GROUPS } from "@/lib/permissions";
+
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { Shield, UserPlus, Trash2, MoreHorizontal, Loader2, Mail, Plus, Check, Eye, EyeOff, Pencil, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -507,7 +509,41 @@ function RolesPage() {
     }));
   };
 
+  const toggleGroup = (ids: string[], on: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      permissionIds: on
+        ? Array.from(new Set([...prev.permissionIds, ...ids]))
+        : prev.permissionIds.filter((id) => !ids.includes(id)),
+    }));
+  };
+
+  /** Permissions arranged exactly like the admin sidebar menu. */
+  const groupedPermissions = useMemo(() => {
+    const byName = new Map<string, any>((permissions ?? []).map((p: any) => [p.name, p]));
+    const used = new Set<string>();
+    const groups = PERMISSION_GROUPS.map((group) => ({
+      key: group.key,
+      label: group.label,
+      items: group.permissions
+        .map((def) => {
+          const row = byName.get(def.key);
+          if (!row) return null;
+          used.add(def.key);
+          return { id: row.id as string, label: def.label, description: def.description };
+        })
+        .filter(Boolean) as { id: string; label: string; description: string }[],
+    })).filter((g) => g.items.length > 0);
+
+    const others = (permissions ?? [])
+      .filter((p: any) => !used.has(p.name))
+      .map((p: any) => ({ id: p.id as string, label: p.name as string, description: (p.description ?? "") as string }));
+    if (others.length > 0) groups.push({ key: "other", label: "Other", items: others });
+    return groups;
+  }, [permissions]);
+
   const customRoles = roles.filter((role) => !role.is_system);
+
 
   return (
     <div className="space-y-6">
@@ -596,37 +632,62 @@ function RolesPage() {
                   <Label className="text-base font-bold">Permissions</Label>
                   <span className="text-xs text-muted-foreground">{formData.permissionIds.length} selected</span>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {permissions.map((perm) => {
-                    const active = formData.permissionIds.includes(perm.id);
-                    return (
-                      <button
-                        type="button"
-                        key={perm.id}
-                        aria-pressed={active}
-                        onClick={() => togglePermission(perm.id)}
-                        className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all hover:shadow-sm ${
-                          active ? "border-primary bg-primary/5 shadow-sm" : "hover:bg-muted/50"
-                        }`}
-                      >
-                        <span
-                          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border ${
-                            active ? "border-primary bg-primary text-primary-foreground" : "border-input"
-                          }`}
-                        >
-                          {active && <Check className="h-3 w-3" />}
-                        </span>
-                        <span className="grid gap-1 leading-none">
-                          <span className="text-sm font-semibold leading-none">{perm.name}</span>
-                          {perm.description && (
-                            <span className="block text-[11px] text-muted-foreground leading-tight mt-1">{perm.description}</span>
-                          )}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                {groupedPermissions.map((group) => {
+                  const ids = group.items.map((i) => i.id);
+                  const selected = ids.filter((id) => formData.permissionIds.includes(id));
+                  const allOn = ids.length > 0 && selected.length === ids.length;
+                  return (
+                    <div key={group.key} className="rounded-lg border">
+                      <div className="flex items-center justify-between gap-2 border-b bg-muted/40 px-3 py-2">
+                        <span className="text-sm font-bold">{group.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-muted-foreground">
+                            {selected.length}/{ids.length}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleGroup(ids, !allOn)}
+                            className="rounded-md border bg-background px-2 py-1 text-[11px] font-medium hover:bg-muted"
+                          >
+                            {allOn ? "Clear all" : "Select all"}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid gap-2 p-3 sm:grid-cols-2">
+                        {group.items.map((perm) => {
+                          const active = formData.permissionIds.includes(perm.id);
+                          return (
+                            <button
+                              type="button"
+                              key={perm.id}
+                              aria-pressed={active}
+                              onClick={() => togglePermission(perm.id)}
+                              className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all hover:shadow-sm ${
+                                active ? "border-primary bg-primary/5 shadow-sm" : "hover:bg-muted/50"
+                              }`}
+                            >
+                              <span
+                                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border ${
+                                  active ? "border-primary bg-primary text-primary-foreground" : "border-input"
+                                }`}
+                              >
+                                {active && <Check className="h-3 w-3" />}
+                              </span>
+                              <span className="grid gap-1 leading-none">
+                                <span className="text-sm font-semibold leading-none">{perm.label}</span>
+                                <span className="block text-[11px] text-muted-foreground leading-tight mt-1">
+                                  {perm.description}
+                                </span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+
             </div>
 
             <DialogFooter className="p-6 pt-2 border-t bg-muted/20">

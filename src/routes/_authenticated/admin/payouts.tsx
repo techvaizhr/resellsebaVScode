@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/ui-kit";
 import { Loader2, Check, X, Wallet, Copy, Phone, Landmark, ChevronDown, Search, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
-import { useAuth } from "@/lib/use-auth";
+import { useAuth, useCan } from "@/lib/use-auth";
 import { DataToolbar, Pagination, usePaginated } from "@/components/data-list";
 import { toast } from "sonner";
 
@@ -102,6 +102,8 @@ function AdminPayouts() {
   const [busy, setBusy] = useState(false);
   const { roles } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
+  const can = useCan();
+  const canManage = can("payouts.manage");
   const [toDelete, setToDelete] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -327,7 +329,7 @@ function AdminPayouts() {
   function actions(r: Row) {
     return (
       <div className="flex flex-wrap gap-1.5">
-        {r.status === "pending" && (
+        {canManage && r.status === "pending" && (
           <>
             <button onClick={() => open(r, "approved")} className="rounded-md border px-2 py-1 text-xs hover:bg-muted">Approve</button>
             <button onClick={() => open(r, "rejected")} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-destructive hover:bg-destructive/10">
@@ -335,7 +337,7 @@ function AdminPayouts() {
             </button>
           </>
         )}
-        {r.status === "approved" && (
+        {canManage && r.status === "approved" && (
           <>
             <button onClick={() => open(r, "paid")} className="btn-brand inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs">
               <Check className="h-3 w-3" /> Mark paid

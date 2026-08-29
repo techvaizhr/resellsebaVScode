@@ -7,6 +7,7 @@ import { DataToolbar, Pagination, usePaginated } from "@/components/data-list";
 import { StatusTabs } from "@/components/status-tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { bdtNum, loadAdminSupplierOverview, type AdminSupplierOverview } from "@/lib/supplier";
+import { useCan } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/supplier-payouts")({
   component: AdminSupplierPayoutsPage,
@@ -58,6 +59,8 @@ function AdminSupplierPayoutsPage() {
   const [method, setMethod] = useState("");
   const [reference, setReference] = useState("");
   const [creating, setCreating] = useState(false);
+  const can = useCan();
+  const canManage = can("suppliers.manage", "payouts.manage");
 
   const load = useCallback(async () => {
     try {
@@ -201,6 +204,7 @@ function AdminSupplierPayoutsPage() {
         />
       </div>
 
+      {canManage && (
       <form
         onSubmit={createPayout}
         className="surface-card mb-4 grid gap-3 p-4 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto]"
@@ -256,6 +260,7 @@ function AdminSupplierPayoutsPage() {
           </button>
         </div>
       </form>
+      )}
 
       <StatusTabs
         tabs={TABS}
@@ -332,6 +337,7 @@ function AdminSupplierPayoutsPage() {
                   p={p}
                   busy={busyId === p.id}
                   setStatus={setStatus}
+                  canManage={canManage}
                   className="mt-3 justify-end"
                 />
               </div>
@@ -377,6 +383,7 @@ function AdminSupplierPayoutsPage() {
                         p={p}
                         busy={busyId === p.id}
                         setStatus={setStatus}
+                        canManage={canManage}
                         className="justify-end"
                       />
                     </td>
@@ -397,14 +404,16 @@ function Actions({
   p,
   busy,
   setStatus,
+  canManage,
   className = "",
 }: {
   p: { id: string; status: string };
   busy: boolean;
   setStatus: (id: string, status: "approved" | "paid" | "rejected") => void;
+  canManage: boolean;
   className?: string;
 }) {
-  if (p.status === "paid" || p.status === "rejected")
+  if (p.status === "paid" || p.status === "rejected" || !canManage)
     return <span className="text-[11px] text-muted-foreground">—</span>;
   return (
     <div className={"inline-flex flex-wrap gap-1 " + className}>

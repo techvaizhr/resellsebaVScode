@@ -19,6 +19,7 @@ import { Truck } from "lucide-react";
 import { APPROVAL_TONE, reviewProduct, setProductSupplier } from "@/lib/supplier";
 import { AppModal } from "@/components/ui-kit/AppModal";
 import { PendingChangesModal } from "@/components/PendingChangesModal";
+import { useCan } from "@/lib/use-auth";
 
 type Row = {
   id: string;
@@ -63,6 +64,9 @@ export const Route = createFileRoute("/_authenticated/admin/products/")({
 function ProductsPage() {
   const nav = useNavigate();
   const search = Route.useSearch();
+  const can = useCan();
+  const canManage = can("products.manage");
+  const canDelete = can("products.delete");
   const [items, setItems] = useState<Row[]>([]);
   const [brands, setBrands] = useState<Opt[]>([]);
   const [categories, setCategories] = useState<Opt[]>([]);
@@ -272,6 +276,7 @@ function ProductsPage() {
         description="Master catalog resellers create listings from."
         actions={
           <div className="flex flex-wrap items-center gap-2">
+          {canManage && (
           <button
             type="button"
             onClick={() => setInlineEdit((v) => !v)}
@@ -285,6 +290,8 @@ function ProductsPage() {
             {inlineEdit ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
             {inlineEdit ? "Inline edit: ON" : "Inline edit: OFF"}
           </button>
+          )}
+          {canManage && (
           <button
             type="button"
             onClick={() => setImportOpen(true)}
@@ -292,12 +299,15 @@ function ProductsPage() {
           >
             <CloudDownload className="h-4 w-4" /> Import from URL
           </button>
+          )}
+          {canManage && (
           <Link
             to="/admin/products/new"
             className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
           >
             <Plus className="h-4 w-4" /> New product
           </Link>
+          )}
           </div>
         }
       />
@@ -323,12 +333,14 @@ function ProductsPage() {
           title="No products match"
           description="Try changing filters or add a new product."
           action={
-            <Link
-              to="/admin/products/new"
-              className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
-            >
-              <Plus className="h-4 w-4" /> Add product
-            </Link>
+            canManage ? (
+              <Link
+                to="/admin/products/new"
+                className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+              >
+                <Plus className="h-4 w-4" /> Add product
+              </Link>
+            ) : undefined
           }
         />
       ) : (
@@ -337,6 +349,7 @@ function ProductsPage() {
             <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm">
               <span className="font-medium">{selected.size} selected</span>
               <div className="ml-auto flex flex-wrap gap-2">
+                {canManage && (
                 <button
                   disabled={bulkBusy}
                   onClick={() => bulkSetActive(true)}
@@ -344,6 +357,8 @@ function ProductsPage() {
                 >
                   <Eye className="h-3.5 w-3.5" /> Activate
                 </button>
+                )}
+                {canManage && (
                 <button
                   disabled={bulkBusy}
                   onClick={() => bulkSetActive(false)}
@@ -351,6 +366,8 @@ function ProductsPage() {
                 >
                   <EyeOff className="h-3.5 w-3.5" /> Hide
                 </button>
+                )}
+                {canDelete && (
                 <button
                   disabled={bulkBusy}
                   onClick={bulkDelete}
@@ -358,6 +375,7 @@ function ProductsPage() {
                 >
                   <Trash2 className="h-3.5 w-3.5" /> Delete
                 </button>
+                )}
                 <button
                   onClick={() => setSelected(new Set())}
                   className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
@@ -465,22 +483,22 @@ function ProductsPage() {
                       <div className="flex justify-center"><SupplierCell row={p} suppliers={suppliers} /></div>
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <PriceCell locked={!inlineEdit} row={p} field="buying_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, buying_price: v } : i)))} />
+                      <PriceCell locked={!inlineEdit || !canManage} row={p} field="buying_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, buying_price: v } : i)))} />
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <PriceCell locked={!inlineEdit} row={p} field="reseller_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, reseller_price: v } : i)))} />
+                      <PriceCell locked={!inlineEdit || !canManage} row={p} field="reseller_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, reseller_price: v } : i)))} />
                     </td>
                     <td className="px-3 py-3 text-center">
-                    <PriceCell locked={!inlineEdit} row={p} field="suggested_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)))} />
+                    <PriceCell locked={!inlineEdit || !canManage} row={p} field="suggested_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)))} />
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <PriceCell locked={!inlineEdit} row={p} field="packaging_cost" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, packaging_cost: v } : i)))} />
+                      <PriceCell locked={!inlineEdit || !canManage} row={p} field="packaging_cost" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, packaging_cost: v } : i)))} />
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <StockCell locked={!inlineEdit} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
+                      <StockCell locked={!inlineEdit || !canManage} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
                     </td>
                     <td className="px-3 py-3 text-center tabular-nums text-muted-foreground">
-                      <WeightCell locked={!inlineEdit} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, weight_grams: v } : i)))} />
+                      <WeightCell locked={!inlineEdit || !canManage} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, weight_grams: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
@@ -504,7 +522,7 @@ function ProductsPage() {
                             {p.approval_status}
                           </div>
                         )}
-                        {p.pending_changes && Object.keys(p.pending_changes).length > 0 && (
+                        {canManage && p.pending_changes && Object.keys(p.pending_changes).length > 0 && (
                           <button
                             type="button"
                             onClick={() => setReviewFor(p)}
@@ -518,13 +536,17 @@ function ProductsPage() {
                           <DropdownMenuItem onSelect={() => setDetailId(p.id)}>
                             <Eye className="mr-2 h-4 w-4" /> View Details
                           </DropdownMenuItem>
+                          {canManage && (
                           <DropdownMenuItem onSelect={() => nav({ to: "/admin/products/$id/edit", params: { id: p.id } })}>
                             <Pencil className="mr-2 h-4 w-4" /> Edit
                           </DropdownMenuItem>
+                          )}
+                          {canManage && (
                           <DropdownMenuItem onSelect={() => setAssignFor(p)}>
                             <Truck className="mr-2 h-4 w-4" /> {p.supplier_id ? "Change / remove supplier" : "Assign supplier"}
                           </DropdownMenuItem>
-                           {((p.approval_status ?? "approved") !== "approved" || p.pending_changes) && (
+                          )}
+                           {canManage && ((p.approval_status ?? "approved") !== "approved" || p.pending_changes) && (
                              <>
                                <DropdownMenuItem onSelect={() => setReviewFor(p)}>
                                  <Eye className="mr-2 h-4 w-4" /> Review changes
@@ -537,6 +559,7 @@ function ProductsPage() {
                               </DropdownMenuItem>
                             </>
                           )}
+                          {canManage && (
                           <DropdownMenuItem onSelect={() => toggle(p)}>
                             {p.is_active ? (
                               <>
@@ -548,6 +571,9 @@ function ProductsPage() {
                               </>
                             )}
                           </DropdownMenuItem>
+                          )}
+                          {canDelete && (
+                          <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
@@ -555,6 +581,8 @@ function ProductsPage() {
                           >
                             <Trash2 className="mr-2 h-4 w-4" /> Delete
                           </DropdownMenuItem>
+                          </>
+                          )}
                         </ActionMenu>
                       </div>
                     </td>

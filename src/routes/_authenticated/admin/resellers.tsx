@@ -64,6 +64,7 @@ import {
   resellerStatusLabel,
   type ResellerStatus,
 } from "@/lib/reseller-status";
+import { useCan } from "@/lib/use-auth";
 
 type Status = ResellerStatus;
 
@@ -162,6 +163,9 @@ function ResellersPage() {
   const [agentFilter, setAgentFilter] = useState("");
   const { settings: advanced } = useAdvancedSettings();
   const autoApprove = advanced.resellerAutoApprove;
+  const can = useCan();
+  const canManage = can("resellers.manage");
+  const canImpersonate = can("resellers.impersonate");
 
 
   async function load() {
@@ -533,57 +537,68 @@ function ResellersPage() {
                       <DropdownMenuContent align="end" className="w-56">
                         <DropdownMenuLabel>{r.business_name}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        {resellerStatusActions(r.status, autoApprove).map((a) => (
-                          <DropdownMenuItem
-                            key={a.status}
-                            onClick={() => setStatus(r, a.status)}
-                            className={a.tone === "danger" ? "text-destructive focus:text-destructive" : ""}
-                          >
-                            {a.status === "active" ? (
-                              <Play className="mr-2 h-4 w-4" />
-                            ) : a.status === "rejected" ? (
-                              <X className="mr-2 h-4 w-4" />
-                            ) : a.status === "suspended" ? (
-                              <ShieldOff className="mr-2 h-4 w-4" />
-                            ) : (
-                              <Check className="mr-2 h-4 w-4" />
-                            )}
-                            {a.label}
-                          </DropdownMenuItem>
-                        ))}
-                        <DropdownMenuSeparator />
-                        {!emailVerified && (
+                        {canManage &&
+                          resellerStatusActions(r.status, autoApprove).map((a) => (
+                            <DropdownMenuItem
+                              key={a.status}
+                              onClick={() => setStatus(r, a.status)}
+                              className={a.tone === "danger" ? "text-destructive focus:text-destructive" : ""}
+                            >
+                              {a.status === "active" ? (
+                                <Play className="mr-2 h-4 w-4" />
+                              ) : a.status === "rejected" ? (
+                                <X className="mr-2 h-4 w-4" />
+                              ) : a.status === "suspended" ? (
+                                <ShieldOff className="mr-2 h-4 w-4" />
+                              ) : (
+                                <Check className="mr-2 h-4 w-4" />
+                              )}
+                              {a.label}
+                            </DropdownMenuItem>
+                          ))}
+                        {canManage && <DropdownMenuSeparator />}
+                        {canManage && !emailVerified && (
                           <DropdownMenuItem onClick={() => confirmEmail(r)}>
                             <MailCheck className="mr-2 h-4 w-4" /> Confirm email
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => void setPhoneVerified(r, !vf.phoneVerified)}>
-                          {vf.phoneVerified ? (
-                            <>
-                              <SmartphoneNfc className="mr-2 h-4 w-4" /> Clear mobile verification
-                            </>
-                          ) : (
-                            <>
-                              <SmartphoneNfc className="mr-2 h-4 w-4" /> Mark mobile verified
-                            </>
-                          )}
-                        </DropdownMenuItem>
+                        {canManage && (
+                          <DropdownMenuItem onClick={() => void setPhoneVerified(r, !vf.phoneVerified)}>
+                            {vf.phoneVerified ? (
+                              <>
+                                <SmartphoneNfc className="mr-2 h-4 w-4" /> Clear mobile verification
+                              </>
+                            ) : (
+                              <>
+                                <SmartphoneNfc className="mr-2 h-4 w-4" /> Mark mobile verified
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setProfileFor(r)}>
                           <UserCircle className="mr-2 h-4 w-4" /> View profile
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEditing(r)}>
-                          <Pencil className="mr-2 h-4 w-4" /> Edit details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setDepositFor(r)}>
-                          <Wallet className="mr-2 h-4 w-4" /> Deposit & freeze
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setResetFor(r)}>
-                          <KeyRound className="mr-2 h-4 w-4" /> Reset password
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => void loginAsReseller(r)}>
-                          <LogIn className="mr-2 h-4 w-4" /> Login as reseller
-                        </DropdownMenuItem>
+                        {canManage && (
+                          <DropdownMenuItem onClick={() => setEditing(r)}>
+                            <Pencil className="mr-2 h-4 w-4" /> Edit details
+                          </DropdownMenuItem>
+                        )}
+                        {canManage && (
+                          <DropdownMenuItem onClick={() => setDepositFor(r)}>
+                            <Wallet className="mr-2 h-4 w-4" /> Deposit & freeze
+                          </DropdownMenuItem>
+                        )}
+                        {canManage && (
+                          <DropdownMenuItem onClick={() => setResetFor(r)}>
+                            <KeyRound className="mr-2 h-4 w-4" /> Reset password
+                          </DropdownMenuItem>
+                        )}
+                        {canImpersonate && (
+                          <DropdownMenuItem onClick={() => void loginAsReseller(r)}>
+                            <LogIn className="mr-2 h-4 w-4" /> Login as reseller
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => copyStoreLink(r)}>
                           <Copy className="mr-2 h-4 w-4" /> Copy store link
                         </DropdownMenuItem>
@@ -592,13 +607,17 @@ function ResellersPage() {
                             <ExternalLink className="mr-2 h-4 w-4" /> Visit storefront
                           </a>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => remove(r)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete reseller
-                        </DropdownMenuItem>
+                        {canManage && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => remove(r)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete reseller
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>

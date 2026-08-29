@@ -6,6 +6,7 @@ import { Plus, Loader2, Trash2, ChevronRight, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader, type UploadedImage } from "@/components/ImageUploader";
 import { confirmAction } from "@/lib/confirm";
+import { useCan } from "@/lib/use-auth";
 
 type EditCat = {
   id: string;
@@ -35,6 +36,8 @@ const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 function CatsPage() {
+  const can = useCan();
+  const canManage = can("categories.manage");
   const [items, setItems] = useState<Cat[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
@@ -153,6 +156,7 @@ function CatsPage() {
         title="Categories"
         description="Nested categories supported — pick a parent to create a subcategory."
       />
+      {canManage && (
       <form onSubmit={create} className="surface-card mb-6 flex flex-wrap items-end gap-3 p-4">
         <div className="flex-1 min-w-[200px]">
           <label className="mb-1 block text-xs font-medium">Name</label>
@@ -183,6 +187,7 @@ function CatsPage() {
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add
         </button>
       </form>
+      )}
 
       {!loading && items.length > 0 && (
         <div className="mb-3">
@@ -220,6 +225,7 @@ function CatsPage() {
               <div key={p.id}>
                 <CategoryRow
                   cat={p}
+                  canManage={canManage}
                   onEdit={() => openEdit(p)}
                   onToggleActive={() => toggle(p)}
                   onDelete={() => remove(p)}
@@ -234,6 +240,7 @@ function CatsPage() {
                         key={c.id}
                         cat={c}
                         indent
+                        canManage={canManage}
                         onEdit={() => openEdit(c)}
                         onToggleActive={() => toggle(c)}
                         onDelete={() => remove(c)}
@@ -248,7 +255,7 @@ function CatsPage() {
         </div>
       )}
 
-      {edit && (
+      {canManage && edit && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={() => setEdit(null)}>
           <form
             onSubmit={saveEdit}
@@ -310,7 +317,7 @@ function CatsPage() {
 }
 
 function CategoryRow({
-  cat, indent, onToggleActive, onDelete, onEdit, onToggleExpand, expanded, childCount,
+  cat, indent, onToggleActive, onDelete, onEdit, onToggleExpand, expanded, childCount, canManage,
 }: {
   cat: Cat;
   indent?: boolean;
@@ -320,6 +327,7 @@ function CategoryRow({
   onToggleExpand?: () => void;
   expanded?: boolean;
   childCount?: number;
+  canManage: boolean;
 }) {
   return (
     <div className={`flex items-center gap-3 p-4 ${indent ? "pl-12" : ""}`}>
@@ -345,18 +353,32 @@ function CategoryRow({
         </div>
         <div className="text-xs text-muted-foreground">/{cat.slug}</div>
       </div>
-      <button
-        onClick={onToggleActive}
-        title={cat.is_active ? "Click to hide" : "Click to activate"}
-        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
-          cat.is_active
-            ? "bg-primary text-primary-foreground shadow-sm hover:opacity-90"
-            : "border border-border bg-muted text-muted-foreground hover:bg-muted/70"
-        }`}
-      >
-        <span className={`h-1.5 w-1.5 rounded-full ${cat.is_active ? "bg-primary-foreground" : "bg-muted-foreground/60"}`} />
-        {cat.is_active ? "Active" : "Hidden"}
-      </button>
+      {canManage ? (
+        <button
+          onClick={onToggleActive}
+          title={cat.is_active ? "Click to hide" : "Click to activate"}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
+            cat.is_active
+              ? "bg-primary text-primary-foreground shadow-sm hover:opacity-90"
+              : "border border-border bg-muted text-muted-foreground hover:bg-muted/70"
+          }`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${cat.is_active ? "bg-primary-foreground" : "bg-muted-foreground/60"}`} />
+          {cat.is_active ? "Active" : "Hidden"}
+        </button>
+      ) : (
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+            cat.is_active
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "border border-border bg-muted text-muted-foreground"
+          }`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${cat.is_active ? "bg-primary-foreground" : "bg-muted-foreground/60"}`} />
+          {cat.is_active ? "Active" : "Hidden"}
+        </span>
+      )}
+      {canManage && (
       <button
         onClick={onEdit}
         title="Edit category"
@@ -364,12 +386,15 @@ function CategoryRow({
       >
         <Pencil className="h-4 w-4" />
       </button>
+      )}
+      {canManage && (
       <button
         onClick={onDelete}
         className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
       >
         <Trash2 className="h-4 w-4" />
       </button>
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { EXPENSE_CATEGORIES, type Expense } from "@/lib/business-report";
 import { DATE_PRESET_OPTIONS, resolveDateRange, DEFAULT_ORDER_FILTERS, type DatePreset } from "@/components/order-filters";
 import { Loader2, Plus, Pencil, Trash2, Download, Wallet, Receipt, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
+import { useCan } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/expenses")({
   component: ExpensesPage,
@@ -63,6 +64,8 @@ function ExpensesPage() {
   const [preset, setPreset] = useState<DatePreset>("lifetime");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
+  const can = useCan();
+  const canManage = can("expenses.manage");
 
   const load = async () => {
     setLoading(true);
@@ -159,13 +162,15 @@ function ExpensesPage() {
             >
               <Download className="mr-1.5 h-3.5 w-3.5" /> Export
             </button>
-            <button
-              type="button"
-              onClick={() => setForm(emptyForm())}
-              className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-            >
-              <Plus className="mr-1.5 h-3.5 w-3.5" /> Add expense
-            </button>
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => setForm(emptyForm())}
+                className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Add expense
+              </button>
+            )}
           </div>
         }
       />
@@ -256,35 +261,39 @@ function ExpensesPage() {
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{e.note || "—"}</td>
                   <td className="px-3 py-2 text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <button
-                        type="button"
-                        title="Edit"
-                        onClick={() =>
-                          setForm({
-                            id: e.id,
-                            title: e.title,
-                            category: e.category,
-                            amount: String(e.amount ?? ""),
-                            spent_on: e.spent_on,
-                            method: e.method ?? "",
-                            reference: e.reference ?? "",
-                            note: e.note ?? "",
-                          })
-                        }
-                        className="rounded-md border p-1.5 hover:bg-accent"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        title="Delete"
-                        onClick={() => setDel(e)}
-                        className="rounded-md border p-1.5 text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+                    {canManage ? (
+                      <div className="inline-flex items-center gap-1">
+                        <button
+                          type="button"
+                          title="Edit"
+                          onClick={() =>
+                            setForm({
+                              id: e.id,
+                              title: e.title,
+                              category: e.category,
+                              amount: String(e.amount ?? ""),
+                              spent_on: e.spent_on,
+                              method: e.method ?? "",
+                              reference: e.reference ?? "",
+                              note: e.note ?? "",
+                            })
+                          }
+                          className="rounded-md border p-1.5 hover:bg-accent"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          title="Delete"
+                          onClick={() => setDel(e)}
+                          className="rounded-md border p-1.5 text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </td>
                 </tr>
               ))}

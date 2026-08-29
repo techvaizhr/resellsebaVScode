@@ -11,6 +11,7 @@ import { Hint } from "@/components/Hint";
 import { AdminProductCalc } from "@/components/price-breakdown";
 import { areaLabel, deliverySettingsSummary, globalDelivery, resolveDelivery, resolvedCharge, type ProductDeliveryMode } from "@/lib/delivery";
 import { confirmAction } from "@/lib/confirm";
+import { useCan } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/products/$id/edit")({
   component: EditProduct,
@@ -38,6 +39,7 @@ function Field({
 function EditProduct() {
   const { id } = Route.useParams();
   const nav = useNavigate();
+  const can = useCan();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [name, setName] = useState("");
@@ -241,18 +243,30 @@ function EditProduct() {
       </div>
     );
 
+  if (!can("products.manage")) {
+    return (
+      <div className="grid place-items-center py-24">
+        <div className="surface-card max-w-md p-8 text-center text-sm text-muted-foreground">
+          You do not have permission to edit products.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader
         title="Edit product"
         description="Changes here also reflect in reseller listings."
         actions={
-          <button
-            onClick={remove}
-            className="inline-flex items-center gap-2 rounded-md border border-destructive/40 px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 className="h-4 w-4" /> Delete
-          </button>
+          can("products.delete") ? (
+            <button
+              onClick={remove}
+              className="inline-flex items-center gap-2 rounded-md border border-destructive/40 px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4" /> Delete
+            </button>
+          ) : undefined
         }
       />
       <form onSubmit={save} className="space-y-4">

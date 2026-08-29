@@ -21,6 +21,7 @@ import {
   Power,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useCan } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/agents")({
   component: AgentsPage,
@@ -46,6 +47,8 @@ function AgentsPage() {
   const [editing, setEditing] = useState<Agent | "new" | null>(null);
   const [assignFor, setAssignFor] = useState<Agent | null>(null);
   const [removing, setRemoving] = useState<Agent | null>(null);
+  const can = useCan();
+  const canManage = can("agents.manage");
 
   async function load() {
     setLoading(true);
@@ -96,12 +99,14 @@ function AgentsPage() {
         title="Commission Agents"
         description="Assign resellers to agents, set their sales target and let them follow up on business growth."
         actions={
-          <button
-            onClick={() => setEditing("new")}
-            className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold"
-          >
-            <Plus className="h-4 w-4" /> Add agent
-          </button>
+          canManage ? (
+            <button
+              onClick={() => setEditing("new")}
+              className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold"
+            >
+              <Plus className="h-4 w-4" /> Add agent
+            </button>
+          ) : undefined
         }
       />
 
@@ -172,34 +177,36 @@ function AgentsPage() {
 
               {a.notes && <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{a.notes}</p>}
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  onClick={() => setAssignFor(a)}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold hover:bg-muted"
-                >
-                  <Users className="h-3.5 w-3.5" /> Assign resellers
-                </button>
-                <button
-                  onClick={() => setEditing(a)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold hover:bg-muted"
-                >
-                  <Pencil className="h-3.5 w-3.5" /> Edit
-                </button>
-                <button
-                  onClick={() => toggleActive(a)}
-                  title={a.is_active ? "Deactivate" : "Activate"}
-                  className="inline-flex items-center justify-center rounded-md border px-2.5 py-2 hover:bg-muted"
-                >
-                  <Power className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => setRemoving(a)}
-                  title="Remove agent"
-                  className="inline-flex items-center justify-center rounded-md border border-destructive/40 px-2.5 py-2 text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
+              {canManage && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setAssignFor(a)}
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold hover:bg-muted"
+                  >
+                    <Users className="h-3.5 w-3.5" /> Assign resellers
+                  </button>
+                  <button
+                    onClick={() => setEditing(a)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold hover:bg-muted"
+                  >
+                    <Pencil className="h-3.5 w-3.5" /> Edit
+                  </button>
+                  <button
+                    onClick={() => toggleActive(a)}
+                    title={a.is_active ? "Deactivate" : "Activate"}
+                    className="inline-flex items-center justify-center rounded-md border px-2.5 py-2 hover:bg-muted"
+                  >
+                    <Power className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setRemoving(a)}
+                    title="Remove agent"
+                    className="inline-flex items-center justify-center rounded-md border border-destructive/40 px-2.5 py-2 text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

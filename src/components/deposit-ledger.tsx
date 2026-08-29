@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useCan } from "@/lib/use-auth";
 import { toast } from "sonner";
 import { Loader2, Pencil, Trash2, Search, X, Wallet } from "lucide-react";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
@@ -33,7 +34,10 @@ export function DepositLedger({
   onChanged?: () => void;
   compact?: boolean;
 }) {
+  const can = useCan();
+  const canManage = can("deposits.manage");
   const [rows, setRows] = useState<DepositLedgerRow[]>([]);
+
   const [names, setNames] = useState<Record<string, string>>({});
   const [resellers, setResellers] = useState<{ id: string; label: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,23 +166,30 @@ export function DepositLedger({
                 <td className="p-2 text-muted-foreground">{r.reference ?? "—"}</td>
                 <td className="p-2 text-muted-foreground">{r.note ?? "—"}</td>
                 <td className="whitespace-nowrap p-2 text-right">
-                  <button
-                    type="button"
-                    onClick={() => setEditRow(r)}
-                    className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                    aria-label="Edit entry"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeleteRow(r)}
-                    className="ml-1 rounded-md p-1 text-destructive hover:bg-destructive/10"
-                    aria-label="Delete entry"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  {canManage ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setEditRow(r)}
+                        className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        aria-label="Edit entry"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteRow(r)}
+                        className="ml-1 rounded-md p-1 text-destructive hover:bg-destructive/10"
+                        aria-label="Delete entry"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </td>
+
               </tr>
             ))}
             {loading && (

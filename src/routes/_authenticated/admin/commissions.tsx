@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, EmptyState } from "@/components/ui-kit";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useCan } from "@/lib/use-auth";
 
 type Row = {
   id: string;
@@ -25,6 +26,8 @@ export const Route = createFileRoute("/_authenticated/admin/commissions")({
 function CommissionsPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const can = useCan();
+  const canManage = can("commissions.manage");
 
   async function load() {
     setLoading(true);
@@ -70,10 +73,12 @@ function CommissionsPage() {
               <div>
                 {r.status === "paid" ? (
                   <span className="rounded-full bg-success/20 px-2 py-0.5 text-xs text-success">Paid</span>
-                ) : (
+                ) : canManage ? (
                   <button onClick={() => markPaid(r.id)} className="rounded-md bg-primary px-2 py-1 text-xs text-primary-foreground">
                     Mark paid
                   </button>
+                ) : (
+                  <span className="text-xs text-muted-foreground">—</span>
                 )}
               </div>
             </div>
