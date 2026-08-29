@@ -572,6 +572,15 @@ export type Prefill = {
   sku: string;
   description: string;
   images: UploadedImage[];
+  /** Duplicate flow carries the rest of the product too (SKU is never copied). */
+  brand_id?: string;
+  category_id?: string;
+  price?: string;
+  stock?: string;
+  weight?: string;
+  meta_title?: string;
+  meta_description?: string;
+  keywords?: string;
 };
 
 function ImportModal({
