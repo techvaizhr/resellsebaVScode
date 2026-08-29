@@ -207,14 +207,15 @@ export function ProductFormModal({
                 className={inputCls}
               />
             </Field>
-            <Field label="Weight (grams)" hint="Used for courier booking weight.">
+            <Field label="Weight (kg)" hint="Used for courier booking weight. You can enter decimals, e.g. 0.5 for 500 g.">
               <input
                 type="number"
                 min={0}
+                step={0.1}
                 value={v.weight}
                 onChange={(e) => set("weight", e.target.value)}
                 className={inputCls}
-                placeholder="e.g. 500"
+                placeholder="e.g. 0.5"
               />
             </Field>
           </div>

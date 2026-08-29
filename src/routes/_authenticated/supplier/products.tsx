@@ -293,10 +293,10 @@ function SupplierProductsPage_() {
                     </td>
                     <td className="px-3 py-3 tabular-nums text-muted-foreground">
                       <InlineNumber
-                        value={Number(p.weight_grams ?? 0)}
-                        suffix=" g"
+                        value={Number(p.weight_grams ?? 0) / 1000}
+                        suffix=" kg"
                         onSave={async (val) => {
-                          await supplierQuickUpdate(p.id, { weight: val });
+                          await supplierQuickUpdate(p.id, { weight: Math.round(val * 1000) });
                           toast.success("Weight updated");
                           await load();
                         }}
@@ -675,7 +675,7 @@ function ProductForm({
     category_id: v("category_id", product?.category_id ?? "") ?? "",
     price: String(v("supplier_price", product?.supplier_price ?? "")),
     stock: String(v("stock", product?.stock ?? 0)),
-    weight: (() => { const w = v<number | null>("weight_grams", product?.weight_grams ?? null); return w == null ? "" : String(w); })(),
+    weight: (() => { const w = v<number | null>("weight_grams", product?.weight_grams ?? null); return w == null ? "" : String(w / 1000); })(),
     meta_title: v("meta_title", product?.meta_title ?? "") ?? "",
     meta_description: v("meta_description", product?.meta_description ?? "") ?? "",
     keywords: v("keywords", product?.keywords ?? "") ?? "",
@@ -704,7 +704,7 @@ function ProductForm({
           category_id: values.category_id || null,
           supplier_price: Number(values.price),
           stock: Number(values.stock) || 0,
-          weight_grams: values.weight === "" ? null : Number(values.weight) || 0,
+          weight_grams: values.weight === "" ? null : Math.round(Number(values.weight) * 1000) || 0,
           meta_title: values.meta_title || null,
           meta_description: values.meta_description || null,
           keywords: values.keywords || null,
