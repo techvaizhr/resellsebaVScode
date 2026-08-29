@@ -115,29 +115,23 @@ export async function catalogProductSeo(slug: string): Promise<SeoPayload> {
   };
 }
 
-async function resellerByCode(code: string) {
-  const { data } = await supabase
-    .from("resellers")
-    .select("id, code, business_name, status")
-    .eq("code", code)
-    .maybeSingle();
-  return (data ?? null) as { id: string; code: string; business_name: string; status: string } | null;
-}
-
-async function storeSettings(resellerId: string) {
-  const { data } = await supabase
-    .from("reseller_settings")
-    .select("store_name, tagline, meta_description, og_image_url, logo_url, hero_image_url")
-    .eq("reseller_id", resellerId)
-    .maybeSingle();
-  return (data ?? null) as Record<string, any> | null;
+/**
+ * Storefront data comes from the `store_seo` database function: storefront
+ * tables are not readable by anonymous clients, and social crawlers are always
+ * anonymous.
+ */
+async function storeSeoRow(code: string, slug?: string) {
+  const { data } = await supabase.rpc("store_seo" as never, { _code: code, _slug: slug ?? null } as never);
+  const row = (data ?? null) as { store: Record<string, any> | null; product: Record<string, any> | null } | null;
+  return row;
 }
 
 /** Reseller storefront home. */
 export async function storeSeo(code: string): Promise<SeoPayload> {
   const origin = currentOrigin();
-  const r = await resellerByCode(code);
-  if (!r) {
+  const row = await storeSeoRow(code);
+  const s = row?.store ?? null;
+  if (!s) {
     return {
       title: "Store not found",
       description: "No active store exists for this address.",
@@ -147,14 +141,13 @@ export async function storeSeo(code: string): Promise<SeoPayload> {
       siteName: null,
     };
   }
-  const s = await storeSettings(r.id);
-  const name = s?.store_name || r.business_name;
+  const name = s.name as string;
   return {
-    title: s?.tagline ? `${name} — ${s.tagline}` : `${name} — Online Store`,
+    title: s.tagline ? `${name} — ${s.tagline}` : `${name} — Online Store`,
     description:
-      plain(s?.meta_description) || `Shop from ${name} — genuine products with cash on delivery across Bangladesh.`,
-    image: absolute(s?.og_image_url ?? s?.hero_image_url ?? s?.logo_url ?? null, origin),
-    url: origin ? `${origin}/s/${r.code}` : null,
+      plain(s.meta_description) || `Shop from ${name} — genuine products with cash on delivery across Bangladesh.`,
+    image: absolute(s.og_image_url ?? s.hero_image_url ?? s.logo_url ?? null, origin),
+    url: origin ? `${origin}/s/${s.code}` : null,
     type: "website",
     siteName: name,
   };
@@ -163,42 +156,31 @@ export async function storeSeo(code: string): Promise<SeoPayload> {
 /** Reseller storefront product page. */
 export async function storeProductSeo(code: string, slug: string): Promise<SeoPayload> {
   const origin = currentOrigin();
-  const r = await resellerByCode(code);
-  if (!r) return storeSeo(code);
-  const [s, listRes] = await Promise.all([
-    storeSettings(r.id),
-    supabase
-      .from("reseller_listings")
-      .select(
-        "custom_title, custom_description, meta_title, meta_description, selling_price, products!inner(name, slug, short_description, description, og_image_url, product_images(url, is_primary, sort_order))",
-      )
-      .eq("reseller_id", r.id)
-      .eq("is_active", true)
-      .eq("products.slug", slug)
-      .maybeSingle(),
-  ]);
+  const row = await storeSeoRow(code, slug);
+  const s = row?.store ?? null;
+  if (!s) return storeSeo(code);
 
-  const storeName = s?.store_name || r.business_name;
-  const l = listRes.data as Record<string, any> | null;
-  const product = l ? (Array.isArray(l.products) ? l.products[0] : l.products) : null;
-  if (!product) {
+  const storeName = s.name as string;
+  const p = row?.product ?? null;
+  if (!p) {
     const base = await storeSeo(code);
     return { ...base, url: origin ? `${origin}/s/${code}/p/${slug}` : base.url };
   }
 
-  const title = l?.custom_title || product.name;
-  const price = Number(l?.selling_price ?? 0);
+  const title = (p.custom_title || p.name) as string;
+  const price = Number(p.selling_price ?? 0);
   return {
-    title: l?.meta_title || `${title} — ${storeName}`,
+    title: p.meta_title || `${title} — ${storeName}`,
     description:
-      plain(l?.meta_description) ||
-      plain(l?.custom_description) ||
-      plain(product.short_description) ||
-      plain(product.description) ||
+      plain(p.meta_description) ||
+      plain(p.custom_description) ||
+      plain(p.short_description) ||
+      plain(p.description) ||
       `Order ${title}${price ? ` at ৳${price}` : ""} with cash on delivery across Bangladesh.`,
-    image: absolute(firstImage(product.product_images) ?? product.og_image_url ?? s?.og_image_url ?? null, origin),
-    url: origin ? `${origin}/s/${r.code}/p/${product.slug}` : null,
+    image: absolute(p.image ?? s.og_image_url ?? s.logo_url ?? null, origin),
+    url: origin ? `${origin}/s/${s.code}/p/${p.slug}` : null,
     type: "product",
     siteName: storeName,
   };
 }
+
