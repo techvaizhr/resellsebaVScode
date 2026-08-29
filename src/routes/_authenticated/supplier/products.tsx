@@ -156,7 +156,14 @@ function SupplierProductsPage_() {
   return (
     <div>
       <PageHeader
-        title="Products"
+        title={
+          <span className="flex items-center gap-2">
+            Products
+            <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-sm font-semibold text-primary">
+              {rows.length}
+            </span>
+          </span>
+        }
         description="Products you have submitted — they go live once approved by admin."
         actions={
           <div className="flex flex-wrap items-center gap-2">
