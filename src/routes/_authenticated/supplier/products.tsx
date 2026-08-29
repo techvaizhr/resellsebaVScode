@@ -216,12 +216,12 @@ function SupplierProductsPage_() {
             <table className="w-full text-sm">
               <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th className="min-w-[240px] px-3 py-3">Product</th>
-                  <th className="px-3 py-3">Supply price</th>
-                  <th className="px-3 py-3">Stock</th>
-                  <th className="px-3 py-3">Weight</th>
-                  <th className="px-3 py-3">Status</th>
-                  <th className="px-3 py-3">Submitted</th>
+                  <th className="min-w-[240px] px-3 py-3 text-left">Product</th>
+                  <th className="px-3 py-3 text-center">Supply price</th>
+                  <th className="px-3 py-3 text-center">Stock</th>
+                  <th className="px-3 py-3 text-center">Weight</th>
+                  <th className="px-3 py-3 text-center">Status</th>
+                  <th className="px-3 py-3 text-center">Submitted</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -261,27 +261,27 @@ function SupplierProductsPage_() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-3 tabular-nums">
-                      <InlineNumber
-                        value={Number(p.supplier_price)}
-                        prefix="৳"
-                        onSave={async (val) => {
-                          const res = await supplierQuickUpdate(p.id, { price: val });
-                          toast.success(
-                            res.price_pending
-                              ? "Price change sent for admin approval"
-                              : "Price updated — awaiting approval",
-                          );
-                          await load();
-                        }}
-                      />
-                      {typeof (p.pending_changes as any)?.supplier_price !== "undefined" && (
-                        <div className="mt-1 text-[10px] text-amber-600">
-                          Pending ৳{Number((p.pending_changes as any).supplier_price)}
-                        </div>
-                      )}
+                    <td className="px-3 py-3 text-center tabular-nums">
+                       <InlineNumber
+                         value={Number(p.supplier_price)}
+                         prefix="৳"
+                         onSave={async (val) => {
+                           const res = await supplierQuickUpdate(p.id, { price: val });
+                           toast.success(
+                             res.price_pending
+                               ? "Price change sent for admin approval"
+                               : "Price updated — awaiting approval",
+                           );
+                           await load();
+                         }}
+                       />
+                       {typeof (p.pending_changes as any)?.supplier_price !== "undefined" && (
+                         <div className="mt-1 text-[10px] text-amber-600">
+                           Pending ৳{Number((p.pending_changes as any).supplier_price)}
+                         </div>
+                       )}
                     </td>
-                    <td className="px-3 py-3 tabular-nums">
+                    <td className="px-3 py-3 text-center tabular-nums">
                       <InlineNumber
                         value={Number(p.stock)}
                         onSave={async (val) => {
@@ -291,7 +291,7 @@ function SupplierProductsPage_() {
                         }}
                       />
                     </td>
-                    <td className="px-3 py-3 tabular-nums text-muted-foreground">
+                    <td className="px-3 py-3 text-center tabular-nums text-muted-foreground">
                       <InlineNumber
                         value={Number(p.weight_grams ?? 0) / 1000}
                         suffix=" kg"
