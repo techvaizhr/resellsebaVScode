@@ -1,5 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { getStoreProductSeo } from "@/lib/seo.functions";
+import { seoLinks, seoMeta } from "@/lib/seo-meta";
+
 import { ChevronLeft, Minus, Plus, ShieldCheck, ShoppingBag, Truck, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { trackAddToCart, trackViewContent } from "@/lib/tracking";
