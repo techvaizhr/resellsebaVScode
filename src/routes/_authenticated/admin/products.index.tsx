@@ -387,15 +387,15 @@ function ProductsPage() {
                       )}
                     </button>
                   </th>
-                  <th className="min-w-[240px] px-3 py-3">Product</th>
-                  <th className="px-3 py-3">Supplier</th>
-                  <th className="px-3 py-3">Admin cost</th>
-                  <th className="px-3 py-3">Reseller</th>
-                  <th className="px-3 py-3">Suggested</th>
-                  <th className="px-3 py-3">Packaging</th>
-                  <th className="px-3 py-3">Stock</th>
-                  <th className="px-3 py-3">Weight</th>
-                  <th className="px-3 py-3">Status</th>
+                  <th className="min-w-[240px] px-3 py-3 text-left">Product</th>
+                  <th className="px-3 py-3 text-center">Supplier</th>
+                  <th className="px-3 py-3 text-center">Admin cost</th>
+                  <th className="px-3 py-3 text-center">Reseller</th>
+                  <th className="px-3 py-3 text-center">Suggested</th>
+                  <th className="px-3 py-3 text-center">Packaging</th>
+                  <th className="px-3 py-3 text-center">Stock</th>
+                  <th className="px-3 py-3 text-center">Weight</th>
+                  <th className="px-3 py-3 text-center">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -454,25 +454,25 @@ function ProductsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-3">
-                      <SupplierCell row={p} suppliers={suppliers} />
+                    <td className="px-3 py-3 text-center">
+                      <div className="flex justify-center"><SupplierCell row={p} suppliers={suppliers} /></div>
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-3 text-center">
                       <PriceCell locked={!inlineEdit} row={p} field="buying_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, buying_price: v } : i)))} />
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-3 text-center">
                       <PriceCell locked={!inlineEdit} row={p} field="reseller_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, reseller_price: v } : i)))} />
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-3 text-center">
                     <PriceCell locked={!inlineEdit} row={p} field="suggested_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)))} />
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-3 text-center">
                       <PriceCell locked={!inlineEdit} row={p} field="packaging_cost" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, packaging_cost: v } : i)))} />
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-3 text-center">
                       <StockCell locked={!inlineEdit} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
                     </td>
-                    <td className="px-3 py-3 tabular-nums text-muted-foreground">
+                    <td className="px-3 py-3 text-center tabular-nums text-muted-foreground">
                       <WeightCell locked={!inlineEdit} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, weight_grams: v } : i)))} />
                     </td>
                     <td className="px-3 py-3">
