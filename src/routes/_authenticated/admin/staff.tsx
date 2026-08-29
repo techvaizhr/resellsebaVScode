@@ -332,73 +332,89 @@ function StaffPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isPassModalOpen} onOpenChange={setIsPassModalOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-[400px]">
-          <form onSubmit={handlePassword}>
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="w-[95vw] sm:max-w-[425px]">
+          <form onSubmit={handleEditUser}>
             <DialogHeader>
-              <DialogTitle>Change Password</DialogTitle>
-              <DialogDescription>{selectedUser?.email}</DialogDescription>
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogDescription>
+                Update name, email, role and password. Leave password empty to keep the current one.
+              </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-2 py-4">
-              <Label htmlFor="newPassword">New Password</Label>
-              <div className="relative">
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="editName">Full Name</Label>
                 <Input
-                  id="newPassword"
-                  type={showNewPassword ? "text" : "password"}
-                  minLength={6}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="pr-10"
+                  id="editName"
+                  value={editData.fullName}
+                  onChange={(e) => setEditData({ ...editData, fullName: e.target.value })}
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword((v) => !v)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  aria-label={showNewPassword ? "Hide password" : "Show password"}
-                  tabIndex={-1}
-                >
-                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="editEmail">Email</Label>
+                <Input
+                  id="editEmail"
+                  type="email"
+                  value={editData.email}
+                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                  required
+                />
+              </div>
+              {selectedUser?.role !== "super_admin" && (
+                <div className="grid gap-2">
+                  <Label>Role</Label>
+                  <Select
+                    value={editData.role}
+                    onValueChange={(v) => setEditData({ ...editData, role: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customRoles.map((role) => (
+                        <SelectItem key={role.id} value={role.id}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="grid gap-2">
+                <Label htmlFor="editPassword">New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="editPassword"
+                    type={showNewPassword ? "text" : "password"}
+                    value={editData.password}
+                    onChange={(e) => setEditData({ ...editData, password: e.target.value })}
+                    placeholder="Leave blank to keep current"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    aria-label={showNewPassword ? "Hide password" : "Show password"}
+                    tabIndex={-1}
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {editData.password.length > 0 && editData.password.length < 6 && (
+                  <p className="text-xs text-destructive">Password must be at least 6 characters.</p>
+                )}
               </div>
             </div>
             <DialogFooter>
-              <button type="submit" disabled={isSubmitting} className="btn-brand w-full py-2.5 flex items-center justify-center gap-2">
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
-                Update Password
-              </button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isRoleModalOpen} onOpenChange={setIsRoleModalOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-[400px]">
-          <form onSubmit={handleRoleChange}>
-            <DialogHeader>
-              <DialogTitle>Change Role</DialogTitle>
-              <DialogDescription>{selectedUser?.email}</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-2 py-4">
-              <Label>Role</Label>
-              <Select value={newRole} onValueChange={setNewRole}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customRoles.map((role) => (
-                    <SelectItem key={role.id} value={role.id}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter>
-              <button type="submit" disabled={isSubmitting} className="btn-brand w-full py-2.5 flex items-center justify-center gap-2">
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
-                Save Role
+              <button
+                type="submit"
+                disabled={isSubmitting || (editData.password.length > 0 && editData.password.length < 6)}
+                className="btn-brand w-full py-2.5 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save changes
               </button>
             </DialogFooter>
           </form>
