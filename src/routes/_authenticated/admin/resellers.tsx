@@ -500,8 +500,59 @@ function ResellersPage() {
               <div key={r.id} className="surface-card p-3 shadow-sm transition hover:shadow-md sm:p-4">
                 <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
                   <ResellerAvatar url={r.avatar_url} name={r.business_name} size={40} />
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">{r.business_name}</div>
+                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                    <span className="font-medium">{r.business_name}</span>
+                    <StatusBadge status={r.status} />
+                    <VerifyBadges {...vf} />
+                    <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
+                      <IdCard className="h-3 w-3 text-primary" />
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">ID</span>
+                      <span className="font-mono text-[11px] font-bold tracking-wider text-primary">{r.code}</span>
+                      <button
+                        type="button"
+                        title="Copy reseller ID"
+                        onClick={() => {
+                          navigator.clipboard.writeText(r.code);
+                          toast.success("Reseller ID copied");
+                        }}
+                        className="text-muted-foreground transition hover:text-foreground"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </button>
+                    </span>
+                    {phone ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5">
+                        <Phone className="h-3 w-3 text-muted-foreground" />
+                        <span className="font-mono text-[11px] font-medium">{phone}</span>
+                        <button
+                          type="button"
+                          title="Copy phone"
+                          onClick={() => {
+                            navigator.clipboard.writeText(phone);
+                            toast.success("Phone copied");
+                          }}
+                          className="text-muted-foreground transition hover:text-foreground"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </button>
+                        <a href={`tel:${phone}`} title="Call" className="text-muted-foreground transition hover:text-primary">
+                          <PhoneCall className="h-3 w-3" />
+                        </a>
+                        <a
+                          href={`https://wa.me/${waPhone}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          title="WhatsApp"
+                          className="text-muted-foreground transition hover:text-success"
+                        >
+                          <MessageCircle className="h-3 w-3" />
+                        </a>
+                      </span>
+                    ) : (
+                      <span className="rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">
+                        no phone
+                      </span>
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     <Link
@@ -623,10 +674,6 @@ function ResellersPage() {
                   </div>
                 </div>
 
-                <div className="mt-2 flex flex-nowrap items-center gap-1.5">
-                  <StatusBadge status={r.status} />
-                  <VerifyBadges {...vf} />
-                </div>
                 {(r.deposit_required && Number(r.deposit_required_amount) > 0) || Number(r.frozen_amount) > 0 ? (
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     {r.deposit_required && Number(r.deposit_required_amount) > 0 && (
@@ -648,57 +695,6 @@ function ResellersPage() {
                     )}
                   </div>
                 ) : null}
-                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                  <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
-                    <IdCard className="h-3 w-3 text-primary" />
-                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">ID</span>
-                    <span className="font-mono text-[11px] font-bold tracking-wider text-primary">{r.code}</span>
-                    <button
-                      type="button"
-                      title="Copy reseller ID"
-                      onClick={() => {
-                        navigator.clipboard.writeText(r.code);
-                        toast.success("Reseller ID copied");
-                      }}
-                      className="text-muted-foreground transition hover:text-foreground"
-                    >
-                      <Copy className="h-3 w-3" />
-                    </button>
-                  </span>
-                  {phone ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5">
-                      <Phone className="h-3 w-3 text-muted-foreground" />
-                      <span className="font-mono text-[11px] font-medium">{phone}</span>
-                      <button
-                        type="button"
-                        title="Copy phone"
-                        onClick={() => {
-                          navigator.clipboard.writeText(phone);
-                          toast.success("Phone copied");
-                        }}
-                        className="text-muted-foreground transition hover:text-foreground"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </button>
-                      <a href={`tel:${phone}`} title="Call" className="text-muted-foreground transition hover:text-primary">
-                        <PhoneCall className="h-3 w-3" />
-                      </a>
-                      <a
-                        href={`https://wa.me/${waPhone}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        title="WhatsApp"
-                        className="text-muted-foreground transition hover:text-success"
-                      >
-                        <MessageCircle className="h-3 w-3" />
-                      </a>
-                    </span>
-                  ) : (
-                    <span className="rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">
-                      no phone
-                    </span>
-                  )}
-                </div>
 
                 <div className="mt-3 grid grid-cols-4 gap-2 lg:grid-cols-4 xl:grid-cols-8">
                   <Metric label="Orders" value={orderCounts[r.id] ?? 0} plain />
