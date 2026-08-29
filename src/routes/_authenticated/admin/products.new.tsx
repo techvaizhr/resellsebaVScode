@@ -17,11 +17,15 @@ import { CloudDownload } from "lucide-react";
 import { useCan } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/products/new")({
+  validateSearch: (s: Record<string, unknown>): { from?: string } => ({
+    from: typeof s.from === "string" ? s.from : undefined,
+  }),
   component: NewProduct,
 });
 
 function NewProduct() {
   const nav = useNavigate();
+  const { from } = Route.useSearch();
   const can = useCan();
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
