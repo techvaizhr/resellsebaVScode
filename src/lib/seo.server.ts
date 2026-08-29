@@ -42,10 +42,16 @@ export function plain(html: string | null | undefined, max = 155): string {
   const text = String(html ?? "")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
     .replace(/\s+/g, " ")
     .trim();
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }
+
 
 function firstImage(imgs: { url: string; is_primary: boolean | null; sort_order: number | null }[] | null) {
   const list = [...(imgs ?? [])].sort(
