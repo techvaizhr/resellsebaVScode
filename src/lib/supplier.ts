@@ -251,6 +251,7 @@ export type SupplierProduct = {
   category_id: string | null;
   supplier_price: number;
   stock: number;
+  weight_grams: number | null;
   is_active: boolean;
   approval_status: "approved" | "pending" | "rejected";
   approval_note: string | null;
@@ -273,6 +274,7 @@ export type SupplierProductPayload = {
   category_id?: string | null;
   supplier_price: number;
   stock: number;
+  weight_grams?: number | null;
   meta_title?: string | null;
   meta_description?: string | null;
   keywords?: string | null;
