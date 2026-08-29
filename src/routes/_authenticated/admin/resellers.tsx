@@ -501,7 +501,7 @@ function ResellersPage() {
                 <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
                   <ResellerAvatar url={r.avatar_url} name={r.business_name} size={40} />
                   <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                    <span className="font-medium">{r.business_name}</span>
+                    <span className="w-full font-medium sm:w-auto">{r.business_name}</span>
                     <StatusBadge status={r.status} />
                     <VerifyBadges {...vf} />
                     <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
