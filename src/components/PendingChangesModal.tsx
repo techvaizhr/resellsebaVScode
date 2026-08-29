@@ -100,7 +100,7 @@ export function PendingChangesModal({
   }
 
   return (
-    <AppModal open onClose={onClose} title="Review supplier changes" description={productName} size="lg">
+    <AppModal open onClose={onClose} title="Review supplier changes" subtitle={productName} size="lg">
       {!current ? (
         <div className="flex justify-center py-10">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
