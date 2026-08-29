@@ -36,6 +36,7 @@ export const emptyProductForm: ProductFormValues = {
   category_id: "",
   price: "",
   stock: "0",
+  weight: "",
   meta_title: "",
   meta_description: "",
   keywords: "",
