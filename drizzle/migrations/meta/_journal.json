@@ -64,6 +64,13 @@
       "when": 1788006561498,
       "tag": "0008_courier_booking_options_fn",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788007911603,
+      "tag": "0009_supplier_product_numeric_slug",
+      "breakpoints": true
     }
   ]
 }

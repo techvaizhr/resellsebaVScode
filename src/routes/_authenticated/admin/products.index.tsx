@@ -542,6 +542,11 @@ function ProductsPage() {
                           </DropdownMenuItem>
                           )}
                           {canManage && (
+                          <DropdownMenuItem onSelect={() => nav({ to: "/admin/products/new", search: { from: p.id } })}>
+                            <Copy className="mr-2 h-4 w-4" /> Duplicate
+                          </DropdownMenuItem>
+                          )}
+                          {canManage && (
                           <DropdownMenuItem onSelect={() => setAssignFor(p)}>
                             <Truck className="mr-2 h-4 w-4" /> {p.supplier_id ? "Change / remove supplier" : "Assign supplier"}
                           </DropdownMenuItem>

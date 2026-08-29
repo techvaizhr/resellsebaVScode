@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, Pencil, PackageSearch, Clock, CheckCircle2, CloudDownload, Eye } from "lucide-react";
+import { Loader2, Plus, Pencil, PackageSearch, Clock, CheckCircle2, CloudDownload, Eye, Copy } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchImportImage, importProductFromUrl } from "@/lib/product-import.functions";
 import { importImagesToStorage } from "@/lib/product-import";
@@ -345,6 +345,14 @@ function SupplierProductsPage_() {
                           >
                             <Pencil className="mr-2 h-4 w-4" /> Edit (needs approval)
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              setPrefill(duplicatePrefill(p));
+                              setEditing(null);
+                            }}
+                          >
+                            <Copy className="mr-2 h-4 w-4" /> Duplicate
+                          </DropdownMenuItem>
                         </ActionMenu>
                       </div>
                     </td>
@@ -567,11 +575,38 @@ function DetailField({ label, value }: { label: string; value: string }) {
 
 
 
+/** Copy every field of a product into a new-product draft — SKU is left blank. */
+function duplicatePrefill(p: SupplierProduct): Prefill {
+  return {
+    name: p.name,
+    sku: "",
+    description: p.description ?? "",
+    images: (p.images ?? []).map((i: any) => ({ url: i.url, path: i.path ?? "", bytes: i.bytes ?? 0 })),
+    brand_id: p.brand_id ?? "",
+    category_id: p.category_id ?? "",
+    price: String(p.supplier_price ?? ""),
+    stock: String(p.stock ?? 0),
+    weight: p.weight_grams == null ? "" : String(p.weight_grams / 1000),
+    meta_title: p.meta_title ?? "",
+    meta_description: p.meta_description ?? "",
+    keywords: p.keywords ?? "",
+  };
+}
+
 export type Prefill = {
   name: string;
   sku: string;
   description: string;
   images: UploadedImage[];
+  /** Duplicate flow carries the rest of the product too (SKU is never copied). */
+  brand_id?: string;
+  category_id?: string;
+  price?: string;
+  stock?: string;
+  weight?: string;
+  meta_title?: string;
+  meta_description?: string;
+  keywords?: string;
 };
 
 function ImportModal({
@@ -678,14 +713,16 @@ function ProductForm({
     name: prefill?.name || v("name", product?.name ?? ""),
     sku: prefill?.sku || (v("sku", product?.sku ?? "") ?? ""),
     description: prefill?.description || (v("description", product?.description ?? "") ?? ""),
-    brand_id: v("brand_id", product?.brand_id ?? "") ?? "",
-    category_id: v("category_id", product?.category_id ?? "") ?? "",
-    price: String(v("supplier_price", product?.supplier_price ?? "")),
-    stock: String(v("stock", product?.stock ?? 0)),
-    weight: (() => { const w = v<number | null>("weight_grams", product?.weight_grams ?? null); return w == null ? "" : String(w / 1000); })(),
-    meta_title: v("meta_title", product?.meta_title ?? "") ?? "",
-    meta_description: v("meta_description", product?.meta_description ?? "") ?? "",
-    keywords: v("keywords", product?.keywords ?? "") ?? "",
+    brand_id: prefill?.brand_id ?? (v("brand_id", product?.brand_id ?? "") ?? ""),
+    category_id: prefill?.category_id ?? (v("category_id", product?.category_id ?? "") ?? ""),
+    price: prefill?.price ?? String(v("supplier_price", product?.supplier_price ?? "")),
+    stock: prefill?.stock ?? String(v("stock", product?.stock ?? 0)),
+    weight:
+      prefill?.weight ??
+      (() => { const w = v<number | null>("weight_grams", product?.weight_grams ?? null); return w == null ? "" : String(w / 1000); })(),
+    meta_title: prefill?.meta_title ?? (v("meta_title", product?.meta_title ?? "") ?? ""),
+    meta_description: prefill?.meta_description ?? (v("meta_description", product?.meta_description ?? "") ?? ""),
+    keywords: prefill?.keywords ?? (v("keywords", product?.keywords ?? "") ?? ""),
     images: (prefill?.images ?? (draft.images as UploadedImage[] | undefined) ?? product?.images ?? []).map(
       (i: any) => ({ url: i.url, path: i.path ?? "", bytes: i.bytes ?? 0 }),
     ),
