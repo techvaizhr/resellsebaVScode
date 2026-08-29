@@ -575,6 +575,24 @@ function DetailField({ label, value }: { label: string; value: string }) {
 
 
 
+/** Copy every field of a product into a new-product draft — SKU is left blank. */
+function duplicatePrefill(p: SupplierProduct): Prefill {
+  return {
+    name: p.name,
+    sku: "",
+    description: p.description ?? "",
+    images: (p.images ?? []).map((i: any) => ({ url: i.url, path: i.path ?? "", bytes: i.bytes ?? 0 })),
+    brand_id: p.brand_id ?? "",
+    category_id: p.category_id ?? "",
+    price: String(p.supplier_price ?? ""),
+    stock: String(p.stock ?? 0),
+    weight: p.weight_grams == null ? "" : String(p.weight_grams / 1000),
+    meta_title: p.meta_title ?? "",
+    meta_description: p.meta_description ?? "",
+    keywords: p.keywords ?? "",
+  };
+}
+
 export type Prefill = {
   name: string;
   sku: string;
