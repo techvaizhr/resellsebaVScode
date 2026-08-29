@@ -57,3 +57,35 @@ export const updateAdminUserRole = createServerFn({ method: "POST" })
     await assignRole(context.supabase, data.userId, role, customRoleId);
     return { ok: true };
   });
+
+const updateAccountInput = z.object({
+  userId: z.string().uuid(),
+  email: z.string().email(),
+  fullName: z.string().min(2),
+  role: z.string().optional(),
+  password: z.string().min(6).max(72).optional(),
+});
+
+/** One-shot staff account edit: name, email, role and (optionally) a new password. */
+export const updateAdminUserAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => updateAccountInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertPermission(context.supabase, context.userId, "staff.manage");
+    const { assignRole, setPassword, splitRoleSelection, updateAccount } = await import(
+      "@/lib/auth-admin.server"
+    );
+
+    await updateAccount(context.supabase, data.userId, data.email, data.fullName);
+
+    if (data.role) {
+      const { role, customRoleId } = splitRoleSelection(data.role);
+      await assignRole(context.supabase, data.userId, role, customRoleId);
+    }
+
+    if (data.password) {
+      await setPassword(context.supabase, data.userId, data.password);
+    }
+
+    return { ok: true };
+  });
