@@ -43,6 +43,13 @@
       "when": 1787997767240,
       "tag": "0005_store_seo_function",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787998284706,
+      "tag": "0006_admin_delete_supplier",
+      "breakpoints": true
     }
   ]
 }

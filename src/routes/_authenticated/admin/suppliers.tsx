@@ -19,6 +19,7 @@ import {
   Receipt,
   PackageSearch,
   Wallet,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, EmptyState } from "@/components/ui-kit";
@@ -36,7 +37,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCan } from "@/lib/use-auth";
 import { PasswordResetModal } from "@/components/password-reset-modal";
 import { startImpersonation } from "@/lib/impersonation";
-import { impersonateSupplier, resetSupplierPassword } from "@/lib/supplier-access.functions";
+import { confirmAction } from "@/lib/confirm";
+import {
+  deleteSupplier,
+  impersonateSupplier,
+  resetSupplierPassword,
+} from "@/lib/supplier-access.functions";
 import {
   bdtNum,
   loadAdminSupplierOverview,
@@ -98,6 +104,7 @@ function AdminSuppliersPage() {
   const [resetFor, setResetFor] = useState<AdminSupplierRow | null>(null);
   const resetPasswordFn = useServerFn(resetSupplierPassword);
   const impersonateFn = useServerFn(impersonateSupplier);
+  const deleteFn = useServerFn(deleteSupplier);
   const can = useCan();
   const canManage = can("suppliers.manage");
 
@@ -170,6 +177,27 @@ function AdminSuppliersPage() {
       setResetFor(null);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to reset password");
+    }
+  }
+
+  async function removeSupplier(s: AdminSupplierRow) {
+    const ok = await confirmAction({
+      title: `Delete ${s.display_name}?`,
+      description:
+        "The supplier account and login will be permanently deleted. Order history and products stay, but lose the supplier link. This cannot be undone.",
+      confirmText: "Delete supplier",
+      variant: "danger",
+    });
+    if (!ok) return;
+    setBusyId(s.id);
+    try {
+      await deleteFn({ data: { supplierId: s.id } });
+      toast.success(`${s.display_name} deleted`);
+      void load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -325,6 +353,13 @@ function AdminSuppliersPage() {
                               <LogIn className="mr-2 h-4 w-4" /> Login as supplier
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => void removeSupplier(s)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete supplier
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}

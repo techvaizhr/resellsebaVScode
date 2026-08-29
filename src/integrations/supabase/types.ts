@@ -2828,6 +2828,7 @@ export type Database = {
         Returns: string
       }
       admin_dashboard: { Args: { _from?: string; _to?: string }; Returns: Json }
+      admin_delete_supplier: { Args: { _supplier_id: string }; Returns: string }
       admin_delete_user: { Args: { _user_id: string }; Returns: undefined }
       admin_handover_returns: {
         Args: { _ids: string[]; _undo?: boolean }

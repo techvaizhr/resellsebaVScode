@@ -20,6 +20,23 @@ export const resetSupplierPassword = createServerFn({ method: "POST" })
     return { ok: true, password };
   });
 
+/** Deletes a supplier account (row + auth user). Order/product history is kept. */
+export const deleteSupplier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ supplierId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAnyPermission(context.supabase, context.userId, PERMS);
+    const { data: userId, error } = await context.supabase.rpc("admin_delete_supplier", {
+      _supplier_id: data.supplierId,
+    });
+    if (error) throw new Error(error.message);
+    if (userId) {
+      const { deleteUser } = await import("@/lib/auth-admin.server");
+      await deleteUser(context.supabase, userId);
+    }
+    return { ok: true };
+  });
+
 /** Mints temporary credentials so an admin can enter the supplier panel. */
 export const impersonateSupplier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
