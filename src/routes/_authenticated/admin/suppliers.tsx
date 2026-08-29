@@ -36,7 +36,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCan } from "@/lib/use-auth";
 import { PasswordResetModal } from "@/components/password-reset-modal";
 import { startImpersonation } from "@/lib/impersonation";
-import { impersonateSupplier, resetSupplierPassword } from "@/lib/supplier-access.functions";
+import { confirmAction } from "@/lib/confirm";
+import {
+  deleteSupplier,
+  impersonateSupplier,
+  resetSupplierPassword,
+} from "@/lib/supplier-access.functions";
 import {
   bdtNum,
   loadAdminSupplierOverview,
@@ -98,6 +103,7 @@ function AdminSuppliersPage() {
   const [resetFor, setResetFor] = useState<AdminSupplierRow | null>(null);
   const resetPasswordFn = useServerFn(resetSupplierPassword);
   const impersonateFn = useServerFn(impersonateSupplier);
+  const deleteFn = useServerFn(deleteSupplier);
   const can = useCan();
   const canManage = can("suppliers.manage");
 
