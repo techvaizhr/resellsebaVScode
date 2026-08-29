@@ -26,6 +26,7 @@ type Cat = {
   slug: string;
   is_active: boolean;
   parent_id: string | null;
+  image_url: string | null;
 };
 
 export const Route = createFileRoute("/_authenticated/admin/categories")({
@@ -47,6 +48,7 @@ function CatsPage() {
   const [search, setSearch] = useState("");
   const [edit, setEdit] = useState<EditCat | null>(null);
   const [editImage, setEditImage] = useState<UploadedImage[]>([]);
+  const [newImage, setNewImage] = useState<UploadedImage[]>([]);
 
   async function openEdit(c: Cat) {
     const { data, error } = await supabase
@@ -87,7 +89,7 @@ function CatsPage() {
     setLoading(true);
     const { data } = await supabase
       .from("categories")
-      .select("id,name,slug,is_active,parent_id")
+      .select("id,name,slug,is_active,parent_id,image_url")
       .order("name");
     setItems(data ?? []);
     setLoading(false);
@@ -105,6 +107,7 @@ function CatsPage() {
       name,
       slug: slugify(name),
       parent_id: parent || null,
+      image_url: newImage[0]?.url ?? null,
     });
     setBusy(false);
     if (error) toast.error(error.message);
@@ -112,6 +115,7 @@ function CatsPage() {
       toast.success("Category added");
       setName("");
       setParent("");
+      setNewImage([]);
       if (parent) setExpanded((s) => new Set(s).add(parent));
       load();
     }
@@ -179,6 +183,18 @@ function CatsPage() {
               <option key={i.id} value={i.id}>{i.name}</option>
             ))}
           </select>
+        </div>
+        <div className="min-w-[160px]">
+          <label className="mb-1 block text-xs font-medium">Image</label>
+          <ImageUploader
+            bucket="branding"
+            folder="categories"
+            value={newImage}
+            onChange={setNewImage}
+            square
+            label="Add"
+            hint=""
+          />
         </div>
         <button
           disabled={busy}
@@ -301,7 +317,7 @@ function CatsPage() {
               <textarea rows={2} value={edit.meta_description ?? ""} onChange={(e) => setEdit({ ...edit, meta_description: e.target.value })} className={inp} />
             </Field>
             <Field label="Image">
-              <ImageUploader bucket="branding" folder="categories" value={editImage} onChange={setEditImage} />
+              <ImageUploader bucket="branding" folder="categories" value={editImage} onChange={setEditImage} square />
             </Field>
             <div className="flex justify-end gap-2 pt-1">
               <button type="button" onClick={() => setEdit(null)} className="rounded-md border px-4 py-2 text-sm">Cancel</button>
@@ -342,6 +358,9 @@ function CategoryRow({
       ) : (
         <span className="w-6" />
       )}
+      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-muted">
+        {cat.image_url && <img src={cat.image_url} className="h-full w-full object-cover" alt="" />}
+      </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 font-medium">
           {cat.name}

@@ -174,7 +174,7 @@ function BrandsPage() {
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium">Logo</label>
-            <ImageUploader bucket="branding" folder="brands" value={logo} onChange={setLogo} />
+            <ImageUploader bucket="branding" folder="brands" value={logo} onChange={setLogo} square />
           </div>
           <div className="flex gap-2">
             <button
@@ -314,7 +314,7 @@ function BrandsPage() {
               <textarea rows={2} value={edit.meta_description ?? ""} onChange={(e) => setEdit({ ...edit, meta_description: e.target.value })} className={inp} />
             </Field>
             <Field label="Logo">
-              <ImageUploader bucket="branding" folder="brands" value={editLogo} onChange={setEditLogo} />
+              <ImageUploader bucket="branding" folder="brands" value={editLogo} onChange={setEditLogo} square />
             </Field>
             <div className="flex justify-end gap-2 pt-1">
               <button type="button" onClick={() => setEdit(null)} className="rounded-md border px-4 py-2 text-sm">Cancel</button>
