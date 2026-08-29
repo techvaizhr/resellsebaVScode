@@ -825,7 +825,7 @@ function WeightCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =
 
   if (locked) {
     return (
-      <span className="px-2 py-0.5 text-xs" title="Turn on Inline edit to change weight">
+      <span className="whitespace-nowrap px-2 py-0.5 text-xs" title="Turn on Inline edit to change weight">
         {current ? `${currentKg} kg` : "—"}
       </span>
     );
@@ -838,7 +838,7 @@ function WeightCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =
           setVal(String(currentKg));
           setEditing(true);
         }}
-        className="rounded-md border border-dashed px-2 py-0.5 text-xs hover:border-primary hover:text-primary"
+        className="whitespace-nowrap rounded-md border border-dashed px-2 py-0.5 text-xs hover:border-primary hover:text-primary"
         title="Click to edit weight (kg)"
       >
         {current ? `${currentKg} kg` : "—"}
