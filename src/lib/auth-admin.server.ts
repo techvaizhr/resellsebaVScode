@@ -54,6 +54,21 @@ export async function setPassword(supabase: any, userId: string, password: strin
   if (error) fail(error);
 }
 
+/** Updates the account's login email and display name. */
+export async function updateAccount(
+  supabase: any,
+  userId: string,
+  email: string,
+  fullName: string,
+) {
+  const { error } = await supabase.rpc("admin_update_staff_account", {
+    _user_id: userId,
+    _email: email,
+    _full_name: fullName,
+  });
+  if (error) fail(error);
+}
+
 export async function assignRole(
   supabase: any,
   userId: string,
