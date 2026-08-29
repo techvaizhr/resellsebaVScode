@@ -186,6 +186,7 @@ function AdminSuppliersPage() {
       description:
         "The supplier account and login will be permanently deleted. Order history and products stay, but lose the supplier link. This cannot be undone.",
       confirmText: "Delete supplier",
+      variant: "danger",
     });
     if (!ok) return;
     setBusyId(s.id);
