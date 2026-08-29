@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBrandingTheme } from "@/lib/branding";
 import { usePlatformBranding } from "@/lib/platform-branding";
 import { GlobalConfirmHost } from "@/lib/confirm";
+import { registerPwa } from "@/lib/pwa-register";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -129,6 +130,10 @@ function RootComponent() {
   const router = useRouter();
   const brand = usePlatformBranding();
 
+
+  useEffect(() => {
+    registerPwa();
+  }, []);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
