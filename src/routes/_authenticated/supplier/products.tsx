@@ -345,6 +345,14 @@ function SupplierProductsPage_() {
                           >
                             <Pencil className="mr-2 h-4 w-4" /> Edit (needs approval)
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              setPrefill(duplicatePrefill(p));
+                              setEditing(null);
+                            }}
+                          >
+                            <Copy className="mr-2 h-4 w-4" /> Duplicate
+                          </DropdownMenuItem>
                         </ActionMenu>
                       </div>
                     </td>
