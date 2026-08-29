@@ -283,7 +283,7 @@ function AdminSuppliersPage() {
                 <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
                   <ResellerAvatar url={null} name={s.display_name} size={40} />
                   <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                    <span className="font-medium">{s.display_name}</span>
+                    <span className="w-full font-medium sm:w-auto">{s.display_name}</span>
                     <span
                       className={
                         "rounded-full px-2 py-0.5 text-[10px] font-medium capitalize " +
