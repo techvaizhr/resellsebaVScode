@@ -523,6 +523,7 @@ function InlineNumber({
         {busy && <Loader2 className="h-3 w-3 animate-spin" />}
         {prefix}
         {value}
+        {suffix}
         <Pencil className="h-3 w-3 text-muted-foreground" />
       </button>
     );
