@@ -664,7 +664,7 @@ function ProductForm({
     category_id: v("category_id", product?.category_id ?? "") ?? "",
     price: String(v("supplier_price", product?.supplier_price ?? "")),
     stock: String(v("stock", product?.stock ?? 0)),
-    weight: (() => { const w = v("weight_grams", product?.weight_grams ?? null); return w == null || w === "" ? "" : String(w); })(),
+    weight: (() => { const w = v<number | null>("weight_grams", product?.weight_grams ?? null); return w == null ? "" : String(w); })(),
     meta_title: v("meta_title", product?.meta_title ?? "") ?? "",
     meta_description: v("meta_description", product?.meta_description ?? "") ?? "",
     keywords: v("keywords", product?.keywords ?? "") ?? "",
