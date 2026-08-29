@@ -8,6 +8,8 @@ import { ProductCodeChip } from "@/components/product-code";
 import { bdt } from "@/lib/finance-report";
 import { Pagination, usePaginated } from "@/components/data-list";
 import { Boxes, Layers, Loader2, Search, Sparkles, Tag } from "lucide-react";
+import { getSiteSeo } from "@/lib/seo.functions";
+import { seoLinks, seoMeta } from "@/lib/seo-meta";
 
 type Search = { category?: string; brand?: string; q?: string; page?: number };
 
@@ -18,21 +20,34 @@ export const Route = createFileRoute("/catalog/")({
     q: typeof s.q === "string" && s.q ? s.q : undefined,
     page: typeof s.page === "number" && s.page > 1 ? s.page : undefined,
   }),
-  head: () => ({
-    meta: [
-      { title: "Master Catalog — All products in one place" },
-      {
-        name: "description",
-        content: "Complete product catalog by category — with images, descriptions, and resell prices.",
-      },
-      { property: "og:title", content: "Master Catalog — All products in one place" },
-      { property: "og:description", content: "Complete product catalog by category, with images and resell prices." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  loader: () => getSiteSeo({ data: { path: "/catalog" } }),
+  head: ({ loaderData }) => {
+    const site = loaderData?.siteName ?? "Master Catalog";
+    return {
+      meta: seoMeta(
+        loaderData
+          ? {
+              ...loaderData,
+              title: `Master Catalog — ${site}`,
+              description:
+                "Complete product catalog by category — with images, descriptions, and resell prices.",
+            }
+          : null,
+        {
+          title: "Master Catalog — All products in one place",
+          description: "Complete product catalog by category — with images, descriptions, and resell prices.",
+          image: null,
+          url: null,
+          type: "website",
+          siteName: null,
+        },
+      ),
+      links: seoLinks(loaderData),
+    };
+  },
   component: CatalogIndex,
 });
+
 
 type Cat = { id: string; name: string; slug: string; image_url: string | null; count: number };
 type Prod = {

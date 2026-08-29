@@ -3181,6 +3181,7 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       store_bootstrap: { Args: { _code: string }; Returns: Json }
+      store_seo: { Args: { _code: string; _slug?: string }; Returns: Json }
       store_visit_access: { Args: { _reseller_id: string }; Returns: boolean }
       store_visit_daily: {
         Args: { _from: string; _reseller_id: string; _to: string }

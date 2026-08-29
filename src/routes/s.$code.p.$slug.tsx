@@ -1,5 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { getStoreProductSeo } from "@/lib/seo.functions";
+import { seoLinks, seoMeta } from "@/lib/seo-meta";
+
 import { ChevronLeft, Minus, Plus, ShieldCheck, ShoppingBag, Truck, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { trackAddToCart, trackViewContent } from "@/lib/tracking";
@@ -28,20 +31,23 @@ import {
 
 export const Route = createFileRoute("/s/$code/p/$slug")({
   component: ProductPage,
-  head: ({ params }) => {
+  loader: ({ params }) => getStoreProductSeo({ data: { code: params.code, slug: params.slug } }),
+  head: ({ params, loaderData }) => {
     const label = params.slug.replace(/-/g, " ");
     return {
-      meta: [
-        { title: `${label} — Buy online, cash on delivery` },
-        { name: "description", content: `Order ${label} online with cash on delivery across Bangladesh.` },
-        { property: "og:title", content: label },
-        { property: "og:description", content: `Order ${label} with cash on delivery.` },
-        { property: "og:type", content: "product" },
-        { name: "twitter:card", content: "summary_large_image" },
-      ],
+      meta: seoMeta(loaderData, {
+        title: `${label} — Buy online, cash on delivery`,
+        description: `Order ${label} online with cash on delivery across Bangladesh.`,
+        image: null,
+        url: null,
+        type: "product",
+        siteName: null,
+      }),
+      links: seoLinks(loaderData),
     };
   },
 });
+
 
 function ProductPage() {
   const { code, slug } = Route.useParams();
