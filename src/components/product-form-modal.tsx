@@ -21,6 +21,7 @@ export type ProductFormValues = {
   category_id: string;
   price: string;
   stock: string;
+  weight: string;
   meta_title: string;
   meta_description: string;
   keywords: string;
