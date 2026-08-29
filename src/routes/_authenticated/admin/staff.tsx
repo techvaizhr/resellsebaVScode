@@ -62,20 +62,17 @@ function StaffPage() {
   const [customRoles, setCustomRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isPassModalOpen, setIsPassModalOpen] = useState(false);
-  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<StaffUser | null>(null);
-  const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState("");
+  const [editData, setEditData] = useState({ fullName: "", email: "", role: "", password: "" });
   const [formData, setFormData] = useState({ email: "", password: "", fullName: "", role: "" });
   const [showAddPassword, setShowAddPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createUserMutation = useServerFn(createAdminUser);
-  const passwordMutation = useServerFn(updateAdminUserPassword);
-  const roleMutation = useServerFn(updateAdminUserRole);
+  const updateAccountMutation = useServerFn(updateAdminUserAccount);
   const deleteUserMutation = useServerFn(deleteAuthUser);
 
   const { user: currentUser, roles: currentRoles } = useAuth();
