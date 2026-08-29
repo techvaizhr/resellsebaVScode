@@ -26,22 +26,22 @@ import { CountUp } from "@/components/count-up";
 import { PublicHeader, Brand } from "@/components/public-header";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Reseller Platform — Nijer online store, zero investment" },
-      {
-        name: "description",
-        content:
-          "Bangladesh er first-class reseller platform. Product listing, courier, payment, marketing — ekta panel-e sob.",
-      },
-      { property: "og:title", content: "Reseller Platform — Nijer online store, zero investment" },
-      { property: "og:description", content: "Bangladesh er first-class reseller platform. Product listing, courier, payment, marketing — ekta panel-e sob." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
+  loader: () => getSiteSeo({ data: { path: "/" } }),
+  head: ({ loaderData }) => ({
+    meta: seoMeta(loaderData, {
+      title: "Reseller Platform — Your own online store, zero investment",
+      description:
+        "Product listing, courier, payment and marketing — everything in one panel for resellers in Bangladesh.",
+      image: null,
+      url: null,
+      type: "website",
+      siteName: null,
+    }),
+    links: seoLinks(loaderData),
   }),
   component: RootResolver,
 });
+
 
 const ICON_MAP = APP_ICONS;
 
