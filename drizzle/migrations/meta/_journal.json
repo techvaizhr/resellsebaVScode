@@ -50,6 +50,13 @@
       "when": 1787998284706,
       "tag": "0006_admin_delete_supplier",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787999885116,
+      "tag": "0007_reseller_dashboard_stock",
+      "breakpoints": true
     }
   ]
 }
