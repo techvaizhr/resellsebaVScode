@@ -5,7 +5,12 @@ import { Shield, UserPlus, Key, Trash2, MoreHorizontal, Loader2, Mail, Plus, Che
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/use-auth";
-import { createAdminUser, updateAdminUserPassword, updateAdminUserRole } from "@/lib/user-management.functions";
+import {
+  createAdminUser,
+  updateAdminUserAccount,
+  updateAdminUserPassword,
+  updateAdminUserRole,
+} from "@/lib/user-management.functions";
 import { deleteAuthUser, listStaffUsers, type StaffUser } from "@/lib/admin-users.functions";
 import { getRoles, getPermissions, saveRole, deleteRole } from "@/lib/roles-permissions.functions";
 import {
