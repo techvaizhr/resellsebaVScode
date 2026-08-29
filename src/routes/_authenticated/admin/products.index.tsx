@@ -18,6 +18,7 @@ import { confirmAction } from "@/lib/confirm";
 import { Truck } from "lucide-react";
 import { APPROVAL_TONE, reviewProduct, setProductSupplier } from "@/lib/supplier";
 import { AppModal } from "@/components/ui-kit/AppModal";
+import { PendingChangesModal } from "@/components/PendingChangesModal";
 
 type Row = {
   id: string;
