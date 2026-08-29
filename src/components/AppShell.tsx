@@ -267,8 +267,9 @@ export function AppShell({
                     alt={brand.name}
                     className="md:hidden h-7 w-auto max-w-[140px] object-contain"
                   />
-                ) : null}
-                <span className="truncate text-base font-bold tracking-tight sm:text-lg md:hidden">{title}</span>
+                ) : (
+                  <span className="truncate text-base font-bold tracking-tight sm:text-lg md:hidden">{title}</span>
+                )}
               </Link>
             </div>
             <div className="flex items-center gap-2">
