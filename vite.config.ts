@@ -25,6 +25,8 @@ export default defineConfig({
         injectRegister: null,
         registerType: "autoUpdate",
         filename: "sw.js",
+        // nitro serves dist/client as the public dir — the SW must live there.
+        outDir: "dist/client",
         // Manifest is served dynamically at /api/public/manifest (site name + favicon from admin settings).
         manifest: false,
         devOptions: { enabled: false },
