@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBrandingTheme } from "@/lib/branding";
 import { usePlatformBranding } from "@/lib/platform-branding";
 import { GlobalConfirmHost } from "@/lib/confirm";
+import { registerPwa } from "@/lib/pwa-register";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
