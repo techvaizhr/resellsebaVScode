@@ -76,6 +76,51 @@ function NewProduct() {
     toast.message(`${d.source} theke data prefilled — check kore save korun.`);
   }, []);
 
+  /** Duplicate: copy every field of the source product except SKU / slug. */
+  useEffect(() => {
+    if (!from) return;
+    let cancelled = false;
+    (async () => {
+      const { data: p } = await supabase
+        .from("products")
+        .select(
+          "name, description, brand_id, category_id, supplier_id, buying_price, reseller_price, packaging_cost, delivery_mode, delivery_flat, delivery_inside, delivery_outside, delivery_sub, suggested_price, stock, weight_grams, meta_title, meta_description, keywords, product_images(url, is_primary, sort_order)",
+        )
+        .eq("id", from)
+        .maybeSingle();
+      if (!p || cancelled) return;
+      const row = p as any;
+      setName(row.name ?? "");
+      setSku("");
+      setDescription(row.description ?? "");
+      setBrandId(row.brand_id ?? "");
+      setCategoryId(row.category_id ?? "");
+      setSupplierId(row.supplier_id ?? "");
+      setBuying(String(row.buying_price ?? ""));
+      setResellerPrice(String(row.reseller_price ?? ""));
+      setPackaging(String(row.packaging_cost ?? 0));
+      setDeliveryMode((row.delivery_mode ?? "global") as ProductDeliveryMode);
+      setDeliveryFlat(String(row.delivery_flat ?? 0));
+      setDeliveryIn(String(row.delivery_inside ?? 0));
+      setDeliveryOut(String(row.delivery_outside ?? 0));
+      setDeliverySub(String(row.delivery_sub ?? 0));
+      setSuggested(String(row.suggested_price ?? ""));
+      setStock(String(row.stock ?? 0));
+      setWeight(row.weight_grams == null ? "" : String(row.weight_grams / 1000));
+      setMetaTitle(row.meta_title ?? "");
+      setMetaDesc(row.meta_description ?? "");
+      setKeywords(row.keywords ?? "");
+      const imgs = [...((row.product_images ?? []) as any[])].sort(
+        (a, b) => Number(!!b.is_primary) - Number(!!a.is_primary) || (a.sort_order ?? 0) - (b.sort_order ?? 0),
+      );
+      setImages(imgs.map((i) => ({ url: i.url, path: "", bytes: 0 })));
+      toast.message("Duplicated — a new SKU and link will be generated on save.");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [from]);
+
   useEffect(() => {
     supabase.from("brands").select("id,name").order("name").then(({ data }) => setBrands(data ?? []));
     supabase.from("categories").select("id,name").order("name").then(({ data }) => setCats(data ?? []));
