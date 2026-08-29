@@ -24,6 +24,9 @@ import {
 
 import { CountUp } from "@/components/count-up";
 import { PublicHeader, Brand } from "@/components/public-header";
+import { getSiteSeo } from "@/lib/seo.functions";
+import { seoLinks, seoMeta } from "@/lib/seo-meta";
+
 
 export const Route = createFileRoute("/")({
   loader: () => getSiteSeo({ data: { path: "/" } }),
