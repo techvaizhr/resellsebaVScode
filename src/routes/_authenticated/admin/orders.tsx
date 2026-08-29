@@ -136,6 +136,18 @@ function AdminOrdersPage() {
   const canDelete = can("orders.delete");
   const canStatus = can("orders.status", "orders.edit");
   const canShip = can("orders.ship", "couriers.manage");
+  const canSettle = can("orders.settle");
+  const canBulkAny = canStatus || canShip || canDelete;
+  const canOpenStatusFor = (o: OrderRow) => (o.status === "pending_partial" ? canSettle : canStatus);
+  const openStatusOrSettle = (o: OrderRow) => {
+    if (o.status === "pending_partial") {
+      if (!canSettle) return;
+      setSettleModal({ orderId: o.id, status: "partial_full", pickKind: true });
+    } else {
+      if (!canStatus) return;
+      setStatusModal({ open: true, orderId: o.id, currentStatus: o.status });
+    }
+  };
   const { tab: tabParam, reseller: resellerParam, q: qParam } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [orders, setOrders] = useState<OrderRow[]>([]);
@@ -653,7 +665,7 @@ function AdminOrdersPage() {
           </div>
         )}
 
-        {marked.length > 0 && (
+        {canBulkAny && marked.length > 0 && (
           <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
             <span className="mr-2 text-sm font-medium">{marked.length} marked</span>
             <button
@@ -693,12 +705,14 @@ function AdminOrdersPage() {
                 </button>
               );
             })()}
+            {canShip && (
             <button
               onClick={() => printShippingLabels(marked)}
               className="inline-flex h-9 items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 text-xs font-medium text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
             >
               <Printer className="h-3.5 w-3.5" /> Print Labels
             </button>
+            )}
             {canShip && (
             <button
               onClick={() => setBookingModal({ open: true, orderIds: marked })}
@@ -740,12 +754,14 @@ function AdminOrdersPage() {
           <div className="space-y-3">
             <div className="hidden grid-cols-[30px_minmax(66px,0.6fr)_minmax(110px,0.9fr)_minmax(110px,0.9fr)_minmax(110px,1fr)_96px_104px_124px_minmax(112px,0.9fr)] items-start gap-2 rounded-lg border bg-muted/40 px-2 py-2.5 text-xs font-medium text-muted-foreground lg:grid">
                <div className="flex justify-center">
+                 {canBulkAny && (
                  <input
                    type="checkbox"
                    className="h-4 w-4 accent-[hsl(var(--primary))]"
                    checked={marked.length > 0 && marked.length === paged.length}
                    onChange={(e) => setMarked(e.target.checked ? paged.map(x => x.id) : [])}
                  />
+                 )}
                </div>
                <div className="text-center">Order</div> <div className="text-center">Reseller</div> <div className="text-center">Products</div> <div className="text-center">Customer</div> <div className="text-center">Reseller total</div> <div className="text-center">Admin total</div> <div className="text-center">Status</div> <div className="text-center">Last update</div>
             </div>
@@ -762,27 +778,25 @@ function AdminOrdersPage() {
                 <div className="space-y-2.5 p-3 lg:hidden">
                   {/* Header: checkbox + order + status + actions + chevron */}
                   <div className="flex items-start gap-2">
+                    {canBulkAny && (
                     <input
                       type="checkbox"
                       className="mt-1 h-4 w-4 shrink-0 accent-[hsl(var(--primary))]"
                       checked={marked.includes(o.id)}
                       onChange={(e) => setMarked(prev => e.target.checked ? [...prev, o.id] : prev.filter(x => x !== o.id))}
                     />
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-bold tracking-tight">#{o.order_number}</div>
                       <div className="text-[10px] uppercase tracking-wide text-muted-foreground tabular-nums">
                         {new Date(o.created_at).toLocaleString([], { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </div>
                     </div>
-                    {canStatus ? (
+                    {canOpenStatusFor(o) ? (
                       <button
                         type="button"
                         title="Change status"
-                        onClick={() =>
-                          o.status === "pending_partial"
-                            ? setSettleModal({ orderId: o.id, status: "partial_full", pickKind: true })
-                            : setStatusModal({ open: true, orderId: o.id, currentStatus: o.status })
-                        }
+                        onClick={() => openStatusOrSettle(o)}
                         className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] transition-shadow hover:ring-2 hover:ring-primary/30 ${orderStatusTone(o.status)}`}
                       >
                         {orderStatusLabel(o.status)}
@@ -805,14 +819,8 @@ function AdminOrdersPage() {
                             <Pencil className="mr-2 h-4 w-4" /> Edit Order
                           </DropdownMenuItem>
                         )}
-                        {canStatus && (
-                          <DropdownMenuItem
-                            onClick={() =>
-                              o.status === "pending_partial"
-                                ? setSettleModal({ orderId: o.id, status: "partial_full", pickKind: true })
-                                : setStatusModal({ open: true, orderId: o.id, currentStatus: o.status })
-                            }
-                          >
+                        {canOpenStatusFor(o) && (
+                          <DropdownMenuItem onClick={() => openStatusOrSettle(o)}>
                             <Settings2 className="mr-2 h-4 w-4" /> Change Status
                           </DropdownMenuItem>
                         )}
@@ -958,12 +966,14 @@ function AdminOrdersPage() {
                 <div className="hidden grid-cols-[30px_minmax(66px,0.6fr)_minmax(110px,0.9fr)_minmax(110px,0.9fr)_minmax(110px,1fr)_96px_104px_124px_minmax(112px,0.9fr)] items-start gap-2 border-b bg-muted/30 px-2 py-3 text-sm lg:grid">
 
                   <div className="flex flex-col items-center gap-1.5">
+                    {canBulkAny && (
                     <input
                       type="checkbox"
                       className="h-4 w-4 accent-[hsl(var(--primary))]"
                       checked={marked.includes(o.id)}
                       onChange={(e) => setMarked(prev => e.target.checked ? [...prev, o.id] : prev.filter(x => x !== o.id))}
                     />
+                    )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="rounded-md border p-0.5 hover:bg-accent transition-colors">
@@ -979,14 +989,8 @@ function AdminOrdersPage() {
                              <Pencil className="mr-2 h-4 w-4" /> Edit Order
                            </DropdownMenuItem>
                            )}
-                           {canStatus && (
-                           <DropdownMenuItem
-                             onClick={() =>
-                               o.status === "pending_partial"
-                                 ? setSettleModal({ orderId: o.id, status: "partial_full", pickKind: true })
-                                 : setStatusModal({ open: true, orderId: o.id, currentStatus: o.status })
-                             }
-                           >
+                           {canOpenStatusFor(o) && (
+                           <DropdownMenuItem onClick={() => openStatusOrSettle(o)}>
                              <Settings2 className="mr-2 h-4 w-4" /> Change Status
                            </DropdownMenuItem>
                            )}
@@ -1080,15 +1084,11 @@ function AdminOrdersPage() {
                     <div className="flex justify-center"><ResellerTotalCell order={moneyOrder(o)} /></div>
                     <div className="flex justify-center"><AdminTotalCell order={moneyOrder(o)} buyingCost={buyingCostFor(o.id, o.status)} /></div>
                    <div className="min-w-0 text-center">
-                        {canStatus ? (
+                        {canOpenStatusFor(o) ? (
                           <button
                             type="button"
                             title="Change status"
-                            onClick={() =>
-                              o.status === "pending_partial"
-                                ? setSettleModal({ orderId: o.id, status: "partial_full", pickKind: true })
-                                : setStatusModal({ open: true, orderId: o.id, currentStatus: o.status })
-                            }
+                            onClick={() => openStatusOrSettle(o)}
                             className={`px-2 py-0.5 rounded-full text-[11px] transition-shadow hover:ring-2 hover:ring-primary/30 ${orderStatusTone(o.status)}`}
                           >
                             {orderStatusLabel(o.status)}
@@ -1255,6 +1255,10 @@ function AdminOrdersPage() {
                           return;
                         }
                         if ((SETTLEMENT_STATUSES as string[]).includes(s)) {
+                          if (!canSettle) {
+                            toast.error("You don't have permission to settle orders.");
+                            return;
+                          }
                           setSettleModal({ orderId: statusModal.orderId, status: s });
                           setStatusModal(null);
                           return;

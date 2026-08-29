@@ -32,6 +32,7 @@ import {
   History,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useCan } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/agent-payouts")({
   component: AgentPayoutsPage,
@@ -64,6 +65,8 @@ function AgentPayoutsPage() {
   const [tab, setTab] = useState<"summary" | "payouts" | "timeline">("summary");
   const [paying, setPaying] = useState<Agent | null>(null);
   const [removing, setRemoving] = useState<AgentPayout | null>(null);
+  const can = useCan();
+  const canManage = can("agents.manage", "payouts.manage");
 
   async function load() {
     setLoading(true);
@@ -253,12 +256,14 @@ function AgentPayoutsPage() {
                       {v.settle.balance < 0 ? "advance adjusted later" : "current balance"}
                     </div>
                   </div>
-                  <button
-                    onClick={() => setPaying(v.agent)}
-                    className="btn-brand inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold"
-                  >
-                    <Plus className="h-3.5 w-3.5" /> New payment
-                  </button>
+                  {canManage && (
+                    <button
+                      onClick={() => setPaying(v.agent)}
+                      className="btn-brand inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> New payment
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -353,42 +358,44 @@ function AgentPayoutsPage() {
                             </div>
                           )}
                         </div>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {p.status === "pending" && (
+                        {canManage && (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {p.status === "pending" && (
+                              <button
+                                onClick={() => setStatus(p, "approved")}
+                                className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-semibold hover:bg-muted"
+                              >
+                                <Check className="h-3.5 w-3.5" /> Approve
+                              </button>
+                            )}
+                            {p.status !== "paid" && p.status !== "rejected" && (
+                              <button
+                                onClick={() => setStatus(p, "paid")}
+                                className="btn-brand inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold"
+                              >
+                                <Wallet className="h-3.5 w-3.5" /> Mark paid
+                              </button>
+                            )}
+                            {p.status !== "rejected" && p.status !== "paid" && (
+                              <button
+                                onClick={() => {
+                                  const note = window.prompt("Reject reason (optional)") ?? "";
+                                  setStatus(p, "rejected", note ? { admin_note: note } : {});
+                                }}
+                                className="inline-flex items-center gap-1 rounded-md border border-destructive/40 px-2.5 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
+                              >
+                                <Ban className="h-3.5 w-3.5" /> Reject
+                              </button>
+                            )}
                             <button
-                              onClick={() => setStatus(p, "approved")}
-                              className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-semibold hover:bg-muted"
+                              onClick={() => setRemoving(p)}
+                              title="Delete record"
+                              className="grid h-7 w-7 place-items-center rounded-md border text-destructive hover:bg-destructive/10"
                             >
-                              <Check className="h-3.5 w-3.5" /> Approve
+                              <Trash2 className="h-3.5 w-3.5" />
                             </button>
-                          )}
-                          {p.status !== "paid" && p.status !== "rejected" && (
-                            <button
-                              onClick={() => setStatus(p, "paid")}
-                              className="btn-brand inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold"
-                            >
-                              <Wallet className="h-3.5 w-3.5" /> Mark paid
-                            </button>
-                          )}
-                          {p.status !== "rejected" && p.status !== "paid" && (
-                            <button
-                              onClick={() => {
-                                const note = window.prompt("Reject reason (optional)") ?? "";
-                                setStatus(p, "rejected", note ? { admin_note: note } : {});
-                              }}
-                              className="inline-flex items-center gap-1 rounded-md border border-destructive/40 px-2.5 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
-                            >
-                              <Ban className="h-3.5 w-3.5" /> Reject
-                            </button>
-                          )}
-                          <button
-                            onClick={() => setRemoving(p)}
-                            title="Delete record"
-                            className="grid h-7 w-7 place-items-center rounded-md border text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

@@ -6,6 +6,7 @@ import { Plus, Loader2, Trash2, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader, type UploadedImage } from "@/components/ImageUploader";
 import { confirmAction } from "@/lib/confirm";
+import { useCan } from "@/lib/use-auth";
 
 type EditBrand = {
   id: string;
@@ -36,6 +37,8 @@ function slugify(s: string) {
 }
 
 function BrandsPage() {
+  const can = useCan();
+  const canManage = can("brands.manage");
   const [items, setItems] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -138,16 +141,18 @@ function BrandsPage() {
         title="Brands"
         description="Organize products under brands."
         actions={
-          <button
-            onClick={() => setOpen((o) => !o)}
-            className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
-          >
-            <Plus className="h-4 w-4" /> New brand
-          </button>
+          canManage ? (
+            <button
+              onClick={() => setOpen((o) => !o)}
+              className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+            >
+              <Plus className="h-4 w-4" /> New brand
+            </button>
+          ) : undefined
         }
       />
 
-      {open && (
+      {canManage && open && (
         <form onSubmit={create} className="surface-card mb-6 space-y-3 p-6">
           <div>
             <label className="mb-1 block text-xs font-medium">Name</label>
@@ -226,18 +231,32 @@ function BrandsPage() {
                 <div className="truncate font-medium">{b.name}</div>
                 <div className="truncate text-xs text-muted-foreground">/{b.slug}</div>
               </div>
-              <button
-                onClick={() => toggle(b)}
-                title={b.is_active ? "Click to hide" : "Click to activate"}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
-                  b.is_active
-                    ? "bg-primary text-primary-foreground shadow-sm hover:opacity-90"
-                    : "border border-border bg-muted text-muted-foreground hover:bg-muted/70"
-                }`}
-              >
-                <span className={`h-1.5 w-1.5 rounded-full ${b.is_active ? "bg-primary-foreground" : "bg-muted-foreground/60"}`} />
-                {b.is_active ? "Active" : "Hidden"}
-              </button>
+              {canManage ? (
+                <button
+                  onClick={() => toggle(b)}
+                  title={b.is_active ? "Click to hide" : "Click to activate"}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
+                    b.is_active
+                      ? "bg-primary text-primary-foreground shadow-sm hover:opacity-90"
+                      : "border border-border bg-muted text-muted-foreground hover:bg-muted/70"
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${b.is_active ? "bg-primary-foreground" : "bg-muted-foreground/60"}`} />
+                  {b.is_active ? "Active" : "Hidden"}
+                </button>
+              ) : (
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+                    b.is_active
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "border border-border bg-muted text-muted-foreground"
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${b.is_active ? "bg-primary-foreground" : "bg-muted-foreground/60"}`} />
+                  {b.is_active ? "Active" : "Hidden"}
+                </span>
+              )}
+              {canManage && (
               <button
                 onClick={() => openEdit(b)}
                 title="Edit brand"
@@ -245,18 +264,21 @@ function BrandsPage() {
               >
                 <Pencil className="h-4 w-4" />
               </button>
+              )}
+              {canManage && (
               <button
                 onClick={() => remove(b)}
                 className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      {edit && (
+      {canManage && edit && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={() => setEdit(null)}>
           <form
             onSubmit={saveEdit}

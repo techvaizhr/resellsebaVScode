@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
+import { useCan } from "@/lib/use-auth";
 import { PasswordResetModal } from "@/components/password-reset-modal";
 import { startImpersonation } from "@/lib/impersonation";
 import { impersonateSupplier, resetSupplierPassword } from "@/lib/supplier-access.functions";
@@ -97,6 +98,8 @@ function AdminSuppliersPage() {
   const [resetFor, setResetFor] = useState<AdminSupplierRow | null>(null);
   const resetPasswordFn = useServerFn(resetSupplierPassword);
   const impersonateFn = useServerFn(impersonateSupplier);
+  const can = useCan();
+  const canManage = can("suppliers.manage");
 
   const load = useCallback(async () => {
     try {
@@ -280,49 +283,51 @@ function AdminSuppliersPage() {
                     >
                       <PackageSearch className="h-4 w-4" />
                     </Link>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="grid h-8 w-8 shrink-0 place-items-center rounded-md border hover:bg-muted">
-                        {busyId === s.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <MoreHorizontal className="h-4 w-4" />
-                        )}
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
-                        <DropdownMenuLabel>{s.display_name}</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {s.status !== "active" && (
-                          <DropdownMenuItem onClick={() => setStatus(s, "active")}>
-                            <Play className="mr-2 h-4 w-4" /> Approve / activate
+                    {canManage && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="grid h-8 w-8 shrink-0 place-items-center rounded-md border hover:bg-muted">
+                          {busyId === s.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <MoreHorizontal className="h-4 w-4" />
+                          )}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuLabel>{s.display_name}</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {s.status !== "active" && (
+                            <DropdownMenuItem onClick={() => setStatus(s, "active")}>
+                              <Play className="mr-2 h-4 w-4" /> Approve / activate
+                            </DropdownMenuItem>
+                          )}
+                          {s.status === "active" && (
+                            <DropdownMenuItem onClick={() => setStatus(s, "suspended")}>
+                              <ShieldOff className="mr-2 h-4 w-4" /> Suspend
+                            </DropdownMenuItem>
+                          )}
+                          {s.status === "pending" && (
+                            <DropdownMenuItem
+                              onClick={() => setStatus(s, "rejected")}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <X className="mr-2 h-4 w-4" /> Reject
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => setEditFor(s)}>
+                            <Pencil className="mr-2 h-4 w-4" /> Edit details
                           </DropdownMenuItem>
-                        )}
-                        {s.status === "active" && (
-                          <DropdownMenuItem onClick={() => setStatus(s, "suspended")}>
-                            <ShieldOff className="mr-2 h-4 w-4" /> Suspend
+                          <DropdownMenuItem onClick={() => setResetFor(s)}>
+                            <KeyRound className="mr-2 h-4 w-4" /> Reset password
                           </DropdownMenuItem>
-                        )}
-                        {s.status === "pending" && (
-                          <DropdownMenuItem
-                            onClick={() => setStatus(s, "rejected")}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <X className="mr-2 h-4 w-4" /> Reject
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setEditFor(s)}>
-                          <Pencil className="mr-2 h-4 w-4" /> Edit details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setResetFor(s)}>
-                          <KeyRound className="mr-2 h-4 w-4" /> Reset password
-                        </DropdownMenuItem>
-                        {s.status === "active" && (
-                          <DropdownMenuItem onClick={() => void loginAsSupplier(s)}>
-                            <LogIn className="mr-2 h-4 w-4" /> Login as supplier
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          {s.status === "active" && (
+                            <DropdownMenuItem onClick={() => void loginAsSupplier(s)}>
+                              <LogIn className="mr-2 h-4 w-4" /> Login as supplier
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </div>
 

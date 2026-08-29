@@ -13,6 +13,7 @@ import { areaLabel, deliverySettingsSummary, globalDelivery, resolveDelivery, re
 import { ProductImportModal } from "@/components/ProductImportModal";
 import { takeImportDraft } from "@/lib/product-import";
 import { CloudDownload } from "lucide-react";
+import { useCan } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/products/new")({
   component: NewProduct,
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin/products/new")({
 
 function NewProduct() {
   const nav = useNavigate();
+  const can = useCan();
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
   const [description, setDescription] = useState("");
@@ -183,6 +185,16 @@ function NewProduct() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (!can("products.manage")) {
+    return (
+      <div className="grid place-items-center py-24">
+        <div className="surface-card max-w-md p-8 text-center text-sm text-muted-foreground">
+          You do not have permission to edit products.
+        </div>
+      </div>
+    );
   }
 
   return (

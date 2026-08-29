@@ -43,51 +43,15 @@ import { useBrandingTheme } from "@/lib/branding";
 import { getGlobalSettings } from "@/lib/app-data";
 import { Loader2 } from "lucide-react";
 import { useOrderNavCount, applyOrderBadge } from "@/lib/use-order-nav-count";
+import { ROUTE_PERMISSIONS } from "@/lib/permissions";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminLayout,
 });
 
-/** Which permission unlocks each admin route. Super admin always sees everything. */
-const ROUTE_PERMISSIONS: Record<string, string[]> = {
-  "/admin": ["dashboard.view"],
-  "/admin/products": ["products.view", "products.manage"],
-  "/admin/brands": ["brands.manage"],
-  "/admin/categories": ["categories.manage"],
-  "/admin/orders": ["orders.view", "orders.edit", "orders.create", "orders.delete", "orders.status", "orders.ship"],
-  "/admin/customers": ["orders.view", "orders.edit", "reports.view"],
-  "/admin/transactions": ["finance.view"],
-  "/admin/business-report": ["reports.view"],
-  "/admin/expenses": ["expenses.manage", "finance.view", "reports.view", "settings.manage"],
-  "/admin/payouts": ["payouts.manage"],
-  "/admin/commissions": ["commissions.manage"],
-  "/admin/resellers": ["resellers.manage"],
-  "/admin/suppliers": ["suppliers.view", "suppliers.manage"],
-  "/admin/supplier-report": ["suppliers.view", "suppliers.manage", "reports.view"],
-  "/admin/supplier-returns": ["suppliers.view", "suppliers.manage"],
-  "/admin/supplier-payouts": ["suppliers.manage", "payouts.manage"],
+/** Which permission unlocks each admin route (see src/lib/permissions.ts). */
 
-  "/admin/agents": ["agents.manage"],
-  "/admin/agent-report": ["agents.view", "agents.manage"],
-  "/admin/agent-payouts": ["agents.manage", "payouts.manage"],
-
-  "/admin/visitors": ["visitors.view", "reports.view", "dashboard.view", "resellers.manage"],
-  "/admin/marketing": ["marketing.manage"],
-  "/admin/notifications": ["notifications.manage"],
-  "/admin/notices": ["notifications.manage", "settings.manage"],
-  "/admin/tutorials": ["settings.manage", "landing.manage"],
-  "/admin/landing": ["landing.manage"],
-  "/admin/couriers": ["couriers.manage"],
-  "/admin/payments": ["payments.manage"],
-  "/admin/staff": ["staff.manage"],
-  "/admin/maintenance": ["maintenance.manage", "settings.manage"],
-  "/admin/advanced": ["settings.advanced", "settings.manage"],
-  "/admin/domains": ["domains.manage", "settings.manage"],
-  "/admin/deposits": ["deposits.manage", "settings.manage", "resellers.manage", "finance.view"],
-  "/admin/deposit-transactions": ["deposits.manage", "finance.view", "resellers.manage", "settings.manage"],
-  "/admin/settings": ["settings.manage"],
-  "/admin/privacy": ["settings.manage"],
-};
 
 
 const NAV: NavEntry[] = [
@@ -227,6 +191,9 @@ function AdminLayout() {
     isSuperAdmin ||
     (isStaff && routePermission != null && routePermission.some((permission) => permissions.includes(permission)));
   const landing = isSuperAdmin ? "/admin" : firstAllowedRoute(NAV, permissions);
+  const canCatalog = isSuperAdmin || permissions.includes("products.view") || permissions.includes("products.manage");
+  const canScan = isSuperAdmin || permissions.includes("orders.status");
+
   const [brand, setBrand] = useState<{ name: string; logoUrl: string | null; primary: string | null }>({
     name: "Admin",
     logoUrl: null,
@@ -313,19 +280,23 @@ function AdminLayout() {
         left: { label: "Orders", to: "/admin/orders", icon: ShoppingCart, badge: orderNavCount },
         right: { label: "Catalog", to: "/admin/products", icon: Package },
       }}
+
       headerRight={
         <>
-          <Link
-            to="/admin/products"
-            title="Catalog"
-            className="hidden md:inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
-          >
-            <Store className="h-4 w-4" />
-            <span className="hidden sm:inline">Catalog</span>
-          </Link>
-          <BulkScanButton compact />
+          {canCatalog ? (
+            <Link
+              to="/admin/products"
+              title="Catalog"
+              className="hidden md:inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
+            >
+              <Store className="h-4 w-4" />
+              <span className="hidden sm:inline">Catalog</span>
+            </Link>
+          ) : null}
+          {canScan ? <BulkScanButton compact /> : null}
         </>
       }
+
       brand={{ name: brand.name, sub: isSuperAdmin ? "Admin panel" : "Staff panel", logoUrl: brand.logoUrl }}
       nav={navWithBadge}
       user={{

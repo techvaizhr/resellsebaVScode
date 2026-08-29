@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useCan } from "@/lib/use-auth";
 import { toast } from "sonner";
 import { Check, Loader2, X } from "lucide-react";
 import { methodLabel } from "@/lib/payment-methods";
@@ -25,7 +26,9 @@ const bdt = (v: number) => `৳${Number(v || 0).toLocaleString("en-US")}`;
 export function DepositRequestsAdmin({ onChanged }: { onChanged?: () => void }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const canManage = useCan()("deposits.manage");
   const [tab, setTab] = useState<"pending" | "all">("pending");
+
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -122,7 +125,7 @@ export function DepositRequestsAdmin({ onChanged }: { onChanged?: () => void }) 
                     <StatusChip status={r.status} />
                   </td>
                   <td className="p-2 text-right">
-                    {r.status === "pending" ? (
+                    {r.status === "pending" && canManage ? (
                       <div className="inline-flex gap-1.5">
                         <button
                           disabled={busyId === r.id}

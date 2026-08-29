@@ -14,6 +14,7 @@ import {
 } from "@/lib/supplier";
 import { impersonateSupplier } from "@/lib/supplier-access.functions";
 import { startImpersonation } from "@/lib/impersonation";
+import { useCan } from "@/lib/use-auth";
 import { SearchableSelect } from "@/components/searchable-select";
 import {
   AlertDialog,
@@ -74,6 +75,8 @@ function AdminSupplierReturnsPage() {
   const [open, setOpen] = useState<string[]>([]);
   const [supplierFilter, setSupplierFilter] = useState("");
   const [undoTarget, setUndoTarget] = useState<string[] | null>(null);
+  const can = useCan();
+  const canManage = can("suppliers.manage");
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -244,7 +247,7 @@ function AdminSupplierReturnsPage() {
         </div>
       </div>
 
-      {sel.length > 0 && (
+      {canManage && sel.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
           <span className="text-xs font-semibold">{sel.length} selected</span>
           <button
@@ -278,18 +281,20 @@ function AdminSupplierReturnsPage() {
             return (
               <div key={g.id} className="surface-card overflow-hidden p-0">
                 <div className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={allSel}
-                    onChange={(e) =>
-                      setSel((p) =>
-                        e.target.checked
-                          ? [...new Set([...p, ...g.rows.map((r) => r.id)])]
-                          : p.filter((id) => !g.rows.some((r) => r.id === id)),
-                      )
-                    }
-                    className="h-3.5 w-3.5"
-                  />
+                  {canManage && (
+                    <input
+                      type="checkbox"
+                      checked={allSel}
+                      onChange={(e) =>
+                        setSel((p) =>
+                          e.target.checked
+                            ? [...new Set([...p, ...g.rows.map((r) => r.id)])]
+                            : p.filter((id) => !g.rows.some((r) => r.id === id)),
+                        )
+                      }
+                      className="h-3.5 w-3.5"
+                    />
+                  )}
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold">{g.name}</div>
                     <div className="text-[11px] text-muted-foreground">
@@ -299,7 +304,7 @@ function AdminSupplierReturnsPage() {
                     </div>
                   </div>
                   <div className="ml-auto flex flex-wrap gap-2">
-                    {gPending.length > 0 && (
+                    {canManage && gPending.length > 0 && (
                       <button
                         onClick={() => act(gPending.map((r) => r.id))}
                         disabled={busy}
@@ -308,13 +313,15 @@ function AdminSupplierReturnsPage() {
                         <PackageCheck className="h-3.5 w-3.5" /> Hand over all ({gPending.length})
                       </button>
                     )}
-                    <button
-                      onClick={() => loginAs(g.id, g.name)}
-                      disabled={busy}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-violet-500/40 bg-violet-500/10 px-3 py-1.5 text-xs font-semibold text-violet-600 hover:bg-violet-500/20 disabled:opacity-50"
-                    >
-                      <LogIn className="h-3.5 w-3.5" /> Login as supplier
-                    </button>
+                    {canManage && (
+                      <button
+                        onClick={() => loginAs(g.id, g.name)}
+                        disabled={busy}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-violet-500/40 bg-violet-500/10 px-3 py-1.5 text-xs font-semibold text-violet-600 hover:bg-violet-500/20 disabled:opacity-50"
+                      >
+                        <LogIn className="h-3.5 w-3.5" /> Login as supplier
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -328,18 +335,20 @@ function AdminSupplierReturnsPage() {
                     return (
                       <div key={key}>
                         <div className="flex flex-wrap items-center gap-2 bg-muted/15 px-4 py-2">
-                          <input
-                            type="checkbox"
-                            checked={ord.rows.every((r) => sel.includes(r.id))}
-                            onChange={(e) =>
-                              setSel((p) =>
-                                e.target.checked
-                                  ? [...new Set([...p, ...ord.rows.map((r) => r.id)])]
-                                  : p.filter((id) => !ord.rows.some((r) => r.id === id)),
-                              )
-                            }
-                            className="h-3.5 w-3.5"
-                          />
+                          {canManage && (
+                            <input
+                              type="checkbox"
+                              checked={ord.rows.every((r) => sel.includes(r.id))}
+                              onChange={(e) =>
+                                setSel((p) =>
+                                  e.target.checked
+                                    ? [...new Set([...p, ...ord.rows.map((r) => r.id)])]
+                                    : p.filter((id) => !ord.rows.some((r) => r.id === id)),
+                                )
+                              }
+                              className="h-3.5 w-3.5"
+                            />
+                          )}
                           <span className="text-xs font-semibold">#{ord.order_number}</span>
                           <span className="text-[11px] text-muted-foreground">
                             {ord.rows.length} product{ord.rows.length > 1 ? "s" : ""} · {bdtNum(sum(ord.rows))}
@@ -350,7 +359,7 @@ function AdminSupplierReturnsPage() {
                             </span>
                           )}
                           <div className="ml-auto flex items-center gap-2">
-                            {oPending.length > 0 && (
+                            {canManage && oPending.length > 0 && (
                               <button
                                 onClick={() => act(oPending.map((r) => r.id))}
                                 disabled={busy}
@@ -380,14 +389,16 @@ function AdminSupplierReturnsPage() {
                           const when = new Date(r.updated_at ?? r.created_at);
                           return (
                             <div key={r.id} className="flex flex-wrap items-center gap-3 border-t px-4 py-2.5 pl-8">
-                              <input
-                                type="checkbox"
-                                checked={sel.includes(r.id)}
-                                onChange={(e) =>
-                                  setSel((p) => (e.target.checked ? [...p, r.id] : p.filter((x) => x !== r.id)))
-                                }
-                                className="h-3.5 w-3.5"
-                              />
+                              {canManage && (
+                                <input
+                                  type="checkbox"
+                                  checked={sel.includes(r.id)}
+                                  onChange={(e) =>
+                                    setSel((p) => (e.target.checked ? [...p, r.id] : p.filter((x) => x !== r.id)))
+                                  }
+                                  className="h-3.5 w-3.5"
+                                />
+                              )}
                               {r.product_image ? (
                                 <img
                                   src={r.product_image}
@@ -411,7 +422,11 @@ function AdminSupplierReturnsPage() {
                                 <div>{when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
                               </div>
                               <div className="w-20 text-right text-xs font-semibold tabular-nums">{bdtNum(value(r))}</div>
-                              {done ? (
+                              {!canManage ? (
+                                <span className="text-[11px] text-muted-foreground">
+                                  {done ? "Handed over" : "Waiting handover"}
+                                </span>
+                              ) : done ? (
                                 <button
                                   onClick={() => setUndoTarget([r.id])}
                                   disabled={busy}
