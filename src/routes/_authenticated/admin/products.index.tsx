@@ -28,6 +28,7 @@ type Row = {
   suggested_price: number;
   packaging_cost: number;
   stock: number;
+  weight_grams: number | null;
   is_active: boolean;
   is_featured: boolean;
   og_image_url: string | null;
@@ -391,6 +392,7 @@ function ProductsPage() {
                   <th className="px-3 py-3">Suggested</th>
                   <th className="px-3 py-3">Packaging</th>
                   <th className="px-3 py-3">Stock</th>
+                  <th className="px-3 py-3">Weight</th>
                   <th className="px-3 py-3">Status</th>
                 </tr>
               </thead>
@@ -467,6 +469,9 @@ function ProductsPage() {
                     </td>
                     <td className="px-3 py-3">
                       <StockCell locked={!inlineEdit} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
+                    </td>
+                    <td className="px-3 py-3 tabular-nums text-muted-foreground">
+                      {p.weight_grams ? `${p.weight_grams} g` : "—"}
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
