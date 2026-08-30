@@ -498,61 +498,13 @@ function ResellersPage() {
             const waPhone = phone.replace(/[^0-9]/g, "").replace(/^0/, "880");
             return (
               <div key={r.id} className="surface-card p-3 shadow-sm transition hover:shadow-md sm:p-4">
-                <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+                <div className="flex items-center gap-3">
                   <ResellerAvatar url={r.avatar_url} name={r.business_name} size={40} />
-                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                    <span className="w-full font-medium sm:w-auto">{r.business_name}</span>
-                    <StatusBadge status={r.status} />
-                    <VerifyBadges {...vf} />
-                    <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
-                      <IdCard className="h-3 w-3 text-primary" />
-                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">ID</span>
-                      <span className="font-mono text-[11px] font-bold tracking-wider text-primary">{r.code}</span>
-                      <button
-                        type="button"
-                        title="Copy reseller ID"
-                        onClick={() => {
-                          navigator.clipboard.writeText(r.code);
-                          toast.success("Reseller ID copied");
-                        }}
-                        className="text-muted-foreground transition hover:text-foreground"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </button>
-                    </span>
-                    {phone ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5">
-                        <Phone className="h-3 w-3 text-muted-foreground" />
-                        <span className="font-mono text-[11px] font-medium">{phone}</span>
-                        <button
-                          type="button"
-                          title="Copy phone"
-                          onClick={() => {
-                            navigator.clipboard.writeText(phone);
-                            toast.success("Phone copied");
-                          }}
-                          className="text-muted-foreground transition hover:text-foreground"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </button>
-                        <a href={`tel:${phone}`} title="Call" className="text-muted-foreground transition hover:text-primary">
-                          <PhoneCall className="h-3 w-3" />
-                        </a>
-                        <a
-                          href={`https://wa.me/${waPhone}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          title="WhatsApp"
-                          className="text-muted-foreground transition hover:text-success"
-                        >
-                          <MessageCircle className="h-3 w-3" />
-                        </a>
-                      </span>
-                    ) : (
-                      <span className="rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">
-                        no phone
-                      </span>
-                    )}
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                    <span className="truncate min-w-0 font-medium">{r.business_name}</span>
+                    <div className="hidden sm:contents">
+                      <ResellerInfoBadges r={r} vf={vf} phone={phone} waPhone={waPhone} />
+                    </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     <Link
@@ -672,6 +624,9 @@ function ResellersPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:hidden">
+                  <ResellerInfoBadges r={r} vf={vf} phone={phone} waPhone={waPhone} />
                 </div>
 
                 {(r.deposit_required && Number(r.deposit_required_amount) > 0) || Number(r.frozen_amount) > 0 ? (
@@ -818,6 +773,73 @@ function StatusBadge({ status }: { status: Status }) {
     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${resellerStatusClass(status)}`}>
       {resellerStatusLabel(status)}
     </span>
+  );
+}
+
+/** Status + verification + ID + phone badges, reused inline (desktop) and below (mobile). */
+function ResellerInfoBadges({
+  r,
+  vf,
+  phone,
+  waPhone,
+}: {
+  r: Reseller;
+  vf: VerifyFlags;
+  phone: string;
+  waPhone: string;
+}) {
+  return (
+    <>
+      <StatusBadge status={r.status} />
+      <VerifyBadges {...vf} />
+      <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
+        <IdCard className="h-3 w-3 text-primary" />
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">ID</span>
+        <span className="font-mono text-[11px] font-bold tracking-wider text-primary">{r.code}</span>
+        <button
+          type="button"
+          title="Copy reseller ID"
+          onClick={() => {
+            navigator.clipboard.writeText(r.code);
+            toast.success("Reseller ID copied");
+          }}
+          className="text-muted-foreground transition hover:text-foreground"
+        >
+          <Copy className="h-3 w-3" />
+        </button>
+      </span>
+      {phone ? (
+        <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5">
+          <Phone className="h-3 w-3 text-muted-foreground" />
+          <span className="font-mono text-[11px] font-medium">{phone}</span>
+          <button
+            type="button"
+            title="Copy phone"
+            onClick={() => {
+              navigator.clipboard.writeText(phone);
+              toast.success("Phone copied");
+            }}
+            className="text-muted-foreground transition hover:text-foreground"
+          >
+            <Copy className="h-3 w-3" />
+          </button>
+          <a href={`tel:${phone}`} title="Call" className="text-muted-foreground transition hover:text-primary">
+            <PhoneCall className="h-3 w-3" />
+          </a>
+          <a
+            href={`https://wa.me/${waPhone}`}
+            target="_blank"
+            rel="noreferrer"
+            title="WhatsApp"
+            className="text-muted-foreground transition hover:text-success"
+          >
+            <MessageCircle className="h-3 w-3" />
+          </a>
+        </span>
+      ) : (
+        <span className="rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">no phone</span>
+      )}
+    </>
   );
 }
 

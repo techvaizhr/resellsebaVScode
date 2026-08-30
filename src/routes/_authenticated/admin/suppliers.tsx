@@ -280,77 +280,13 @@ function AdminSuppliersPage() {
             const waPhone = (s.whatsapp || phone).replace(/[^0-9]/g, "").replace(/^0/, "880");
             return (
               <div key={s.id} className="surface-card p-3 shadow-sm transition hover:shadow-md sm:p-4">
-                <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+                <div className="flex items-center gap-3">
                   <ResellerAvatar url={null} name={s.display_name} size={40} />
-                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                    <span className="w-full font-medium sm:w-auto">{s.display_name}</span>
-                    <span
-                      className={
-                        "rounded-full px-2 py-0.5 text-[10px] font-medium capitalize " +
-                        (STATUS_TONE[s.status] ?? "bg-muted")
-                      }
-                    >
-                      {s.status}
-                    </span>
-                    {s.pending_returns > 0 && (
-                      <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600">
-                        {s.pending_returns} return to hand over
-                      </span>
-                    )}
-                    <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
-                      <IdCard className="h-3 w-3 text-primary" />
-                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">ID</span>
-                      <span className="font-mono text-[11px] font-bold tracking-wider text-primary">{s.code}</span>
-                      <button
-                        type="button"
-                        title="Copy supplier ID"
-                        onClick={() => {
-                          navigator.clipboard.writeText(s.code);
-                          toast.success("Supplier ID copied");
-                        }}
-                        className="text-muted-foreground transition hover:text-foreground"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </button>
-                    </span>
-                    {phone ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5">
-                        <Phone className="h-3 w-3 text-muted-foreground" />
-                        <span className="font-mono text-[11px] font-medium">{phone}</span>
-                        <button
-                          type="button"
-                          title="Copy phone"
-                          onClick={() => {
-                            navigator.clipboard.writeText(phone);
-                            toast.success("Phone copied");
-                          }}
-                          className="text-muted-foreground transition hover:text-foreground"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </button>
-                        <a href={`tel:${phone}`} title="Call" className="text-muted-foreground transition hover:text-primary">
-                          <PhoneCall className="h-3 w-3" />
-                        </a>
-                        <a
-                          href={`https://wa.me/${waPhone}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          title="WhatsApp"
-                          className="text-muted-foreground transition hover:text-success"
-                        >
-                          <MessageCircle className="h-3 w-3" />
-                        </a>
-                      </span>
-                    ) : (
-                      <span className="rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">
-                        no phone
-                      </span>
-                    )}
-                    {s.email && (
-                      <span className="min-w-0 truncate rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">
-                        {s.email}
-                      </span>
-                    )}
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                    <span className="truncate min-w-0 font-medium">{s.display_name}</span>
+                    <div className="hidden sm:contents">
+                      <SupplierInfoBadges s={s} phone={phone} waPhone={waPhone} />
+                    </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     <Link
@@ -432,6 +368,9 @@ function AdminSuppliersPage() {
                     )}
                   </div>
                 </div>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:hidden">
+                  <SupplierInfoBadges s={s} phone={phone} waPhone={waPhone} />
+                </div>
 
 
 
@@ -473,6 +412,87 @@ function AdminSuppliersPage() {
         />
       )}
     </div>
+  );
+}
+
+/** Status + returns + ID + phone + email badges, reused inline (desktop) and below (mobile). */
+function SupplierInfoBadges({
+  s,
+  phone,
+  waPhone,
+}: {
+  s: AdminSupplierRow;
+  phone: string;
+  waPhone: string;
+}) {
+  return (
+    <>
+      <span
+        className={
+          "rounded-full px-2 py-0.5 text-[10px] font-medium capitalize " +
+          (STATUS_TONE[s.status] ?? "bg-muted")
+        }
+      >
+        {s.status}
+      </span>
+      {s.pending_returns > 0 && (
+        <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600">
+          {s.pending_returns} return to hand over
+        </span>
+      )}
+      <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
+        <IdCard className="h-3 w-3 text-primary" />
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">ID</span>
+        <span className="font-mono text-[11px] font-bold tracking-wider text-primary">{s.code}</span>
+        <button
+          type="button"
+          title="Copy supplier ID"
+          onClick={() => {
+            navigator.clipboard.writeText(s.code);
+            toast.success("Supplier ID copied");
+          }}
+          className="text-muted-foreground transition hover:text-foreground"
+        >
+          <Copy className="h-3 w-3" />
+        </button>
+      </span>
+      {phone ? (
+        <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5">
+          <Phone className="h-3 w-3 text-muted-foreground" />
+          <span className="font-mono text-[11px] font-medium">{phone}</span>
+          <button
+            type="button"
+            title="Copy phone"
+            onClick={() => {
+              navigator.clipboard.writeText(phone);
+              toast.success("Phone copied");
+            }}
+            className="text-muted-foreground transition hover:text-foreground"
+          >
+            <Copy className="h-3 w-3" />
+          </button>
+          <a href={`tel:${phone}`} title="Call" className="text-muted-foreground transition hover:text-primary">
+            <PhoneCall className="h-3 w-3" />
+          </a>
+          <a
+            href={`https://wa.me/${waPhone}`}
+            target="_blank"
+            rel="noreferrer"
+            title="WhatsApp"
+            className="text-muted-foreground transition hover:text-success"
+          >
+            <MessageCircle className="h-3 w-3" />
+          </a>
+        </span>
+      ) : (
+        <span className="rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">no phone</span>
+      )}
+      {s.email && (
+        <span className="min-w-0 truncate rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">
+          {s.email}
+        </span>
+      )}
+    </>
   );
 }
 
