@@ -96,6 +96,7 @@ const NAV: NavEntry[] = [
 function ResellerLayout() {
   const { user, roles, loading } = useAuth();
   const orderNavCount = useOrderNavCount();
+  const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
   const navWithBadge = useMemo(() => {
     // A panel-only plan has no public storefront, so its settings stay hidden.
     const base = subscription && subscription.store_enabled === false
@@ -104,7 +105,6 @@ function ResellerLayout() {
     return applyOrderBadge(base, "/reseller/orders", orderNavCount);
   }, [orderNavCount, subscription]);
   const { required: needsVerify, loading: verifyLoading } = useVerification();
-  const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
   const location = useLocation();
   const nav = useNavigate();
   const [storeName, setStoreName] = useState("My store");
