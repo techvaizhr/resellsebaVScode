@@ -19,7 +19,10 @@ import {
   BarChart,
   Bar,
   Legend,
+  Cell,
 } from "recharts";
+
+const BAR_COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ec4899", "#06b6d4", "#a855f7", "#f97316", "#14b8a6"];
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: AdminDashboard,
@@ -345,13 +348,23 @@ function AdminDashboard() {
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={daily}>
+                <defs>
+                  <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.5} />
+                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="gradProfit" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22c55e" stopOpacity={0.5} />
+                    <stop offset="100%" stopColor="#22c55e" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
                 <Legend />
-                <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" name="Revenue ৳" />
-                <Area type="monotone" dataKey="profit" stroke="hsl(142 76% 36%)" fill="hsl(142 76% 36% / 0.15)" name="Reseller profit ৳" />
+                <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2.5} fill="url(#gradRevenue)" name="Revenue ৳" />
+                <Area type="monotone" dataKey="profit" stroke="#22c55e" strokeWidth={2.5} fill="url(#gradProfit)" name="Reseller profit ৳" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -367,7 +380,11 @@ function AdminDashboard() {
                 <XAxis type="number" tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
                 <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
-                <Bar dataKey="sales" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
+                <Bar dataKey="sales" radius={[0, 6, 6, 0]}>
+                  {top.map((_, i) => (
+                    <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
