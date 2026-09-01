@@ -99,7 +99,8 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
   const width = size === "3x3" ? "3in" : "3in";
   const height = size === "3x3" ? "3in" : "4in";
   const orderBarcodeHeight = size === "3x3" ? 30 : 38;
-  const trackingBarcodeHeight = size === "3x3" ? 42 : 54;
+  const trackingBarcodeHeight = size === "3x3" ? 48 : 60;
+  const trackingFontSize = size === "3x3" ? 18 : 22;
 
   const win = window.open("", "_blank");
   if (!win) return;
@@ -130,12 +131,12 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
             justify-content: space-between;
             gap: 4px;
             min-width: 0;
-            margin-bottom: 3px;
+            margin-bottom: 1px;
             border-bottom: 2px solid #000;
-            padding-bottom: 3px;
+            padding-bottom: 1px;
           }
           .brand-box { display: flex; align-items: center; flex-shrink: 0; max-width: 40%; }
-          .brand-logo { max-height: 20px; max-width: 100%; object-fit: contain; }
+          .brand-logo { max-height: 24px; max-width: 100%; object-fit: contain; }
           .site-name { font-size: 8.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
           .order-barcode { flex: 0 0 auto; min-width: 0; max-width: 58%; text-align: right; }
           .order-barcode svg { width: 100%; height: auto; display: block; max-height: ${orderBarcodeHeight}px; }
@@ -209,7 +210,7 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
       <body>
         ${docs.map((d) => {
           const orderBarcode = barcodeSvg(d.orderNumber, orderBarcodeHeight, 14);
-          const trackingBarcode = d.courier?.tracking ? barcodeSvg(d.courier.tracking, trackingBarcodeHeight, 16) : "";
+          const trackingBarcode = d.courier?.tracking ? barcodeSvg(d.courier.tracking, trackingBarcodeHeight, trackingFontSize) : "";
           const brand = courierBrand(d.courier?.provider);
           const brandLogo = brand?.wordmark ?? null;
           return `
