@@ -113,8 +113,8 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
   if (!docs.length) return;
   const width = size === "3x3" ? "3in" : "3in";
   const height = size === "3x3" ? "3in" : "4in";
-  const orderBarcodeHeight = size === "3x3" ? 28 : 34;
-  const trackingBarcodeHeight = size === "3x3" ? 26 : 32;
+  const orderBarcodeHeight = size === "3x3" ? 22 : 26;
+  const trackingBarcodeHeight = size === "3x3" ? 36 : 44;
 
   const win = window.open("", "_blank");
   if (!win) return;
