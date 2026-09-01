@@ -32,6 +32,8 @@ export type PanelBootstrap = {
     frozen_amount: number | null;
   } | null;
   reseller_settings: { logo_url: string | null; primary_color: string | null } | null;
+  /** Subscription state of the signed-in reseller (see src/lib/subscription.ts). */
+  subscription: import("@/lib/subscription").SubscriptionState | null;
   deposits: { id: string; amount: number; method: string | null; reference: string | null; note: string | null; created_at: string }[];
   notices: any[];
 };
