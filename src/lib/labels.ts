@@ -109,12 +109,12 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
       <head>
         <title>Shipping Labels - ${size}</title>
         <style>
-          @page { size: ${width} ${height}; margin: 0; }
+          @page { size: ${width} ${height}; margin: 0.04in; }
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fff; }
           .label {
-            width: ${width};
-            height: ${height};
+            width: calc(${width} - 0.08in);
+            height: calc(${height} - 0.08in);
             padding: 0.09in;
             box-sizing: border-box;
             border: 2px solid #000;
@@ -127,16 +127,17 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
           .header {
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: space-between;
+            gap: 4px;
             min-width: 0;
             margin-bottom: 3px;
             border-bottom: 2px solid #000;
             padding-bottom: 3px;
           }
-          .brand-box { display: flex; align-items: center; flex-shrink: 0; max-width: 34%; }
+          .brand-box { display: flex; align-items: center; flex-shrink: 0; max-width: 40%; }
           .brand-logo { max-height: 20px; max-width: 100%; object-fit: contain; }
           .site-name { font-size: 8.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-          .order-barcode { flex: 1; min-width: 0; text-align: right; }
+          .order-barcode { flex: 0 0 auto; min-width: 0; max-width: 58%; text-align: right; }
           .order-barcode svg { width: 100%; height: auto; display: block; max-height: ${orderBarcodeHeight}px; }
 
           .courier-section {
