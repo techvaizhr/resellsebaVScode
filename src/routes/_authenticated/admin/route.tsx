@@ -36,6 +36,7 @@ import {
   Target,
   Receipt,
   Undo2,
+  ScrollText,
 } from "lucide-react";
 import { AppShell, type NavEntry } from "@/components/AppShell";
 import { BulkScanButton } from "@/components/BulkScanModal";
@@ -128,6 +129,7 @@ const NAV: NavEntry[] = [
       { label: "Cache & cleanup", to: "/admin/maintenance", icon: <Eraser className="h-4 w-4" /> },
       { label: "Advanced settings", to: "/admin/advanced", icon: <Sliders className="h-4 w-4" /> },
 
+      { label: "Reseller policies", to: "/admin/policies", icon: <ScrollText className="h-4 w-4" /> },
       { label: "Privacy policy", to: "/admin/privacy", icon: <Shield className="h-4 w-4" /> },
       { label: "Settings", to: "/admin/settings", icon: <Settings className="h-4 w-4" /> },
 
