@@ -98,8 +98,8 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
   if (!docs.length) return;
   const width = size === "3x3" ? "3in" : "3in";
   const height = size === "3x3" ? "3in" : "4in";
-  const orderBarcodeHeight = size === "3x3" ? 22 : 26;
-  const trackingBarcodeHeight = size === "3x3" ? 36 : 44;
+  const orderBarcodeHeight = size === "3x3" ? 30 : 38;
+  const trackingBarcodeHeight = size === "3x3" ? 42 : 54;
 
   const win = window.open("", "_blank");
   if (!win) return;
@@ -136,7 +136,7 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
           .brand-box { display: flex; align-items: center; flex-shrink: 0; max-width: 34%; }
           .brand-logo { max-height: 20px; max-width: 100%; object-fit: contain; }
           .site-name { font-size: 8.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-          .order-barcode { flex: 1; min-width: 0; text-align: center; }
+          .order-barcode { flex: 1; min-width: 0; text-align: right; }
           .order-barcode svg { width: 100%; height: auto; display: block; max-height: ${orderBarcodeHeight}px; }
 
           .courier-section {
