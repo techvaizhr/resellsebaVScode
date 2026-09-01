@@ -46,11 +46,33 @@ function fileNameFor(url: string, base: string, i: number) {
   return `${clean}-${i + 1}.${ext}`;
 }
 
+/** Messenger/Facebook can't handle WebP — re-encode downloads as JPEG. */
+async function toJpegBlob(blob: Blob): Promise<Blob> {
+  if (blob.type === "image/jpeg") return blob;
+  try {
+    const bmp = await createImageBitmap(blob);
+    const canvas = document.createElement("canvas");
+    canvas.width = bmp.width;
+    canvas.height = bmp.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return blob;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bmp, 0, 0);
+    bmp.close?.();
+    const jpg = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.92));
+    return jpg ?? blob;
+  } catch {
+    return blob;
+  }
+}
+
 async function downloadOne(url: string, name: string) {
   try {
     const res = await fetch(url, { mode: "cors" });
     if (!res.ok) throw new Error("fetch failed");
-    const blob = await res.blob();
+    const blob = await toJpegBlob(await res.blob());
+    if (blob.type === "image/jpeg") name = name.replace(/\.\w+$/, ".jpg");
     const href = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = href;
