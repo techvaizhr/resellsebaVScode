@@ -114,6 +114,8 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
   if (!docs.length) return;
   const width = size === "3x3" ? "3in" : "3in";
   const height = size === "3x3" ? "3in" : "4in";
+  const orderBarcodeHeight = size === "3x3" ? 28 : 34;
+  const trackingBarcodeHeight = size === "3x3" ? 26 : 32;
 
   const win = window.open("", "_blank");
   if (!win) return;
@@ -129,7 +131,7 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
           .label {
             width: ${width};
             height: ${height};
-            padding: 0.12in;
+            padding: 0.09in;
             box-sizing: border-box;
             border: 2px solid #000;
             page-break-after: always;
@@ -140,88 +142,90 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
           }
           .header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
+            min-width: 0;
+            margin-bottom: 3px;
           }
-          .reseller-info { display: flex; align-items: center; gap: 6px; min-width: 0; }
-          .reseller-logo { width: 30px; height: 30px; object-fit: contain; border: 1px solid #eee; border-radius: 4px; }
-          .site-name { font-size: 10pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-          .order-tag { font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: #000; color: #fff; padding: 3px 8px; border-radius: 3px; white-space: nowrap; }
+          .reseller-info { display: flex; align-items: center; gap: 5px; min-width: 0; flex: 1; }
+          .reseller-logo { width: 24px; height: 24px; object-fit: contain; border: 1px solid #ddd; border-radius: 3px; }
+          .site-name { font-size: 9pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-          .order-barcode {
+          .barcode-section {
             border-top: 2px solid #000;
             border-bottom: 2px solid #000;
-            margin: 5px 0 7px;
-            padding: 3px 4px 1px;
-            text-align: center;
+            padding: 3px 0;
+            margin-bottom: 4px;
           }
-          .order-barcode svg { max-height: 40px; }
+          .order-barcode { text-align: center; margin-bottom: 3px; }
+          .order-barcode svg { width: 100%; height: auto; display: block; max-height: ${orderBarcodeHeight}px; }
+          .courier-line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            border-top: 1px dashed #bbb;
+            padding-top: 3px;
+          }
+          .courier-name { font-size: 8pt; font-weight: 900; text-transform: uppercase; color: #000; }
+          .courier-barcode { flex: 1; min-width: 0; text-align: center; }
+          .courier-barcode svg { width: 100%; height: auto; display: block; max-height: ${trackingBarcodeHeight}px; }
+          .tracking-pending { font-size: 7pt; font-family: monospace; font-weight: bold; border: 1px dashed #000; padding: 2px 6px; border-radius: 3px; }
 
           .section-title { font-size: 6.5pt; text-transform: uppercase; color: #666; font-weight: bold; margin-bottom: 2px; letter-spacing: 0.4px; }
 
           .customer {
             border: 1.5px solid #000;
-            padding: 7px;
-            margin-bottom: 7px;
+            padding: 5px;
+            margin-bottom: 4px;
             border-radius: 4px;
           }
-          .name { font-size: 12.5pt; font-weight: 800; margin-bottom: 2px; color: #000; }
-          .phone { font-size: 11pt; font-weight: bold; margin-bottom: 4px; display: block; border-bottom: 1px dashed #000; width: fit-content; }
-          .address { font-size: 8.5pt; line-height: 1.3; font-weight: 500; }
+          .name { font-size: 11.5pt; font-weight: 800; margin-bottom: 2px; color: #000; }
+          .phone { font-size: 10pt; font-weight: bold; margin-bottom: 3px; display: block; border-bottom: 1px dashed #000; width: fit-content; }
+          .address { font-size: 8pt; line-height: 1.25; font-weight: 500; }
 
           .items-box {
             border: 1px solid #000;
-            padding: 6px;
+            padding: 4px;
             flex-grow: 1;
-            margin-bottom: 7px;
+            margin-bottom: 4px;
             border-radius: 4px;
             background: #f9f9f9;
-            font-size: 8pt;
+            font-size: 7.5pt;
             overflow: hidden;
           }
-          .item-row { display: block; margin-bottom: 2px; border-bottom: 1px solid #ddd; padding-bottom: 2px; }
-          .item-row:last-child { border-bottom: none; }
-
-          .courier-box {
-            border: 1.5px solid #000;
-            border-radius: 4px;
-            padding: 6px;
-            margin-bottom: 7px;
+          .item-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            gap: 8px;
+            align-items: baseline;
+            gap: 6px;
+            margin-bottom: 2px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 2px;
           }
-          .courier-info { display: flex; flex-direction: column; min-width: 0; }
-          .courier { font-size: 10pt; font-weight: 900; text-transform: uppercase; color: #000; }
-          .courier-barcode { flex: 1; min-width: 0; text-align: center; }
-          .courier-barcode svg { max-height: 32px; max-width: 100%; }
-          .tracking-pending { font-size: 8pt; font-family: monospace; font-weight: bold; border: 1px dashed #000; padding: 3px 8px; border-radius: 3px; }
+          .item-row:last-child { border-bottom: none; }
+          .item-name { flex: 1; min-width: 0; line-height: 1.2; font-size: 7.5pt; }
+          .item-qty { font-weight: 900; color: #000; white-space: nowrap; font-size: 8.5pt; }
 
           .footer {
+            margin-top: auto;
             border-top: 2px solid #000;
-            padding-top: 5px;
+            padding-top: 3px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 6px;
           }
-          .thanks { font-size: 7pt; font-weight: 700; text-transform: uppercase; color: #444; letter-spacing: 0.5px; }
-          .cod-badge {
-            background: #000;
-            color: #fff;
-            padding: 4px 10px;
-            border-radius: 4px;
-            text-align: right;
-          }
-          .cod-label { font-size: 6.5pt; text-transform: uppercase; display: block; line-height: 1; }
-          .cod-value { font-size: 13pt; font-weight: 900; }
+          .thanks { font-size: 6pt; font-weight: 700; text-transform: uppercase; color: #444; letter-spacing: 0.4px; line-height: 1.2; }
+          .cod-badge { background: #000; color: #fff; padding: 3px 8px; border-radius: 4px; text-align: right; }
+          .cod-label { font-size: 6pt; text-transform: uppercase; display: block; line-height: 1; }
+          .cod-value { font-size: 11pt; font-weight: 900; }
         </style>
       </head>
       <body>
         ${docs.map((d) => {
-          const orderBarcode = barcodeSvg(d.orderNumber, 34, 10);
-          const trackingBarcode = d.courier?.tracking ? barcodeSvg(d.courier.tracking, 26, 9) : "";
+          const orderBarcode = barcodeSvg(d.orderNumber, orderBarcodeHeight, 10);
+          const trackingBarcode = d.courier?.tracking ? barcodeSvg(d.courier.tracking, trackingBarcodeHeight, 9) : "";
           return `
             <div class="label">
               <div class="header">
@@ -229,34 +233,31 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
                   ${d.storeLogo ? `<img src="${d.storeLogo}" class="reseller-logo" />` : ""}
                   <div class="site-name">${d.storeName}</div>
                 </div>
-                <div class="order-tag">Order ID</div>
               </div>
-              <div class="order-barcode">${orderBarcode || `<strong>#${d.orderNumber}</strong>`}</div>
+              <div class="barcode-section">
+                <div class="order-barcode">${orderBarcode || `<strong style="font-size:10pt">#${d.orderNumber}</strong>`}</div>
+                <div class="courier-line">
+                  <div class="courier-name">${courierLabel(d.courier?.provider as never) === "—" ? "MANUAL" : courierLabel(d.courier?.provider as never)}</div>
+                  ${trackingBarcode
+                    ? `<div class="courier-barcode">${trackingBarcode}</div>`
+                    : `<div class="tracking-pending">${d.courier?.tracking || "PENDING"}</div>`}
+                </div>
+              </div>
               <div class="customer">
                 ${d.customer
                   ? `<div class="section-title">Recipient</div>
                      <div class="name">${d.customer.name}</div>
                      <div class="phone">${d.customer.phone}</div>
-                     <div class="address">${d.customer.address}<br><strong>${d.area.replace("_", " ")}</strong></div>`
+                     <div class="address">${d.customer.address}</div>`
                   : `<div class="section-title">Parcel</div>
-                     <div class="name">#${d.orderNumber}</div>
-                     <div class="address"><strong>${d.area.replace("_", " ")}</strong></div>`}
+                     <div class="name">#${d.orderNumber}</div>`}
               </div>
               <div class="items-box">
                 <div class="section-title">Order Items</div>
-                ${d.items.map((it) => `<span class="item-row">${it.name} <strong>x ${it.qty}</strong></span>`).join("")}
-              </div>
-              <div class="courier-box">
-                <div class="courier-info">
-                  <div class="section-title">Courier</div>
-                  <div class="courier">${courierLabel(d.courier?.provider as never) === "—" ? "Manual" : courierLabel(d.courier?.provider as never)}</div>
-                </div>
-                ${trackingBarcode
-                  ? `<div class="courier-barcode">${trackingBarcode}</div>`
-                  : `<div class="tracking-pending">${d.courier?.tracking || "PENDING"}</div>`}
+                ${d.items.map((it) => `<div class="item-row"><span class="item-name">${it.name}</span><span class="item-qty">x ${it.qty}</span></div>`).join("")}
               </div>
               <div class="footer">
-                <div class="thanks">Thank you for shopping with us</div>
+                <div class="thanks">Thank you for<br>shopping with us</div>
                 ${d.cod == null
                   ? ""
                   : `<div class="cod-badge">
