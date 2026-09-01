@@ -73,6 +73,18 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ],
   },
   {
+    key: "subscriptions",
+    label: "Subscriptions",
+    permissions: [
+      { key: "subscriptions.view", label: "View subscriptions", description: "Plans, subscribers and subscription revenue", view: true },
+      {
+        key: "subscriptions.manage",
+        label: "Manage subscriptions",
+        description: "Edit plans, change a reseller's plan and approve subscription payments",
+      },
+    ],
+  },
+  {
     key: "resellers",
     label: "Resellers",
     permissions: [
@@ -160,6 +172,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/admin/expenses": ["expenses.manage", "finance.view", "reports.view"],
   "/admin/payouts": ["payouts.manage"],
   "/admin/commissions": ["commissions.manage"],
+  "/admin/subscriptions": ["subscriptions.view", "subscriptions.manage"],
   "/admin/resellers": ["resellers.manage"],
   "/admin/suppliers": ["suppliers.view", "suppliers.manage"],
   "/admin/supplier-report": ["suppliers.view", "suppliers.manage", "reports.view"],

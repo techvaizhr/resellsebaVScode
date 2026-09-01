@@ -115,7 +115,8 @@ export function useStore(): StoreData {
   return ctx;
 }
 
-export type LoadState = "loading" | "missing" | "ready";
+/** `closed` = the reseller exists but their subscription no longer includes a storefront. */
+export type LoadState = "loading" | "missing" | "closed" | "ready";
 
 export function useStoreLoader(code: string, themeOverride?: string | null, paletteOverride?: string | null) {
   const [state, setState] = useState<LoadState>("loading");
@@ -138,7 +139,7 @@ export function useStoreLoader(code: string, themeOverride?: string | null, pale
       const boot = await getStoreBootstrap(code);
       if (!alive) return;
       const r = boot?.store as (StoreSettings & { reseller_id: string; business_name: string }) | null;
-      if (!r) return setState("missing");
+      if (!r) return setState((boot as { closed?: boolean } | null)?.closed ? "closed" : "missing");
 
       const rid = r.reseller_id;
       const s = r as unknown as StoreSettings;

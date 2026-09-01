@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { canAccessResellerPanel } from "@/lib/reseller-status";
 
@@ -24,6 +24,8 @@ import {
   UserCircle,
   ListTree,
   CreditCard,
+  BadgeCheck,
+  Lock,
 
 
 } from "lucide-react";
@@ -34,6 +36,7 @@ import { useVerification } from "@/lib/use-verification";
 import { useBrandingTheme } from "@/lib/branding";
 import { getGlobalSettings, getMyReseller } from "@/lib/app-data";
 import { getPanelBootstrapPayload } from "@/lib/panel-bootstrap";
+import { fmtDate, statusLabel, type SubscriptionState } from "@/lib/subscription";
 import { consumeImpersonationReturnTarget } from "@/lib/impersonation";
 import { useOrderNavCount, applyOrderBadge } from "@/lib/use-order-nav-count";
 
@@ -61,6 +64,7 @@ const NAV: NavEntry[] = [
       { label: "Transactions", to: "/reseller/transactions", icon: <TrendingUp className="h-4 w-4" /> },
       { label: "Payouts", to: "/reseller/payouts", icon: <Wallet className="h-4 w-4" /> },
       { label: "Leader commissions", to: "/reseller/commissions", icon: <Award className="h-4 w-4" /> },
+      { label: "My subscription", to: "/reseller/subscription", icon: <BadgeCheck className="h-4 w-4" /> },
     ],
   },
   {
@@ -92,11 +96,16 @@ const NAV: NavEntry[] = [
 function ResellerLayout() {
   const { user, roles, loading } = useAuth();
   const orderNavCount = useOrderNavCount();
-  const navWithBadge = useMemo(
-    () => applyOrderBadge(NAV, "/reseller/orders", orderNavCount),
-    [orderNavCount],
-  );
+  const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
+  const navWithBadge = useMemo(() => {
+    // A panel-only plan has no public storefront, so its settings stay hidden.
+    const base = subscription && subscription.store_enabled === false
+      ? NAV.filter((n) => n.label !== "Store")
+      : NAV;
+    return applyOrderBadge(base, "/reseller/orders", orderNavCount);
+  }, [orderNavCount, subscription]);
   const { required: needsVerify, loading: verifyLoading } = useVerification();
+  const location = useLocation();
   const nav = useNavigate();
   const [storeName, setStoreName] = useState("My store");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -139,7 +148,9 @@ function ResellerLayout() {
         setStoreCode(r.code);
         setAvatarUrl(r.avatar_url ?? null);
         // Store branding rides along with the panel bootstrap.
-        const s = getPanelBootstrapPayload()?.reseller_settings ?? null;
+        const boot = getPanelBootstrapPayload();
+        setSubscription(boot?.subscription ?? null);
+        const s = boot?.reseller_settings ?? null;
         if (s?.logo_url) logo = s.logo_url;
         if (s?.primary_color) color = s.primary_color;
       } else {
@@ -167,6 +178,10 @@ function ResellerLayout() {
     );
   }
 
+
+  const allowedWhileLocked = ["/reseller/subscription", "/reseller/profile", "/reseller/support"];
+  const locked =
+    Boolean(subscription?.locked) && !allowedWhileLocked.some((p) => location.pathname.startsWith(p));
 
   return (
     <AppShell
@@ -210,7 +225,41 @@ function ResellerLayout() {
       }
     >
       <ImpersonationBanner />
-      <Outlet />
+      {subscription?.status === "grace" ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+          <span>
+            Your subscription ended on {fmtDate(subscription.current_period_end ?? subscription.ends_at)} —{" "}
+            {subscription.grace_days_left ?? 0} day(s) of grace access left.
+          </span>
+          <Link to="/reseller/subscription" className="rounded-md bg-amber-500 px-2.5 py-1 font-semibold text-white">
+            Renew now
+          </Link>
+        </div>
+      ) : null}
+      {locked ? <SubscriptionLock state={subscription} /> : <Outlet />}
     </AppShell>
+  );
+}
+
+
+/** Shown instead of the page when the plan has expired past its grace period. */
+function SubscriptionLock({ state }: { state: SubscriptionState | null }) {
+  return (
+    <div className="mx-auto max-w-lg py-16 text-center">
+      <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10 text-destructive">
+        <Lock className="h-6 w-6" />
+      </div>
+      <h2 className="text-lg font-semibold">Your subscription has ended</h2>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {statusLabel(state?.status)} · {state?.plan_name ?? "No plan"} — the panel, your storefront and new orders stay
+        paused until the plan is renewed.
+      </p>
+      <Link
+        to="/reseller/subscription"
+        className="mt-5 inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+      >
+        Renew subscription
+      </Link>
+    </div>
   );
 }
