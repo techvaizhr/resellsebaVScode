@@ -18,6 +18,7 @@ import {
   Award,
   Shield,
   ShieldCheck,
+  BadgeCheck,
   Eraser,
   Globe,
 
@@ -77,6 +78,7 @@ const NAV: NavEntry[] = [
       { label: "Expenses", to: "/admin/expenses", icon: <Receipt className="h-4 w-4" /> },
       { label: "Payouts", to: "/admin/payouts", icon: <Wallet className="h-4 w-4" /> },
       { label: "Commissions", to: "/admin/commissions", icon: <Percent className="h-4 w-4" /> },
+      { label: "Subscriptions", to: "/admin/subscriptions", icon: <BadgeCheck className="h-4 w-4" /> },
       { label: "Deposit transactions", to: "/admin/deposit-transactions", icon: <ShieldCheck className="h-4 w-4" /> },
     ],
   },

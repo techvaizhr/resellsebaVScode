@@ -172,6 +172,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/admin/expenses": ["expenses.manage", "finance.view", "reports.view"],
   "/admin/payouts": ["payouts.manage"],
   "/admin/commissions": ["commissions.manage"],
+  "/admin/subscriptions": ["subscriptions.view", "subscriptions.manage"],
   "/admin/resellers": ["resellers.manage"],
   "/admin/suppliers": ["suppliers.view", "suppliers.manage"],
   "/admin/supplier-report": ["suppliers.view", "suppliers.manage", "reports.view"],
