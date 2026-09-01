@@ -73,6 +73,18 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ],
   },
   {
+    key: "subscriptions",
+    label: "Subscriptions",
+    permissions: [
+      { key: "subscriptions.view", label: "View subscriptions", description: "Plans, subscribers and subscription revenue", view: true },
+      {
+        key: "subscriptions.manage",
+        label: "Manage subscriptions",
+        description: "Edit plans, change a reseller's plan and approve subscription payments",
+      },
+    ],
+  },
+  {
     key: "resellers",
     label: "Resellers",
     permissions: [
