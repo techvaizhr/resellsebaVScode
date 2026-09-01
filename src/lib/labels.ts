@@ -32,21 +32,6 @@ export async function printShippingLabels(
 
   if (!orders || orders.length === 0) return;
 
-  const resellerIds = [...new Set(orders.map((o) => o.reseller_id).filter((x): x is string => Boolean(x)))];
-  const { data: resellers } = await supabase
-    .from("resellers")
-    .select("id,business_name,reseller_settings(logo_url,store_name)")
-    .in("id", resellerIds);
-
-  const resellerMap = new Map();
-  resellers?.forEach(r => {
-    const s = Array.isArray(r.reseller_settings) ? r.reseller_settings[0] : r.reseller_settings;
-    resellerMap.set(r.id, {
-      name: s?.store_name || r.business_name,
-      logo: s?.logo_url
-    });
-  });
-
   const size = forceSize || (settings as any)?.label_size || "3x4";
   const siteName = settings?.site_name || "ResellHub";
 
