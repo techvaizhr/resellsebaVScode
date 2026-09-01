@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ResellerAvatar } from "@/components/reseller-avatar";
 import { PageHeader, EmptyState } from "@/components/ui-kit";
-import { DataToolbar, Pagination, usePaginated } from "@/components/data-list";
+import { Pagination, usePaginated } from "@/components/data-list";
 import { SearchableSelect } from "@/components/searchable-select";
 import {
   Check,
@@ -451,35 +451,50 @@ function ResellersPage() {
         ))}
       </div>
 
-      <div className="mb-3 w-full sm:max-w-xs">
-        <SearchableSelect
-          value={agentFilter}
-          onChange={(v) => {
-            setAgentFilter(v);
+      <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        <input
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
             setPage(1);
           }}
-          placeholder="All agents"
-          options={[
-            { value: "", label: "All agents" },
-            { value: "none", label: "No agent assigned" },
-            ...agents.map((a) => ({ value: a.id, label: a.display_name })),
-          ]}
+          placeholder="Search name, code, phone, email…"
+          className="w-full min-w-0 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
         />
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="w-40 sm:w-48">
+            <SearchableSelect
+              value={agentFilter}
+              onChange={(v) => {
+                setAgentFilter(v);
+                setPage(1);
+              }}
+              placeholder="All agents"
+              options={[
+                { value: "", label: "All agents" },
+                { value: "none", label: "No agent assigned" },
+                ...agents.map((a) => ({ value: a.id, label: a.display_name })),
+              ]}
+            />
+          </div>
+          <select
+            value={perPage}
+            onChange={(e) => {
+              setPerPage(Number(e.target.value));
+              setPage(1);
+            }}
+            className="shrink-0 rounded-md border bg-background px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            title="Per page"
+          >
+            {[10, 20, 50, 100].map((n) => (
+              <option key={n} value={n}>
+                {n} / page
+              </option>
+            ))}
+            <option value={-1}>All</option>
+          </select>
+        </div>
       </div>
-
-      <DataToolbar
-        search={query}
-        onSearch={(v) => {
-          setQuery(v);
-          setPage(1);
-        }}
-        searchPlaceholder="Search name, code, phone, email…"
-        perPage={perPage}
-        onPerPage={(n) => {
-          setPerPage(n);
-          setPage(1);
-        }}
-      />
 
       {loading ? (
         <div className="grid place-items-center py-12">
