@@ -207,8 +207,8 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
       </head>
       <body>
         ${docs.map((d) => {
-          const orderBarcode = barcodeSvg(d.orderNumber, orderBarcodeHeight, 11);
-          const trackingBarcode = d.courier?.tracking ? barcodeSvg(d.courier.tracking, trackingBarcodeHeight, 13) : "";
+          const orderBarcode = barcodeSvg(d.orderNumber, orderBarcodeHeight, 14);
+          const trackingBarcode = d.courier?.tracking ? barcodeSvg(d.courier.tracking, trackingBarcodeHeight, 16) : "";
           const brand = courierBrand(d.courier?.provider);
           const brandLogo = brand?.wordmark ?? null;
           return `
