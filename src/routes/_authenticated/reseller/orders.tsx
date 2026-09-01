@@ -32,6 +32,7 @@ import {
   DollarSign,
   Wallet,
 } from "lucide-react";
+import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { NewOrderModal } from "@/components/NewOrderModal";
 import { OrderEditModal } from "@/components/OrderEditModal";

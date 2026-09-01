@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Truck,
 } from "lucide-react";
+import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { toast } from "sonner";
 import { PageHeader, EmptyState } from "@/components/ui-kit";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";

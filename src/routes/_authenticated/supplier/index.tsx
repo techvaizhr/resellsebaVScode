@@ -9,6 +9,7 @@ import {
   Package,
   ClipboardList,
 } from "lucide-react";
+import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { PageHeader, StatCard } from "@/components/ui-kit";
 import { ReportCard } from "@/components/report-blocks";
 import { useSupplier } from "@/components/supplier-context";

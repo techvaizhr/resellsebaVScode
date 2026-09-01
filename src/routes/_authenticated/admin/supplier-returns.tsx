@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, PackageCheck, Undo2, LogIn, ImageIcon, Search, ChevronDown } from "lucide-react";
+import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { toast } from "sonner";
 import { PageHeader, StatCard, EmptyState } from "@/components/ui-kit";
 import {

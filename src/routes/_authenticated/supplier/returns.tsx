@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PackageCheck, ImageIcon } from "lucide-react";
+import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { PageHeader, StatCard } from "@/components/ui-kit";
 import { StatusTabs } from "@/components/status-tabs";
 import { useSupplier } from "@/components/supplier-context";
