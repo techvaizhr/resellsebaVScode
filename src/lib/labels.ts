@@ -130,9 +130,9 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
             justify-content: space-between;
             gap: 4px;
             min-width: 0;
-            margin-bottom: 3px;
+            margin-bottom: 1px;
             border-bottom: 2px solid #000;
-            padding-bottom: 3px;
+            padding-bottom: 1px;
           }
           .brand-box { display: flex; align-items: center; flex-shrink: 0; max-width: 40%; }
           .brand-logo { max-height: 24px; max-width: 100%; object-fit: contain; }
