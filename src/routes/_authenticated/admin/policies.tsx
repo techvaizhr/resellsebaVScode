@@ -144,7 +144,6 @@ function PoliciesAdmin() {
 
       {rows.length === 0 ? (
         <EmptyState
-          icon={<ScrollText className="h-6 w-6" />}
           title="No policies yet"
           description="Add your first policy section so resellers know the rules."
         />
