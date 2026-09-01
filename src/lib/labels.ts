@@ -222,24 +222,26 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
       </head>
       <body>
         ${docs.map((d) => {
-          const orderBarcode = barcodeSvg(d.orderNumber, orderBarcodeHeight, 10);
-          const trackingBarcode = d.courier?.tracking ? barcodeSvg(d.courier.tracking, trackingBarcodeHeight, 9) : "";
+          const orderBarcode = barcodeSvg(d.orderNumber, orderBarcodeHeight, 11);
+          const trackingBarcode = d.courier?.tracking ? barcodeSvg(d.courier.tracking, trackingBarcodeHeight, 13) : "";
+          const brand = courierBrand(d.courier?.provider);
+          const brandLogo = brand?.wordmark ?? null;
           return `
             <div class="label">
               <div class="header">
-                <div class="reseller-info">
-                  ${d.storeLogo ? `<img src="${d.storeLogo}" class="reseller-logo" />` : ""}
-                  <div class="site-name">${d.storeName}</div>
+                <div class="brand-box">
+                  ${d.storeLogo ? `<img src="${d.storeLogo}" class="brand-logo" />` : `<div class="site-name">${d.storeName}</div>`}
                 </div>
-              </div>
-              <div class="barcode-section">
                 <div class="order-barcode">${orderBarcode || `<strong style="font-size:10pt">#${d.orderNumber}</strong>`}</div>
-                <div class="courier-line">
-                  <div class="courier-name">${courierLabel(d.courier?.provider as never) === "—" ? "MANUAL" : courierLabel(d.courier?.provider as never)}</div>
-                  ${trackingBarcode
-                    ? `<div class="courier-barcode">${trackingBarcode}</div>`
-                    : `<div class="tracking-pending">${d.courier?.tracking || "PENDING"}</div>`}
+              </div>
+              <div class="courier-section">
+                <div class="courier-info">
+                  ${brandLogo ? `<img src="${brandLogo}" class="courier-logo" />` : ""}
+                  <div class="courier-name">${brand?.label ?? (d.courier?.provider ? String(d.courier.provider) : "MANUAL")}</div>
                 </div>
+                ${trackingBarcode
+                  ? `<div class="courier-barcode">${trackingBarcode}</div>`
+                  : `<div class="courier-barcode"><span class="tracking-pending">${d.courier?.tracking || "PENDING"}</span></div>`}
               </div>
               <div class="customer">
                 ${d.customer
