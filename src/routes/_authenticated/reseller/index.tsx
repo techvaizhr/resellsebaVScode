@@ -347,6 +347,16 @@ function ResellerDashboard() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chart}>
+                  <defs>
+                    <linearGradient id="gradOrders" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#6366f1" stopOpacity={0.5} />
+                      <stop offset="100%" stopColor="#6366f1" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="gradProfit" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#22c55e" stopOpacity={0.5} />
+                      <stop offset="100%" stopColor="#22c55e" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
@@ -357,15 +367,17 @@ function ResellerDashboard() {
                   <Area
                     type="monotone"
                     dataKey="orders"
-                    stroke="hsl(var(--primary))"
-                    fill="hsl(var(--primary) / 0.2)"
+                    stroke="#6366f1"
+                    strokeWidth={2.5}
+                    fill="url(#gradOrders)"
                     name="Orders"
                   />
                   <Area
                     type="monotone"
                     dataKey="profit"
-                    stroke="hsl(142 76% 36%)"
-                    fill="hsl(142 76% 36% / 0.15)"
+                    stroke="#22c55e"
+                    strokeWidth={2.5}
+                    fill="url(#gradProfit)"
                     name="Profit ৳"
                   />
                 </AreaChart>
