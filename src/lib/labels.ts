@@ -217,7 +217,7 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
                 <div class="brand-box">
                   ${d.storeLogo ? `<img src="${d.storeLogo}" class="brand-logo" />` : `<div class="site-name">${d.storeName}</div>`}
                 </div>
-                <div class="order-barcode">${orderBarcode || `<strong style="font-size:10pt">#${d.orderNumber}</strong>`}</div>
+                <div class="order-barcode">${orderBarcode || `<strong style="font-size:13pt">#${d.orderNumber}</strong>`}</div>
               </div>
               <div class="courier-section">
                 <div class="courier-info">
