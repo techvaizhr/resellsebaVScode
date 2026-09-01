@@ -1,7 +1,7 @@
 import JsBarcode from "jsbarcode";
 import { supabase } from "@/integrations/supabase/client";
 import { getGlobalSettings } from "@/lib/app-data";
-import { courierLabel } from "@/components/courier-brand";
+import { courierBrand } from "@/components/courier-brand";
 
 export type LabelDoc = {
   orderNumber: string;
@@ -32,21 +32,6 @@ export async function printShippingLabels(
 
   if (!orders || orders.length === 0) return;
 
-  const resellerIds = [...new Set(orders.map((o) => o.reseller_id).filter((x): x is string => Boolean(x)))];
-  const { data: resellers } = await supabase
-    .from("resellers")
-    .select("id,business_name,reseller_settings(logo_url,store_name)")
-    .in("id", resellerIds);
-
-  const resellerMap = new Map();
-  resellers?.forEach(r => {
-    const s = Array.isArray(r.reseller_settings) ? r.reseller_settings[0] : r.reseller_settings;
-    resellerMap.set(r.id, {
-      name: s?.store_name || r.business_name,
-      logo: s?.logo_url
-    });
-  });
-
   const size = forceSize || (settings as any)?.label_size || "3x4";
   const siteName = settings?.site_name || "ResellHub";
 
@@ -61,7 +46,6 @@ export async function printShippingLabels(
   shipments?.forEach(s => shipmentsByOrder.set(s.order_id, s));
 
   const docs: LabelDoc[] = orders.map((o) => {
-    const reseller = resellerMap.get(o.reseller_id);
     const s = shipmentsByOrder.get(o.id);
     const rawPhone = o.customer_phone || "";
     const maskedPhone = maskPhone && rawPhone
@@ -71,8 +55,8 @@ export async function printShippingLabels(
       : rawPhone;
     return {
       orderNumber: o.order_number,
-      storeName: reseller?.name || siteName,
-      storeLogo: reseller?.logo ?? null,
+      storeName: siteName,
+      storeLogo: (settings as any)?.logo_url ?? null,
       area: o.area,
       customer: hideCustomer
         ? null
@@ -114,8 +98,8 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
   if (!docs.length) return;
   const width = size === "3x3" ? "3in" : "3in";
   const height = size === "3x3" ? "3in" : "4in";
-  const orderBarcodeHeight = size === "3x3" ? 28 : 34;
-  const trackingBarcodeHeight = size === "3x3" ? 26 : 32;
+  const orderBarcodeHeight = size === "3x3" ? 22 : 26;
+  const trackingBarcodeHeight = size === "3x3" ? 36 : 44;
 
   const win = window.open("", "_blank");
   if (!win) return;
@@ -143,34 +127,33 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
           .header {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             min-width: 0;
             margin-bottom: 3px;
-          }
-          .reseller-info { display: flex; align-items: center; gap: 5px; min-width: 0; flex: 1; }
-          .reseller-logo { width: 24px; height: 24px; object-fit: contain; border: 1px solid #ddd; border-radius: 3px; }
-          .site-name { font-size: 9pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-          .barcode-section {
-            border-top: 2px solid #000;
             border-bottom: 2px solid #000;
-            padding: 3px 0;
-            margin-bottom: 4px;
+            padding-bottom: 3px;
           }
-          .order-barcode { text-align: center; margin-bottom: 3px; }
+          .brand-box { display: flex; align-items: center; flex-shrink: 0; max-width: 34%; }
+          .brand-logo { max-height: 20px; max-width: 100%; object-fit: contain; }
+          .site-name { font-size: 8.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+          .order-barcode { flex: 1; min-width: 0; text-align: center; }
           .order-barcode svg { width: 100%; height: auto; display: block; max-height: ${orderBarcodeHeight}px; }
-          .courier-line {
+
+          .courier-section {
+            border: 1.5px solid #000;
+            border-radius: 4px;
+            padding: 4px 5px;
+            margin-bottom: 4px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
             gap: 6px;
-            border-top: 1px dashed #bbb;
-            padding-top: 3px;
           }
-          .courier-name { font-size: 8pt; font-weight: 900; text-transform: uppercase; color: #000; }
-          .courier-barcode { flex: 1; min-width: 0; text-align: center; }
-          .courier-barcode svg { width: 100%; height: auto; display: block; max-height: ${trackingBarcodeHeight}px; }
-          .tracking-pending { font-size: 7pt; font-family: monospace; font-weight: bold; border: 1px dashed #000; padding: 2px 6px; border-radius: 3px; }
+          .courier-info { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; width: 0.62in; }
+          .courier-logo { max-height: 16px; max-width: 100%; object-fit: contain; }
+          .courier-name { font-size: 6.5pt; font-weight: 900; text-transform: uppercase; color: #000; text-align: center; line-height: 1.1; }
+          .courier-barcode { flex: 1; min-width: 0; text-align: center; border-left: 1px dashed #999; padding-left: 5px; }
+          .courier-barcode svg { width: 100%; height: auto; display: block; max-height: ${trackingBarcodeHeight + 12}px; }
+          .tracking-pending { font-size: 8pt; font-family: monospace; font-weight: bold; border: 1px dashed #000; padding: 3px 8px; border-radius: 3px; }
 
           .section-title { font-size: 6.5pt; text-transform: uppercase; color: #666; font-weight: bold; margin-bottom: 2px; letter-spacing: 0.4px; }
 
@@ -224,24 +207,26 @@ export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
       </head>
       <body>
         ${docs.map((d) => {
-          const orderBarcode = barcodeSvg(d.orderNumber, orderBarcodeHeight, 10);
-          const trackingBarcode = d.courier?.tracking ? barcodeSvg(d.courier.tracking, trackingBarcodeHeight, 9) : "";
+          const orderBarcode = barcodeSvg(d.orderNumber, orderBarcodeHeight, 11);
+          const trackingBarcode = d.courier?.tracking ? barcodeSvg(d.courier.tracking, trackingBarcodeHeight, 13) : "";
+          const brand = courierBrand(d.courier?.provider);
+          const brandLogo = brand?.wordmark ?? null;
           return `
             <div class="label">
               <div class="header">
-                <div class="reseller-info">
-                  ${d.storeLogo ? `<img src="${d.storeLogo}" class="reseller-logo" />` : ""}
-                  <div class="site-name">${d.storeName}</div>
+                <div class="brand-box">
+                  ${d.storeLogo ? `<img src="${d.storeLogo}" class="brand-logo" />` : `<div class="site-name">${d.storeName}</div>`}
                 </div>
-              </div>
-              <div class="barcode-section">
                 <div class="order-barcode">${orderBarcode || `<strong style="font-size:10pt">#${d.orderNumber}</strong>`}</div>
-                <div class="courier-line">
-                  <div class="courier-name">${courierLabel(d.courier?.provider as never) === "—" ? "MANUAL" : courierLabel(d.courier?.provider as never)}</div>
-                  ${trackingBarcode
-                    ? `<div class="courier-barcode">${trackingBarcode}</div>`
-                    : `<div class="tracking-pending">${d.courier?.tracking || "PENDING"}</div>`}
+              </div>
+              <div class="courier-section">
+                <div class="courier-info">
+                  ${brandLogo ? `<img src="${brandLogo}" class="courier-logo" />` : ""}
+                  <div class="courier-name">${brand?.label ?? (d.courier?.provider ? String(d.courier.provider) : "MANUAL")}</div>
                 </div>
+                ${trackingBarcode
+                  ? `<div class="courier-barcode">${trackingBarcode}</div>`
+                  : `<div class="courier-barcode"><span class="tracking-pending">${d.courier?.tracking || "PENDING"}</span></div>`}
               </div>
               <div class="customer">
                 ${d.customer
