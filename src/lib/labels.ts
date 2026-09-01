@@ -1,3 +1,4 @@
+import JsBarcode from "jsbarcode";
 import { supabase } from "@/integrations/supabase/client";
 import { getGlobalSettings } from "@/lib/app-data";
 import { courierLabel } from "@/components/courier-brand";
@@ -83,6 +84,30 @@ export async function printShippingLabels(
   });
 
   printLabelDocs(docs, size);
+}
+
+/** Render a CODE128 barcode as inline SVG markup (serialized from a detached node). */
+function barcodeSvg(value: string, height = 34, fontSize = 11): string {
+  if (!value) return "";
+  try {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    JsBarcode(svg, String(value), {
+      format: "CODE128",
+      displayValue: true,
+      height,
+      margin: 0,
+      fontSize,
+      fontOptions: "bold",
+      textMargin: 2,
+      lineColor: "#000",
+      background: "transparent",
+    });
+    svg.setAttribute("style", "width:100%;height:auto;display:block;");
+    svg.removeAttribute("width");
+    return svg.outerHTML;
+  } catch {
+    return "";
+  }
 }
 
 export function printLabelDocs(docs: LabelDoc[], size: "3x3" | "3x4" = "3x4") {
