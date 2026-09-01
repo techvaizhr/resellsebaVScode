@@ -250,7 +250,7 @@ function AdminSupplierReportPage() {
                     {detail!.returns.map((r) => (
                       <tr key={r.id}>
                         <td className="p-2 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
-                        <td>#{r.order_number}</td>
+                        <td><CopyOrderNumber orderNumber={r.order_number} /></td>
                         <td className="text-muted-foreground">{r.product_name}</td>
                         <td className="tabular-nums">{r.quantity}</td>
                         <td className="font-semibold tabular-nums">{bdtNum(Number(r.quantity) * Number(r.unit_price))}</td>
@@ -284,7 +284,7 @@ function AdminSupplierReportPage() {
                     return (
                       <tr key={r.id}>
                         <td className="p-2 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
-                        <td className="font-medium">#{r.order_number}</td>
+                        <td className="font-medium"><CopyOrderNumber orderNumber={r.order_number} /></td>
                         <td className="text-muted-foreground">{r.product_name}</td>
                         <td className="tabular-nums">{qty}</td>
                         <td className="tabular-nums">{bdtNum(r.unit_price)}</td>

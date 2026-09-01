@@ -350,7 +350,7 @@ function AdminSupplierReturnsPage() {
                               className="h-3.5 w-3.5"
                             />
                           )}
-                          <span className="text-xs font-semibold">#{ord.order_number}</span>
+                          <CopyOrderNumber orderNumber={ord.order_number} className="text-xs font-semibold" />
                           <span className="text-[11px] text-muted-foreground">
                             {ord.rows.length} product{ord.rows.length > 1 ? "s" : ""} · {bdtNum(sum(ord.rows))}
                           </span>

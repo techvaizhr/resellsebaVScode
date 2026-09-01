@@ -224,7 +224,7 @@ function ItemTable({
             const qty = r[qtyKey];
             return (
               <tr key={r.id} className="border-t">
-                <td className="p-2 font-medium">#{r.order_number}</td>
+                <td className="p-2 font-medium"><CopyOrderNumber orderNumber={r.order_number} /></td>
                 <td className="p-2 text-muted-foreground">{r.product_name}</td>
                 <td className="p-2 tabular-nums">{qty}</td>
                 <td className="p-2 tabular-nums">{bdtNum(r.unit_price)}</td>

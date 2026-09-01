@@ -140,7 +140,7 @@ function SupplierReportPage() {
                   return (
                     <tr key={r.id} className="border-t">
                       <td className="p-2 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
-                      <td className="font-medium">#{r.order_number}</td>
+                      <td className="font-medium"><CopyOrderNumber orderNumber={r.order_number} /></td>
                       <td className="text-muted-foreground">{r.product_name}</td>
                       <td className="tabular-nums">{qty}</td>
                       <td className="tabular-nums">{bdtNum(r.unit_price)}</td>

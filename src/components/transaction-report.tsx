@@ -522,7 +522,7 @@ export function TransactionReport({
 
                             className="font-semibold text-primary hover:underline"
                           >
-                            #{r.order_number}
+                            <CopyOrderNumber orderNumber={r.order_number ?? ""} />
                           </Link>
                         ) : (
                           <span className="font-semibold">{r.label}</span>

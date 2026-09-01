@@ -160,7 +160,7 @@ function SupplierReturnsPage() {
                           })}
                         </div>
                       </td>
-                      <td className="font-medium">#{r.order_number}</td>
+                      <td className="font-medium"><CopyOrderNumber orderNumber={r.order_number} /></td>
                       <td>
                         <div className="flex items-center gap-2">
                           {r.product_image ? (
