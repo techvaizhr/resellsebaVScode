@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Truck,
 } from "lucide-react";
+import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { toast } from "sonner";
 import { PageHeader, EmptyState } from "@/components/ui-kit";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
@@ -516,7 +517,7 @@ function SupplierOrdersPage() {
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-semibold">#{o.order_number}</span>
+                          <CopyOrderNumber orderNumber={o.order_number} className="text-sm font-semibold" />
                           <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${supplierStatusTone(o.status)}`}>
                             {supplierStatusLabel(o.status)}
                           </span>
@@ -596,7 +597,7 @@ function SupplierOrdersPage() {
                     </div>
 
                     <div className="min-w-0 text-center">
-                      <div className="truncate text-xs font-semibold">#{o.order_number}</div>
+                      <CopyOrderNumber orderNumber={o.order_number} className="text-xs font-semibold" />
                       <div className="text-[11px] text-muted-foreground">
                         {new Date(o.created_at).toLocaleDateString()}
                       </div>

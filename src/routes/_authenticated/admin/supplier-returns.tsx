@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, PackageCheck, Undo2, LogIn, ImageIcon, Search, ChevronDown } from "lucide-react";
+import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { toast } from "sonner";
 import { PageHeader, StatCard, EmptyState } from "@/components/ui-kit";
 import {
@@ -349,7 +350,7 @@ function AdminSupplierReturnsPage() {
                               className="h-3.5 w-3.5"
                             />
                           )}
-                          <span className="text-xs font-semibold">#{ord.order_number}</span>
+                          <CopyOrderNumber orderNumber={ord.order_number} className="text-xs font-semibold" />
                           <span className="text-[11px] text-muted-foreground">
                             {ord.rows.length} product{ord.rows.length > 1 ? "s" : ""} · {bdtNum(sum(ord.rows))}
                           </span>

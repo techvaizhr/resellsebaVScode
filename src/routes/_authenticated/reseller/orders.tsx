@@ -32,6 +32,7 @@ import {
   DollarSign,
   Wallet,
 } from "lucide-react";
+import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { NewOrderModal } from "@/components/NewOrderModal";
 import { OrderEditModal } from "@/components/OrderEditModal";
@@ -878,7 +879,7 @@ function OrdersPage() {
                       onChange={(e) => mark(e.target.checked)}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-bold tracking-tight">#{o.order_number}</div>
+                      <CopyOrderNumber orderNumber={o.order_number} className="text-sm font-bold tracking-tight" />
                       <div className="text-[10px] uppercase tracking-wide text-muted-foreground tabular-nums">
                         {new Date(o.created_at).toLocaleString([], {
                           day: "2-digit",
@@ -1046,7 +1047,7 @@ function OrdersPage() {
                     </button>
                   </div>
                   <div className="min-w-0 text-center">
-                    <div className="font-medium truncate">{o.order_number}</div>
+                    <CopyOrderNumber orderNumber={o.order_number} prefix={false} className="font-medium" />
                     <div className="text-[11px] text-muted-foreground">
                       {new Date(o.created_at).toLocaleDateString()}
                     </div>

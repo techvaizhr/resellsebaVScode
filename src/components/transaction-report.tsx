@@ -15,6 +15,7 @@ import { resolveRange, rangeLabel, type DateRangeState } from "@/components/date
 import { DATE_PRESET_OPTIONS, type DatePreset } from "@/components/order-filters";
 import { bdt, toCsv, downloadCsv, PROFIT_FORMULA_HINT } from "@/lib/finance-report";
 import { orderStatusLabel, orderStatusTone } from "@/lib/courier-status";
+import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 
 export type TxRow = {
   at: string;
@@ -521,7 +522,7 @@ export function TransactionReport({
 
                             className="font-semibold text-primary hover:underline"
                           >
-                            #{r.order_number}
+                            <CopyOrderNumber orderNumber={r.order_number ?? ""} />
                           </Link>
                         ) : (
                           <span className="font-semibold">{r.label}</span>

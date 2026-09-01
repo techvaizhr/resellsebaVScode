@@ -18,6 +18,7 @@ import { PageHeader, EmptyState } from "@/components/ui-kit";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { BulkScanButton } from "@/components/BulkScanModal";
 import { Loader2, X, Download, PackageCheck, ChevronDown, Plus, MoreVertical, Eye, Phone, CheckCircle2, Settings2, Trash2, Copy, ShoppingCart, Printer, Truck, RefreshCw, TrendingUp, DollarSign, Wallet, UserCircle, CheckSquare } from "lucide-react";
+import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { CourierLogo, courierLabel, COURIER_BRANDS } from "@/components/courier-brand";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -787,7 +788,7 @@ function AdminOrdersPage() {
                     />
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-bold tracking-tight">#{o.order_number}</div>
+                      <CopyOrderNumber orderNumber={o.order_number} className="text-sm font-bold tracking-tight" />
                       <div className="text-[10px] uppercase tracking-wide text-muted-foreground tabular-nums">
                         {new Date(o.created_at).toLocaleString([], { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </div>
@@ -1026,7 +1027,7 @@ function AdminOrdersPage() {
                     </button>
                   </div>
                   <div className="min-w-0 text-center">
-                    <div className="font-medium truncate">{o.order_number}</div>
+                    <CopyOrderNumber orderNumber={o.order_number} prefix={false} className="font-medium" />
                     <div className="text-[11px] text-muted-foreground">
                       {new Date(o.created_at).toLocaleDateString()}
                     </div>

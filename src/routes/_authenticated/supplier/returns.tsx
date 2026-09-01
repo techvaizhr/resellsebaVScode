@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PackageCheck, ImageIcon } from "lucide-react";
+import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { PageHeader, StatCard } from "@/components/ui-kit";
 import { StatusTabs } from "@/components/status-tabs";
 import { useSupplier } from "@/components/supplier-context";
@@ -159,7 +160,7 @@ function SupplierReturnsPage() {
                           })}
                         </div>
                       </td>
-                      <td className="font-medium">#{r.order_number}</td>
+                      <td className="font-medium"><CopyOrderNumber orderNumber={r.order_number} /></td>
                       <td>
                         <div className="flex items-center gap-2">
                           {r.product_image ? (
