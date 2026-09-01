@@ -1,7 +1,7 @@
 import JsBarcode from "jsbarcode";
 import { supabase } from "@/integrations/supabase/client";
 import { getGlobalSettings } from "@/lib/app-data";
-import { courierLabel } from "@/components/courier-brand";
+import { courierBrand, courierLabel } from "@/components/courier-brand";
 
 export type LabelDoc = {
   orderNumber: string;
