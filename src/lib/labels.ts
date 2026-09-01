@@ -61,7 +61,6 @@ export async function printShippingLabels(
   shipments?.forEach(s => shipmentsByOrder.set(s.order_id, s));
 
   const docs: LabelDoc[] = orders.map((o) => {
-    const reseller = resellerMap.get(o.reseller_id);
     const s = shipmentsByOrder.get(o.id);
     const rawPhone = o.customer_phone || "";
     const maskedPhone = maskPhone && rawPhone
@@ -71,8 +70,8 @@ export async function printShippingLabels(
       : rawPhone;
     return {
       orderNumber: o.order_number,
-      storeName: reseller?.name || siteName,
-      storeLogo: reseller?.logo ?? null,
+      storeName: siteName,
+      storeLogo: (settings as any)?.logo_url ?? null,
       area: o.area,
       customer: hideCustomer
         ? null
