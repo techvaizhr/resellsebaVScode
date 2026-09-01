@@ -123,6 +123,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       { key: "notifications.manage", label: "Manage notifications", description: "Email / SMS notification providers and templates" },
       { key: "notices.manage", label: "Manage reseller notices", description: "Create and publish notices shown to resellers" },
       { key: "tutorials.manage", label: "Manage tutorials", description: "Manage tutorial topics and videos" },
+      { key: "policies.manage", label: "Manage reseller policies", description: "Write the policy points shown in the reseller panel" },
     ],
   },
   {
@@ -197,4 +198,5 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/admin/deposit-transactions": ["deposits.manage", "finance.view"],
   "/admin/settings": ["settings.manage"],
   "/admin/privacy": ["settings.manage"],
+  "/admin/policies": ["policies.manage", "settings.manage"],
 };

@@ -26,6 +26,7 @@ import {
   CreditCard,
   BadgeCheck,
   Lock,
+  ScrollText,
 
 
 } from "lucide-react";
@@ -89,6 +90,7 @@ const NAV: NavEntry[] = [
     ],
   },
   { label: "My profile", to: "/reseller/profile", icon: <UserCircle className="h-4 w-4" /> },
+  { label: "Policies", to: "/reseller/policies", icon: <ScrollText className="h-4 w-4" /> },
   { label: "Support", to: "/reseller/support", icon: <Headphones className="h-4 w-4" /> },
 ];
 
