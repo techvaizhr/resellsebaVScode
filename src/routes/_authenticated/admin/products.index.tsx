@@ -379,6 +379,38 @@ function ProductsPage() {
 
       <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} onSaved={() => load()} />
 
+      <div className="mb-2 flex overflow-x-auto rounded-md border bg-muted/30 p-1">
+        <div className="flex min-w-max items-center gap-1 pr-2">
+          <span className="px-2 text-xs font-semibold text-muted-foreground">Status</span>
+          {statusButtons.map(([value, label, count]) => (
+            <button
+              key={`status-${value || "all"}`}
+              type="button"
+              onClick={() => setStatus(value)}
+              className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                status === value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background hover:text-foreground"
+              }`}
+            >
+              {label}<span className={status === value ? "opacity-90" : "text-foreground/70"}>({count})</span>
+            </button>
+          ))}
+          <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+          <span className="px-2 text-xs font-semibold text-muted-foreground">Approval</span>
+          {approvalButtons.map(([value, label, count]) => (
+            <button
+              key={`approval-${value || "all"}`}
+              type="button"
+              onClick={() => setApproval(value)}
+              className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                approval === value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background hover:text-foreground"
+              }`}
+            >
+              {label}<span className={approval === value ? "opacity-90" : "text-foreground/70"}>({count})</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <DataToolbar
         inline
         search={q}

@@ -220,7 +220,7 @@ function EditProduct() {
       }
       
       toast.success("Product updated successfully");
-      nav({ to: "/admin/products" });
+      nav({ to: "/admin/products", search: { refresh: id } });
     } catch (err) {
       console.error("Save product catch block:", err);
       toast.error(err instanceof Error ? err.message : "Failed to update product");
@@ -234,7 +234,7 @@ function EditProduct() {
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
-    nav({ to: "/admin/products" });
+    nav({ to: "/admin/products", search: { refresh: id } });
   }
 
   if (loading)

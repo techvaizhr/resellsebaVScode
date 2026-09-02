@@ -228,7 +228,7 @@ function NewProduct() {
       }
       
       toast.success("Product created successfully");
-      nav({ to: "/admin/products" });
+      nav({ to: "/admin/products", search: { refresh: "all" } });
     } catch (err) {
       console.error("Save product catch block:", err);
       toast.error(err instanceof Error ? err.message : "Failed to create product");
