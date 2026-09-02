@@ -485,17 +485,25 @@ function RevenueTab({ rows }: { rows: SubscriptionPayment[] }) {
     downloadCsv("subscription-revenue.csv", csv);
   }
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
+  useEffect(() => setPage(1), [perPage]);
+  const pageRows = usePaginated(byMonth, page, perPage);
+
   if (byMonth.length === 0) return <EmptyState title="No revenue yet" description="Approved subscription payments are summarised here." />;
 
   return (
     <div className="space-y-3">
-      <button
-        type="button"
-        onClick={exportCsv}
-        className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted"
-      >
-        <Download className="h-3.5 w-3.5" /> Export CSV
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={exportCsv}
+          className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+        >
+          <Download className="h-3.5 w-3.5" /> Export CSV
+        </button>
+        <PerPage value={perPage} onChange={setPerPage} />
+      </div>
       <div className="surface-card overflow-hidden">
         <div className="grid grid-cols-4 gap-4 border-b bg-muted/40 px-4 py-2 text-center text-xs font-medium text-muted-foreground">
           <div className="text-left">Month</div>
@@ -503,7 +511,7 @@ function RevenueTab({ rows }: { rows: SubscriptionPayment[] }) {
           <div>Wallet / bank</div>
           <div>Total</div>
         </div>
-        {byMonth.map(([m, v]) => (
+        {pageRows.map(([m, v]) => (
           <div key={m} className="grid grid-cols-4 gap-4 border-b px-4 py-3 text-center text-sm last:border-b-0">
             <div className="text-left text-xs font-medium">{m}</div>
             <div className="text-xs tabular-nums">{bdt(v.earning)}</div>
@@ -512,6 +520,7 @@ function RevenueTab({ rows }: { rows: SubscriptionPayment[] }) {
           </div>
         ))}
       </div>
+      <Pagination page={page} perPage={perPage} total={byMonth.length} onPage={setPage} />
     </div>
   );
 }
