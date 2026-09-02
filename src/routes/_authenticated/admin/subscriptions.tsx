@@ -183,6 +183,8 @@ function SubscribersTab({
 }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
   const filtered = useMemo(
     () =>
       rows.filter((r) => {
@@ -193,6 +195,8 @@ function SubscribersTab({
       }),
     [rows, q, status],
   );
+  useEffect(() => setPage(1), [q, status, perPage]);
+  const pageRows = usePaginated(filtered, page, perPage);
 
   if (rows.length === 0) return <EmptyState title="No resellers yet" description="Subscriptions appear once resellers sign up." />;
 
@@ -213,6 +217,7 @@ function SubscribersTab({
             </option>
           ))}
         </select>
+        <PerPage value={perPage} onChange={setPerPage} />
       </div>
 
       <div className="surface-card overflow-hidden">
