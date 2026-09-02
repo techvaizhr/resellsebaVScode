@@ -4,6 +4,7 @@ import { Loader2, Download, Pencil, Check, X, Plus, Wallet, Users, BadgeCheck, C
 import { toast } from "sonner";
 import { PageHeader, StatCard, EmptyState } from "@/components/ui-kit";
 import { AppModal } from "@/components/ui-kit/AppModal";
+import { Pagination, usePaginated } from "@/components/data-list";
 import { bdt, toCsv, downloadCsv } from "@/lib/finance-report";
 import { useCan } from "@/lib/use-auth";
 import {
@@ -42,6 +43,24 @@ export const Route = createFileRoute("/_authenticated/admin/subscriptions")({
 });
 
 type Tab = "plans" | "subscribers" | "payments" | "revenue";
+
+function PerPage({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="rounded-md border bg-background px-2 py-2 text-xs"
+      title="Per page"
+    >
+      {[10, 20, 50, 100].map((n) => (
+        <option key={n} value={n}>
+          {n} / page
+        </option>
+      ))}
+      <option value={-1}>All</option>
+    </select>
+  );
+}
 
 function AdminSubscriptionsPage() {
   const can = useCan();
