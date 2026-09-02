@@ -280,6 +280,19 @@ function PaymentsTab({
   onReload: () => void | Promise<void>;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return rows;
+    return rows.filter((p) =>
+      [p.business_name, p.code, p.plan_name, p.reference]
+        .some((v) => v?.toLowerCase().includes(term)),
+    );
+  }, [rows, q]);
+  useEffect(() => setPage(1), [q, perPage]);
+  const pageRows = usePaginated(filtered, page, perPage);
 
   async function review(id: string, approve: boolean) {
     setBusy(id);
