@@ -229,7 +229,7 @@ function SubscribersTab({
           <div>Balance</div>
           <div></div>
         </div>
-        {filtered.map((r) => (
+        {pageRows.map((r) => (
           <div
             key={r.reseller_id}
             className="grid grid-cols-1 items-center gap-1 border-b px-4 py-3 text-sm last:border-b-0 md:grid-cols-[1.4fr_1fr_auto_auto_auto_auto] md:gap-4 md:text-center"
@@ -265,6 +265,7 @@ function SubscribersTab({
           </div>
         ))}
       </div>
+      <Pagination page={page} perPage={perPage} total={filtered.length} onPage={setPage} />
     </div>
   );
 }
