@@ -138,7 +138,7 @@ function AdminSubscriptionsPage() {
       </div>
 
       {tab === "subscribers" ? (
-        <SubscribersTab rows={subscribers} canManage={canManage} onEdit={setEditSub} />
+        <SubscribersTab rows={subscribers} plans={plans} canManage={canManage} onEdit={setEditSub} />
       ) : tab === "payments" ? (
         <PaymentsTab rows={payments} canManage={canManage} onReload={load} />
       ) : tab === "plans" ? (
