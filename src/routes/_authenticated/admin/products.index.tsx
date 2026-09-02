@@ -226,29 +226,55 @@ function ProductsPage() {
     setSelected(new Set());
   }
 
-  const filtered = useMemo(() => {
+  const lowerFiltered = useMemo(() => {
     return items.filter((i) => {
       if (q) {
-        const t = q.toLowerCase();
-        if (!i.name.toLowerCase().includes(t) && !i.product_code.includes(t)) return false;
+        const t = q.trim().toLowerCase();
+        if (t && !i.name.toLowerCase().includes(t) && !i.product_code.toLowerCase().includes(t)) return false;
       }
       if (brand && i.brand_id !== brand) return false;
       if (category && i.category_id !== category) return false;
-      if (status === "active" && !i.is_active) return false;
-      if (status === "hidden" && i.is_active) return false;
-      if (status === "featured" && !i.is_featured) return false;
       if (stockFilter === "out" && i.stock > 0) return false;
       if (stockFilter === "low" && (i.stock === 0 || i.stock > 5)) return false;
       if (stockFilter === "in" && i.stock <= 0) return false;
       if (supplierFilter === "admin" && i.supplier_id) return false;
       if (supplierFilter && supplierFilter !== "admin" && i.supplier_id !== supplierFilter) return false;
-      if (approval && (i.approval_status ?? "approved") !== approval) return false;
       return true;
     });
-  }, [items, q, brand, category, status, stockFilter, supplierFilter, approval]);
+  }, [items, q, brand, category, stockFilter, supplierFilter]);
+
+  const filtered = useMemo(
+    () =>
+      lowerFiltered.filter((i) => {
+        if (status === "active" && !i.is_active) return false;
+        if (status === "hidden" && i.is_active) return false;
+        if (status === "featured" && !i.is_featured) return false;
+        if (approval && (i.approval_status ?? "approved") !== approval) return false;
+        return true;
+      }),
+    [lowerFiltered, status, approval],
+  );
+
+  const statusCounts = useMemo(
+    () => ({
+      all: lowerFiltered.length,
+      active: lowerFiltered.filter((i) => i.is_active).length,
+      hidden: lowerFiltered.filter((i) => !i.is_active).length,
+      featured: lowerFiltered.filter((i) => i.is_featured).length,
+    }),
+    [lowerFiltered],
+  );
+  const approvalCounts = useMemo(
+    () => ({
+      all: lowerFiltered.length,
+      pending: lowerFiltered.filter((i) => i.approval_status === "pending").length,
+      approved: lowerFiltered.filter((i) => (i.approval_status ?? "approved") === "approved").length,
+      rejected: lowerFiltered.filter((i) => i.approval_status === "rejected").length,
+    }),
+    [lowerFiltered],
+  );
 
   const paged = usePaginated(filtered, page, perPage);
-
 
   const filters: FilterDef[] = [
     {
@@ -266,17 +292,6 @@ function ProductsPage() {
       options: categories.map((c) => ({ value: c.id, label: c.name })),
     },
     {
-      key: "status",
-      label: "Status",
-      value: status,
-      onChange: setStatus,
-      options: [
-        { value: "active", label: "Active" },
-        { value: "hidden", label: "Hidden" },
-        { value: "featured", label: "Featured" },
-      ],
-    },
-    {
       key: "supplier",
       label: "Supplier",
       value: supplierFilter,
@@ -284,17 +299,6 @@ function ProductsPage() {
       options: [
         { value: "admin", label: "Admin's own" },
         ...suppliers.map((s) => ({ value: s.id, label: s.name })),
-      ],
-    },
-    {
-      key: "approval",
-      label: "Approval",
-      value: approval,
-      onChange: setApproval,
-      options: [
-        { value: "pending", label: "Pending approval" },
-        { value: "approved", label: "Approved" },
-        { value: "rejected", label: "Rejected" },
       ],
     },
     {
@@ -309,6 +313,19 @@ function ProductsPage() {
       ],
     },
   ];
+
+  const statusButtons = [
+    ["", "All", statusCounts.all],
+    ["active", "Active", statusCounts.active],
+    ["hidden", "Hidden", statusCounts.hidden],
+    ["featured", "Featured", statusCounts.featured],
+  ] as const;
+  const approvalButtons = [
+    ["", "All", approvalCounts.all],
+    ["pending", "Pending", approvalCounts.pending],
+    ["approved", "Approved", approvalCounts.approved],
+    ["rejected", "Rejected", approvalCounts.rejected],
+  ] as const;
 
   return (
     <div>
