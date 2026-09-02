@@ -424,7 +424,12 @@ function PlansTab({
           <div key={p.id} className="surface-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold">{p.name}</h3>
+                <h3 className="flex items-center gap-2 text-sm font-semibold">
+                  {p.name}
+                  {p.is_default ? (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Default</span>
+                  ) : null}
+                </h3>
                 <p className="text-xs text-muted-foreground">{p.description}</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   {p.includes_store ? "Panel + storefront" : "Panel only"} · {p.trial_days}d trial · {p.grace_days}d grace ·{" "}
@@ -452,6 +457,7 @@ function PlansTab({
           </div>
         ))}
       </div>
+      <Pagination page={page} perPage={perPage} total={plans.length} onPage={setPage} />
     </div>
   );
 }
