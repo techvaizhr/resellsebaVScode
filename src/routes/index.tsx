@@ -72,7 +72,7 @@ type LandingContent = {
 
 
 const FALLBACK: LandingContent = {
-  nav: { features: "Features", how: "How it works", categories: "Categories", faq: "FAQ", signIn: "Sign in", cta: "Get started" },
+  nav: { features: "Features", how: "How it works", categories: "Categories", faq: "FAQ", signIn: "লগইন", cta: "Get started" },
   hero: {
     badge: "Bangladesh's reseller platform",
     titleStart: "Launch your own online store",
@@ -268,12 +268,12 @@ function Landing({
               >
                 {c.hero.ctaPrimary} <ArrowRight className="h-4 w-4" />
               </Link>
-              <a
-                href="#about"
+              <Link
+                to="/login"
                 className="btn-live inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-7 py-3.5 text-sm font-bold transition hover:border-primary/50 hover:text-primary sm:text-base"
               >
                 {c.hero.ctaSecondary}
-              </a>
+              </Link>
             </div>
 
             {c.hero.badges.length > 0 && (
