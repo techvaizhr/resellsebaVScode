@@ -624,6 +624,10 @@ function PlanModal({
           <input type="checkbox" checked={form.is_active ?? true} onChange={(e) => set({ is_active: e.target.checked })} />
           Plan is active
         </label>
+        <label className="flex items-center gap-2 text-xs font-medium">
+          <input type="checkbox" checked={Boolean(form.is_default)} onChange={(e) => set({ is_default: e.target.checked })} />
+          Default plan for new signups
+        </label>
       </div>
     </AppModal>
   );
