@@ -47,7 +47,22 @@ type SupplierOpt = { id: string; name: string; code: string; status: string };
 
 type Opt = { id: string; name: string };
 
-type ProductSearch = { status?: string; stock?: string; category?: string; brand?: string; supplier?: string; approval?: string };
+type ProductSearch = {
+  status?: string;
+  stock?: string;
+  category?: string;
+  brand?: string;
+  supplier?: string;
+  approval?: string;
+  /** product id to re-fetch on return (or "all" to reload everything) */
+  refresh?: string;
+};
+
+const PRODUCT_COLS =
+  "id,product_code,name,buying_price,reseller_price,suggested_price,packaging_cost,stock,weight_grams,is_active,is_featured,og_image_url,brand_id,category_id,supplier_id,supplier_price,approval_status,approval_note,pending_changes";
+
+/** Keeps the list alive across navigation so editing one product never reloads the page. */
+let catalogCache: { products: Row[]; brands: Opt[]; categories: Opt[]; suppliers: SupplierOpt[] } | null = null;
 
 export const Route = createFileRoute("/_authenticated/admin/products/")({
   validateSearch: (s: Record<string, unknown>): ProductSearch => ({
@@ -57,6 +72,7 @@ export const Route = createFileRoute("/_authenticated/admin/products/")({
     brand: typeof s.brand === "string" ? s.brand : undefined,
     supplier: typeof s.supplier === "string" ? s.supplier : undefined,
     approval: typeof s.approval === "string" ? s.approval : undefined,
+    refresh: typeof s.refresh === "string" ? s.refresh : undefined,
   }),
   component: ProductsPage,
 });
@@ -67,12 +83,12 @@ function ProductsPage() {
   const can = useCan();
   const canManage = can("products.manage");
   const canDelete = can("products.delete");
-  const [items, setItems] = useState<Row[]>([]);
-  const [brands, setBrands] = useState<Opt[]>([]);
-  const [categories, setCategories] = useState<Opt[]>([]);
-  const [suppliers, setSuppliers] = useState<SupplierOpt[]>([]);
+  const [items, setItems] = useState<Row[]>(catalogCache?.products ?? []);
+  const [brands, setBrands] = useState<Opt[]>(catalogCache?.brands ?? []);
+  const [categories, setCategories] = useState<Opt[]>(catalogCache?.categories ?? []);
+  const [suppliers, setSuppliers] = useState<SupplierOpt[]>(catalogCache?.suppliers ?? []);
   const [assignFor, setAssignFor] = useState<Row | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!catalogCache);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [inlineEdit, setInlineEdit] = useState(false);
@@ -98,19 +114,51 @@ function ProductsPage() {
     setBrands((pl.brands ?? []) as Opt[]);
     setCategories((pl.categories ?? []) as Opt[]);
     setSuppliers((pl.suppliers ?? []) as SupplierOpt[]);
+    catalogCache = {
+      products: (pl.products ?? []) as Row[],
+      brands: (pl.brands ?? []) as Opt[],
+      categories: (pl.categories ?? []) as Opt[],
+      suppliers: (pl.suppliers ?? []) as SupplierOpt[],
+    };
     setLoading(false);
   }
+
+  /** Re-fetch a single row (or drop it when deleted) — no full page reload. */
+  async function refreshOne(id: string) {
+    const { data } = await supabase.from("products").select(PRODUCT_COLS).eq("id", id).maybeSingle();
+    setItems((s) => {
+      if (!data) return s.filter((i) => i.id !== id);
+      const row = data as unknown as Row;
+      return s.some((i) => i.id === id) ? s.map((i) => (i.id === id ? { ...i, ...row } : i)) : [row, ...s];
+    });
+  }
+
   const didLoad = useRef(false);
   useEffect(() => {
     if (didLoad.current) return;
     didLoad.current = true;
-    load();
+    if (!catalogCache) {
+      load();
+    } else if (search.refresh === "all") {
+      load();
+    } else if (search.refresh) {
+      refreshOne(search.refresh);
+    }
+    if (search.refresh) {
+      void nav({ to: "/admin/products", search: { ...search, refresh: undefined }, replace: true });
+    }
   }, []);
+
+  // Keep the cache in sync with any inline/optimistic change.
+  useEffect(() => {
+    if (catalogCache) catalogCache.products = items;
+  }, [items]);
 
 
   useEffect(() => {
     setPage(1);
   }, [q, brand, category, status, stockFilter, supplierFilter, approval, perPage]);
+
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -148,7 +196,7 @@ function ProductsPage() {
     try {
       await reviewProduct(p.id, approve);
       toast.success(approve ? "Approved" : "Rejected");
-      await load();
+      await refreshOne(p.id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
     }
@@ -178,29 +226,55 @@ function ProductsPage() {
     setSelected(new Set());
   }
 
-  const filtered = useMemo(() => {
+  const lowerFiltered = useMemo(() => {
     return items.filter((i) => {
       if (q) {
-        const t = q.toLowerCase();
-        if (!i.name.toLowerCase().includes(t) && !i.product_code.includes(t)) return false;
+        const t = q.trim().toLowerCase();
+        if (t && !i.name.toLowerCase().includes(t) && !i.product_code.toLowerCase().includes(t)) return false;
       }
       if (brand && i.brand_id !== brand) return false;
       if (category && i.category_id !== category) return false;
-      if (status === "active" && !i.is_active) return false;
-      if (status === "hidden" && i.is_active) return false;
-      if (status === "featured" && !i.is_featured) return false;
       if (stockFilter === "out" && i.stock > 0) return false;
       if (stockFilter === "low" && (i.stock === 0 || i.stock > 5)) return false;
       if (stockFilter === "in" && i.stock <= 0) return false;
       if (supplierFilter === "admin" && i.supplier_id) return false;
       if (supplierFilter && supplierFilter !== "admin" && i.supplier_id !== supplierFilter) return false;
-      if (approval && (i.approval_status ?? "approved") !== approval) return false;
       return true;
     });
-  }, [items, q, brand, category, status, stockFilter, supplierFilter, approval]);
+  }, [items, q, brand, category, stockFilter, supplierFilter]);
+
+  const filtered = useMemo(
+    () =>
+      lowerFiltered.filter((i) => {
+        if (status === "active" && !i.is_active) return false;
+        if (status === "hidden" && i.is_active) return false;
+        if (status === "featured" && !i.is_featured) return false;
+        if (approval && (i.approval_status ?? "approved") !== approval) return false;
+        return true;
+      }),
+    [lowerFiltered, status, approval],
+  );
+
+  const statusCounts = useMemo(
+    () => ({
+      all: lowerFiltered.length,
+      active: lowerFiltered.filter((i) => i.is_active).length,
+      hidden: lowerFiltered.filter((i) => !i.is_active).length,
+      featured: lowerFiltered.filter((i) => i.is_featured).length,
+    }),
+    [lowerFiltered],
+  );
+  const approvalCounts = useMemo(
+    () => ({
+      all: lowerFiltered.length,
+      pending: lowerFiltered.filter((i) => i.approval_status === "pending").length,
+      approved: lowerFiltered.filter((i) => (i.approval_status ?? "approved") === "approved").length,
+      rejected: lowerFiltered.filter((i) => i.approval_status === "rejected").length,
+    }),
+    [lowerFiltered],
+  );
 
   const paged = usePaginated(filtered, page, perPage);
-
 
   const filters: FilterDef[] = [
     {
@@ -218,17 +292,6 @@ function ProductsPage() {
       options: categories.map((c) => ({ value: c.id, label: c.name })),
     },
     {
-      key: "status",
-      label: "Status",
-      value: status,
-      onChange: setStatus,
-      options: [
-        { value: "active", label: "Active" },
-        { value: "hidden", label: "Hidden" },
-        { value: "featured", label: "Featured" },
-      ],
-    },
-    {
       key: "supplier",
       label: "Supplier",
       value: supplierFilter,
@@ -236,17 +299,6 @@ function ProductsPage() {
       options: [
         { value: "admin", label: "Admin's own" },
         ...suppliers.map((s) => ({ value: s.id, label: s.name })),
-      ],
-    },
-    {
-      key: "approval",
-      label: "Approval",
-      value: approval,
-      onChange: setApproval,
-      options: [
-        { value: "pending", label: "Pending approval" },
-        { value: "approved", label: "Approved" },
-        { value: "rejected", label: "Rejected" },
       ],
     },
     {
@@ -261,6 +313,19 @@ function ProductsPage() {
       ],
     },
   ];
+
+  const statusButtons = [
+    ["", "All", statusCounts.all],
+    ["active", "Active", statusCounts.active],
+    ["hidden", "Hidden", statusCounts.hidden],
+    ["featured", "Featured", statusCounts.featured],
+  ] as const;
+  const approvalButtons = [
+    ["", "All", approvalCounts.all],
+    ["pending", "Pending", approvalCounts.pending],
+    ["approved", "Approved", approvalCounts.approved],
+    ["rejected", "Rejected", approvalCounts.rejected],
+  ] as const;
 
   return (
     <div>
@@ -313,6 +378,38 @@ function ProductsPage() {
       />
 
       <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} onSaved={() => load()} />
+
+      <div className="mb-2 flex overflow-x-auto rounded-md border bg-muted/30 p-1">
+        <div className="flex min-w-max items-center gap-1 pr-2">
+          <span className="px-2 text-xs font-semibold text-muted-foreground">Status</span>
+          {statusButtons.map(([value, label, count]) => (
+            <button
+              key={`status-${value || "all"}`}
+              type="button"
+              onClick={() => setStatus(value)}
+              className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                status === value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background hover:text-foreground"
+              }`}
+            >
+              {label}<span className={status === value ? "opacity-90" : "text-foreground/70"}>({count})</span>
+            </button>
+          ))}
+          <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+          <span className="px-2 text-xs font-semibold text-muted-foreground">Approval</span>
+          {approvalButtons.map(([value, label, count]) => (
+            <button
+              key={`approval-${value || "all"}`}
+              type="button"
+              onClick={() => setApproval(value)}
+              className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                approval === value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background hover:text-foreground"
+              }`}
+            >
+              {label}<span className={approval === value ? "opacity-90" : "text-foreground/70"}>({count})</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <DataToolbar
         inline
@@ -605,8 +702,9 @@ function ProductsPage() {
           suppliers={suppliers}
           onClose={() => setAssignFor(null)}
           onSaved={() => {
+            const id = assignFor.id;
             setAssignFor(null);
-            load();
+            refreshOne(id);
           }}
         />
       )}
@@ -619,8 +717,9 @@ function ProductsPage() {
           categories={categories}
           onClose={() => setReviewFor(null)}
           onReviewed={() => {
+            const id = reviewFor.id;
             setReviewFor(null);
-            load();
+            refreshOne(id);
           }}
         />
       )}
