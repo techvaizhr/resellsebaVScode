@@ -400,19 +400,27 @@ function PlansTab({
   canManage: boolean;
   onEdit: (p: Partial<SubscriptionPlan>) => void;
 }) {
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
+  useEffect(() => setPage(1), [perPage]);
+  const pagePlans = usePaginated(plans, page, perPage);
+
   return (
     <div className="space-y-3">
-      {canManage ? (
-        <button
-          type="button"
-          onClick={() => onEdit({ includes_store: false, trial_days: 14, grace_days: 7, is_active: true })}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
-        >
-          <Plus className="h-3.5 w-3.5" /> New plan
-        </button>
-      ) : null}
+      <div className="flex flex-wrap items-center gap-2">
+        {canManage ? (
+          <button
+            type="button"
+            onClick={() => onEdit({ includes_store: false, trial_days: 14, grace_days: 7, is_active: true })}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" /> New plan
+          </button>
+        ) : null}
+        <PerPage value={perPage} onChange={setPerPage} />
+      </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        {plans.map((p) => (
+        {pagePlans.map((p) => (
           <div key={p.id} className="surface-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
