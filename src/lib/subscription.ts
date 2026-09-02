@@ -43,6 +43,7 @@ export type SubscriptionPlan = {
   trial_days: number;
   grace_days: number;
   is_active: boolean;
+  is_default: boolean;
   sort_order: number;
 };
 
@@ -216,9 +217,17 @@ export async function savePlan(plan: Partial<SubscriptionPlan> & { id?: string }
     trial_days: Number(plan.trial_days ?? 0),
     grace_days: Number(plan.grace_days ?? 0),
     is_active: plan.is_active ?? true,
+    is_default: Boolean(plan.is_default),
     sort_order: Number(plan.sort_order ?? 0),
     updated_at: new Date().toISOString(),
   };
+  if (plan.is_default) {
+    const { error: clearErr } = await supabase
+      .from("subscription_plans")
+      .update({ is_default: false } as never)
+      .eq("is_default", true);
+    if (clearErr) throw new Error(clearErr.message);
+  }
   const q = plan.id
     ? supabase.from("subscription_plans").update(row as never).eq("id", plan.id)
     : supabase.from("subscription_plans").insert(row as never);
