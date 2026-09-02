@@ -310,6 +310,16 @@ function PaymentsTab({
   if (rows.length === 0) return <EmptyState title="No payments yet" description="Reseller subscription payments show up here." />;
 
   return (
+    <div className="space-y-3">
+    <div className="flex flex-wrap gap-2">
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Search reseller, plan or reference"
+        className="w-full rounded-md border bg-background px-3 py-2 text-xs sm:w-64"
+      />
+      <PerPage value={perPage} onChange={setPerPage} />
+    </div>
     <div className="surface-card overflow-hidden">
       <div className="hidden grid-cols-[1.2fr_1fr_1fr_auto_auto_auto] gap-4 border-b bg-muted/40 px-4 py-2 text-center text-xs font-medium text-muted-foreground md:grid">
         <div className="text-left">Reseller</div>
@@ -319,7 +329,7 @@ function PaymentsTab({
         <div>Status</div>
         <div></div>
       </div>
-      {rows.map((p) => (
+      {pageRows.map((p) => (
         <div
           key={p.id}
           className="grid grid-cols-1 items-center gap-1 border-b px-4 py-3 text-sm last:border-b-0 md:grid-cols-[1.2fr_1fr_1fr_auto_auto_auto] md:gap-4 md:text-center"
