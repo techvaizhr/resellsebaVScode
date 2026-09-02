@@ -196,7 +196,7 @@ function ProductsPage() {
     try {
       await reviewProduct(p.id, approve);
       toast.success(approve ? "Approved" : "Rejected");
-      await load();
+      await refreshOne(p.id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
     }
@@ -653,8 +653,9 @@ function ProductsPage() {
           suppliers={suppliers}
           onClose={() => setAssignFor(null)}
           onSaved={() => {
+            const id = assignFor.id;
             setAssignFor(null);
-            load();
+            refreshOne(id);
           }}
         />
       )}
@@ -667,8 +668,9 @@ function ProductsPage() {
           categories={categories}
           onClose={() => setReviewFor(null)}
           onReviewed={() => {
+            const id = reviewFor.id;
             setReviewFor(null);
-            load();
+            refreshOne(id);
           }}
         />
       )}
