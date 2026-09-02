@@ -2549,6 +2549,7 @@ export type Database = {
           id: string
           includes_store: boolean
           is_active: boolean
+          is_default: boolean
           name: string
           price_12m: number
           price_1m: number
@@ -2566,6 +2567,7 @@ export type Database = {
           id?: string
           includes_store?: boolean
           is_active?: boolean
+          is_default?: boolean
           name: string
           price_12m?: number
           price_1m?: number
@@ -2583,6 +2585,7 @@ export type Database = {
           id?: string
           includes_store?: boolean
           is_active?: boolean
+          is_default?: boolean
           name?: string
           price_12m?: number
           price_1m?: number
