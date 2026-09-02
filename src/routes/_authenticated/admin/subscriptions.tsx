@@ -174,15 +174,18 @@ function AdminSubscriptionsPage() {
 
 function SubscribersTab({
   rows,
+  plans,
   canManage,
   onEdit,
 }: {
   rows: Subscriber[];
+  plans: SubscriptionPlan[];
   canManage: boolean;
   onEdit: (r: Subscriber) => void;
 }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [plan, setPlan] = useState("all");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
   const filtered = useMemo(
@@ -191,11 +194,12 @@ function SubscribersTab({
         const term = q.trim().toLowerCase();
         const okQ = !term || r.business_name.toLowerCase().includes(term) || r.code.toLowerCase().includes(term);
         const okS = status === "all" || r.state?.status === status;
-        return okQ && okS;
+        const okP = plan === "all" || r.state?.plan_id === plan;
+        return okQ && okS && okP;
       }),
-    [rows, q, status],
+    [rows, q, status, plan],
   );
-  useEffect(() => setPage(1), [q, status, perPage]);
+  useEffect(() => setPage(1), [q, status, plan, perPage]);
   const pageRows = usePaginated(filtered, page, perPage);
 
   if (rows.length === 0) return <EmptyState title="No resellers yet" description="Subscriptions appear once resellers sign up." />;
