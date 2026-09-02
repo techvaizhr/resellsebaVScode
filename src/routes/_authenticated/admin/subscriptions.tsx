@@ -221,6 +221,14 @@ function SubscribersTab({
             </option>
           ))}
         </select>
+        <select value={plan} onChange={(e) => setPlan(e.target.value)} className="rounded-md border bg-background px-3 py-2 text-xs">
+          <option value="all">All plans</option>
+          {plans.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
         <PerPage value={perPage} onChange={setPerPage} />
       </div>
 
