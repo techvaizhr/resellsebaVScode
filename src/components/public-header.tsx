@@ -22,7 +22,7 @@ const FALLBACK: PublicHeaderContent = {
     how: "How it works",
     categories: "Categories",
     faq: "FAQ",
-    signIn: "Sign in",
+    signIn: "লগইন",
     cta: "Get started",
   },
 };

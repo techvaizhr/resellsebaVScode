@@ -72,7 +72,7 @@ type LandingContent = {
 
 
 const FALLBACK: LandingContent = {
-  nav: { features: "Features", how: "How it works", categories: "Categories", faq: "FAQ", signIn: "Sign in", cta: "Get started" },
+  nav: { features: "Features", how: "How it works", categories: "Categories", faq: "FAQ", signIn: "লগইন", cta: "Get started" },
   hero: {
     badge: "Bangladesh's reseller platform",
     titleStart: "Launch your own online store",
