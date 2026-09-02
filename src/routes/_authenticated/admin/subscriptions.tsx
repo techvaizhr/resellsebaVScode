@@ -4,6 +4,7 @@ import { Loader2, Download, Pencil, Check, X, Plus, Wallet, Users, BadgeCheck, C
 import { toast } from "sonner";
 import { PageHeader, StatCard, EmptyState } from "@/components/ui-kit";
 import { AppModal } from "@/components/ui-kit/AppModal";
+import { Pagination, usePaginated } from "@/components/data-list";
 import { bdt, toCsv, downloadCsv } from "@/lib/finance-report";
 import { useCan } from "@/lib/use-auth";
 import {
@@ -42,6 +43,24 @@ export const Route = createFileRoute("/_authenticated/admin/subscriptions")({
 });
 
 type Tab = "plans" | "subscribers" | "payments" | "revenue";
+
+function PerPage({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="rounded-md border bg-background px-2 py-2 text-xs"
+      title="Per page"
+    >
+      {[10, 20, 50, 100].map((n) => (
+        <option key={n} value={n}>
+          {n} / page
+        </option>
+      ))}
+      <option value={-1}>All</option>
+    </select>
+  );
+}
 
 function AdminSubscriptionsPage() {
   const can = useCan();
@@ -164,6 +183,8 @@ function SubscribersTab({
 }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
   const filtered = useMemo(
     () =>
       rows.filter((r) => {
@@ -174,6 +195,8 @@ function SubscribersTab({
       }),
     [rows, q, status],
   );
+  useEffect(() => setPage(1), [q, status, perPage]);
+  const pageRows = usePaginated(filtered, page, perPage);
 
   if (rows.length === 0) return <EmptyState title="No resellers yet" description="Subscriptions appear once resellers sign up." />;
 
@@ -194,6 +217,7 @@ function SubscribersTab({
             </option>
           ))}
         </select>
+        <PerPage value={perPage} onChange={setPerPage} />
       </div>
 
       <div className="surface-card overflow-hidden">
@@ -205,7 +229,7 @@ function SubscribersTab({
           <div>Balance</div>
           <div></div>
         </div>
-        {filtered.map((r) => (
+        {pageRows.map((r) => (
           <div
             key={r.reseller_id}
             className="grid grid-cols-1 items-center gap-1 border-b px-4 py-3 text-sm last:border-b-0 md:grid-cols-[1.4fr_1fr_auto_auto_auto_auto] md:gap-4 md:text-center"
@@ -241,6 +265,7 @@ function SubscribersTab({
           </div>
         ))}
       </div>
+      <Pagination page={page} perPage={perPage} total={filtered.length} onPage={setPage} />
     </div>
   );
 }
@@ -255,6 +280,19 @@ function PaymentsTab({
   onReload: () => void | Promise<void>;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return rows;
+    return rows.filter((p) =>
+      [p.business_name, p.code, p.plan_name, p.reference]
+        .some((v) => v?.toLowerCase().includes(term)),
+    );
+  }, [rows, q]);
+  useEffect(() => setPage(1), [q, perPage]);
+  const pageRows = usePaginated(filtered, page, perPage);
 
   async function review(id: string, approve: boolean) {
     setBusy(id);
@@ -272,6 +310,16 @@ function PaymentsTab({
   if (rows.length === 0) return <EmptyState title="No payments yet" description="Reseller subscription payments show up here." />;
 
   return (
+    <div className="space-y-3">
+    <div className="flex flex-wrap gap-2">
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Search reseller, plan or reference"
+        className="w-full rounded-md border bg-background px-3 py-2 text-xs sm:w-64"
+      />
+      <PerPage value={perPage} onChange={setPerPage} />
+    </div>
     <div className="surface-card overflow-hidden">
       <div className="hidden grid-cols-[1.2fr_1fr_1fr_auto_auto_auto] gap-4 border-b bg-muted/40 px-4 py-2 text-center text-xs font-medium text-muted-foreground md:grid">
         <div className="text-left">Reseller</div>
@@ -281,7 +329,7 @@ function PaymentsTab({
         <div>Status</div>
         <div></div>
       </div>
-      {rows.map((p) => (
+      {pageRows.map((p) => (
         <div
           key={p.id}
           className="grid grid-cols-1 items-center gap-1 border-b px-4 py-3 text-sm last:border-b-0 md:grid-cols-[1.2fr_1fr_1fr_auto_auto_auto] md:gap-4 md:text-center"
@@ -338,6 +386,8 @@ function PaymentsTab({
         </div>
       ))}
     </div>
+    <Pagination page={page} perPage={perPage} total={filtered.length} onPage={setPage} />
+    </div>
   );
 }
 
@@ -350,23 +400,36 @@ function PlansTab({
   canManage: boolean;
   onEdit: (p: Partial<SubscriptionPlan>) => void;
 }) {
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
+  useEffect(() => setPage(1), [perPage]);
+  const pagePlans = usePaginated(plans, page, perPage);
+
   return (
     <div className="space-y-3">
-      {canManage ? (
-        <button
-          type="button"
-          onClick={() => onEdit({ includes_store: false, trial_days: 14, grace_days: 7, is_active: true })}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
-        >
-          <Plus className="h-3.5 w-3.5" /> New plan
-        </button>
-      ) : null}
+      <div className="flex flex-wrap items-center gap-2">
+        {canManage ? (
+          <button
+            type="button"
+            onClick={() => onEdit({ includes_store: false, trial_days: 14, grace_days: 7, is_active: true })}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" /> New plan
+          </button>
+        ) : null}
+        <PerPage value={perPage} onChange={setPerPage} />
+      </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        {plans.map((p) => (
+        {pagePlans.map((p) => (
           <div key={p.id} className="surface-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold">{p.name}</h3>
+                <h3 className="flex items-center gap-2 text-sm font-semibold">
+                  {p.name}
+                  {p.is_default ? (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Default</span>
+                  ) : null}
+                </h3>
                 <p className="text-xs text-muted-foreground">{p.description}</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   {p.includes_store ? "Panel + storefront" : "Panel only"} · {p.trial_days}d trial · {p.grace_days}d grace ·{" "}
@@ -394,6 +457,7 @@ function PlansTab({
           </div>
         ))}
       </div>
+      <Pagination page={page} perPage={perPage} total={plans.length} onPage={setPage} />
     </div>
   );
 }
@@ -421,17 +485,25 @@ function RevenueTab({ rows }: { rows: SubscriptionPayment[] }) {
     downloadCsv("subscription-revenue.csv", csv);
   }
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
+  useEffect(() => setPage(1), [perPage]);
+  const pageRows = usePaginated(byMonth, page, perPage);
+
   if (byMonth.length === 0) return <EmptyState title="No revenue yet" description="Approved subscription payments are summarised here." />;
 
   return (
     <div className="space-y-3">
-      <button
-        type="button"
-        onClick={exportCsv}
-        className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted"
-      >
-        <Download className="h-3.5 w-3.5" /> Export CSV
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={exportCsv}
+          className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+        >
+          <Download className="h-3.5 w-3.5" /> Export CSV
+        </button>
+        <PerPage value={perPage} onChange={setPerPage} />
+      </div>
       <div className="surface-card overflow-hidden">
         <div className="grid grid-cols-4 gap-4 border-b bg-muted/40 px-4 py-2 text-center text-xs font-medium text-muted-foreground">
           <div className="text-left">Month</div>
@@ -439,7 +511,7 @@ function RevenueTab({ rows }: { rows: SubscriptionPayment[] }) {
           <div>Wallet / bank</div>
           <div>Total</div>
         </div>
-        {byMonth.map(([m, v]) => (
+        {pageRows.map(([m, v]) => (
           <div key={m} className="grid grid-cols-4 gap-4 border-b px-4 py-3 text-center text-sm last:border-b-0">
             <div className="text-left text-xs font-medium">{m}</div>
             <div className="text-xs tabular-nums">{bdt(v.earning)}</div>
@@ -448,6 +520,7 @@ function RevenueTab({ rows }: { rows: SubscriptionPayment[] }) {
           </div>
         ))}
       </div>
+      <Pagination page={page} perPage={perPage} total={byMonth.length} onPage={setPage} />
     </div>
   );
 }
@@ -550,6 +623,10 @@ function PlanModal({
         <label className="flex items-center gap-2 text-xs font-medium">
           <input type="checkbox" checked={form.is_active ?? true} onChange={(e) => set({ is_active: e.target.checked })} />
           Plan is active
+        </label>
+        <label className="flex items-center gap-2 text-xs font-medium">
+          <input type="checkbox" checked={Boolean(form.is_default)} onChange={(e) => set({ is_default: e.target.checked })} />
+          Default plan for new signups
         </label>
       </div>
     </AppModal>
