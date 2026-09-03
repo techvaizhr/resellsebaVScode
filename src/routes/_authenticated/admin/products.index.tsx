@@ -41,6 +41,7 @@ type Row = {
   approval_status: "approved" | "pending" | "rejected";
   approval_note: string | null;
   pending_changes: Record<string, unknown> | null;
+  created_at?: string | null;
 };
 
 type SupplierOpt = { id: string; name: string; code: string; status: string };
@@ -100,6 +101,7 @@ function ProductsPage() {
   const [status, setStatus] = useState(search.status ?? search.approval ?? "");
   const [stockFilter, setStockFilter] = useState(search.stock ?? "");
   const [supplierFilter, setSupplierFilter] = useState(search.supplier ?? "");
+  const [sort, setSort] = useState("");
 
   const [perPage, setPerPage] = useState(20);
   const [page, setPage] = useState(1);
