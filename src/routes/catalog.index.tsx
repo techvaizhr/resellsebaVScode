@@ -11,7 +11,7 @@ import { Boxes, Layers, Loader2, Search, Sparkles, Tag } from "lucide-react";
 import { getSiteSeo } from "@/lib/seo.functions";
 import { seoLinks, seoMeta } from "@/lib/seo-meta";
 
-type Search = { category?: string; brand?: string; q?: string; page?: number };
+type Search = { category?: string; brand?: string; q?: string; page?: number; sort?: string };
 
 export const Route = createFileRoute("/catalog/")({
   validateSearch: (s: Record<string, unknown>): Search => ({
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/catalog/")({
     brand: typeof s.brand === "string" && s.brand ? s.brand : undefined,
     q: typeof s.q === "string" && s.q ? s.q : undefined,
     page: typeof s.page === "number" && s.page > 1 ? s.page : undefined,
+    sort: s.sort === "oldest" ? "oldest" : undefined,
   }),
   loader: () => getSiteSeo({ data: { path: "/catalog" } }),
   head: ({ loaderData }) => {
