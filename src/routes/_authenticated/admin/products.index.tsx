@@ -158,7 +158,7 @@ function ProductsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [q, brand, category, status, stockFilter, supplierFilter, perPage]);
+  }, [q, brand, category, status, stockFilter, supplierFilter, sort, perPage]);
 
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -244,19 +244,20 @@ function ProductsPage() {
     });
   }, [items, q, brand, category, stockFilter, supplierFilter]);
 
-  const filtered = useMemo(
-    () =>
-      lowerFiltered.filter((i) => {
-        if (status === "active" && !i.is_active) return false;
-        if (status === "hidden" && i.is_active) return false;
-        if (status === "featured" && !i.is_featured) return false;
-        if (status === "pending" && i.approval_status !== "pending") return false;
-        if (status === "approved" && (i.approval_status ?? "approved") !== "approved") return false;
-        if (status === "rejected" && i.approval_status !== "rejected") return false;
-        return true;
-      }),
-    [lowerFiltered, status],
-  );
+  const filtered = useMemo(() => {
+    const list = lowerFiltered.filter((i) => {
+      if (status === "active" && !i.is_active) return false;
+      if (status === "hidden" && i.is_active) return false;
+      if (status === "featured" && !i.is_featured) return false;
+      if (status === "pending" && i.approval_status !== "pending") return false;
+      if (status === "approved" && (i.approval_status ?? "approved") !== "approved") return false;
+      if (status === "rejected" && i.approval_status !== "rejected") return false;
+      return true;
+    });
+    if (sort === "oldest")
+      list.sort((a, b) => String(a.created_at ?? "").localeCompare(String(b.created_at ?? "")));
+    return list;
+  }, [lowerFiltered, status, sort]);
 
   const statusCounts = useMemo(
     () => ({
@@ -307,6 +308,16 @@ function ProductsPage() {
         { value: "in", label: "In stock" },
         { value: "low", label: "Low (≤5)" },
         { value: "out", label: "Out of stock" },
+      ],
+    },
+    {
+      key: "sort",
+      label: "Added",
+      value: sort,
+      onChange: setSort,
+      options: [
+        { value: "newest", label: "Newest first" },
+        { value: "oldest", label: "Oldest first" },
       ],
     },
   ];
