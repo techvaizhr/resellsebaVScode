@@ -61,12 +61,13 @@ type Prod = {
   resellerPrice: number;
   categoryId: string | null;
   brandId: string | null;
+  createdAt: string | null;
   image: string | null;
   images: string[];
 };
 
 function CatalogIndex() {
-  const { category, brand, q, page } = Route.useSearch();
+  const { category, brand, q, page, sort } = Route.useSearch();
   const { banner, siteName } = useCatalogBrand();
   const navigate = useNavigate();
   const fetchCatalog = useServerFn(getCatalog);
