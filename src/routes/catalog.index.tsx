@@ -91,13 +91,15 @@ function CatalogIndex() {
     if (activeBrand) list = list.filter((p) => p.brandId === activeBrand.id);
     const t = (q ?? "").trim().toLowerCase();
     if (t) list = list.filter((p) => p.name.toLowerCase().includes(t) || p.code.includes(t));
+    if (sort === "oldest")
+      list = [...list].sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""));
     return list;
-  }, [data, activeCat, activeBrand, q]);
+  }, [data, activeCat, activeBrand, q, sort]);
 
   const pagedRows = usePaginated(rows, currentPage, perPage);
 
   const setPage = (p: number) =>
-    void navigate({ to: "/catalog", search: { category, brand, q, page: p > 1 ? p : undefined } });
+    void navigate({ to: "/catalog", search: { category, brand, q, sort, page: p > 1 ? p : undefined } });
 
   return (
     <div>
