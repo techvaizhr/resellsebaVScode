@@ -136,7 +136,7 @@ function CatalogIndex() {
             className="mx-auto mt-7 flex max-w-md items-center gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              void navigate({ to: "/catalog", search: { category, brand, q: term.trim() || undefined, page: undefined } });
+              void navigate({ to: "/catalog", search: { category, brand, q: term.trim() || undefined, sort, page: undefined } });
             }}
           >
             <div className="relative flex-1">
@@ -170,10 +170,29 @@ function CatalogIndex() {
               <Stat icon={<Sparkles className="h-4 w-4" />} label="Showing" value={rows.length} />
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-6 flex flex-wrap items-center gap-2">
               <Link
                 to="/catalog"
-                search={{ page: undefined }}
+                search={{ category, brand, q, sort: undefined, page: undefined }}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                  !sort ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
+                }`}
+              >
+                Newest
+              </Link>
+              <Link
+                to="/catalog"
+                search={{ category, brand, q, sort: "oldest", page: undefined }}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                  sort === "oldest" ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
+                }`}
+              >
+                Oldest
+              </Link>
+              <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+              <Link
+                to="/catalog"
+                search={{ sort, page: undefined }}
                 className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
                   !category ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
                 }`}
@@ -184,7 +203,7 @@ function CatalogIndex() {
                 <Link
                   key={c.id}
                   to="/catalog"
-                  search={{ category: c.slug, page: undefined }}
+                  search={{ category: c.slug, sort, page: undefined }}
                   className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
                     category === c.slug ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
                   }`}
