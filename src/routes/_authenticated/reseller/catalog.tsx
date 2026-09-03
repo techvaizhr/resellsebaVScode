@@ -34,6 +34,7 @@ type P = {
   og_image_url: string | null;
   brand_id: string | null;
   category_id: string | null;
+  created_at?: string | null;
 };
 type Opt = { id: string; name: string };
 
@@ -73,6 +74,7 @@ function CatalogPage() {
   const [brand, setBrand] = useState("");
   const [category, setCategory] = useState("");
   const [avail, setAvail] = useState("");
+  const [sort, setSort] = useState("");
   const [perPage, setPerPage] = useState(20);
   const [page, setPage] = useState(1);
   const [detailId, setDetailId] = useState<string | null>(null);
