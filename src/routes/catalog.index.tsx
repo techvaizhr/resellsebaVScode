@@ -11,7 +11,7 @@ import { Boxes, Layers, Loader2, Search, Sparkles, Tag } from "lucide-react";
 import { getSiteSeo } from "@/lib/seo.functions";
 import { seoLinks, seoMeta } from "@/lib/seo-meta";
 
-type Search = { category?: string; brand?: string; q?: string; page?: number };
+type Search = { category?: string; brand?: string; q?: string; page?: number; sort?: string };
 
 export const Route = createFileRoute("/catalog/")({
   validateSearch: (s: Record<string, unknown>): Search => ({
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/catalog/")({
     brand: typeof s.brand === "string" && s.brand ? s.brand : undefined,
     q: typeof s.q === "string" && s.q ? s.q : undefined,
     page: typeof s.page === "number" && s.page > 1 ? s.page : undefined,
+    sort: s.sort === "oldest" ? "oldest" : undefined,
   }),
   loader: () => getSiteSeo({ data: { path: "/catalog" } }),
   head: ({ loaderData }) => {
@@ -60,12 +61,13 @@ type Prod = {
   resellerPrice: number;
   categoryId: string | null;
   brandId: string | null;
+  createdAt: string | null;
   image: string | null;
   images: string[];
 };
 
 function CatalogIndex() {
-  const { category, brand, q, page } = Route.useSearch();
+  const { category, brand, q, page, sort } = Route.useSearch();
   const { banner, siteName } = useCatalogBrand();
   const navigate = useNavigate();
   const fetchCatalog = useServerFn(getCatalog);
@@ -89,13 +91,15 @@ function CatalogIndex() {
     if (activeBrand) list = list.filter((p) => p.brandId === activeBrand.id);
     const t = (q ?? "").trim().toLowerCase();
     if (t) list = list.filter((p) => p.name.toLowerCase().includes(t) || p.code.includes(t));
+    if (sort === "oldest")
+      list = [...list].sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""));
     return list;
-  }, [data, activeCat, activeBrand, q]);
+  }, [data, activeCat, activeBrand, q, sort]);
 
   const pagedRows = usePaginated(rows, currentPage, perPage);
 
   const setPage = (p: number) =>
-    void navigate({ to: "/catalog", search: { category, brand, q, page: p > 1 ? p : undefined } });
+    void navigate({ to: "/catalog", search: { category, brand, q, sort, page: p > 1 ? p : undefined } });
 
   return (
     <div>
@@ -132,7 +136,7 @@ function CatalogIndex() {
             className="mx-auto mt-7 flex max-w-md items-center gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              void navigate({ to: "/catalog", search: { category, brand, q: term.trim() || undefined, page: undefined } });
+              void navigate({ to: "/catalog", search: { category, brand, q: term.trim() || undefined, sort, page: undefined } });
             }}
           >
             <div className="relative flex-1">
@@ -166,10 +170,29 @@ function CatalogIndex() {
               <Stat icon={<Sparkles className="h-4 w-4" />} label="Showing" value={rows.length} />
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-6 flex flex-wrap items-center gap-2">
               <Link
                 to="/catalog"
-                search={{ page: undefined }}
+                search={{ category, brand, q, sort: undefined, page: undefined }}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                  !sort ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
+                }`}
+              >
+                Newest
+              </Link>
+              <Link
+                to="/catalog"
+                search={{ category, brand, q, sort: "oldest", page: undefined }}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                  sort === "oldest" ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
+                }`}
+              >
+                Oldest
+              </Link>
+              <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+              <Link
+                to="/catalog"
+                search={{ sort, page: undefined }}
                 className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
                   !category ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
                 }`}
@@ -180,7 +203,7 @@ function CatalogIndex() {
                 <Link
                   key={c.id}
                   to="/catalog"
-                  search={{ category: c.slug, page: undefined }}
+                  search={{ category: c.slug, sort, page: undefined }}
                   className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
                     category === c.slug ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
                   }`}

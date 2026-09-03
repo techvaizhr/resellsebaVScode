@@ -113,6 +113,13 @@
       "when": 1788348260402,
       "tag": "0015_subscription_plan_default",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1788431640691,
+      "tag": "0016_add_created_at_to_reseller_catalog_page",
+      "breakpoints": true
     }
   ]
 }

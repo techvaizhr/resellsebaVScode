@@ -39,6 +39,7 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
       categoryId: row.category_id as string | null,
       brandId: row.brand_id as string | null,
       featured: Boolean(row.is_featured),
+      createdAt: (row.created_at ?? null) as string | null,
       image: pickImage(row.product_images),
       images: [...((row.product_images ?? []) as ImgRow[])]
         .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order)

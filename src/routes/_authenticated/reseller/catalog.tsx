@@ -34,6 +34,7 @@ type P = {
   og_image_url: string | null;
   brand_id: string | null;
   category_id: string | null;
+  created_at?: string | null;
 };
 type Opt = { id: string; name: string };
 
@@ -73,6 +74,7 @@ function CatalogPage() {
   const [brand, setBrand] = useState("");
   const [category, setCategory] = useState("");
   const [avail, setAvail] = useState("");
+  const [sort, setSort] = useState("");
   const [perPage, setPerPage] = useState(20);
   const [page, setPage] = useState(1);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -96,29 +98,30 @@ function CatalogPage() {
   }, [user]);
 
 
-  useEffect(() => setPage(1), [q, brand, category, avail, perPage]);
+  useEffect(() => setPage(1), [q, brand, category, avail, sort, perPage]);
 
-  const filtered = useMemo(
-    () =>
-      items.filter((i) => {
-        if (q) {
-          const t = q.toLowerCase();
-          if (
-            !i.name.toLowerCase().includes(t) &&
-            !i.slug.includes(t) &&
-            !String(i.product_code ?? "").toLowerCase().includes(t)
-          )
-            return false;
-        }
-        if (brand && i.brand_id !== brand) return false;
-        if (category && i.category_id !== category) return false;
-        if (avail === "listed" && !listed.has(i.id)) return false;
-        if (avail === "unlisted" && listed.has(i.id)) return false;
-        if (avail === "instock" && i.stock <= 0) return false;
-        return true;
-      }),
-    [items, q, brand, category, avail, listed],
-  );
+  const filtered = useMemo(() => {
+    const list = items.filter((i) => {
+      if (q) {
+        const t = q.toLowerCase();
+        if (
+          !i.name.toLowerCase().includes(t) &&
+          !i.slug.includes(t) &&
+          !String(i.product_code ?? "").toLowerCase().includes(t)
+        )
+          return false;
+      }
+      if (brand && i.brand_id !== brand) return false;
+      if (category && i.category_id !== category) return false;
+      if (avail === "listed" && !listed.has(i.id)) return false;
+      if (avail === "unlisted" && listed.has(i.id)) return false;
+      if (avail === "instock" && i.stock <= 0) return false;
+      return true;
+    });
+    if (sort === "oldest")
+      list.sort((a, b) => String(a.created_at ?? "").localeCompare(String(b.created_at ?? "")));
+    return list;
+  }, [items, q, brand, category, avail, sort, listed]);
   const paged = usePaginated(filtered, page, perPage);
 
   const filters: FilterDef[] = [
@@ -133,6 +136,16 @@ function CatalogPage() {
         { value: "unlisted", label: "Not listed yet" },
         { value: "listed", label: "Already listed" },
         { value: "instock", label: "In stock" },
+      ],
+    },
+    {
+      key: "sort",
+      label: "Added",
+      value: sort,
+      onChange: setSort,
+      options: [
+        { value: "newest", label: "Newest first" },
+        { value: "oldest", label: "Oldest first" },
       ],
     },
   ];
