@@ -72,16 +72,16 @@ export function ConfirmModal({
           <X className="h-4 w-4" />
         </button>
 
-        <div className="relative flex flex-col items-center px-6 pb-2 pt-8 text-center">
-          <div className={`grid h-14 w-14 place-items-center rounded-full ring-8 ${s.ring}`}>
+        <div className="relative flex w-full min-w-0 flex-col items-center px-6 pb-2 pt-8 text-center">
+          <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-full ring-8 ${s.ring}`}>
             <Icon className="h-6 w-6" />
           </div>
-          <DialogTitle className="mt-4 text-lg font-black tracking-tight">{title}</DialogTitle>
-          <DialogDescription className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          <DialogTitle className="mt-4 w-full min-w-0 break-words text-lg font-black tracking-tight">{title}</DialogTitle>
+          <DialogDescription className="mt-1.5 w-full min-w-0 break-words text-sm leading-relaxed text-muted-foreground">
             {description}
           </DialogDescription>
           {detail && (
-            <div className="mt-3 w-full truncate rounded-lg bg-muted/60 px-3 py-2 text-xs font-semibold">{detail}</div>
+            <div className="mt-3 w-full min-w-0 break-words rounded-lg bg-muted/60 px-3 py-2 text-xs font-semibold line-clamp-2">{detail}</div>
           )}
         </div>
 
