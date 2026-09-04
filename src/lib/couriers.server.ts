@@ -381,13 +381,18 @@ export const FINAL_COURIER_SHIP_STATUSES = ["delivered", "returned", "cancelled"
  * Poll every still-moving shipment and persist status changes.
  * Safe to call repeatedly; errors on one shipment never abort the rest.
  */
-export async function syncPendingShipments(db: any, limit = 40) {
-  const { data: rows } = await db
+export async function syncPendingShipments(db: any, limit = 40, staleMinutes = 0) {
+  let query = db
     .from("shipments")
     .select("id, provider, consignment_id, tracking_id, order_id, orders(order_number)")
     .not("status", "in", `(${FINAL_COURIER_SHIP_STATUSES.join(",")})`)
-    .order("last_event_at", { ascending: true, nullsFirst: true })
+    .order("last_synced_at", { ascending: true, nullsFirst: true })
     .limit(limit);
+  if (staleMinutes > 0) {
+    const cutoff = new Date(Date.now() - staleMinutes * 60 * 1000).toISOString();
+    query = query.or(`last_synced_at.is.null,last_synced_at.lt.${cutoff}`);
+  }
+  const { data: rows } = await query;
 
   let synced = 0;
   const errors: string[] = [];
