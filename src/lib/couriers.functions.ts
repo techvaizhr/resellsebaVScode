@@ -818,3 +818,20 @@ export const receiveReturn = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+/**
+ * Background safety net: whenever an order list is opened, refresh the courier
+ * status of shipments that were not synced in the last few minutes. Keeps order
+ * statuses correct even when a courier webhook never arrives.
+ */
+export const autoSyncCourierStatuses = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { syncPendingShipments } = await import("@/lib/couriers.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    try {
+      return await syncPendingShipments(supabaseAdmin as any, 15, 5);
+    } catch {
+      return { checked: 0, synced: 0, errors: [] as string[] };
+    }
+  });
