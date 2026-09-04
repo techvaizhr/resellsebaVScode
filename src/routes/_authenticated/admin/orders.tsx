@@ -203,6 +203,17 @@ function AdminOrdersPage() {
     queryFn: () => fetchActive(),
   });
 
+  // Safety net for missed courier webhooks: refresh live courier statuses in the
+  // background while the order list is open.
+  const runAutoSync = useServerFn(autoSyncCourierStatuses);
+  useQuery({
+    queryKey: ["courier-auto-sync"],
+    queryFn: () => runAutoSync(),
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
   const activeProviderLabel = useMemo(() => {
     if (activeProviders.length === 1) {
       return (COURIER_BRANDS as any)[activeProviders[0]]?.label || "Courier";
