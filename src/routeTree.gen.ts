@@ -100,6 +100,7 @@ import { Route as ApiPublicSitemapCodeRouteImport } from './routes/api/public/si
 import { Route as ApiPublicPaymentSslcommerzIpnRouteImport } from './routes/api/public/payment.sslcommerz-ipn'
 import { Route as ApiPublicPaymentEpaysebaWebhookRouteImport } from './routes/api/public/payment.epayseba-webhook'
 import { Route as ApiPublicPaymentBridgeRouteImport } from './routes/api/public/payment.bridge'
+import { Route as ApiPublicCourierSyncRouteImport } from './routes/api/public/courier.sync'
 import { Route as ApiPublicCourierSteadfastRouteImport } from './routes/api/public/courier.steadfast'
 import { Route as ApiPublicCourierPathaoRouteImport } from './routes/api/public/courier.pathao'
 import { Route as ApiPublicCourierCarrybeeRouteImport } from './routes/api/public/courier.carrybee'
@@ -628,6 +629,11 @@ const ApiPublicPaymentBridgeRoute = ApiPublicPaymentBridgeRouteImport.update({
   path: '/api/public/payment/bridge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCourierSyncRoute = ApiPublicCourierSyncRouteImport.update({
+  id: '/api/public/courier/sync',
+  path: '/api/public/courier/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCourierSteadfastRoute =
   ApiPublicCourierSteadfastRouteImport.update({
     id: '/api/public/courier/steadfast',
@@ -758,6 +764,7 @@ export interface FileRoutesByFullPath {
   '/api/public/courier/carrybee': typeof ApiPublicCourierCarrybeeRoute
   '/api/public/courier/pathao': typeof ApiPublicCourierPathaoRoute
   '/api/public/courier/steadfast': typeof ApiPublicCourierSteadfastRoute
+  '/api/public/courier/sync': typeof ApiPublicCourierSyncRoute
   '/api/public/payment/bridge': typeof ApiPublicPaymentBridgeRoute
   '/api/public/payment/epayseba-webhook': typeof ApiPublicPaymentEpaysebaWebhookRoute
   '/api/public/payment/sslcommerz-ipn': typeof ApiPublicPaymentSslcommerzIpnRoute
@@ -852,6 +859,7 @@ export interface FileRoutesByTo {
   '/api/public/courier/carrybee': typeof ApiPublicCourierCarrybeeRoute
   '/api/public/courier/pathao': typeof ApiPublicCourierPathaoRoute
   '/api/public/courier/steadfast': typeof ApiPublicCourierSteadfastRoute
+  '/api/public/courier/sync': typeof ApiPublicCourierSyncRoute
   '/api/public/payment/bridge': typeof ApiPublicPaymentBridgeRoute
   '/api/public/payment/epayseba-webhook': typeof ApiPublicPaymentEpaysebaWebhookRoute
   '/api/public/payment/sslcommerz-ipn': typeof ApiPublicPaymentSslcommerzIpnRoute
@@ -953,6 +961,7 @@ export interface FileRoutesById {
   '/api/public/courier/carrybee': typeof ApiPublicCourierCarrybeeRoute
   '/api/public/courier/pathao': typeof ApiPublicCourierPathaoRoute
   '/api/public/courier/steadfast': typeof ApiPublicCourierSteadfastRoute
+  '/api/public/courier/sync': typeof ApiPublicCourierSyncRoute
   '/api/public/payment/bridge': typeof ApiPublicPaymentBridgeRoute
   '/api/public/payment/epayseba-webhook': typeof ApiPublicPaymentEpaysebaWebhookRoute
   '/api/public/payment/sslcommerz-ipn': typeof ApiPublicPaymentSslcommerzIpnRoute
@@ -1054,6 +1063,7 @@ export interface FileRouteTypes {
     | '/api/public/courier/carrybee'
     | '/api/public/courier/pathao'
     | '/api/public/courier/steadfast'
+    | '/api/public/courier/sync'
     | '/api/public/payment/bridge'
     | '/api/public/payment/epayseba-webhook'
     | '/api/public/payment/sslcommerz-ipn'
@@ -1148,6 +1158,7 @@ export interface FileRouteTypes {
     | '/api/public/courier/carrybee'
     | '/api/public/courier/pathao'
     | '/api/public/courier/steadfast'
+    | '/api/public/courier/sync'
     | '/api/public/payment/bridge'
     | '/api/public/payment/epayseba-webhook'
     | '/api/public/payment/sslcommerz-ipn'
@@ -1248,6 +1259,7 @@ export interface FileRouteTypes {
     | '/api/public/courier/carrybee'
     | '/api/public/courier/pathao'
     | '/api/public/courier/steadfast'
+    | '/api/public/courier/sync'
     | '/api/public/payment/bridge'
     | '/api/public/payment/epayseba-webhook'
     | '/api/public/payment/sslcommerz-ipn'
@@ -1274,6 +1286,7 @@ export interface RootRouteChildren {
   ApiPublicCourierCarrybeeRoute: typeof ApiPublicCourierCarrybeeRoute
   ApiPublicCourierPathaoRoute: typeof ApiPublicCourierPathaoRoute
   ApiPublicCourierSteadfastRoute: typeof ApiPublicCourierSteadfastRoute
+  ApiPublicCourierSyncRoute: typeof ApiPublicCourierSyncRoute
   ApiPublicPaymentBridgeRoute: typeof ApiPublicPaymentBridgeRoute
   ApiPublicPaymentEpaysebaWebhookRoute: typeof ApiPublicPaymentEpaysebaWebhookRoute
   ApiPublicPaymentSslcommerzIpnRoute: typeof ApiPublicPaymentSslcommerzIpnRoute
@@ -1920,6 +1933,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentBridgeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/courier/sync': {
+      id: '/api/public/courier/sync'
+      path: '/api/public/courier/sync'
+      fullPath: '/api/public/courier/sync'
+      preLoaderRoute: typeof ApiPublicCourierSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/courier/steadfast': {
       id: '/api/public/courier/steadfast'
       path: '/api/public/courier/steadfast'
@@ -2231,6 +2251,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCourierCarrybeeRoute: ApiPublicCourierCarrybeeRoute,
   ApiPublicCourierPathaoRoute: ApiPublicCourierPathaoRoute,
   ApiPublicCourierSteadfastRoute: ApiPublicCourierSteadfastRoute,
+  ApiPublicCourierSyncRoute: ApiPublicCourierSyncRoute,
   ApiPublicPaymentBridgeRoute: ApiPublicPaymentBridgeRoute,
   ApiPublicPaymentEpaysebaWebhookRoute: ApiPublicPaymentEpaysebaWebhookRoute,
   ApiPublicPaymentSslcommerzIpnRoute: ApiPublicPaymentSslcommerzIpnRoute,
