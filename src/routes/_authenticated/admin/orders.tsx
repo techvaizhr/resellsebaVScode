@@ -24,7 +24,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getActiveCouriers } from "@/lib/courier-config.functions";
 import { getOrderDetails, recheckCourierStatus } from "@/lib/order-details.functions";
-import { syncSteadfastStatus, syncPathaoStatus } from "@/lib/couriers.functions";
+import { syncSteadfastStatus, syncPathaoStatus, autoSyncCourierStatuses } from "@/lib/couriers.functions";
 import {
   orderProfit,
   orderReceived,
@@ -201,6 +201,17 @@ function AdminOrdersPage() {
   const { data: activeProviders = [] } = useQuery({
     queryKey: ["active-couriers"],
     queryFn: () => fetchActive(),
+  });
+
+  // Safety net for missed courier webhooks: refresh live courier statuses in the
+  // background while the order list is open.
+  const runAutoSync = useServerFn(autoSyncCourierStatuses);
+  useQuery({
+    queryKey: ["courier-auto-sync"],
+    queryFn: () => runAutoSync(),
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const activeProviderLabel = useMemo(() => {

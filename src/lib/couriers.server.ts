@@ -296,3 +296,113 @@ export async function applyCourierUpdate(
   return { matched: true as const, orderId, shipmentId: shipment?.id ?? null, mapped };
 }
 
+
+/**
+ * Pull the live status of one shipment from its courier and persist it.
+ * Provider agnostic — used by the manual "Recheck status" button and by the
+ * automatic sync job (webhooks can be missed or misconfigured, so polling is
+ * the safety net that keeps order statuses correct).
+ */
+export async function syncShipmentStatus(
+  db: any,
+  shipment: { id: string; provider: string; consignment_id: string | null; tracking_id: string | null; order_id: string },
+  orderNumber?: string | null,
+) {
+  const provider = String(shipment.provider);
+  const cid = shipment.consignment_id || shipment.tracking_id;
+  const conf = await getCourierConfig(db, provider);
+
+  if (provider === "steadfast") {
+    const path = shipment.consignment_id
+      ? `/status_by_cid/${shipment.consignment_id}`
+      : shipment.tracking_id
+        ? `/status_by_trackingcode/${shipment.tracking_id}`
+        : `/status_by_invoice/${orderNumber ?? ""}`;
+    const body = await steadfastRequest(conf, path);
+    const courierStatus = String(body.delivery_status || body.status || "unknown").toLowerCase();
+    const result = await applyCourierUpdate(db, {
+      provider,
+      consignmentId: shipment.consignment_id,
+      trackingCode: shipment.tracking_id,
+      invoice: orderNumber ?? null,
+      courierStatus,
+      source: "sync",
+      notificationType: "auto_sync",
+      payload: body,
+    });
+    return { courierStatus, matched: result.matched };
+  }
+
+  if (provider === "pathao") {
+    if (!cid) throw new Response("Shipment has no Pathao consignment id", { status: 400 });
+    const { pathaoOrderInfo } = await import("@/lib/pathao.server");
+    const info = await pathaoOrderInfo(db, conf, cid);
+    const result = await applyCourierUpdate(db, {
+      provider,
+      consignmentId: shipment.consignment_id ?? cid,
+      trackingCode: shipment.tracking_id,
+      invoice: info.merchantOrderId ?? orderNumber ?? null,
+      courierStatus: info.status,
+      source: "sync",
+      notificationType: "auto_sync",
+      payload: info,
+    });
+    return { courierStatus: info.status, matched: result.matched };
+  }
+
+  if (provider === "carrybee") {
+    if (!cid) throw new Response("Shipment has no Carrybee consignment id", { status: 400 });
+    const { carrybeeRequest } = await import("@/lib/carrybee.server");
+    const body = await carrybeeRequest(conf, `/api/v2/orders/${encodeURIComponent(cid)}/details`);
+    const d = body?.data ?? {};
+    const courierStatus = String(d.transfer_status ?? "unknown");
+    const result = await applyCourierUpdate(db, {
+      provider,
+      consignmentId: shipment.consignment_id ?? cid,
+      trackingCode: shipment.tracking_id,
+      courierStatus,
+      source: "sync",
+      notificationType: "auto_sync",
+      codAmount: d.collected_amount != null ? Number(d.collected_amount) : null,
+      deliveryCharge: d.delivery_fee != null ? Number(d.delivery_fee) : null,
+      note: d.reason ?? null,
+      payload: body,
+    });
+    return { courierStatus, matched: result.matched };
+  }
+
+  throw new Response(`Sync not supported for ${provider}`, { status: 400 });
+}
+
+/** Statuses that never change again — skipped by the polling job. */
+export const FINAL_COURIER_SHIP_STATUSES = ["delivered", "returned", "cancelled", "failed"];
+
+/**
+ * Poll every still-moving shipment and persist status changes.
+ * Safe to call repeatedly; errors on one shipment never abort the rest.
+ */
+export async function syncPendingShipments(db: any, limit = 40, staleMinutes = 0) {
+  let query = db
+    .from("shipments")
+    .select("id, provider, consignment_id, tracking_id, order_id, orders(order_number)")
+    .not("status", "in", `(${FINAL_COURIER_SHIP_STATUSES.join(",")})`)
+    .order("last_synced_at", { ascending: true, nullsFirst: true })
+    .limit(limit);
+  if (staleMinutes > 0) {
+    const cutoff = new Date(Date.now() - staleMinutes * 60 * 1000).toISOString();
+    query = query.or(`last_synced_at.is.null,last_synced_at.lt.${cutoff}`);
+  }
+  const { data: rows } = await query;
+
+  let synced = 0;
+  const errors: string[] = [];
+  for (const sh of rows ?? []) {
+    try {
+      await syncShipmentStatus(db, sh as any, (sh as any).orders?.order_number ?? null);
+      synced += 1;
+    } catch (err: any) {
+      errors.push(`${(sh as any).id}: ${err?.message ?? String(err)}`);
+    }
+  }
+  return { checked: rows?.length ?? 0, synced, errors };
+}
