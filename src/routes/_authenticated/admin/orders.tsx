@@ -24,7 +24,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getActiveCouriers } from "@/lib/courier-config.functions";
 import { getOrderDetails, recheckCourierStatus } from "@/lib/order-details.functions";
-import { syncSteadfastStatus, syncPathaoStatus } from "@/lib/couriers.functions";
+import { syncSteadfastStatus, syncPathaoStatus, autoSyncCourierStatuses } from "@/lib/couriers.functions";
 import {
   orderProfit,
   orderReceived,
