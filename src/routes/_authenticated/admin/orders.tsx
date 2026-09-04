@@ -209,8 +209,8 @@ function AdminOrdersPage() {
   useQuery({
     queryKey: ["courier-auto-sync"],
     queryFn: () => runAutoSync(),
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+    staleTime: 30 * 60 * 1000,
+    refetchInterval: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
