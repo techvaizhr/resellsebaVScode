@@ -481,9 +481,12 @@ function BusinessReportPage() {
                   <th className={th + " text-left"}>Reseller</th>
                   <SortTh label="Orders" sortKey="orders" active={resSort.key} dir={resSort.dir} onSort={sortR} />
                   <SortTh label="Delivered" sortKey="delivered" active={resSort.key} dir={resSort.dir} onSort={sortR} />
+                  <SortTh label="Partial" sortKey="partial" active={resSort.key} dir={resSort.dir} onSort={sortR} />
                   <SortTh label="Failed" sortKey="failed" active={resSort.key} dir={resSort.dir} onSort={sortR} />
+                  <SortTh label="Running" sortKey="running" active={resSort.key} dir={resSort.dir} onSort={sortR} hint="Still in progress — money not counted" />
                   <SortTh label="Order value" sortKey="value" active={resSort.key} dir={resSort.dir} onSort={sortR} />
                   <SortTh label="Received" sortKey="received" active={resSort.key} dir={resSort.dir} onSort={sortR} hint="Courier collection + advance already taken" />
+                  <SortTh label="Delivery cost" sortKey="deliverySpend" active={resSort.key} dir={resSort.dir} onSort={sortR} hint="What the courier actually charged us" />
                   <SortTh label="Reseller profit" sortKey="resellerProfit" active={resSort.key} dir={resSort.dir} onSort={sortR} />
                   <SortTh label="Admin profit" sortKey="adminProfit" active={resSort.key} dir={resSort.dir} onSort={sortR} />
                 </tr>
@@ -502,23 +505,27 @@ function BusinessReportPage() {
                     </td>
                     <td className="px-3 py-2 text-center font-semibold">{r.orders}</td>
                     <td className="px-3 py-2 text-center text-success">{r.delivered}</td>
+                    <td className="px-3 py-2 text-center text-amber-600">{r.partial || "—"}</td>
                     <td className="px-3 py-2 text-center text-destructive">{r.failed || "—"}</td>
+                    <td className="px-3 py-2 text-center text-muted-foreground">{r.running || "—"}</td>
                     <td className="px-3 py-2 text-center tabular-nums">{bdt(r.value)}</td>
                     <td className="px-3 py-2 text-center tabular-nums">
                       {bdt(r.received)}
                       {r.advance > 0 && <div className="text-[9px] text-primary">adv {bdt(r.advance)} included</div>}
                     </td>
+                    <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{bdt(r.deliverySpend)}</td>
                     <td className={"px-3 py-2 text-center tabular-nums " + toneOf(r.resellerProfit)}>{bdt(r.resellerProfit)}</td>
                     <td className={"px-3 py-2 text-center font-semibold tabular-nums " + toneOf(r.adminProfit)}>{bdt(r.adminProfit)}</td>
                   </tr>
                 ))}
                 {pagedResellers.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-3 py-10 text-center text-xs text-muted-foreground">
+                    <td colSpan={11} className="px-3 py-10 text-center text-xs text-muted-foreground">
                       No reseller order in this range.
                     </td>
                   </tr>
                 )}
+
               </tbody>
             </table>
           </ReportCard>
