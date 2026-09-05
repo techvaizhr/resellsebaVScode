@@ -98,6 +98,107 @@ export function withKeptCost<T extends BizOrder | ProfitOrder>(o: T, items: BizI
   return { ...o, kept_product_cost: keptProductCost(o, items) };
 }
 
+/* ---------------------------- settlement scope --------------------------- */
+
+/**
+ * Which orders a report should count. Money is only real once a parcel is
+ * finished, so the default scope is the completed (delivered + partial) set —
+ * running orders and cancel/return no longer pollute the profit numbers.
+ */
+export type ReportScope = "completed" | "delivered" | "partial" | "failed" | "running" | "all";
+
+export const DELIVERED_STATUSES = ["delivered"];
+export const PARTIAL_STATUSES = ["partial", "partial_full", "partial_item", "partial_delivery", "damaged"];
+export const COMPLETED_STATUSES = [...DELIVERED_STATUSES, ...PARTIAL_STATUSES];
+export const FAILED_STATUSES = ["returned", "pending_return", "cancelled"];
+export const RUNNING_STATUSES = [
+  "draft",
+  "pending",
+  "confirmed",
+  "forwarded",
+  "packaging",
+  "ready_to_ship",
+  "processing",
+  "shipped",
+  "pending_partial",
+];
+
+export const SCOPE_STATUSES: Record<ReportScope, string[] | null> = {
+  completed: COMPLETED_STATUSES,
+  delivered: DELIVERED_STATUSES,
+  partial: PARTIAL_STATUSES,
+  failed: FAILED_STATUSES,
+  running: RUNNING_STATUSES,
+  all: null,
+};
+
+export const SCOPE_OPTIONS: { value: ReportScope; label: string; hint: string }[] = [
+  { value: "completed", label: "Completed (delivered + partial)", hint: "Default — every finished parcel, partial amounts added or subtracted" },
+  { value: "delivered", label: "Delivered only", hint: "Full delivery, full money collected" },
+  { value: "partial", label: "Partial / damaged", hint: "Parcels where only part of the money or the items came through" },
+  { value: "failed", label: "Returned / cancelled", hint: "Money lost — only delivery charge and packaging burned" },
+  { value: "running", label: "In progress", hint: "Not finished yet — money not counted as earned" },
+  { value: "all", label: "All orders", hint: "Everything, running orders shown as pipeline only" },
+];
+
+/** Keep only the orders that belong to the chosen scope. */
+export function scopeOrders<T extends { status: string }>(orders: T[], scope: ReportScope): T[] {
+  const allow = SCOPE_STATUSES[scope];
+  if (!allow) return orders;
+  const set = new Set(allow);
+  return orders.filter((o) => set.has(o.status));
+}
+
+/**
+ * True when the parcel is finished, so its money is final.
+ * A running order has collected nothing yet — counting its expected total as
+ * "received" is exactly what made the old report wrong.
+ */
+export function isMoneyFinal(status?: string | null) {
+  return !RUNNING_STATUSES.includes(String(status ?? ""));
+}
+
+/** Received money that is actually in hand (0 while the order is still running). */
+export function finalReceived(o: BizOrder | ProfitOrder) {
+  return isMoneyFinal(o.status) ? orderReceived(o) : 0;
+}
+
+/** Reseller profit that is actually earned (0 while the order is still running). */
+export function finalProfit(o: BizOrder | ProfitOrder) {
+  return isMoneyFinal(o.status) ? orderProfit(o) : 0;
+}
+
+/**
+ * What admin really paid the courier for this parcel: the booked shipment cost
+ * when we have it, otherwise the admin-set delivery cost of the order.
+ * Cancelled orders never went to the courier, so they cost nothing.
+ */
+export function adminDeliverySpend(o: BizOrder | ProfitOrder, shipmentCost?: number | null) {
+  if (o.status === "cancelled" || !isMoneyFinal(o.status)) return 0;
+  const booked = n(shipmentCost);
+  return booked > 0 ? booked : orderDeliveryCost(o);
+}
+
+/** Map order_id -> booked courier cost (first shipment wins). */
+export function shipmentCostMap(shipments: { order_id: string; cost: number | string | null }[]) {
+  const m = new Map<string, number>();
+  for (const s of shipments) if (!m.has(s.order_id)) m.set(s.order_id, n(s.cost));
+  return m;
+}
+
+/** Group order items by order id. */
+export function groupItems(items: BizItem[]) {
+  const m = new Map<string, BizItem[]>();
+  for (const it of items) {
+    const arr = m.get(it.order_id) ?? [];
+    arr.push(it);
+    m.set(it.order_id, arr);
+  }
+  return m;
+}
+
+
+
 
 
 /**
@@ -174,12 +275,15 @@ export function buildProductRows(
       };
       map.set(key, row);
     }
-    const kept = keptQty(it, o.status);
+
+    const final = isMoneyFinal(o.status);
+    // A running parcel has sold nothing yet — it only counts as pipeline quantity.
+    const kept = final ? keptQty(it, o.status) : 0;
     row._orders.add(it.order_id);
     row.qty += Number(it.quantity);
     row.saleQty += kept;
-    row.returnedQty += Math.max(Number(it.quantity) - kept, 0);
-    row.sellValue += n(it.line_total);
+    if (final) row.returnedQty += Math.max(Number(it.quantity) - kept, 0);
+    row.sellValue += (n(it.line_total) / Math.max(Number(it.quantity), 1)) * kept;
     row.adminRevenue += n(it.sa_price) * kept;
     row.buyCost += lineBuyingPrice(it, products) * kept;
     if (kept > 0) row.resellerProfit += (n(it.profit) / Math.max(Number(it.quantity), 1)) * kept;
@@ -197,11 +301,16 @@ export type ResellerRow = {
   code: string;
   orders: number;
   delivered: number;
+  partial: number;
   failed: number;
+  running: number;
   value: number;
   received: number;
   advance: number;
   resellerProfit: number;
+  deliverySpend: number;
+  packaging: number;
+  adminMargin: number;
   adminProfit: number;
 };
 
@@ -209,13 +318,10 @@ export function buildResellerRows(
   orders: BizOrder[],
   items: BizItem[],
   products: Map<string, BizProduct>,
+  shipments: { order_id: string; cost: number | string | null }[] = [],
 ): ResellerRow[] {
-  const itemsByOrder = new Map<string, BizItem[]>();
-  for (const it of items) {
-    const arr = itemsByOrder.get(it.order_id) ?? [];
-    arr.push(it);
-    itemsByOrder.set(it.order_id, arr);
-  }
+  const itemsByOrder = groupItems(items);
+  const shipCost = shipmentCostMap(shipments);
   const map = new Map<string, ResellerRow>();
   for (const o of orders) {
     const key = o.reseller_id ?? "none";
@@ -227,24 +333,39 @@ export function buildResellerRows(
         code: o.resellers?.code ?? "—",
         orders: 0,
         delivered: 0,
+        partial: 0,
         failed: 0,
+        running: 0,
         value: 0,
         received: 0,
         advance: 0,
         resellerProfit: 0,
+        deliverySpend: 0,
+        packaging: 0,
+        adminMargin: 0,
         adminProfit: 0,
       } as ResellerRow);
     const myItems = itemsByOrder.get(o.id) ?? [];
     const ord = withKeptCost(o, myItems);
-    const buy = orderBuyingCost(myItems, o.status, products);
+    const final = isMoneyFinal(o.status);
+    const buy = final ? orderBuyingCost(myItems, o.status, products) : 0;
+    const received = finalReceived(ord);
+    const profit = finalProfit(ord);
+    const ship = adminDeliverySpend(o, shipCost.get(o.id));
+    const pack = final && o.status !== "cancelled" ? orderPackaging(o) : 0;
     row.orders += 1;
-    if (isRealizedStatus(o.status)) row.delivered += 1;
-    if (isFailedOrder(o)) row.failed += 1;
+    if (o.status === "delivered") row.delivered += 1;
+    if (PARTIAL_STATUSES.includes(o.status)) row.partial += 1;
+    if (FAILED_STATUSES.includes(o.status)) row.failed += 1;
+    if (!final) row.running += 1;
     row.value += n(o.total);
-    row.received += orderReceived(ord);
-    row.advance += Math.max(n(o.advance_amount), 0);
-    row.resellerProfit += orderProfit(ord);
-    row.adminProfit += adminOrderProfit(ord, buy);
+    row.received += received;
+    row.advance += final ? Math.max(n(o.advance_amount), 0) : 0;
+    row.resellerProfit += profit;
+    row.deliverySpend += ship;
+    row.packaging += pack;
+    row.adminMargin += received - profit - buy;
+    row.adminProfit += received - profit - buy - ship - pack;
     map.set(key, row);
   }
   return Array.from(map.values()).sort((a, b) => b.orders - a.orders);
@@ -258,9 +379,12 @@ export type CourierRow = {
   parcels: number;
   delivered: number;
   returned: number;
+  running: number;
   value: number;
   received: number;
+  deliveryCharged: number;
   courierBill: number;
+  deliveryMargin: number;
   adminProfit: number;
 };
 
@@ -277,12 +401,7 @@ export function buildCourierRows(
   products: Map<string, BizProduct>,
   shipments: { order_id: string; provider: string; cost: number | string | null }[],
 ): CourierRow[] {
-  const itemsByOrder = new Map<string, BizItem[]>();
-  for (const it of items) {
-    const arr = itemsByOrder.get(it.order_id) ?? [];
-    arr.push(it);
-    itemsByOrder.set(it.order_id, arr);
-  }
+  const itemsByOrder = groupItems(items);
   const shipByOrder = new Map<string, { provider: string; cost: number }>();
   for (const s of shipments) {
     if (!shipByOrder.has(s.order_id)) shipByOrder.set(s.order_id, { provider: s.provider, cost: n(s.cost) });
@@ -299,21 +418,33 @@ export function buildCourierRows(
         parcels: 0,
         delivered: 0,
         returned: 0,
+        running: 0,
         value: 0,
         received: 0,
+        deliveryCharged: 0,
         courierBill: 0,
+        deliveryMargin: 0,
         adminProfit: 0,
       } as CourierRow);
     const myItems = itemsByOrder.get(o.id) ?? [];
     const ord = withKeptCost(o, myItems);
-    const buy = orderBuyingCost(myItems, o.status, products);
+    const final = isMoneyFinal(o.status);
+    const buy = final ? orderBuyingCost(myItems, o.status, products) : 0;
+    const received = finalReceived(ord);
+    const profit = finalProfit(ord);
+    const bill = sh ? adminDeliverySpend(o, sh.cost) : adminDeliverySpend(o);
+    const charged = final && o.status !== "cancelled" ? orderDeliveryCost(o) : 0;
+    const pack = final && o.status !== "cancelled" ? orderPackaging(o) : 0;
     row.parcels += 1;
-    if (isRealizedStatus(o.status)) row.delivered += 1;
-    if (isFailedOrder(o)) row.returned += 1;
+    if (o.status === "delivered" || PARTIAL_STATUSES.includes(o.status)) row.delivered += 1;
+    if (FAILED_STATUSES.includes(o.status)) row.returned += 1;
+    if (!final) row.running += 1;
     row.value += n(o.total);
-    row.received += orderReceived(ord);
-    row.courierBill += sh ? sh.cost || orderDeliveryCost(o) : 0;
-    row.adminProfit += adminOrderProfit(ord, buy);
+    row.received += received;
+    row.deliveryCharged += charged;
+    row.courierBill += bill;
+    row.deliveryMargin += charged - bill;
+    row.adminProfit += received - profit - buy - bill - pack;
     map.set(key, row);
   }
   return Array.from(map.values()).sort((a, b) => b.parcels - a.parcels);
@@ -321,18 +452,33 @@ export function buildCourierRows(
 
 /* ------------------------------ profit & loss ---------------------------- */
 
+/**
+ * Expense categories that the P&L already deducts from the orders themselves
+ * (real courier bill + packaging), so counting them again from the expense
+ * sheet would double-charge admin.
+ */
+export const ORDER_COVERED_EXPENSE_CATEGORIES = ["delivery", "courier", "packaging"];
+
 export type PnL = {
   orders: number;
+  deliveredOrders: number;
+  partialOrders: number;
+  failedOrders: number;
+  runningOrders: number;
   value: number;
+  runningValue: number;
   received: number;
   advance: number;
   resellerPayout: number;
   buyCost: number;
   grossProfit: number;
-  delivery: number;
+  deliveryCharged: number;
+  deliverySpend: number;
+  deliveryMargin: number;
   packaging: number;
   expenses: number;
   expenseByCategory: { category: string; amount: number }[];
+  skippedExpenses: number;
   agentCommission: number;
   netProfit: number;
 };
@@ -343,57 +489,85 @@ export function buildPnL(
   products: Map<string, BizProduct>,
   expenses: Expense[],
   agentCommissionTotal = 0,
+  shipments: { order_id: string; cost: number | string | null }[] = [],
 ): PnL {
-  const itemsByOrder = new Map<string, BizItem[]>();
-  for (const it of items) {
-    const arr = itemsByOrder.get(it.order_id) ?? [];
-    arr.push(it);
-    itemsByOrder.set(it.order_id, arr);
-  }
+  const itemsByOrder = groupItems(items);
+  const shipCost = shipmentCostMap(shipments);
   let value = 0;
+  let runningValue = 0;
   let received = 0;
   let advance = 0;
   let resellerPayout = 0;
   let buyCost = 0;
-  let delivery = 0;
+  let deliveryCharged = 0;
+  let deliverySpend = 0;
   let packaging = 0;
+  let deliveredOrders = 0;
+  let partialOrders = 0;
+  let failedOrders = 0;
+  let runningOrders = 0;
   for (const o of orders) {
     const myItems = itemsByOrder.get(o.id) ?? [];
     const ord = withKeptCost(o, myItems);
-    const buy = orderBuyingCost(myItems, o.status, products);
+    const final = isMoneyFinal(o.status);
     value += n(o.total);
+    if (!final) {
+      runningOrders += 1;
+      runningValue += n(o.total);
+      continue;
+    }
+    if (o.status === "delivered") deliveredOrders += 1;
+    if (PARTIAL_STATUSES.includes(o.status)) partialOrders += 1;
+    if (FAILED_STATUSES.includes(o.status)) failedOrders += 1;
     received += orderReceived(ord);
     advance += Math.max(n(o.advance_amount), 0);
     resellerPayout += orderProfit(ord);
-    buyCost += buy;
-    delivery += orderDeliveryCost(o);
-    packaging += orderPackaging(o);
+    buyCost += orderBuyingCost(myItems, o.status, products);
+    if (o.status !== "cancelled") {
+      deliveryCharged += orderDeliveryCost(o);
+      packaging += orderPackaging(o);
+    }
+    deliverySpend += adminDeliverySpend(o, shipCost.get(o.id));
   }
   const catMap = new Map<string, number>();
   let expenseTotal = 0;
+  let skippedExpenses = 0;
   for (const e of expenses) {
+    if (ORDER_COVERED_EXPENSE_CATEGORIES.includes(e.category)) {
+      skippedExpenses += n(e.amount);
+      continue;
+    }
     expenseTotal += n(e.amount);
     catMap.set(e.category, (catMap.get(e.category) ?? 0) + n(e.amount));
   }
-  const grossProfit = received - resellerPayout - buyCost;
+  const grossProfit = received - resellerPayout - buyCost - deliverySpend - packaging;
   return {
     orders: orders.length,
+    deliveredOrders,
+    partialOrders,
+    failedOrders,
+    runningOrders,
     value,
+    runningValue,
     received,
     advance,
     resellerPayout,
     buyCost,
     grossProfit,
-    delivery,
+    deliveryCharged,
+    deliverySpend,
+    deliveryMargin: deliveryCharged - deliverySpend,
     packaging,
     expenses: expenseTotal,
     expenseByCategory: Array.from(catMap.entries())
       .map(([category, amount]) => ({ category, amount }))
       .sort((a, b) => b.amount - a.amount),
+    skippedExpenses,
     agentCommission: agentCommissionTotal,
     netProfit: grossProfit - expenseTotal - agentCommissionTotal,
   };
 }
+
 
 /* ------------------------------ sorting helper --------------------------- */
 
