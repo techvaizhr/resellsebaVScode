@@ -145,7 +145,7 @@ function BusinessReportPage() {
     })();
   }, []);
 
-  useEffect(() => setPage(1), [tab, filters]);
+  useEffect(() => setPage(1), [tab, filters, scope]);
 
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const filtered = useMemo(
@@ -264,16 +264,16 @@ function BusinessReportPage() {
       return downloadCsv(
         "reseller-report.csv",
         toCsv(
-          ["Reseller", "Code", "Orders", "Delivered", "Failed", "Order value", "Received", "Advance", "Reseller profit", "Admin profit"],
-          resellerRows.map((r) => [r.name, r.code, r.orders, r.delivered, r.failed, r.value, r.received, r.advance, r.resellerProfit, r.adminProfit]),
+          ["Reseller", "Code", "Orders", "Delivered", "Partial", "Failed", "Running", "Order value", "Received", "Advance", "Delivery cost", "Packaging", "Reseller profit", "Admin profit"],
+          resellerRows.map((r) => [r.name, r.code, r.orders, r.delivered, r.partial, r.failed, r.running, r.value, r.received, r.advance, r.deliverySpend, r.packaging, r.resellerProfit, r.adminProfit]),
         ),
       );
     if (tab === "couriers")
       return downloadCsv(
         "courier-report.csv",
         toCsv(
-          ["Courier", "Parcels", "Delivered", "Returned", "Parcel value", "Received", "Courier bill", "Admin profit"],
-          courierRows.map((r) => [r.name, r.parcels, r.delivered, r.returned, r.value, r.received, r.courierBill, r.adminProfit]),
+          ["Courier", "Parcels", "Delivered", "Returned", "Running", "Parcel value", "Received", "Delivery charged", "Courier bill", "Delivery gain", "Admin profit"],
+          courierRows.map((r) => [r.name, r.parcels, r.delivered, r.returned, r.running, r.value, r.received, r.deliveryCharged, r.courierBill, r.deliveryMargin, r.adminProfit]),
         ),
       );
     if (tab === "agents")
@@ -293,11 +293,15 @@ function BusinessReportPage() {
           ["Received (incl. advance)", pnl.received],
           ["Reseller payout", pnl.resellerPayout],
           ["Product buying cost", pnl.buyCost],
+          ["Delivery charged to customers", pnl.deliveryCharged],
+          ["Delivery cost paid to courier", pnl.deliverySpend],
+          ["Packaging cost", pnl.packaging],
           ["Gross profit", pnl.grossProfit],
-          ["Expenses", pnl.expenses],
+          ["Other expenses", pnl.expenses],
           ["Agent commission", pnl.agentCommission],
           ["Net profit", pnl.netProfit],
         ],
+
       ),
     );
   };
@@ -344,25 +348,55 @@ function BusinessReportPage() {
         variant="report"
       />
 
+      <div className="surface-card mb-4 p-3 sm:p-4">
+        <div className="mb-2 text-[11px] font-medium text-muted-foreground">
+          Which orders to count — money is only counted once a parcel is finished
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {SCOPE_OPTIONS.map((s) => (
+            <button
+              key={s.value}
+              type="button"
+              title={s.hint}
+              onClick={() => setScope(s.value)}
+              className={
+                "rounded-full border px-3 py-1.5 text-xs font-medium transition " +
+                (scope === s.value
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "hover:bg-accent")
+              }
+            >
+              {s.label}
+              <span className={"ml-1.5 tabular-nums " + (scope === s.value ? "opacity-80" : "text-muted-foreground")}>
+                {scopeCount[s.value] ?? 0}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="mt-2 text-[11px] text-muted-foreground">
+          {SCOPE_OPTIONS.find((s) => s.value === scope)?.hint}
+        </div>
+      </div>
+
       <div className="mb-6 grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Received money"
           value={bdt(pnl.received)}
-          hint={`${pnl.orders} orders · order value ${bdt(pnl.value)} · advance ${bdt(pnl.advance)} included`}
+          hint={`${pnl.deliveredOrders} delivered · ${pnl.partialOrders} partial · ${pnl.failedOrders} returned/cancelled · advance ${bdt(pnl.advance)} included`}
           icon={<Wallet className="h-4 w-4" />}
         />
         <StatCard
           label="Reseller payout"
           value={bdt(pnl.resellerPayout)}
-          hint="What the resellers finally earn from these orders"
+          hint="What the resellers finally earn from these finished orders"
           icon={<Users className="h-4 w-4" />}
           tone="sky"
         />
         <StatCard
-          label="Product buying cost"
-          value={bdt(pnl.buyCost)}
-          hint="Your own buying price of the items the customer kept"
-          icon={<Boxes className="h-4 w-4" />}
+          label="Delivery cost (admin)"
+          value={bdt(pnl.deliverySpend)}
+          hint={`Charged to customers ${bdt(pnl.deliveryCharged)} · ${pnl.deliveryMargin >= 0 ? "gain" : "loss"} ${bdt(Math.abs(pnl.deliveryMargin))}`}
+          icon={<Truck className="h-4 w-4" />}
           tone="violet"
         />
         <StatCard
@@ -373,6 +407,13 @@ function BusinessReportPage() {
           tone="emerald"
         />
       </div>
+      {pnl.runningOrders > 0 && (
+        <div className="mb-6 rounded-lg border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          {pnl.runningOrders} order(s) worth {bdt(pnl.runningValue)} are still in progress — their money is not counted
+          as earned anywhere above.
+        </div>
+      )}
+
 
       <ReportTabs tabs={TABS} active={tab} onChange={setTab} />
 
@@ -444,9 +485,12 @@ function BusinessReportPage() {
                   <th className={th + " text-left"}>Reseller</th>
                   <SortTh label="Orders" sortKey="orders" active={resSort.key} dir={resSort.dir} onSort={sortR} />
                   <SortTh label="Delivered" sortKey="delivered" active={resSort.key} dir={resSort.dir} onSort={sortR} />
+                  <SortTh label="Partial" sortKey="partial" active={resSort.key} dir={resSort.dir} onSort={sortR} />
                   <SortTh label="Failed" sortKey="failed" active={resSort.key} dir={resSort.dir} onSort={sortR} />
+                  <SortTh label="Running" sortKey="running" active={resSort.key} dir={resSort.dir} onSort={sortR} hint="Still in progress — money not counted" />
                   <SortTh label="Order value" sortKey="value" active={resSort.key} dir={resSort.dir} onSort={sortR} />
                   <SortTh label="Received" sortKey="received" active={resSort.key} dir={resSort.dir} onSort={sortR} hint="Courier collection + advance already taken" />
+                  <SortTh label="Delivery cost" sortKey="deliverySpend" active={resSort.key} dir={resSort.dir} onSort={sortR} hint="What the courier actually charged us" />
                   <SortTh label="Reseller profit" sortKey="resellerProfit" active={resSort.key} dir={resSort.dir} onSort={sortR} />
                   <SortTh label="Admin profit" sortKey="adminProfit" active={resSort.key} dir={resSort.dir} onSort={sortR} />
                 </tr>
@@ -465,23 +509,27 @@ function BusinessReportPage() {
                     </td>
                     <td className="px-3 py-2 text-center font-semibold">{r.orders}</td>
                     <td className="px-3 py-2 text-center text-success">{r.delivered}</td>
+                    <td className="px-3 py-2 text-center text-amber-600">{r.partial || "—"}</td>
                     <td className="px-3 py-2 text-center text-destructive">{r.failed || "—"}</td>
+                    <td className="px-3 py-2 text-center text-muted-foreground">{r.running || "—"}</td>
                     <td className="px-3 py-2 text-center tabular-nums">{bdt(r.value)}</td>
                     <td className="px-3 py-2 text-center tabular-nums">
                       {bdt(r.received)}
                       {r.advance > 0 && <div className="text-[9px] text-primary">adv {bdt(r.advance)} included</div>}
                     </td>
+                    <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{bdt(r.deliverySpend)}</td>
                     <td className={"px-3 py-2 text-center tabular-nums " + toneOf(r.resellerProfit)}>{bdt(r.resellerProfit)}</td>
                     <td className={"px-3 py-2 text-center font-semibold tabular-nums " + toneOf(r.adminProfit)}>{bdt(r.adminProfit)}</td>
                   </tr>
                 ))}
                 {pagedResellers.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-3 py-10 text-center text-xs text-muted-foreground">
+                    <td colSpan={11} className="px-3 py-10 text-center text-xs text-muted-foreground">
                       No reseller order in this range.
                     </td>
                   </tr>
                 )}
+
               </tbody>
             </table>
           </ReportCard>
@@ -496,11 +544,14 @@ function BusinessReportPage() {
               <tr>
                 <th className={th + " text-left"}>Courier</th>
                 <SortTh label="Parcels" sortKey="parcels" active={couSort.key} dir={couSort.dir} onSort={sortC} />
-                <SortTh label="Delivered" sortKey="delivered" active={couSort.key} dir={couSort.dir} onSort={sortC} />
+                <SortTh label="Delivered" sortKey="delivered" active={couSort.key} dir={couSort.dir} onSort={sortC} hint="Delivered + partial parcels" />
                 <SortTh label="Returned" sortKey="returned" active={couSort.key} dir={couSort.dir} onSort={sortC} />
+                <SortTh label="Running" sortKey="running" active={couSort.key} dir={couSort.dir} onSort={sortC} />
                 <SortTh label="Parcel value" sortKey="value" active={couSort.key} dir={couSort.dir} onSort={sortC} />
                 <SortTh label="Received" sortKey="received" active={couSort.key} dir={couSort.dir} onSort={sortC} />
-                <SortTh label="Courier bill" sortKey="courierBill" active={couSort.key} dir={couSort.dir} onSort={sortC} />
+                <SortTh label="Charged" sortKey="deliveryCharged" active={couSort.key} dir={couSort.dir} onSort={sortC} hint="Delivery charge taken from customers" />
+                <SortTh label="Courier bill" sortKey="courierBill" active={couSort.key} dir={couSort.dir} onSort={sortC} hint="Actual courier cost" />
+                <SortTh label="Delivery gain" sortKey="deliveryMargin" active={couSort.key} dir={couSort.dir} onSort={sortC} />
                 <SortTh label="Admin profit" sortKey="adminProfit" active={couSort.key} dir={couSort.dir} onSort={sortC} />
               </tr>
             </thead>
@@ -511,19 +562,23 @@ function BusinessReportPage() {
                   <td className="px-3 py-2 text-center font-semibold">{r.parcels}</td>
                   <td className="px-3 py-2 text-center text-success">{r.delivered}</td>
                   <td className="px-3 py-2 text-center text-destructive">{r.returned || "—"}</td>
+                  <td className="px-3 py-2 text-center text-muted-foreground">{r.running || "—"}</td>
                   <td className="px-3 py-2 text-center tabular-nums">{bdt(r.value)}</td>
                   <td className="px-3 py-2 text-center tabular-nums">{bdt(r.received)}</td>
+                  <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{bdt(r.deliveryCharged)}</td>
                   <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{bdt(r.courierBill)}</td>
+                  <td className={"px-3 py-2 text-center tabular-nums " + toneOf(r.deliveryMargin)}>{bdt(r.deliveryMargin)}</td>
                   <td className={"px-3 py-2 text-center font-semibold tabular-nums " + toneOf(r.adminProfit)}>{bdt(r.adminProfit)}</td>
                 </tr>
               ))}
               {courierRows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-3 py-10 text-center text-xs text-muted-foreground">
+                  <td colSpan={11} className="px-3 py-10 text-center text-xs text-muted-foreground">
                     No parcel in this range.
                   </td>
                 </tr>
               )}
+
             </tbody>
           </table>
         </ReportCard>
@@ -610,7 +665,12 @@ function BusinessReportPage() {
             <table className="w-full min-w-[560px] text-sm">
               <tbody>
                 {[
-                  { label: "Order value", value: pnl.value, muted: true, note: `${pnl.orders} orders in this range` },
+                  {
+                    label: "Order value",
+                    value: pnl.value,
+                    muted: true,
+                    note: `${pnl.orders} orders counted · ${pnl.deliveredOrders} delivered, ${pnl.partialOrders} partial, ${pnl.failedOrders} returned/cancelled`,
+                  },
                   {
                     label: "Received (incl. advance)",
                     value: pnl.received,
@@ -618,6 +678,12 @@ function BusinessReportPage() {
                   },
                   { label: "Reseller final payout", value: -pnl.resellerPayout, note: "what the resellers earn from these orders" },
                   { label: "Product buying cost", value: -pnl.buyCost, note: "your buying price of the kept items" },
+                  {
+                    label: "Delivery cost paid to courier",
+                    value: -pnl.deliverySpend,
+                    note: `customers were charged ${bdt(pnl.deliveryCharged)} — ${pnl.deliveryMargin >= 0 ? "gain" : "loss"} ${bdt(Math.abs(pnl.deliveryMargin))}`,
+                  },
+                  { label: "Packaging cost", value: -pnl.packaging, note: "packaging of the parcels in this range" },
                 ].map((r) => (
                   <tr key={r.label} className="border-t">
                     <td className="px-3 py-2">
@@ -641,9 +707,11 @@ function BusinessReportPage() {
                 ))}
                 <tr className="border-t">
                   <td className="px-3 py-2">
-                    <div className="font-medium">Total expenses</div>
+                    <div className="font-medium">Other expenses</div>
                     <div className="text-[11px] text-muted-foreground">
-                      Delivery and packaging are only deducted here — record them once as an expense.
+                      Delivery, courier and packaging expense entries are skipped here because every order already
+                      carries its real delivery and packaging cost above
+                      {pnl.skippedExpenses > 0 ? ` (${bdt(pnl.skippedExpenses)} skipped)` : ""}.
                     </div>
                   </td>
                   <td className="px-3 py-2 text-right font-semibold tabular-nums text-destructive">−{bdt(pnl.expenses)}</td>
@@ -666,11 +734,12 @@ function BusinessReportPage() {
           </ReportCard>
 
           <div className="mb-6 grid gap-4 grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Total expense" value={bdt(pnl.expenses)} hint={`${scopedExpenses.length} expense entries in this range`} icon={<Receipt className="h-4 w-4" />} tone="rose" />
-            <StatCard label="Delivery charge (info)" value={bdt(pnl.delivery)} hint="Not deducted here — add it as a courier expense to deduct once" icon={<Truck className="h-4 w-4" />} tone="sky" />
-            <StatCard label="Packaging (info)" value={bdt(pnl.packaging)} hint="Not deducted here — add it as a packaging expense to deduct once" icon={<Boxes className="h-4 w-4" />} tone="violet" />
+            <StatCard label="Other expenses" value={bdt(pnl.expenses)} hint={`${scopedExpenses.length} expense entries in this range`} icon={<Receipt className="h-4 w-4" />} tone="rose" />
+            <StatCard label="Delivery gain/loss" value={bdt(pnl.deliveryMargin)} hint={`Charged ${bdt(pnl.deliveryCharged)} − paid ${bdt(pnl.deliverySpend)}`} icon={<Truck className="h-4 w-4" />} tone="sky" />
+            <StatCard label="Packaging cost" value={bdt(pnl.packaging)} hint="Already deducted in the statement above" icon={<Boxes className="h-4 w-4" />} tone="violet" />
             <StatCard label="Agent commission" value={bdt(pnl.agentCommission)} hint="Deducted from the net profit" icon={<Target className="h-4 w-4" />} />
           </div>
+
         </>
       )}
     </div>
