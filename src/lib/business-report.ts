@@ -271,10 +271,11 @@ export function buildProductRows(
         buyCost: 0,
         adminProfit: 0,
         resellerProfit: 0,
+        _orders: new Set<string>(),
       };
-      map.set(key, { ...row, _orders: new Set<string>() });
-      row = map.get(key)!;
+      map.set(key, row);
     }
+
     const final = isMoneyFinal(o.status);
     // A running parcel has sold nothing yet — it only counts as pipeline quantity.
     const kept = final ? keptQty(it, o.status) : 0;
