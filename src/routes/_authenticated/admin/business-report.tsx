@@ -540,11 +540,14 @@ function BusinessReportPage() {
               <tr>
                 <th className={th + " text-left"}>Courier</th>
                 <SortTh label="Parcels" sortKey="parcels" active={couSort.key} dir={couSort.dir} onSort={sortC} />
-                <SortTh label="Delivered" sortKey="delivered" active={couSort.key} dir={couSort.dir} onSort={sortC} />
+                <SortTh label="Delivered" sortKey="delivered" active={couSort.key} dir={couSort.dir} onSort={sortC} hint="Delivered + partial parcels" />
                 <SortTh label="Returned" sortKey="returned" active={couSort.key} dir={couSort.dir} onSort={sortC} />
+                <SortTh label="Running" sortKey="running" active={couSort.key} dir={couSort.dir} onSort={sortC} />
                 <SortTh label="Parcel value" sortKey="value" active={couSort.key} dir={couSort.dir} onSort={sortC} />
                 <SortTh label="Received" sortKey="received" active={couSort.key} dir={couSort.dir} onSort={sortC} />
-                <SortTh label="Courier bill" sortKey="courierBill" active={couSort.key} dir={couSort.dir} onSort={sortC} />
+                <SortTh label="Charged" sortKey="deliveryCharged" active={couSort.key} dir={couSort.dir} onSort={sortC} hint="Delivery charge taken from customers" />
+                <SortTh label="Courier bill" sortKey="courierBill" active={couSort.key} dir={couSort.dir} onSort={sortC} hint="Actual courier cost" />
+                <SortTh label="Delivery gain" sortKey="deliveryMargin" active={couSort.key} dir={couSort.dir} onSort={sortC} />
                 <SortTh label="Admin profit" sortKey="adminProfit" active={couSort.key} dir={couSort.dir} onSort={sortC} />
               </tr>
             </thead>
@@ -555,19 +558,23 @@ function BusinessReportPage() {
                   <td className="px-3 py-2 text-center font-semibold">{r.parcels}</td>
                   <td className="px-3 py-2 text-center text-success">{r.delivered}</td>
                   <td className="px-3 py-2 text-center text-destructive">{r.returned || "—"}</td>
+                  <td className="px-3 py-2 text-center text-muted-foreground">{r.running || "—"}</td>
                   <td className="px-3 py-2 text-center tabular-nums">{bdt(r.value)}</td>
                   <td className="px-3 py-2 text-center tabular-nums">{bdt(r.received)}</td>
+                  <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{bdt(r.deliveryCharged)}</td>
                   <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{bdt(r.courierBill)}</td>
+                  <td className={"px-3 py-2 text-center tabular-nums " + toneOf(r.deliveryMargin)}>{bdt(r.deliveryMargin)}</td>
                   <td className={"px-3 py-2 text-center font-semibold tabular-nums " + toneOf(r.adminProfit)}>{bdt(r.adminProfit)}</td>
                 </tr>
               ))}
               {courierRows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-3 py-10 text-center text-xs text-muted-foreground">
+                  <td colSpan={11} className="px-3 py-10 text-center text-xs text-muted-foreground">
                     No parcel in this range.
                   </td>
                 </tr>
               )}
+
             </tbody>
           </table>
         </ReportCard>
