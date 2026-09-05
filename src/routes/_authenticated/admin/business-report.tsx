@@ -12,26 +12,36 @@ import {
 import { ReportCard, ReportTabs, SortTh, toneOf } from "@/components/report-blocks";
 import { Pagination, usePaginated } from "@/components/data-list";
 import { ResellerAvatar } from "@/components/reseller-avatar";
-import { bdt, toCsv, downloadCsv, orderProfit, orderReceived } from "@/lib/finance-report";
+import { bdt, toCsv, downloadCsv } from "@/lib/finance-report";
 import { agentCommission, AGENT_COMMISSION_HINT } from "@/lib/agents";
 import {
   ADMIN_PROFIT_HINT,
+  adminDeliverySpend,
   buildCourierRows,
   buildPnL,
   buildProductRows,
+  finalProfit,
+  finalReceived,
+  groupItems,
+  isMoneyFinal,
+  scopeOrders,
+  shipmentCostMap,
   withKeptCost,
   buildResellerRows,
   orderBuyingCost,
   sortRows,
+  SCOPE_OPTIONS,
   type BizItem,
   type BizOrder,
   type BizProduct,
   type CourierRow,
   type Expense,
   type ProductRow,
+  type ReportScope,
   type ResellerRow,
   type SortDir,
 } from "@/lib/business-report";
+
 import { Loader2, Download, Wallet, Boxes, TrendingUp, Receipt, Package, Users, Truck, Target } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/business-report")({
