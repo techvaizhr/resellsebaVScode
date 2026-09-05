@@ -264,16 +264,16 @@ function BusinessReportPage() {
       return downloadCsv(
         "reseller-report.csv",
         toCsv(
-          ["Reseller", "Code", "Orders", "Delivered", "Failed", "Order value", "Received", "Advance", "Reseller profit", "Admin profit"],
-          resellerRows.map((r) => [r.name, r.code, r.orders, r.delivered, r.failed, r.value, r.received, r.advance, r.resellerProfit, r.adminProfit]),
+          ["Reseller", "Code", "Orders", "Delivered", "Partial", "Failed", "Running", "Order value", "Received", "Advance", "Delivery cost", "Packaging", "Reseller profit", "Admin profit"],
+          resellerRows.map((r) => [r.name, r.code, r.orders, r.delivered, r.partial, r.failed, r.running, r.value, r.received, r.advance, r.deliverySpend, r.packaging, r.resellerProfit, r.adminProfit]),
         ),
       );
     if (tab === "couriers")
       return downloadCsv(
         "courier-report.csv",
         toCsv(
-          ["Courier", "Parcels", "Delivered", "Returned", "Parcel value", "Received", "Courier bill", "Admin profit"],
-          courierRows.map((r) => [r.name, r.parcels, r.delivered, r.returned, r.value, r.received, r.courierBill, r.adminProfit]),
+          ["Courier", "Parcels", "Delivered", "Returned", "Running", "Parcel value", "Received", "Delivery charged", "Courier bill", "Delivery gain", "Admin profit"],
+          courierRows.map((r) => [r.name, r.parcels, r.delivered, r.returned, r.running, r.value, r.received, r.deliveryCharged, r.courierBill, r.deliveryMargin, r.adminProfit]),
         ),
       );
     if (tab === "agents")
@@ -293,11 +293,15 @@ function BusinessReportPage() {
           ["Received (incl. advance)", pnl.received],
           ["Reseller payout", pnl.resellerPayout],
           ["Product buying cost", pnl.buyCost],
+          ["Delivery charged to customers", pnl.deliveryCharged],
+          ["Delivery cost paid to courier", pnl.deliverySpend],
+          ["Packaging cost", pnl.packaging],
           ["Gross profit", pnl.grossProfit],
-          ["Expenses", pnl.expenses],
+          ["Other expenses", pnl.expenses],
           ["Agent commission", pnl.agentCommission],
           ["Net profit", pnl.netProfit],
         ],
+
       ),
     );
   };
