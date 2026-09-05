@@ -98,6 +98,107 @@ export function withKeptCost<T extends BizOrder | ProfitOrder>(o: T, items: BizI
   return { ...o, kept_product_cost: keptProductCost(o, items) };
 }
 
+/* ---------------------------- settlement scope --------------------------- */
+
+/**
+ * Which orders a report should count. Money is only real once a parcel is
+ * finished, so the default scope is the completed (delivered + partial) set —
+ * running orders and cancel/return no longer pollute the profit numbers.
+ */
+export type ReportScope = "completed" | "delivered" | "partial" | "failed" | "running" | "all";
+
+export const DELIVERED_STATUSES = ["delivered"];
+export const PARTIAL_STATUSES = ["partial", "partial_full", "partial_item", "partial_delivery", "damaged"];
+export const COMPLETED_STATUSES = [...DELIVERED_STATUSES, ...PARTIAL_STATUSES];
+export const FAILED_STATUSES = ["returned", "pending_return", "cancelled"];
+export const RUNNING_STATUSES = [
+  "draft",
+  "pending",
+  "confirmed",
+  "forwarded",
+  "packaging",
+  "ready_to_ship",
+  "processing",
+  "shipped",
+  "pending_partial",
+];
+
+export const SCOPE_STATUSES: Record<ReportScope, string[] | null> = {
+  completed: COMPLETED_STATUSES,
+  delivered: DELIVERED_STATUSES,
+  partial: PARTIAL_STATUSES,
+  failed: FAILED_STATUSES,
+  running: RUNNING_STATUSES,
+  all: null,
+};
+
+export const SCOPE_OPTIONS: { value: ReportScope; label: string; hint: string }[] = [
+  { value: "completed", label: "Completed (delivered + partial)", hint: "Default — every finished parcel, partial amounts added or subtracted" },
+  { value: "delivered", label: "Delivered only", hint: "Full delivery, full money collected" },
+  { value: "partial", label: "Partial / damaged", hint: "Parcels where only part of the money or the items came through" },
+  { value: "failed", label: "Returned / cancelled", hint: "Money lost — only delivery charge and packaging burned" },
+  { value: "running", label: "In progress", hint: "Not finished yet — money not counted as earned" },
+  { value: "all", label: "All orders", hint: "Everything, running orders shown as pipeline only" },
+];
+
+/** Keep only the orders that belong to the chosen scope. */
+export function scopeOrders<T extends { status: string }>(orders: T[], scope: ReportScope): T[] {
+  const allow = SCOPE_STATUSES[scope];
+  if (!allow) return orders;
+  const set = new Set(allow);
+  return orders.filter((o) => set.has(o.status));
+}
+
+/**
+ * True when the parcel is finished, so its money is final.
+ * A running order has collected nothing yet — counting its expected total as
+ * "received" is exactly what made the old report wrong.
+ */
+export function isMoneyFinal(status?: string | null) {
+  return !RUNNING_STATUSES.includes(String(status ?? ""));
+}
+
+/** Received money that is actually in hand (0 while the order is still running). */
+export function finalReceived(o: BizOrder | ProfitOrder) {
+  return isMoneyFinal(o.status) ? orderReceived(o) : 0;
+}
+
+/** Reseller profit that is actually earned (0 while the order is still running). */
+export function finalProfit(o: BizOrder | ProfitOrder) {
+  return isMoneyFinal(o.status) ? orderProfit(o) : 0;
+}
+
+/**
+ * What admin really paid the courier for this parcel: the booked shipment cost
+ * when we have it, otherwise the admin-set delivery cost of the order.
+ * Cancelled orders never went to the courier, so they cost nothing.
+ */
+export function adminDeliverySpend(o: BizOrder | ProfitOrder, shipmentCost?: number | null) {
+  if (o.status === "cancelled" || !isMoneyFinal(o.status)) return 0;
+  const booked = n(shipmentCost);
+  return booked > 0 ? booked : orderDeliveryCost(o);
+}
+
+/** Map order_id -> booked courier cost (first shipment wins). */
+export function shipmentCostMap(shipments: { order_id: string; cost: number | string | null }[]) {
+  const m = new Map<string, number>();
+  for (const s of shipments) if (!m.has(s.order_id)) m.set(s.order_id, n(s.cost));
+  return m;
+}
+
+/** Group order items by order id. */
+export function groupItems(items: BizItem[]) {
+  const m = new Map<string, BizItem[]>();
+  for (const it of items) {
+    const arr = m.get(it.order_id) ?? [];
+    arr.push(it);
+    m.set(it.order_id, arr);
+  }
+  return m;
+}
+
+
+
 
 
 /**
