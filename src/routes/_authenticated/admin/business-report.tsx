@@ -344,25 +344,55 @@ function BusinessReportPage() {
         variant="report"
       />
 
+      <div className="surface-card mb-4 p-3 sm:p-4">
+        <div className="mb-2 text-[11px] font-medium text-muted-foreground">
+          Which orders to count — money is only counted once a parcel is finished
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {SCOPE_OPTIONS.map((s) => (
+            <button
+              key={s.value}
+              type="button"
+              title={s.hint}
+              onClick={() => setScope(s.value)}
+              className={
+                "rounded-full border px-3 py-1.5 text-xs font-medium transition " +
+                (scope === s.value
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "hover:bg-accent")
+              }
+            >
+              {s.label}
+              <span className={"ml-1.5 tabular-nums " + (scope === s.value ? "opacity-80" : "text-muted-foreground")}>
+                {scopeCount[s.value] ?? 0}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="mt-2 text-[11px] text-muted-foreground">
+          {SCOPE_OPTIONS.find((s) => s.value === scope)?.hint}
+        </div>
+      </div>
+
       <div className="mb-6 grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Received money"
           value={bdt(pnl.received)}
-          hint={`${pnl.orders} orders · order value ${bdt(pnl.value)} · advance ${bdt(pnl.advance)} included`}
+          hint={`${pnl.deliveredOrders} delivered · ${pnl.partialOrders} partial · ${pnl.failedOrders} returned/cancelled · advance ${bdt(pnl.advance)} included`}
           icon={<Wallet className="h-4 w-4" />}
         />
         <StatCard
           label="Reseller payout"
           value={bdt(pnl.resellerPayout)}
-          hint="What the resellers finally earn from these orders"
+          hint="What the resellers finally earn from these finished orders"
           icon={<Users className="h-4 w-4" />}
           tone="sky"
         />
         <StatCard
-          label="Product buying cost"
-          value={bdt(pnl.buyCost)}
-          hint="Your own buying price of the items the customer kept"
-          icon={<Boxes className="h-4 w-4" />}
+          label="Delivery cost (admin)"
+          value={bdt(pnl.deliverySpend)}
+          hint={`Charged to customers ${bdt(pnl.deliveryCharged)} · ${pnl.deliveryMargin >= 0 ? "gain" : "loss"} ${bdt(Math.abs(pnl.deliveryMargin))}`}
+          icon={<Truck className="h-4 w-4" />}
           tone="violet"
         />
         <StatCard
@@ -373,6 +403,13 @@ function BusinessReportPage() {
           tone="emerald"
         />
       </div>
+      {pnl.runningOrders > 0 && (
+        <div className="mb-6 rounded-lg border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          {pnl.runningOrders} order(s) worth {bdt(pnl.runningValue)} are still in progress — their money is not counted
+          as earned anywhere above.
+        </div>
+      )}
+
 
       <ReportTabs tabs={TABS} active={tab} onChange={setTab} />
 
