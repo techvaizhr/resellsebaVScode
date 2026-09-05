@@ -136,12 +136,18 @@ function BusinessReportPage() {
   useEffect(() => setPage(1), [tab, filters]);
 
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
-  const scoped = useMemo(
+  const filtered = useMemo(
     () => applyOrderFilters(orders as unknown as (BizOrder & { customer_name: string; customer_phone: string })[], filters),
     [orders, filters],
   ) as unknown as BizOrder[];
+  const scoped = useMemo(() => scopeOrders(filtered, scope), [filtered, scope]);
   const scopedIds = useMemo(() => new Set(scoped.map((o) => o.id)), [scoped]);
   const scopedItems = useMemo(() => items.filter((i) => scopedIds.has(i.order_id)), [items, scopedIds]);
+  const scopeCount = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const s of SCOPE_OPTIONS) c[s.value] = scopeOrders(filtered, s.value).length;
+    return c;
+  }, [filtered]);
 
   const scopedExpenses = useMemo(() => {
     const { fromTs, toTs } = resolveDateRange(filters);
@@ -158,8 +164,8 @@ function BusinessReportPage() {
     [scoped, scopedItems, productMap, prodSort],
   );
   const resellerRows = useMemo(
-    () => sortRows(buildResellerRows(scoped, scopedItems, productMap), resSort.key, resSort.dir),
-    [scoped, scopedItems, productMap, resSort],
+    () => sortRows(buildResellerRows(scoped, scopedItems, productMap, shipments), resSort.key, resSort.dir),
+    [scoped, scopedItems, productMap, shipments, resSort],
   );
   const courierRows = useMemo(
     () => sortRows(buildCourierRows(scoped, scopedItems, productMap, shipments), couSort.key, couSort.dir),
@@ -167,12 +173,8 @@ function BusinessReportPage() {
   );
 
   const agentRows = useMemo(() => {
-    const itemsByOrder = new Map<string, BizItem[]>();
-    for (const i of scopedItems) {
-      const arr = itemsByOrder.get(i.order_id) ?? [];
-      arr.push(i);
-      itemsByOrder.set(i.order_id, arr);
-    }
+    const itemsByOrder = groupItems(scopedItems);
+    const shipCost = shipmentCostMap(shipments);
     const rows: AgentRow[] = agents.map((ag) => {
       const mine = new Set(resellers.filter((r) => r.agent_id === ag.id).map((r) => r.id));
       const mineOrders = scoped.filter((o) => o.reseller_id && mine.has(o.reseller_id));
@@ -182,9 +184,15 @@ function BusinessReportPage() {
       for (const o of mineOrders) {
         const myItems = itemsByOrder.get(o.id) ?? [];
         const ord = withKeptCost(o, myItems);
-        sales += orderReceived(ord);
-        base += orderProfit(ord);
-        adminProfit += orderReceived(ord) - orderProfit(ord) - orderBuyingCost(myItems, o.status, productMap);
+        const final = isMoneyFinal(o.status);
+        const received = finalReceived(ord);
+        const profit = finalProfit(ord);
+        const buy = final ? orderBuyingCost(myItems, o.status, productMap) : 0;
+        const ship = adminDeliverySpend(o, shipCost.get(o.id));
+        const pack = final && o.status !== "cancelled" ? Number(o.packaging_total ?? 0) || 0 : 0;
+        sales += received;
+        base += profit;
+        adminProfit += received - profit - buy - ship - pack;
       }
       const target = Number(ag.sale_target ?? 0) || 0;
       const rate = Number(ag.commission_rate ?? 0) || 0;
@@ -204,13 +212,14 @@ function BusinessReportPage() {
       };
     });
     return sortRows(rows, agtSort.key, agtSort.dir);
-  }, [agents, resellers, scoped, scopedItems, productMap, agtSort]);
+  }, [agents, resellers, scoped, scopedItems, productMap, shipments, agtSort]);
 
   const agentCommissionTotal = useMemo(() => agentRows.reduce((t, a) => t + a.commission, 0), [agentRows]);
   const pnl = useMemo(
-    () => buildPnL(scoped, scopedItems, productMap, scopedExpenses, agentCommissionTotal),
-    [scoped, scopedItems, productMap, scopedExpenses, agentCommissionTotal],
+    () => buildPnL(scoped, scopedItems, productMap, scopedExpenses, agentCommissionTotal, shipments),
+    [scoped, scopedItems, productMap, scopedExpenses, agentCommissionTotal, shipments],
   );
+
 
   const perPage = filters.perPage;
   const pagedProducts = usePaginated(productRows, page, perPage);
