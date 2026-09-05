@@ -661,7 +661,12 @@ function BusinessReportPage() {
             <table className="w-full min-w-[560px] text-sm">
               <tbody>
                 {[
-                  { label: "Order value", value: pnl.value, muted: true, note: `${pnl.orders} orders in this range` },
+                  {
+                    label: "Order value",
+                    value: pnl.value,
+                    muted: true,
+                    note: `${pnl.orders} orders counted · ${pnl.deliveredOrders} delivered, ${pnl.partialOrders} partial, ${pnl.failedOrders} returned/cancelled`,
+                  },
                   {
                     label: "Received (incl. advance)",
                     value: pnl.received,
@@ -669,6 +674,12 @@ function BusinessReportPage() {
                   },
                   { label: "Reseller final payout", value: -pnl.resellerPayout, note: "what the resellers earn from these orders" },
                   { label: "Product buying cost", value: -pnl.buyCost, note: "your buying price of the kept items" },
+                  {
+                    label: "Delivery cost paid to courier",
+                    value: -pnl.deliverySpend,
+                    note: `customers were charged ${bdt(pnl.deliveryCharged)} — ${pnl.deliveryMargin >= 0 ? "gain" : "loss"} ${bdt(Math.abs(pnl.deliveryMargin))}`,
+                  },
+                  { label: "Packaging cost", value: -pnl.packaging, note: "packaging of the parcels in this range" },
                 ].map((r) => (
                   <tr key={r.label} className="border-t">
                     <td className="px-3 py-2">
@@ -692,9 +703,11 @@ function BusinessReportPage() {
                 ))}
                 <tr className="border-t">
                   <td className="px-3 py-2">
-                    <div className="font-medium">Total expenses</div>
+                    <div className="font-medium">Other expenses</div>
                     <div className="text-[11px] text-muted-foreground">
-                      Delivery and packaging are only deducted here — record them once as an expense.
+                      Delivery, courier and packaging expense entries are skipped here because every order already
+                      carries its real delivery and packaging cost above
+                      {pnl.skippedExpenses > 0 ? ` (${bdt(pnl.skippedExpenses)} skipped)` : ""}.
                     </div>
                   </td>
                   <td className="px-3 py-2 text-right font-semibold tabular-nums text-destructive">−{bdt(pnl.expenses)}</td>
@@ -717,11 +730,12 @@ function BusinessReportPage() {
           </ReportCard>
 
           <div className="mb-6 grid gap-4 grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Total expense" value={bdt(pnl.expenses)} hint={`${scopedExpenses.length} expense entries in this range`} icon={<Receipt className="h-4 w-4" />} tone="rose" />
-            <StatCard label="Delivery charge (info)" value={bdt(pnl.delivery)} hint="Not deducted here — add it as a courier expense to deduct once" icon={<Truck className="h-4 w-4" />} tone="sky" />
-            <StatCard label="Packaging (info)" value={bdt(pnl.packaging)} hint="Not deducted here — add it as a packaging expense to deduct once" icon={<Boxes className="h-4 w-4" />} tone="violet" />
+            <StatCard label="Other expenses" value={bdt(pnl.expenses)} hint={`${scopedExpenses.length} expense entries in this range`} icon={<Receipt className="h-4 w-4" />} tone="rose" />
+            <StatCard label="Delivery gain/loss" value={bdt(pnl.deliveryMargin)} hint={`Charged ${bdt(pnl.deliveryCharged)} − paid ${bdt(pnl.deliverySpend)}`} icon={<Truck className="h-4 w-4" />} tone="sky" />
+            <StatCard label="Packaging cost" value={bdt(pnl.packaging)} hint="Already deducted in the statement above" icon={<Boxes className="h-4 w-4" />} tone="violet" />
             <StatCard label="Agent commission" value={bdt(pnl.agentCommission)} hint="Deducted from the net profit" icon={<Target className="h-4 w-4" />} />
           </div>
+
         </>
       )}
     </div>
