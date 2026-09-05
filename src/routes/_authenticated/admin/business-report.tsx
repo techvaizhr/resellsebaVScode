@@ -105,8 +105,10 @@ function BusinessReportPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
   const [filters, setFilters] = useState<OrderFilterState>(DEFAULT_ORDER_FILTERS);
+  const [scope, setScope] = useState<ReportScope>("completed");
   const [tab, setTab] = useState<Tab>("products");
   const [page, setPage] = useState(1);
+
 
   const [prodSort, setProdSort] = useState<{ key: keyof ProductRow; dir: SortDir }>({ key: "saleQty", dir: "desc" });
   const [resSort, setResSort] = useState<{ key: keyof ResellerRow; dir: SortDir }>({ key: "orders", dir: "desc" });
