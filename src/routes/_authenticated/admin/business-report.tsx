@@ -145,7 +145,7 @@ function BusinessReportPage() {
     })();
   }, []);
 
-  useEffect(() => setPage(1), [tab, filters]);
+  useEffect(() => setPage(1), [tab, filters, scope]);
 
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const filtered = useMemo(
