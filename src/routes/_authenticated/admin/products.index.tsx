@@ -515,6 +515,24 @@ function ProductsPage() {
                   <EyeOff className="h-3.5 w-3.5" /> Hide
                 </button>
                 )}
+                {canManage && (
+                <button
+                  disabled={bulkBusy}
+                  onClick={() => bulkReview(true)}
+                  className="inline-flex items-center gap-1 rounded-md border border-emerald-500/50 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50"
+                >
+                  <Check className="h-3.5 w-3.5" /> Approve
+                </button>
+                )}
+                {canManage && (
+                <button
+                  disabled={bulkBusy}
+                  onClick={() => bulkReview(false)}
+                  className="inline-flex items-center gap-1 rounded-md border border-amber-500/50 px-3 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-500/10 disabled:opacity-50"
+                >
+                  <X className="h-3.5 w-3.5" /> Reject
+                </button>
+                )}
                 {canDelete && (
                 <button
                   disabled={bulkBusy}
@@ -531,6 +549,9 @@ function ProductsPage() {
                   Clear
                 </button>
               </div>
+              {canManage && (
+                <BulkValuePanel count={selected.size} busy={bulkBusy} onApply={bulkApplyValues} />
+              )}
             </div>
           )}
           <div className="surface-card overflow-x-auto">
