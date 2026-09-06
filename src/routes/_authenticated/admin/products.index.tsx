@@ -20,6 +20,7 @@ import { APPROVAL_TONE, reviewProduct, setProductSupplier } from "@/lib/supplier
 import { AppModal } from "@/components/ui-kit/AppModal";
 import { PendingChangesModal } from "@/components/PendingChangesModal";
 import { useCan } from "@/lib/use-auth";
+import { BulkValuePanel, computeBulkPatch } from "@/components/bulk-value-panel";
 
 type Row = {
   id: string;
