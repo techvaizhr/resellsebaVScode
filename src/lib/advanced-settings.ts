@@ -30,6 +30,8 @@ export type AdvancedSettings = {
   depositPayEnabled: boolean;
   /** Platform-wide delivery charge rule (products can override it). */
   delivery: DeliverySettings;
+  /** Global auto-pricing rule for new products. */
+  pricing: PricingRule;
 };
 
 export const DEFAULT_ADVANCED_SETTINGS: AdvancedSettings = {
