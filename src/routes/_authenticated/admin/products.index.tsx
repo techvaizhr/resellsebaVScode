@@ -20,6 +20,7 @@ import { APPROVAL_TONE, reviewProduct, setProductSupplier } from "@/lib/supplier
 import { AppModal } from "@/components/ui-kit/AppModal";
 import { PendingChangesModal } from "@/components/PendingChangesModal";
 import { useCan } from "@/lib/use-auth";
+import { BulkValuePanel, computeBulkPatch } from "@/components/bulk-value-panel";
 
 type Row = {
   id: string;
@@ -225,6 +226,66 @@ function ProductsPage() {
     setItems((s) => s.filter((i) => !ids.includes(i.id)));
     toast.success(`${ids.length} product deleted`);
     setSelected(new Set());
+  }
+
+  /** Approve or reject every selected supplier submission in one go. */
+  async function bulkReview(approve: boolean) {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    const targets = items.filter(
+      (i) => ids.includes(i.id) && ((i.approval_status ?? "approved") !== "approved" || i.pending_changes),
+    );
+    if (!targets.length) return toast.error("No pending submission in the selection");
+    if (
+      !(await confirmAction({
+        title: approve ? "Approve submissions" : "Reject submissions",
+        description: approve
+          ? "The selected supplier submissions will go live."
+          : "The selected submissions will be rejected; live data stays unchanged.",
+        detail: `${targets.length} product${targets.length === 1 ? "" : "s"}`,
+        confirmText: approve ? "Approve" : "Reject",
+      }))
+    )
+      return;
+    setBulkBusy(true);
+    let ok = 0;
+    for (const t of targets) {
+      try {
+        await reviewProduct(t.id, approve);
+        ok += 1;
+      } catch {
+        /* keep going, report the count at the end */
+      }
+    }
+    await Promise.all(targets.map((t) => refreshOne(t.id)));
+    setBulkBusy(false);
+    if (!ok) return toast.error("Failed");
+    toast.success(`${ok} product ${approve ? "approved" : "rejected"}`);
+    setSelected(new Set());
+  }
+
+  /** Bulk price / stock / packaging setter (admin only). */
+  async function bulkApplyValues(state: Parameters<typeof computeBulkPatch>[1]) {
+    const ids = Array.from(selected);
+    const targets = items.filter((i) => ids.includes(i.id));
+    if (!targets.length) return;
+    setBulkBusy(true);
+    const updated: Record<string, Record<string, number>> = {};
+    let failed = 0;
+    for (const t of targets) {
+      const patch = computeBulkPatch(t, state);
+      if (!Object.keys(patch).length) continue;
+      const { error } = await supabase.from("products").update(patch as never).eq("id", t.id);
+      if (error) failed += 1;
+      else updated[t.id] = patch;
+    }
+    setBulkBusy(false);
+    const okCount = Object.keys(updated).length;
+    if (okCount) {
+      setItems((s) => s.map((i) => (updated[i.id] ? ({ ...i, ...updated[i.id] } as Row) : i)));
+      toast.success(`${okCount} product updated`);
+    }
+    if (failed) toast.error(`${failed} product could not be updated`);
   }
 
   const lowerFiltered = useMemo(() => {
@@ -454,6 +515,24 @@ function ProductsPage() {
                   <EyeOff className="h-3.5 w-3.5" /> Hide
                 </button>
                 )}
+                {canManage && (
+                <button
+                  disabled={bulkBusy}
+                  onClick={() => bulkReview(true)}
+                  className="inline-flex items-center gap-1 rounded-md border border-emerald-500/50 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50"
+                >
+                  <Check className="h-3.5 w-3.5" /> Approve
+                </button>
+                )}
+                {canManage && (
+                <button
+                  disabled={bulkBusy}
+                  onClick={() => bulkReview(false)}
+                  className="inline-flex items-center gap-1 rounded-md border border-amber-500/50 px-3 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-500/10 disabled:opacity-50"
+                >
+                  <X className="h-3.5 w-3.5" /> Reject
+                </button>
+                )}
                 {canDelete && (
                 <button
                   disabled={bulkBusy}
@@ -470,6 +549,9 @@ function ProductsPage() {
                   Clear
                 </button>
               </div>
+              {canManage && (
+                <BulkValuePanel count={selected.size} busy={bulkBusy} onApply={bulkApplyValues} />
+              )}
             </div>
           )}
           <div className="surface-card overflow-x-auto">
