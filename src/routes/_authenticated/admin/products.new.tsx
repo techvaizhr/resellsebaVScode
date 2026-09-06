@@ -15,6 +15,9 @@ import { ProductImportModal } from "@/components/ProductImportModal";
 import { takeImportDraft } from "@/lib/product-import";
 import { CloudDownload } from "lucide-react";
 import { useCan } from "@/lib/use-auth";
+import { useAdvancedSettings } from "@/lib/advanced-settings";
+import { applyPricingRule, pricingRuleSummary } from "@/lib/pricing-rule";
+import { Wand2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/products/new")({
   validateSearch: (s: Record<string, unknown>): { from?: string } => ({
@@ -51,6 +54,11 @@ function NewProduct() {
   const [cats, setCats] = useState<{ id: string; name: string }[]>([]);
   const [suppliers, setSuppliers] = useState<{ id: string; display_name: string; code: string }[]>([]);
   const [supplierId, setSupplierId] = useState("");
+
+  const { settings: advanced } = useAdvancedSettings();
+  const rule = advanced.pricing;
+  /** Fields the admin typed by hand — auto pricing never overwrites them. */
+  const [priceTouched, setPriceTouched] = useState(false);
 
   const [busy, setBusy] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -132,6 +140,15 @@ function NewProduct() {
       .then(({ data }) => setSuppliers(data ?? []));
 
   }, []);
+
+  /** Fill reseller / suggested / packaging from the global rule. */
+  function autoFill(cost: number) {
+    if (!rule.enabled || !(cost > 0)) return;
+    const r = applyPricingRule(cost, rule);
+    setResellerPrice(String(r.resellerPrice));
+    setSuggested(String(r.suggestedPrice));
+    setPackaging(String(r.packaging));
+  }
 
   const calc = useMemo(() => {
     const buy = Number(buying) || 0;
@@ -335,6 +352,22 @@ function NewProduct() {
               Reseller's minimum sell price is <b>reseller price + packaging</b>, on top of delivery.
             </Hint>
           </h3>
+          {rule.enabled && (
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
+              <Wand2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <span className="min-w-0">{pricingRuleSummary(rule)}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setPriceTouched(false);
+                  autoFill(Number(buying) || 0);
+                }}
+                className="ml-auto rounded-md border bg-background px-2 py-1 text-[11px] font-medium hover:bg-muted"
+              >
+                Apply rule
+              </button>
+            </div>
+          )}
           <div className="grid gap-3 md:grid-cols-3">
             <Field
               label="Supplier"
@@ -353,14 +386,43 @@ function NewProduct() {
               required
               hint={supplierId ? "Supplier ei amount ta pabe (per unit, delivered item)." : "Your cost. Resellers do not see this."}
             >
-              <input required type="number" min={0} value={buying} onChange={(e) => setBuying(e.target.value)} className={inputCls} />
+              <input
+                required
+                type="number"
+                min={0}
+                value={buying}
+                onChange={(e) => {
+                  setBuying(e.target.value);
+                  if (!priceTouched) autoFill(Number(e.target.value) || 0);
+                }}
+                className={inputCls}
+              />
             </Field>
 
             <Field label="Reseller price (৳)" required hint="Resellers see this as the product price and cannot sell below it.">
-              <input required type="number" min={0} value={resellerPrice} onChange={(e) => setResellerPrice(e.target.value)} className={inputCls} />
+              <input
+                required
+                type="number"
+                min={0}
+                value={resellerPrice}
+                onChange={(e) => {
+                  setPriceTouched(true);
+                  setResellerPrice(e.target.value);
+                }}
+                className={inputCls}
+              />
             </Field>
             <Field label="Packaging cost (৳)" hint="Per-order packaging cost, deducted from the reseller.">
-              <input type="number" min={0} value={packaging} onChange={(e) => setPackaging(e.target.value)} className={inputCls} />
+              <input
+                type="number"
+                min={0}
+                value={packaging}
+                onChange={(e) => {
+                  setPriceTouched(true);
+                  setPackaging(e.target.value);
+                }}
+                className={inputCls}
+              />
             </Field>
             <Field
               label="Delivery type"
@@ -403,7 +465,17 @@ function NewProduct() {
               <input type="number" min={0} step={0.1} value={weight} onChange={(e) => setWeight(e.target.value)} className={inputCls} placeholder="e.g. 0.5" />
             </Field>
             <Field label="Suggested sell price (৳)" required hint="Suggested to resellers. Must be at least reseller price + packaging.">
-              <input required type="number" min={0} value={suggested} onChange={(e) => setSuggested(e.target.value)} className={inputCls} />
+              <input
+                required
+                type="number"
+                min={0}
+                value={suggested}
+                onChange={(e) => {
+                  setPriceTouched(true);
+                  setSuggested(e.target.value);
+                }}
+                className={inputCls}
+              />
             </Field>
           </div>
 
