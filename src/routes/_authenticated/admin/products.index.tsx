@@ -275,7 +275,7 @@ function ProductsPage() {
     for (const t of targets) {
       const patch = computeBulkPatch(t, state);
       if (!Object.keys(patch).length) continue;
-      const { error } = await supabase.from("products").update(patch).eq("id", t.id);
+      const { error } = await supabase.from("products").update(patch as never).eq("id", t.id);
       if (error) failed += 1;
       else updated[t.id] = patch;
     }
