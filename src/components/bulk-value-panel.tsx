@@ -77,7 +77,7 @@ export function computeBulkPatch(
     const cost = Number(row.buying_price ?? 0);
     const next =
       s.mode === "fixed" ? v : s.mode === "pct_cost" ? cost * (1 + v / 100) : current * (1 + v / 100);
-    patch[f.key] = Math.max(0, round2(next));
+    patch[f.key] = Math.max(0, round5(next));
   }
   return patch;
 }
