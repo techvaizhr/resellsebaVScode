@@ -6,6 +6,7 @@ import {
   setGlobalDelivery,
   type DeliverySettings,
 } from "@/lib/delivery";
+import { DEFAULT_PRICING_RULE, mergePricingRule, type PricingRule } from "@/lib/pricing-rule";
 
 /**
  * Advanced system settings — small feature switches an admin can flip without
