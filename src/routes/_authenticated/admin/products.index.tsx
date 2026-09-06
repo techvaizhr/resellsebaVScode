@@ -227,6 +227,66 @@ function ProductsPage() {
     setSelected(new Set());
   }
 
+  /** Approve or reject every selected supplier submission in one go. */
+  async function bulkReview(approve: boolean) {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    const targets = items.filter(
+      (i) => ids.includes(i.id) && ((i.approval_status ?? "approved") !== "approved" || i.pending_changes),
+    );
+    if (!targets.length) return toast.error("No pending submission in the selection");
+    if (
+      !(await confirmAction({
+        title: approve ? "Approve submissions" : "Reject submissions",
+        description: approve
+          ? "The selected supplier submissions will go live."
+          : "The selected submissions will be rejected; live data stays unchanged.",
+        detail: `${targets.length} product${targets.length === 1 ? "" : "s"}`,
+        confirmText: approve ? "Approve" : "Reject",
+      }))
+    )
+      return;
+    setBulkBusy(true);
+    let ok = 0;
+    for (const t of targets) {
+      try {
+        await reviewProduct(t.id, approve);
+        ok += 1;
+      } catch {
+        /* keep going, report the count at the end */
+      }
+    }
+    await Promise.all(targets.map((t) => refreshOne(t.id)));
+    setBulkBusy(false);
+    if (!ok) return toast.error("Failed");
+    toast.success(`${ok} product ${approve ? "approved" : "rejected"}`);
+    setSelected(new Set());
+  }
+
+  /** Bulk price / stock / packaging setter (admin only). */
+  async function bulkApplyValues(state: Parameters<typeof computeBulkPatch>[1]) {
+    const ids = Array.from(selected);
+    const targets = items.filter((i) => ids.includes(i.id));
+    if (!targets.length) return;
+    setBulkBusy(true);
+    const updated: Record<string, Record<string, number>> = {};
+    let failed = 0;
+    for (const t of targets) {
+      const patch = computeBulkPatch(t, state);
+      if (!Object.keys(patch).length) continue;
+      const { error } = await supabase.from("products").update(patch).eq("id", t.id);
+      if (error) failed += 1;
+      else updated[t.id] = patch;
+    }
+    setBulkBusy(false);
+    const okCount = Object.keys(updated).length;
+    if (okCount) {
+      setItems((s) => s.map((i) => (updated[i.id] ? ({ ...i, ...updated[i.id] } as Row) : i)));
+      toast.success(`${okCount} product updated`);
+    }
+    if (failed) toast.error(`${failed} product could not be updated`);
+  }
+
   const lowerFiltered = useMemo(() => {
     return items.filter((i) => {
       if (q) {
