@@ -10,7 +10,8 @@ import {
   clearAdvancedSettingsCache,
   type AdvancedSettings,
 } from "@/lib/advanced-settings";
-import { Loader2, Save, Package, ShieldCheck, Mail, Smartphone, Info, Boxes, Truck, UserCheck } from "lucide-react";
+import { Loader2, Save, Package, ShieldCheck, Mail, Smartphone, Info, Boxes, Truck, UserCheck, Tag } from "lucide-react";
+import { applyPricingRule, pricingRuleSummary, type PricingMarkupMode, type PricingRule } from "@/lib/pricing-rule";
 import {
   DELIVERY_AREAS,
   deliverySettingsSummary,
@@ -36,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/admin/advanced")({
   }),
 });
 
-type TabKey = "delivery" | "orders" | "resellers" | "deposit";
+type TabKey = "delivery" | "pricing" | "orders" | "resellers" | "deposit";
 
 type Group = {
   tab: TabKey;
@@ -54,6 +55,7 @@ type Group = {
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: "delivery", label: "Delivery", icon: <Truck className="h-4 w-4" /> },
+  { key: "pricing", label: "Product pricing", icon: <Tag className="h-4 w-4" /> },
   { key: "orders", label: "Orders", icon: <Boxes className="h-4 w-4" /> },
   { key: "resellers", label: "Resellers", icon: <UserCheck className="h-4 w-4" /> },
   { key: "deposit", label: "Security deposit", icon: <ShieldCheck className="h-4 w-4" /> },
@@ -222,6 +224,13 @@ function AdvancedSettingsPage() {
 
       {tab === "deposit" && <DepositSettingsPanel />}
 
+      {tab === "pricing" && (
+        <PricingCard
+          value={settings.pricing}
+          onChange={(pricing) => setSettings((s) => ({ ...s, pricing }))}
+        />
+      )}
+
       {tab === "delivery" && (
         <div className="space-y-5">
           <DeliveryCard
@@ -286,6 +295,146 @@ function AdvancedSettingsPage() {
   );
 }
 
+
+/** Global auto-pricing rule used when a product is uploaded. */
+function PricingCard({ value, onChange }: { value: PricingRule; onChange: (v: PricingRule) => void }) {
+  const inp = "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:border-primary";
+  const set = <K extends keyof PricingRule>(key: K, v: PricingRule[K]) => onChange({ ...value, [key]: v });
+  const preview = applyPricingRule(100, value);
+
+  return (
+    <section className="surface-card overflow-hidden">
+      <header className="flex items-center gap-2 border-b bg-muted/30 px-4 py-3">
+        <span className="grid h-8 w-8 place-items-center rounded-md bg-primary/10 text-primary">
+          <Tag className="h-4 w-4" />
+        </span>
+        <div>
+          <h2 className="text-sm font-semibold">Auto pricing rule</h2>
+          <p className="text-xs text-muted-foreground">
+            Admin product upload e ei rule onujai price auto fill hobe (change kora jabe). Supplier
+            product upload korle rule chup chap apply hoye save hobe — approve er somoy verify korlei hobe.
+          </p>
+        </div>
+      </header>
+
+      <div className="space-y-4 p-4">
+        <label className="flex items-start justify-between gap-4 rounded-lg border bg-primary/5 px-3 py-3">
+          <div className="min-w-0">
+            <div className="text-sm font-medium">Auto pricing on</div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Off thakle kono price auto fill hobe na, sob hate likhte hobe.
+            </p>
+          </div>
+          <Toggle checked={value.enabled} onChange={(v) => set("enabled", v)} />
+        </label>
+
+        <div className={value.enabled ? "space-y-4" : "space-y-4 opacity-50"}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <MarkupField
+              label="Reseller price"
+              help="Admin cost (buying / supplier price) er upore markup."
+              mode={value.resellerMode}
+              amount={value.resellerValue}
+              disabled={!value.enabled}
+              onMode={(m) => set("resellerMode", m)}
+              onAmount={(n) => set("resellerValue", n)}
+            />
+            <MarkupField
+              label="Suggested sell price"
+              help="Reseller price er upore markup (packaging jog hobe)."
+              mode={value.suggestedMode}
+              amount={value.suggestedValue}
+              disabled={!value.enabled}
+              onMode={(m) => set("suggestedMode", m)}
+              onAmount={(n) => set("suggestedValue", n)}
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-xs font-medium">
+              Default packaging charge (৳)
+              <input
+                type="number"
+                min={0}
+                disabled={!value.enabled}
+                value={value.packaging}
+                onChange={(e) => set("packaging", Number(e.target.value) || 0)}
+                className={`${inp} mt-1`}
+              />
+            </label>
+            <label className="block text-xs font-medium">
+              Round money to nearest (৳)
+              <input
+                type="number"
+                min={0}
+                disabled={!value.enabled}
+                value={value.roundTo}
+                onChange={(e) => set("roundTo", Number(e.target.value) || 0)}
+                className={`${inp} mt-1`}
+              />
+              <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
+                0 dile rounding hobe na.
+              </span>
+            </label>
+          </div>
+
+          <div className="rounded-lg border bg-muted/40 p-3 text-xs">
+            <div className="font-medium">{pricingRuleSummary(value)}</div>
+            <div className="mt-1 text-muted-foreground">
+              Example — cost ৳100 → reseller ৳{preview.resellerPrice} · suggested ৳
+              {preview.suggestedPrice} · packaging ৳{preview.packaging}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MarkupField({
+  label,
+  help,
+  mode,
+  amount,
+  disabled,
+  onMode,
+  onAmount,
+}: {
+  label: string;
+  help: string;
+  mode: PricingMarkupMode;
+  amount: number;
+  disabled: boolean;
+  onMode: (m: PricingMarkupMode) => void;
+  onAmount: (n: number) => void;
+}) {
+  const inp = "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:border-primary";
+  return (
+    <div className="rounded-lg border p-3">
+      <div className="text-sm font-medium">{label}</div>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">{help}</p>
+      <div className="mt-2 grid grid-cols-[minmax(0,1fr)_7rem] gap-2">
+        <select
+          disabled={disabled}
+          value={mode}
+          onChange={(e) => onMode(e.target.value as PricingMarkupMode)}
+          className={inp}
+        >
+          <option value="pct">Percent markup (%)</option>
+          <option value="fixed">Fixed amount (৳)</option>
+        </select>
+        <input
+          type="number"
+          min={0}
+          disabled={disabled}
+          value={amount}
+          onChange={(e) => onAmount(Number(e.target.value) || 0)}
+          className={inp}
+        />
+      </div>
+    </div>
+  );
+}
 
 const DELIVERY_MODES: { value: DeliveryMode; label: string; help: string }[] = [
   { value: "area", label: "Area-wise", help: "3 ta area, protita area er alada charge." },

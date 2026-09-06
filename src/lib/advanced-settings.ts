@@ -6,6 +6,7 @@ import {
   setGlobalDelivery,
   type DeliverySettings,
 } from "@/lib/delivery";
+import { DEFAULT_PRICING_RULE, mergePricingRule, type PricingRule } from "@/lib/pricing-rule";
 
 /**
  * Advanced system settings — small feature switches an admin can flip without
@@ -29,6 +30,8 @@ export type AdvancedSettings = {
   depositPayEnabled: boolean;
   /** Platform-wide delivery charge rule (products can override it). */
   delivery: DeliverySettings;
+  /** Global auto-pricing rule for new products. */
+  pricing: PricingRule;
 };
 
 export const DEFAULT_ADVANCED_SETTINGS: AdvancedSettings = {
@@ -40,6 +43,7 @@ export const DEFAULT_ADVANCED_SETTINGS: AdvancedSettings = {
   verifySms: false,
   depositPayEnabled: true,
   delivery: DEFAULT_DELIVERY_SETTINGS,
+  pricing: DEFAULT_PRICING_RULE,
 };
 
 
@@ -53,6 +57,7 @@ export function mergeAdvanced(raw: unknown): AdvancedSettings {
     }
   }
   out.delivery = mergeDeliverySettings(r.delivery);
+  out.pricing = mergePricingRule(r.pricing);
   setGlobalDelivery(out.delivery);
   return out;
 }
