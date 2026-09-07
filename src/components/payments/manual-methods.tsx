@@ -20,6 +20,9 @@ import { PaymentLogo, paymentLogo } from "./payment-brand";
 
 type Draft = PaymentConfigRow & { config: Record<string, unknown> };
 
+/** Standard account types — shown here and on the reseller dashboard's payment-numbers card. */
+const ACCOUNT_TYPES = ["Personal", "Agent", "Payment"] as const;
+
 const emptyDraft = (): Draft => ({
   id: "",
   method: MANUAL_METHODS[0]!.value,
@@ -289,12 +292,25 @@ function MethodModal({
         </div>
         <div>
           <Label>Account type</Label>
-          <input
+          <select
             value={cfgString(row.config, "account_type")}
             onChange={(e) => setConfig("account_type", e.target.value)}
             className={field}
-            placeholder="Personal / Agent / Merchant"
-          />
+          >
+            <option value="">— Select —</option>
+            {ACCOUNT_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+            {/* Keep an older/custom value visible instead of silently dropping it. */}
+            {(() => {
+              const v = cfgString(row.config, "account_type");
+              return v && !ACCOUNT_TYPES.includes(v as (typeof ACCOUNT_TYPES)[number]) ? (
+                <option value={v}>{v}</option>
+              ) : null;
+            })()}
+          </select>
         </div>
         <div className="sm:col-span-2">
           <Label>Payment instructions</Label>

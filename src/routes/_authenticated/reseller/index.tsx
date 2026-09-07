@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getResellerDashboard, clearBootstrapCache } from "@/lib/bootstrap";
 import { useDepositStatus } from "@/lib/deposit";
 import { DepositNotice } from "@/components/deposit-notice";
+import { AdminPaymentNumbersCard } from "@/components/admin-payment-numbers-card";
 import { AdminNoticePopup } from "@/components/admin-notice-popup";
 import { useLiveNotices } from "@/lib/admin-notices";
 import { useAuth } from "@/lib/use-auth";
@@ -198,6 +199,8 @@ function ResellerDashboard() {
       />
 
       <DepositNotice status={deposit} place="dashboard" />
+
+      <AdminPaymentNumbersCard />
 
       <AdminNoticePopup notices={adminNotices} onDismiss={dismissNotice} />
 
