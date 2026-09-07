@@ -73,7 +73,9 @@ function idList(v: unknown): string[] {
 export function mergeDeliveryRule(raw: unknown): DeliveryRule {
   const r = (raw ?? {}) as any;
   const base = emptyDeliveryRule();
-  const mode = (["area", "free", "flat", "custom"] as DeliveryMode[]).includes(r.mode) ? (r.mode as DeliveryMode) : base.mode;
+  const mode = (["area", "free", "flat", "custom"] as DeliveryMode[]).includes(r.mode)
+    ? (r.mode as DeliveryMode)
+    : base.mode;
   return {
     id: typeof r.id === "string" && r.id ? r.id : base.id,
     name: typeof r.name === "string" && r.name.trim() ? r.name.trim() : base.name,
@@ -103,7 +105,10 @@ export function mergeDeliverySettings(raw: unknown): DeliverySettings {
   for (const key of DELIVERY_AREAS) {
     const src = (r.areas as any)?.[key] ?? {};
     areas[key] = {
-      label: typeof src.label === "string" && src.label.trim() ? src.label.trim() : DEFAULT_DELIVERY_SETTINGS.areas[key].label,
+      label:
+        typeof src.label === "string" && src.label.trim()
+          ? src.label.trim()
+          : DEFAULT_DELIVERY_SETTINGS.areas[key].label,
       charge: num(src.charge, DEFAULT_DELIVERY_SETTINGS.areas[key].charge),
     };
   }
@@ -115,7 +120,6 @@ export function mergeDeliverySettings(raw: unknown): DeliverySettings {
     rules: Array.isArray((r as any).rules) ? (r as any).rules.map(mergeDeliveryRule) : [],
   };
 }
-
 
 function num(v: unknown, fallback = 0): number {
   const n = Number(v);
@@ -263,7 +267,7 @@ export function productDeliveryCharge(
 /** Short label like "Free shipping", "Flat ৳80", "৳60 / ৳90 / ৳130". */
 export function deliveryLabel(p: DeliveryConfig, g: DeliverySettings = active): string {
   const r = resolveDelivery(p, g);
-  const suffix = r.source === "global" ? " (global)" : r.source === "rule" ? ` (${r.ruleName})` : "";
+  const suffix = r.source === "global" ? " (g)" : r.source === "rule" ? ` (${r.ruleName})` : "";
   if (r.mode === "free") return `Free shipping${suffix}`;
   if (r.mode === "flat") return `Flat ৳${r.flat}${suffix}`;
   if (r.mode === "custom") return `Custom ৳${r.custom}${suffix}`;
