@@ -963,7 +963,16 @@ function ProductDetailModal({
                   <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Stock Available</div>
                   <div className={`text-lg font-bold ${p.stock <= 5 ? "text-destructive" : ""}`}>{p.stock} units</div>
                 </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Weight</div>
+                  <div className="text-lg font-bold">{p.weight_grams ? `${(p.weight_grams / 1000).toFixed(2)} kg` : "—"}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Delivery Charge</div>
+                  <div className="text-sm font-semibold">{deliveryLabel(p, settings.delivery)}</div>
+                </div>
               </div>
+
 
               <div>
                 <div className="flex items-center justify-between mb-2">
