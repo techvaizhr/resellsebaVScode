@@ -134,6 +134,13 @@
       "when": 1788751680294,
       "tag": "0018_admin_catalog_page_delivery_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1788758400000,
+      "tag": "0019_shipments_tracking_url",
+      "breakpoints": true
     }
   ]
 }

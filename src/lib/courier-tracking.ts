@@ -1,12 +1,20 @@
 /**
  * External (courier website) tracking links.
- * Steadfast : https://steadfast.com.bd/t/<tracking_code>
+ * Steadfast : the real per-consignment link Steadfast returns at booking time
+ *             (https://steadfast.com.bd/tl/<token>), saved on shipments.tracking_url.
+ *             There is no way to derive this from tracking_code — a URL built as
+ *             https://steadfast.com.bd/t/<tracking_code> looks plausible but 404s
+ *             ("Link Unavailable") on Steadfast's own site, so it's only used as a
+ *             last-resort fallback for the rare shipment saved before this existed.
  * Pathao    : https://merchant.pathao.com/tracking?consignment_id=<id>&phone=<customer phone>
  * Carrybee  : https://merchant.carrybee.com/order-track/<tracking_id>
  */
 export function courierTrackingUrl(
   provider: string | null | undefined,
-  shipment: { tracking_id?: string | null; consignment_id?: string | null } | null | undefined,
+  shipment:
+    | { tracking_id?: string | null; consignment_id?: string | null; tracking_url?: string | null }
+    | null
+    | undefined,
   customerPhone?: string | null,
 ): string | null {
   if (!provider || !shipment) return null;
@@ -16,8 +24,12 @@ export function courierTrackingUrl(
   if (!any) return null;
 
   switch (provider) {
-    case "steadfast":
+    case "steadfast": {
+      const saved = (shipment.tracking_url || "").toString().trim();
+      if (saved) return saved;
+      // Fallback only — see note above, this link will usually say "Link Unavailable".
       return `https://steadfast.com.bd/t/${encodeURIComponent(tracking || consignment)}`;
+    }
     case "pathao": {
       const id = consignment || tracking;
       const phone = (customerPhone || "").replace(/[^0-9]/g, "");

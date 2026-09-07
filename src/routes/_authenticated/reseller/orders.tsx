@@ -263,7 +263,7 @@ function OrdersPage() {
         .in("order_id", list),
       supabase
         .from("shipments")
-        .select("id,order_id,provider,tracking_id,consignment_id,status,courier_status,last_event_at")
+        .select("id,order_id,provider,tracking_id,tracking_url,consignment_id,status,courier_status,last_event_at")
         .in("order_id", list),
       supabase
         .from("courier_events")

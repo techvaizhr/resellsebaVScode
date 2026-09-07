@@ -240,7 +240,7 @@ function AdminOrdersPage() {
     "id,reseller_id,order_number,customer_name,customer_phone,address_line,area,city,subtotal,discount,shipping_cost,sa_cost_total,packaging_total,delivery_cost,received_amount,advance_amount,advance_by,total,status,payment_status,payment_method,forwarded_to_admin,created_at,updated_at,reseller_note,admin_note,resellers(business_name,code,contact_phone,agents(display_name))";
   const ITEM_SELECT =
     "order_id,product_id,product_name,product_image,quantity,returned_qty,reseller_price,line_total,sa_price,buying_price,packaging_cost,supplier_id";
-  const SHIPMENT_SELECT = "id,order_id,provider,tracking_id,consignment_id";
+  const SHIPMENT_SELECT = "id,order_id,provider,tracking_id,tracking_url,consignment_id";
 
   // A remount with the same tab within a moment must not refetch the same payload.
   const lastLoad = useRef<{ key: string; at: number } | null>(null);

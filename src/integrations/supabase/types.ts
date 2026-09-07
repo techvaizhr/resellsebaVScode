@@ -2342,6 +2342,7 @@ export type Database = {
           response_payload: Json | null
           status: Database["public"]["Enums"]["shipment_status"]
           tracking_id: string | null
+          tracking_url: string | null
           updated_at: string
         }
         Insert: {
@@ -2363,6 +2364,7 @@ export type Database = {
           response_payload?: Json | null
           status?: Database["public"]["Enums"]["shipment_status"]
           tracking_id?: string | null
+          tracking_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -2384,6 +2386,7 @@ export type Database = {
           response_payload?: Json | null
           status?: Database["public"]["Enums"]["shipment_status"]
           tracking_id?: string | null
+          tracking_url?: string | null
           updated_at?: string
         }
         Relationships: [

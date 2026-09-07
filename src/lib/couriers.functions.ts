@@ -38,7 +38,8 @@ export const bookSteadfast = createServerFn({ method: "POST" })
       .eq("order_id", order.id)
       .not("consignment_id", "is", null)
       .maybeSingle();
-    if (existing) throw new Response("This order is already booked with a courier", { status: 400 });
+    if (existing)
+      throw new Response("This order is already booked with a courier", { status: 400 });
 
     const { data: items } = await supabase
       .from("order_items")
@@ -54,8 +55,10 @@ export const bookSteadfast = createServerFn({ method: "POST" })
       cod_amount: codAmount,
       note: (data.note || order.reseller_note || order.notes || "")?.slice(0, 250) || undefined,
       item_description:
-        (items ?? []).map((i: any) => `${i.product_name} x${i.quantity}`).join(", ").slice(0, 250) ||
-        undefined,
+        (items ?? [])
+          .map((i: any) => `${i.product_name} x${i.quantity}`)
+          .join(", ")
+          .slice(0, 250) || undefined,
       total_lot: (items ?? []).reduce((s: number, i: any) => s + Number(i.quantity || 0), 0) || 1,
       delivery_type: data.deliveryType ?? 0,
     };
@@ -66,6 +69,12 @@ export const bookSteadfast = createServerFn({ method: "POST" })
     });
     const c = body.consignment ?? {};
     const trackingId = c.tracking_code || String(c.consignment_id ?? "");
+    // Steadfast's real create_order response includes a working per-consignment
+    // tracking page (https://steadfast.com.bd/tl/<token>) here — not documented
+    // in their public API doc, but present on the actual response. Save it as-is;
+    // do NOT reconstruct a URL from tracking_code (that format 404s on their site).
+    const trackingUrl =
+      typeof c.tracking_link === "string" && c.tracking_link ? c.tracking_link : null;
     const nowIso = new Date().toISOString();
 
     const { data: shipment } = await supabase
@@ -74,6 +83,7 @@ export const bookSteadfast = createServerFn({ method: "POST" })
         order_id: order.id,
         provider: "steadfast",
         tracking_id: trackingId,
+        tracking_url: trackingUrl,
         consignment_id: String(c.consignment_id ?? ""),
         status: "booked",
         courier_status: String(c.status ?? "in_review"),
@@ -111,9 +121,13 @@ export const bookSteadfast = createServerFn({ method: "POST" })
       changed_by: userId,
     });
 
-    return { success: true, trackingId, consignmentId: String(c.consignment_id ?? ""), status: c.status ?? "in_review" };
+    return {
+      success: true,
+      trackingId,
+      consignmentId: String(c.consignment_id ?? ""),
+      status: c.status ?? "in_review",
+    };
   });
-
 
 export const syncSteadfastStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -245,7 +259,6 @@ export const pathaoStores = createServerFn({ method: "POST" })
     return { stores, defaultStoreId };
   });
 
-
 export const pathaoPricePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
@@ -297,13 +310,15 @@ export const bookPathao = createServerFn({ method: "POST" })
       .eq("order_id", order.id)
       .not("consignment_id", "is", null)
       .maybeSingle();
-    if (existing) throw new Response("This order is already booked with a courier", { status: 400 });
+    if (existing)
+      throw new Response("This order is already booked with a courier", { status: 400 });
 
     const { data: items } = await supabase
       .from("order_items")
       .select("product_name, quantity")
       .eq("order_id", order.id);
-    const quantity = (items ?? []).reduce((s: number, i: any) => s + Number(i.quantity || 0), 0) || 1;
+    const quantity =
+      (items ?? []).reduce((s: number, i: any) => s + Number(i.quantity || 0), 0) || 1;
 
     const codAmount = order.payment_method === "cod" ? Math.round(Number(order.total)) : 0;
     // recipient_city/zone/area are intentionally omitted — Pathao resolves them
@@ -320,8 +335,10 @@ export const bookPathao = createServerFn({ method: "POST" })
       item_weight: String(data.itemWeight ?? 0.5),
       amount_to_collect: codAmount,
       item_description:
-        (items ?? []).map((i: any) => `${i.product_name} x${i.quantity}`).join(", ").slice(0, 250) ||
-        `Order ${order.order_number}`,
+        (items ?? [])
+          .map((i: any) => `${i.product_name} x${i.quantity}`)
+          .join(", ")
+          .slice(0, 250) || `Order ${order.order_number}`,
       special_instruction:
         (data.note || order.reseller_note || order.notes || "")?.slice(0, 250) || undefined,
     };
@@ -382,9 +399,13 @@ export const bookPathao = createServerFn({ method: "POST" })
       changed_by: userId,
     });
 
-    return { success: true, trackingId: consignmentId, consignmentId, deliveryFee: deliveryFee ?? 0 };
+    return {
+      success: true,
+      trackingId: consignmentId,
+      consignmentId,
+      deliveryFee: deliveryFee ?? 0,
+    };
   });
-
 
 export const syncPathaoStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -418,7 +439,6 @@ export const syncPathaoStatus = createServerFn({ method: "POST" })
     return { courierStatus: info.status, shipStatus: result.matched ? result.mapped.ship : null };
   });
 
-
 /* ------------------------------- Carrybee ------------------------------- */
 
 export const carrybeeStores = createServerFn({ method: "POST" })
@@ -437,13 +457,15 @@ export const carrybeeStores = createServerFn({ method: "POST" })
         : Array.isArray(body?.data)
           ? body.data
           : [];
-    const stores = raw.map((s: any) => ({
-      id: String(s.id ?? s.store_id ?? ""),
-      name: String(s.name ?? s.store_name ?? ""),
-      isApproved: Boolean(s.is_approved),
-      isActive: Boolean(s.is_active),
-      isDefaultPickup: Boolean(s.is_default_pickup_store),
-    })).filter((s: any) => s.id);
+    const stores = raw
+      .map((s: any) => ({
+        id: String(s.id ?? s.store_id ?? ""),
+        name: String(s.name ?? s.store_name ?? ""),
+        isApproved: Boolean(s.is_approved),
+        isActive: Boolean(s.is_active),
+        isDefaultPickup: Boolean(s.is_default_pickup_store),
+      }))
+      .filter((s: any) => s.id);
     const usable = stores.filter((s: any) => s.isActive !== false);
     const defaultStoreId = await persistCourierStores(supabase, "carrybee", conf, usable);
     if (usable.length === 0)
@@ -453,7 +475,6 @@ export const carrybeeStores = createServerFn({ method: "POST" })
       );
     return { stores: usable, defaultStoreId };
   });
-
 
 export const bookCarrybee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -487,13 +508,15 @@ export const bookCarrybee = createServerFn({ method: "POST" })
       .eq("order_id", order.id)
       .not("consignment_id", "is", null)
       .maybeSingle();
-    if (existing) throw new Response("This order is already booked with a courier", { status: 400 });
+    if (existing)
+      throw new Response("This order is already booked with a courier", { status: 400 });
 
     const { data: items } = await supabase
       .from("order_items")
       .select("product_name, quantity")
       .eq("order_id", order.id);
-    const quantity = (items ?? []).reduce((s: number, i: any) => s + Number(i.quantity || 0), 0) || 1;
+    const quantity =
+      (items ?? []).reduce((s: number, i: any) => s + Number(i.quantity || 0), 0) || 1;
 
     const address = fullAddress(order);
     const loc = await carrybeeResolveLocation(conf, {
@@ -518,9 +541,12 @@ export const bookCarrybee = createServerFn({ method: "POST" })
       item_quantity: Math.min(200, quantity),
       collectable_amount: Math.min(100000, codAmount),
       product_description:
-        (items ?? []).map((i: any) => `${i.product_name} x${i.quantity}`).join(", ").slice(0, 255) ||
-        undefined,
-      special_instruction: (data.note || order.reseller_note || order.notes || "")?.slice(0, 255) || undefined,
+        (items ?? [])
+          .map((i: any) => `${i.product_name} x${i.quantity}`)
+          .join(", ")
+          .slice(0, 255) || undefined,
+      special_instruction:
+        (data.note || order.reseller_note || order.notes || "")?.slice(0, 255) || undefined,
       ...(data.isExchange ? { is_exchange: true } : {}),
     };
 
@@ -579,9 +605,13 @@ export const bookCarrybee = createServerFn({ method: "POST" })
       changed_by: userId,
     });
 
-    return { success: true, trackingId: consignmentId, consignmentId, deliveryFee: Number(o.delivery_fee ?? 0) };
+    return {
+      success: true,
+      trackingId: consignmentId,
+      consignmentId,
+      deliveryFee: Number(o.delivery_fee ?? 0),
+    };
   });
-
 
 export const syncCarrybeeStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
