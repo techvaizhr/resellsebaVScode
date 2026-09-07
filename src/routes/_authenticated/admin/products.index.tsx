@@ -21,6 +21,9 @@ import { AppModal } from "@/components/ui-kit/AppModal";
 import { PendingChangesModal } from "@/components/PendingChangesModal";
 import { useCan } from "@/lib/use-auth";
 import { BulkValuePanel, computeBulkPatch } from "@/components/bulk-value-panel";
+import { useAdvancedSettings } from "@/lib/advanced-settings";
+import { deliveryLabel } from "@/lib/delivery";
+
 
 type Row = {
   id: string;
