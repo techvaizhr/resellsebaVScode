@@ -67,10 +67,24 @@ type ProductSearch = {
 };
 
 const PRODUCT_COLS =
-  "id,product_code,name,buying_price,reseller_price,suggested_price,packaging_cost,stock,weight_grams,is_active,is_featured,og_image_url,brand_id,category_id,supplier_id,supplier_price,approval_status,approval_note,pending_changes";
+  "id,product_code,name,buying_price,reseller_price,suggested_price,packaging_cost,stock,weight_grams,is_active,is_featured,og_image_url,brand_id,category_id,supplier_id,supplier_price,approval_status,approval_note,pending_changes,delivery_mode,delivery_flat,delivery_inside,delivery_outside,delivery_sub";
 
 /** Keeps the list alive across navigation so editing one product never reloads the page. */
 let catalogCache: { products: Row[]; brands: Opt[]; categories: Opt[]; suppliers: SupplierOpt[] } | null = null;
+
+/** Filters / paging survive a trip to the edit page and back. */
+type ListState = {
+  q: string;
+  brand: string;
+  category: string;
+  status: string;
+  stockFilter: string;
+  supplierFilter: string;
+  sort: string;
+  perPage: number;
+  page: number;
+};
+let listStateCache: ListState | null = null;
 
 export const Route = createFileRoute("/_authenticated/admin/products/")({
   validateSearch: (s: Record<string, unknown>): ProductSearch => ({
@@ -91,6 +105,7 @@ function ProductsPage() {
   const can = useCan();
   const canManage = can("products.manage");
   const canDelete = can("products.delete");
+  const { settings } = useAdvancedSettings();
   const [items, setItems] = useState<Row[]>(catalogCache?.products ?? []);
   const [brands, setBrands] = useState<Opt[]>(catalogCache?.brands ?? []);
   const [categories, setCategories] = useState<Opt[]>(catalogCache?.categories ?? []);
@@ -102,16 +117,23 @@ function ProductsPage() {
   const [inlineEdit, setInlineEdit] = useState(false);
   const [reviewFor, setReviewFor] = useState<Row | null>(null);
 
-  const [q, setQ] = useState("");
-  const [brand, setBrand] = useState(search.brand ?? "");
-  const [category, setCategory] = useState(search.category ?? "");
-  const [status, setStatus] = useState(search.status ?? search.approval ?? "");
-  const [stockFilter, setStockFilter] = useState(search.stock ?? "");
-  const [supplierFilter, setSupplierFilter] = useState(search.supplier ?? "");
-  const [sort, setSort] = useState("");
+  // A link that carries filters in the URL wins; otherwise restore the last state.
+  const fromUrl = Boolean(
+    search.brand || search.category || search.status || search.approval || search.stock || search.supplier,
+  );
+  const restored = !fromUrl ? listStateCache : null;
 
-  const [perPage, setPerPage] = useState(20);
-  const [page, setPage] = useState(1);
+  const [q, setQ] = useState(restored?.q ?? "");
+  const [brand, setBrand] = useState(restored?.brand ?? search.brand ?? "");
+  const [category, setCategory] = useState(restored?.category ?? search.category ?? "");
+  const [status, setStatus] = useState(restored?.status ?? search.status ?? search.approval ?? "");
+  const [stockFilter, setStockFilter] = useState(restored?.stockFilter ?? search.stock ?? "");
+  const [supplierFilter, setSupplierFilter] = useState(restored?.supplierFilter ?? search.supplier ?? "");
+  const [sort, setSort] = useState(restored?.sort ?? "");
+
+  const [perPage, setPerPage] = useState(restored?.perPage ?? 20);
+  const [page, setPage] = useState(restored?.page ?? 1);
+
 
   async function load() {
     setLoading(true);
