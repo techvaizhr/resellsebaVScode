@@ -865,6 +865,7 @@ function ProductDetailModal({
   brands: Opt[]; 
   categories: Opt[] 
 }) {
+  const { settings } = useAdvancedSettings();
   const [p, setP] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [images, setImages] = useState<{url: string}[]>([]);
