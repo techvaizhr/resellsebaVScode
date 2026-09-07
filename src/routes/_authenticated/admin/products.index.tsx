@@ -711,6 +711,10 @@ function ProductsPage() {
                     </td>
                     <td className="px-3 py-3 text-center tabular-nums text-muted-foreground">
                       <WeightCell locked={!inlineEdit || !canManage} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, weight_grams: v } : i)))} />
+                      <div className="mt-0.5 whitespace-nowrap text-[10px] leading-tight text-muted-foreground" title="Applicable delivery charge">
+                        {deliveryLabel(p, settings.delivery)}
+                      </div>
+
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
