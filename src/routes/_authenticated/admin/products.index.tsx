@@ -184,10 +184,22 @@ function ProductsPage() {
     if (catalogCache) catalogCache.products = items;
   }, [items]);
 
-
+  // Reset to the first page only when a filter actually changes (not on mount,
+  // so a restored page number survives coming back from the edit page).
+  const firstFilterRun = useRef(true);
   useEffect(() => {
+    if (firstFilterRun.current) {
+      firstFilterRun.current = false;
+      return;
+    }
     setPage(1);
   }, [q, brand, category, status, stockFilter, supplierFilter, sort, perPage]);
+
+  // Remember filters + paging for the next mount.
+  useEffect(() => {
+    listStateCache = { q, brand, category, status, stockFilter, supplierFilter, sort, perPage, page };
+  }, [q, brand, category, status, stockFilter, supplierFilter, sort, perPage, page]);
+
 
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
