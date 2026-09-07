@@ -43,7 +43,13 @@ type Row = {
   approval_note: string | null;
   pending_changes: Record<string, unknown> | null;
   created_at?: string | null;
+  delivery_mode?: string | null;
+  delivery_flat?: number | null;
+  delivery_inside?: number | null;
+  delivery_outside?: number | null;
+  delivery_sub?: number | null;
 };
+
 
 type SupplierOpt = { id: string; name: string; code: string; status: string };
 
