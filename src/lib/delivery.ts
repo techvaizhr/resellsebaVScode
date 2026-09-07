@@ -271,7 +271,7 @@ export function deliveryLabel(p: DeliveryConfig, g: DeliverySettings = active): 
   if (r.mode === "free") return `Free shipping${suffix}`;
   if (r.mode === "flat") return `Flat ৳${r.flat}${suffix}`;
   if (r.mode === "custom") return `Custom ৳${r.custom}${suffix}`;
-  return `${r.charges.inside_dhaka} / ${r.charges.sub_dhaka} / ${r.charges.outside_dhaka}${suffix}`;
+  return `${r.charges.inside_dhaka}/${r.charges.sub_dhaka}/${r.charges.outside_dhaka}${suffix}`;
 }
 
 /** One-line description of the global rule, for hints. */
