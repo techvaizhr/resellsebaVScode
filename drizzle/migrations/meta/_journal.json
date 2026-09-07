@@ -127,6 +127,13 @@
       "when": 1788679460521,
       "tag": "0017_global_auto_pricing_rule",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1788751680294,
+      "tag": "0018_admin_catalog_page_delivery_fields",
+      "breakpoints": true
     }
   ]
 }

@@ -21,6 +21,9 @@ import { AppModal } from "@/components/ui-kit/AppModal";
 import { PendingChangesModal } from "@/components/PendingChangesModal";
 import { useCan } from "@/lib/use-auth";
 import { BulkValuePanel, computeBulkPatch } from "@/components/bulk-value-panel";
+import { useAdvancedSettings } from "@/lib/advanced-settings";
+import { deliveryLabel } from "@/lib/delivery";
+
 
 type Row = {
   id: string;
@@ -43,7 +46,13 @@ type Row = {
   approval_note: string | null;
   pending_changes: Record<string, unknown> | null;
   created_at?: string | null;
+  delivery_mode?: string | null;
+  delivery_flat?: number | null;
+  delivery_inside?: number | null;
+  delivery_outside?: number | null;
+  delivery_sub?: number | null;
 };
+
 
 type SupplierOpt = { id: string; name: string; code: string; status: string };
 
@@ -61,10 +70,24 @@ type ProductSearch = {
 };
 
 const PRODUCT_COLS =
-  "id,product_code,name,buying_price,reseller_price,suggested_price,packaging_cost,stock,weight_grams,is_active,is_featured,og_image_url,brand_id,category_id,supplier_id,supplier_price,approval_status,approval_note,pending_changes";
+  "id,product_code,name,buying_price,reseller_price,suggested_price,packaging_cost,stock,weight_grams,is_active,is_featured,og_image_url,brand_id,category_id,supplier_id,supplier_price,approval_status,approval_note,pending_changes,delivery_mode,delivery_flat,delivery_inside,delivery_outside,delivery_sub";
 
 /** Keeps the list alive across navigation so editing one product never reloads the page. */
 let catalogCache: { products: Row[]; brands: Opt[]; categories: Opt[]; suppliers: SupplierOpt[] } | null = null;
+
+/** Filters / paging survive a trip to the edit page and back. */
+type ListState = {
+  q: string;
+  brand: string;
+  category: string;
+  status: string;
+  stockFilter: string;
+  supplierFilter: string;
+  sort: string;
+  perPage: number;
+  page: number;
+};
+let listStateCache: ListState | null = null;
 
 export const Route = createFileRoute("/_authenticated/admin/products/")({
   validateSearch: (s: Record<string, unknown>): ProductSearch => ({
@@ -85,6 +108,7 @@ function ProductsPage() {
   const can = useCan();
   const canManage = can("products.manage");
   const canDelete = can("products.delete");
+  const { settings } = useAdvancedSettings();
   const [items, setItems] = useState<Row[]>(catalogCache?.products ?? []);
   const [brands, setBrands] = useState<Opt[]>(catalogCache?.brands ?? []);
   const [categories, setCategories] = useState<Opt[]>(catalogCache?.categories ?? []);
@@ -96,16 +120,23 @@ function ProductsPage() {
   const [inlineEdit, setInlineEdit] = useState(false);
   const [reviewFor, setReviewFor] = useState<Row | null>(null);
 
-  const [q, setQ] = useState("");
-  const [brand, setBrand] = useState(search.brand ?? "");
-  const [category, setCategory] = useState(search.category ?? "");
-  const [status, setStatus] = useState(search.status ?? search.approval ?? "");
-  const [stockFilter, setStockFilter] = useState(search.stock ?? "");
-  const [supplierFilter, setSupplierFilter] = useState(search.supplier ?? "");
-  const [sort, setSort] = useState("");
+  // A link that carries filters in the URL wins; otherwise restore the last state.
+  const fromUrl = Boolean(
+    search.brand || search.category || search.status || search.approval || search.stock || search.supplier,
+  );
+  const restored = !fromUrl ? listStateCache : null;
 
-  const [perPage, setPerPage] = useState(20);
-  const [page, setPage] = useState(1);
+  const [q, setQ] = useState(restored?.q ?? "");
+  const [brand, setBrand] = useState(restored?.brand ?? search.brand ?? "");
+  const [category, setCategory] = useState(restored?.category ?? search.category ?? "");
+  const [status, setStatus] = useState(restored?.status ?? search.status ?? search.approval ?? "");
+  const [stockFilter, setStockFilter] = useState(restored?.stockFilter ?? search.stock ?? "");
+  const [supplierFilter, setSupplierFilter] = useState(restored?.supplierFilter ?? search.supplier ?? "");
+  const [sort, setSort] = useState(restored?.sort ?? "");
+
+  const [perPage, setPerPage] = useState(restored?.perPage ?? 20);
+  const [page, setPage] = useState(restored?.page ?? 1);
+
 
   async function load() {
     setLoading(true);
@@ -156,10 +187,22 @@ function ProductsPage() {
     if (catalogCache) catalogCache.products = items;
   }, [items]);
 
-
+  // Reset to the first page only when a filter actually changes (not on mount,
+  // so a restored page number survives coming back from the edit page).
+  const firstFilterRun = useRef(true);
   useEffect(() => {
+    if (firstFilterRun.current) {
+      firstFilterRun.current = false;
+      return;
+    }
     setPage(1);
   }, [q, brand, category, status, stockFilter, supplierFilter, sort, perPage]);
+
+  // Remember filters + paging for the next mount.
+  useEffect(() => {
+    listStateCache = { q, brand, category, status, stockFilter, supplierFilter, sort, perPage, page };
+  }, [q, brand, category, status, stockFilter, supplierFilter, sort, perPage, page]);
+
 
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -668,6 +711,10 @@ function ProductsPage() {
                     </td>
                     <td className="px-3 py-3 text-center tabular-nums text-muted-foreground">
                       <WeightCell locked={!inlineEdit || !canManage} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, weight_grams: v } : i)))} />
+                      <div className="mt-0.5 whitespace-nowrap text-[10px] leading-tight text-muted-foreground" title="Applicable delivery charge">
+                        {deliveryLabel(p, settings.delivery)}
+                      </div>
+
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
@@ -818,6 +865,7 @@ function ProductDetailModal({
   brands: Opt[]; 
   categories: Opt[] 
 }) {
+  const { settings } = useAdvancedSettings();
   const [p, setP] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [images, setImages] = useState<{url: string}[]>([]);
@@ -916,7 +964,16 @@ function ProductDetailModal({
                   <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Stock Available</div>
                   <div className={`text-lg font-bold ${p.stock <= 5 ? "text-destructive" : ""}`}>{p.stock} units</div>
                 </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Weight</div>
+                  <div className="text-lg font-bold">{p.weight_grams ? `${(p.weight_grams / 1000).toFixed(2)} kg` : "—"}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Delivery Charge</div>
+                  <div className="text-sm font-semibold">{deliveryLabel(p, settings.delivery)}</div>
+                </div>
               </div>
+
 
               <div>
                 <div className="flex items-center justify-between mb-2">
