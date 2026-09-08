@@ -122,6 +122,17 @@ export function orderReceived(o: ProfitOrder) {
   return n(o.total);
 }
 
+/**
+ * Money that actually reached admin for this order.
+ * An advance the reseller collected never passes through admin's hands, so it is
+ * not admin cash — it only reduces what admin still owes the reseller. An advance
+ * held by admin is real admin cash, so nothing is removed there.
+ */
+export function adminReceived(o: ProfitOrder) {
+  if (isFailedOrder(o)) return 0;
+  return orderReceived(o) - resellerHeldAdvance(o);
+}
+
 /** Partial delivery = courier collected less than the order value. */
 export function isPartialOrder(o: ProfitOrder) {
   if (o.status === "partial" || o.status === "partial_full" || o.status === "partial_item" || o.status === "partial_delivery")
