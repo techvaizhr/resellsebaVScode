@@ -7,7 +7,7 @@ import { ImagePickerButton } from "@/components/catalog/image-picker";
 import { ProductCodeChip } from "@/components/product-code";
 import { bdt } from "@/lib/finance-report";
 import { Pagination, usePaginated } from "@/components/data-list";
-import { Boxes, Layers, Loader2, Search, Sparkles, Tag } from "lucide-react";
+import { Boxes, ChevronDown, Layers, Loader2, Search, Sparkles, Tag } from "lucide-react";
 import { getSiteSeo } from "@/lib/seo.functions";
 import { seoLinks, seoMeta } from "@/lib/seo-meta";
 
@@ -36,7 +36,8 @@ export const Route = createFileRoute("/catalog/")({
           : null,
         {
           title: "Master Catalog — All products in one place",
-          description: "Complete product catalog by category — with images, descriptions, and resell prices.",
+          description:
+            "Complete product catalog by category — with images, descriptions, and resell prices.",
           image: null,
           url: null,
           type: "website",
@@ -48,7 +49,6 @@ export const Route = createFileRoute("/catalog/")({
   },
   component: CatalogIndex,
 });
-
 
 type Cat = { id: string; name: string; slug: string; image_url: string | null; count: number };
 type Prod = {
@@ -68,11 +68,17 @@ type Prod = {
 
 function CatalogIndex() {
   const { category, brand, q, page, sort } = Route.useSearch();
-  const { banner, siteName } = useCatalogBrand();
+  const { banner, siteName, logoUrl } = useCatalogBrand();
   const navigate = useNavigate();
   const fetchCatalog = useServerFn(getCatalog);
-  const [data, setData] = useState<{ categories: Cat[]; brands: { id: string; name: string; slug: string }[]; products: Prod[] } | null>(null);
+  const [data, setData] = useState<{
+    categories: Cat[];
+    brands: { id: string; name: string; slug: string }[];
+    products: Prod[];
+  } | null>(null);
   const [term, setTerm] = useState(q ?? "");
+  const [showSuggest, setShowSuggest] = useState(false);
+  const [catOpen, setCatOpen] = useState(false);
   // Price/profit shown only when logged in as admin/staff/reseller/leader.
   const showPrices = useCatalogPrices();
   const perPage = 100;
@@ -96,10 +102,21 @@ function CatalogIndex() {
     return list;
   }, [data, activeCat, activeBrand, q, sort]);
 
+  const searchSuggestions = useMemo(() => {
+    const t = term.trim().toLowerCase();
+    if (!t || !data) return [];
+    return data.products
+      .filter((p) => p.name.toLowerCase().includes(t) || p.code.toLowerCase().includes(t))
+      .slice(0, 6);
+  }, [term, data]);
+
   const pagedRows = usePaginated(rows, currentPage, perPage);
 
   const setPage = (p: number) =>
-    void navigate({ to: "/catalog", search: { category, brand, q, sort, page: p > 1 ? p : undefined } });
+    void navigate({
+      to: "/catalog",
+      search: { category, brand, q, sort, page: p > 1 ? p : undefined },
+    });
 
   return (
     <div>
@@ -115,7 +132,9 @@ function CatalogIndex() {
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-14 text-center sm:px-6 sm:py-20">
           <span
             className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold backdrop-blur ${
-              banner ? "border-white/30 bg-white/15 text-white" : "border-primary/25 bg-primary/10 text-primary"
+              banner
+                ? "border-white/30 bg-white/15 text-white"
+                : "border-primary/25 bg-primary/10 text-primary"
             }`}
           >
             <Sparkles className="h-3 w-3" /> Master Catalog
@@ -126,32 +145,106 @@ function CatalogIndex() {
           >
             {activeCat ? activeCat.name : `${siteName} Product Catalog`}
           </h1>
-          <p className={`mx-auto mt-3 max-w-xl text-sm sm:text-base ${banner ? "text-white/90" : "text-muted-foreground"}`}>
+          <p
+            className={`mx-auto mt-3 max-w-xl text-sm sm:text-base ${banner ? "text-white/90" : "text-muted-foreground"}`}
+          >
             {activeCat
               ? `${rows.length} products in this category`
               : "See images, descriptions, and resell prices — get the full picture before you list."}
           </p>
 
           <form
-            className="mx-auto mt-7 flex max-w-md items-center gap-2"
+            className="relative mx-auto mt-7 max-w-md"
             onSubmit={(e) => {
               e.preventDefault();
-              void navigate({ to: "/catalog", search: { category, brand, q: term.trim() || undefined, sort, page: undefined } });
+              setShowSuggest(false);
+              void navigate({
+                to: "/catalog",
+                search: { category, brand, q: term.trim() || undefined, sort, page: undefined },
+              });
             }}
           >
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={term}
-                onChange={(e) => setTerm(e.target.value)}
-                placeholder="Search products…"
-                aria-label="Search products"
-                className="w-full rounded-xl border bg-card/95 py-2.5 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={term}
+                  onChange={(e) => {
+                    setTerm(e.target.value);
+                    setShowSuggest(true);
+                  }}
+                  onFocus={() => term.trim() && setShowSuggest(true)}
+                  onBlur={() => setTimeout(() => setShowSuggest(false), 150)}
+                  placeholder="Search products…"
+                  aria-label="Search products"
+                  autoComplete="off"
+                  className="w-full rounded-xl border bg-card/95 py-2.5 pl-9 pr-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+              <button
+                type="submit"
+                className="btn-brand rounded-xl px-4 py-2.5 text-sm font-semibold"
+              >
+                Search
+              </button>
             </div>
-            <button type="submit" className="btn-brand rounded-xl px-4 py-2.5 text-sm font-semibold">
-              Search
-            </button>
+
+            {showSuggest && term.trim() && (
+              <div className="absolute inset-x-0 top-full z-20 mt-2 max-h-80 overflow-y-auto rounded-xl border bg-card text-left shadow-elegant">
+                {searchSuggestions.length === 0 ? (
+                  <div className="px-4 py-4 text-center text-xs text-muted-foreground">
+                    No matching products
+                  </div>
+                ) : (
+                  searchSuggestions.map((p) => (
+                    <Link
+                      key={p.id}
+                      to="/catalog/$slug"
+                      params={{ slug: p.slug }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setShowSuggest(false)}
+                      className="flex items-center gap-3 border-b px-3 py-2.5 text-sm last:border-b-0 hover:bg-accent"
+                    >
+                      <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted">
+                        {p.image ? (
+                          <img src={p.image} alt="" className="h-full w-full object-cover" />
+                        ) : logoUrl ? (
+                          <img src={logoUrl} alt="" className="h-6 w-6 object-contain opacity-60" />
+                        ) : (
+                          <Boxes className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-semibold text-foreground">{p.name}</div>
+                        <div className="text-[11px] text-muted-foreground">{p.code}</div>
+                      </div>
+                    </Link>
+                  ))
+                )}
+                {searchSuggestions.length > 0 && (
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setShowSuggest(false);
+                      void navigate({
+                        to: "/catalog",
+                        search: {
+                          category,
+                          brand,
+                          q: term.trim() || undefined,
+                          sort,
+                          page: undefined,
+                        },
+                      });
+                    }}
+                    className="block w-full px-3 py-2.5 text-center text-xs font-semibold text-primary hover:bg-accent"
+                  >
+                    See all results for "{term.trim()}"
+                  </button>
+                )}
+              </div>
+            )}
           </form>
         </div>
       </section>
@@ -164,8 +257,16 @@ function CatalogIndex() {
         <>
           <section className="mx-auto max-w-6xl px-4 pt-10 sm:px-6">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat icon={<Boxes className="h-4 w-4" />} label="Products" value={data.products.length} />
-              <Stat icon={<Layers className="h-4 w-4" />} label="Categories" value={data.categories.length} />
+              <Stat
+                icon={<Boxes className="h-4 w-4" />}
+                label="Products"
+                value={data.products.length}
+              />
+              <Stat
+                icon={<Layers className="h-4 w-4" />}
+                label="Categories"
+                value={data.categories.length}
+              />
               <Stat icon={<Tag className="h-4 w-4" />} label="Brands" value={data.brands.length} />
               <Stat icon={<Sparkles className="h-4 w-4" />} label="Showing" value={rows.length} />
             </div>
@@ -175,7 +276,9 @@ function CatalogIndex() {
                 to="/catalog"
                 search={{ category, brand, q, sort: undefined, page: undefined }}
                 className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                  !sort ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
+                  !sort
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "hover:border-primary/50"
                 }`}
               >
                 Newest
@@ -184,33 +287,69 @@ function CatalogIndex() {
                 to="/catalog"
                 search={{ category, brand, q, sort: "oldest", page: undefined }}
                 className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                  sort === "oldest" ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
+                  sort === "oldest"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "hover:border-primary/50"
                 }`}
               >
                 Oldest
               </Link>
-              <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-              <Link
-                to="/catalog"
-                search={{ sort, page: undefined }}
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                  !category ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
-                }`}
+            </div>
+
+            <div className="surface-card mt-4 p-4">
+              <button
+                type="button"
+                onClick={() => setCatOpen((v) => !v)}
+                className="flex w-full items-center justify-between gap-2"
               >
-                All ({data.products.length})
-              </Link>
-              {data.categories.map((c) => (
-                <Link
-                  key={c.id}
-                  to="/catalog"
-                  search={{ category: c.slug, sort, page: undefined }}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                    category === c.slug ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"
-                  }`}
-                >
-                  {c.name} ({c.count})
-                </Link>
-              ))}
+                <span className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground">
+                  <Layers className="h-3.5 w-3.5" /> Categories
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground">
+                    {data.categories.length}
+                  </span>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 text-muted-foreground transition-transform ${catOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {catOpen && (
+                <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
+                  <Link
+                    to="/catalog"
+                    search={{ sort, page: undefined }}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                      !category
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "hover:border-primary/50"
+                    }`}
+                  >
+                    All ({data.products.length})
+                  </Link>
+                  {data.categories.map((c) => (
+                    <Link
+                      key={c.id}
+                      to="/catalog"
+                      search={{ category: c.slug, sort, page: undefined }}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                        category === c.slug
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "hover:border-primary/50"
+                      }`}
+                    >
+                      {c.name} ({c.count})
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {!catOpen && activeCat && (
+                <div className="mt-3 border-t pt-3">
+                  <span className="rounded-full border border-primary bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
+                    {activeCat.name} ({activeCat.count})
+                  </span>
+                </div>
+              )}
             </div>
           </section>
 
@@ -224,7 +363,11 @@ function CatalogIndex() {
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                   {pagedRows.map((p) => (
                     <div key={p.id} className="group surface-card flex flex-col overflow-hidden">
-                      <Link to="/catalog/$slug" params={{ slug: p.slug }} className="relative block aspect-square overflow-hidden bg-muted">
+                      <Link
+                        to="/catalog/$slug"
+                        params={{ slug: p.slug }}
+                        className="relative block aspect-square overflow-hidden bg-muted"
+                      >
                         {p.image ? (
                           <img
                             src={p.image}
@@ -233,7 +376,9 @@ function CatalogIndex() {
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
-                          <div className="grid h-full w-full place-items-center text-xs text-muted-foreground">No image</div>
+                          <div className="grid h-full w-full place-items-center text-xs text-muted-foreground">
+                            No image
+                          </div>
                         )}
                       </Link>
                       <div className="flex flex-1 flex-col p-4">
@@ -257,16 +402,24 @@ function CatalogIndex() {
                         {showPrices ? (
                           <div className="mt-3 grid grid-cols-3 gap-2 rounded-xl border bg-muted/40 p-2.5 text-[11px]">
                             <div>
-                              <div className="font-bold uppercase tracking-wide text-muted-foreground">Wholesale</div>
+                              <div className="font-bold uppercase tracking-wide text-muted-foreground">
+                                Wholesale
+                              </div>
                               <div className="text-sm font-bold">{bdt(p.resellerPrice)}</div>
                             </div>
                             <div>
-                              <div className="font-bold uppercase tracking-wide text-muted-foreground">Sale</div>
+                              <div className="font-bold uppercase tracking-wide text-muted-foreground">
+                                Sale
+                              </div>
                               <div className="text-sm font-black text-primary">{bdt(p.price)}</div>
                             </div>
                             <div>
-                              <div className="font-bold uppercase tracking-wide text-muted-foreground">Profit</div>
-                              <div className="text-sm font-bold text-emerald-600">{bdt(Math.max(0, p.price - p.resellerPrice))}</div>
+                              <div className="font-bold uppercase tracking-wide text-muted-foreground">
+                                Profit
+                              </div>
+                              <div className="text-sm font-bold text-emerald-600">
+                                {bdt(Math.max(0, p.price - p.resellerPrice))}
+                              </div>
                             </div>
                           </div>
                         ) : (
@@ -277,18 +430,29 @@ function CatalogIndex() {
                         <div className="mt-3 flex flex-wrap gap-1.5 border-t pt-3">
                           <CopyBtn text={p.name} title="Title" label="Title copied" />
                           <CopyBtn
-                            text={showPrices ? `${p.name}\n\n${p.short}\n\nPrice: ${bdt(p.price)}` : `${p.name}\n\n${p.short}`}
+                            text={
+                              showPrices
+                                ? `${p.name}\n\n${p.short}\n\nPrice: ${bdt(p.price)}`
+                                : `${p.name}\n\n${p.short}`
+                            }
                             title="Details"
                             label="Details copied"
                           />
-                          <ImagePickerButton images={p.images ?? (p.image ? [p.image] : [])} baseName={p.name} />
+                          <ImagePickerButton
+                            images={p.images ?? (p.image ? [p.image] : [])}
+                            baseName={p.name}
+                          />
                         </div>
                       </div>
-
                     </div>
                   ))}
                 </div>
-                <Pagination page={currentPage} perPage={perPage} total={rows.length} onPage={setPage} />
+                <Pagination
+                  page={currentPage}
+                  perPage={perPage}
+                  total={rows.length}
+                  onPage={setPage}
+                />
               </>
             )}
           </section>
@@ -301,10 +465,14 @@ function CatalogIndex() {
 function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
   return (
     <div className="surface-card flex items-center gap-3 p-4">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">{icon}</span>
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+        {icon}
+      </span>
       <div className="min-w-0">
         <div className="text-lg font-black leading-none">{value}</div>
-        <div className="truncate text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</div>
+        <div className="truncate text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          {label}
+        </div>
       </div>
     </div>
   );

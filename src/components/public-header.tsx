@@ -36,8 +36,9 @@ export function Brand({
   logoUrl: string | null;
   size?: "md" | "sm";
 }) {
-  const h = size === "md" ? "h-11 sm:h-12" : "h-9";
-  if (logoUrl) return <img src={logoUrl} alt={siteName} className={`${h} max-w-40 shrink-0 object-contain`} />;
+  const h = size === "md" ? "h-12 sm:h-14" : "h-9";
+  if (logoUrl)
+    return <img src={logoUrl} alt={siteName} className={`${h} max-w-40 shrink-0 object-contain`} />;
   return (
     <span
       className={`grid ${size === "md" ? "h-11 w-11" : "h-9 w-9"} shrink-0 place-items-center rounded-xl bg-[image:var(--gradient-brand)] text-lg font-black text-primary-foreground`}
@@ -90,23 +91,20 @@ export function PublicHeader({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isCatalog = pathname === "/catalog" || pathname.startsWith("/catalog/");
 
-  const navLinks: Array<{ href?: string; to?: string; label?: string; icon?: ReactNode }> = isCatalog
-    ? [
-        { to: "/tutorials", label: "Tutorials" },
-        { to: "/", label: "Back to home", icon: <Home className="h-4 w-4" /> },
-      ]
-    : [
-        { href: "#features", label: c.nav.features },
-        { href: "#about", label: c.nav.how },
-        { href: "#categories", label: c.nav.categories || "Categories" },
-        { to: "/catalog", label: "Products" },
-        { to: "/tutorials", label: "Tutorials" },
-        { href: "#faq", label: c.nav.faq || "FAQ" },
-      ];
-
-
-
-
+  const navLinks: Array<{ href?: string; to?: string; label?: string; icon?: ReactNode }> =
+    isCatalog
+      ? [
+          { to: "/tutorials", label: "Tutorials" },
+          { to: "/", label: "Back to home", icon: <Home className="h-4 w-4" /> },
+        ]
+      : [
+          { href: "#features", label: c.nav.features },
+          { href: "#about", label: c.nav.how },
+          { href: "#categories", label: c.nav.categories || "Categories" },
+          { to: "/catalog", label: "Products" },
+          { to: "/tutorials", label: "Tutorials" },
+          { href: "#faq", label: c.nav.faq || "FAQ" },
+        ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-xl">
@@ -130,15 +128,16 @@ export function PublicHeader({
                 {l.icon} {l.label}
               </Link>
             ) : (
-              <a key={l.href} href={l.href} className="whitespace-nowrap text-muted-foreground transition-colors hover:text-primary">
+              <a
+                key={l.href}
+                href={l.href}
+                className="whitespace-nowrap text-muted-foreground transition-colors hover:text-primary"
+              >
                 {l.icon} {l.label}
               </a>
             ),
           )}
         </nav>
-
-
-
 
         <div className="flex shrink-0 items-center gap-2">
           <Link
@@ -192,7 +191,6 @@ export function PublicHeader({
               </a>
             ),
           )}
-
 
           <Link
             to="/login"

@@ -27,7 +27,6 @@ import { PublicHeader, Brand } from "@/components/public-header";
 import { getSiteSeo } from "@/lib/seo.functions";
 import { seoLinks, seoMeta } from "@/lib/seo-meta";
 
-
 export const Route = createFileRoute("/")({
   loader: () => getSiteSeo({ data: { path: "/" } }),
   head: ({ loaderData }) => ({
@@ -45,7 +44,6 @@ export const Route = createFileRoute("/")({
   component: RootResolver,
 });
 
-
 const ICON_MAP = APP_ICONS;
 
 type Feature = { icon: string; title: string; desc: string };
@@ -55,10 +53,22 @@ type FaqItem = { q: string; a: string };
 type HeroImage = { path: string; url: string; bytes: number } | null;
 type StatItem = { value: string; label: string };
 type LandingContent = {
-  nav: { features: string; how: string; categories?: string; signIn: string; cta: string; faq?: string };
+  nav: {
+    features: string;
+    how: string;
+    categories?: string;
+    signIn: string;
+    cta: string;
+    faq?: string;
+  };
   hero: {
-    badge: string; titleStart: string; titleHighlight: string; subtitle: string;
-    ctaPrimary: string; ctaSecondary: string; badges: string[];
+    badge: string;
+    titleStart: string;
+    titleHighlight: string;
+    subtitle: string;
+    ctaPrimary: string;
+    ctaSecondary: string;
+    badges: string[];
     bannerImage?: HeroImage;
   };
   stats?: { title?: string; items: StatItem[] };
@@ -70,9 +80,15 @@ type LandingContent = {
   footer: { tagline: string };
 };
 
-
 const FALLBACK: LandingContent = {
-  nav: { features: "Features", how: "How it works", categories: "Categories", faq: "FAQ", signIn: "লগইন", cta: "Get started" },
+  nav: {
+    features: "Features",
+    how: "How it works",
+    categories: "Categories",
+    faq: "FAQ",
+    signIn: "লগইন",
+    cta: "Get started",
+  },
   hero: {
     badge: "Bangladesh's reseller platform",
     titleStart: "Launch your own online store",
@@ -86,30 +102,85 @@ const FALLBACK: LandingContent = {
   about: {
     badge: "",
     title: "",
-    body:
-      "You just sell, we handle the rest. Every step, from generating orders to withdrawing profit, is clear and trackable.",
+    body: "You just sell, we handle the rest. Every step, from generating orders to withdrawing profit, is clear and trackable.",
     points: [],
     flow: [
-      { icon: "ClipboardList", title: "Generate order", desc: "The reseller submits the customer's order from their own store into the panel." },
-      { icon: "Send", title: "Send to admin", desc: "Confirmed orders are forwarded to the admin with one click." },
-      { icon: "PackageCheck", title: "Packing & courier", desc: "The admin packs the product, books the courier, and follows up on delivery." },
-      { icon: "Coins", title: "Profit credited", desc: "Once delivery succeeds, profit is auto-credited to the reseller's panel." },
-      { icon: "BanknoteArrowDown", title: "Withdraw", desc: "Request a withdrawal to bKash/Nagad/bank — with full payment history." },
+      {
+        icon: "ClipboardList",
+        title: "Generate order",
+        desc: "The reseller submits the customer's order from their own store into the panel.",
+      },
+      {
+        icon: "Send",
+        title: "Send to admin",
+        desc: "Confirmed orders are forwarded to the admin with one click.",
+      },
+      {
+        icon: "PackageCheck",
+        title: "Packing & courier",
+        desc: "The admin packs the product, books the courier, and follows up on delivery.",
+      },
+      {
+        icon: "Coins",
+        title: "Profit credited",
+        desc: "Once delivery succeeds, profit is auto-credited to the reseller's panel.",
+      },
+      {
+        icon: "BanknoteArrowDown",
+        title: "Withdraw",
+        desc: "Request a withdrawal to bKash/Nagad/bank — with full payment history.",
+      },
     ],
   },
   features: {
     title: "Benefits you get",
     subtitle: "From products to payments — everything in one panel",
     items: [
-      { icon: "Boxes", title: "Thousands of products, listed in one click", desc: "Verified catalog, HD images, SEO content — no need to buy stock." },
-      { icon: "Wallet", title: "Set your own profit", desc: "See the cost, set your margin — the full profit is yours." },
-      { icon: "Truck", title: "We handle courier booking", desc: "Steadfast, Pathao, CarryBee — from packaging to tracking." },
-      { icon: "Globe", title: "Your own branded store", desc: "Custom domain, logo, colors, theme — customers only see you." },
-      { icon: "Wallet", title: "Easiest payments", desc: "bKash, Nagad, Rocket, SSLCommerz, EPS — COD + online." },
-      { icon: "Megaphone", title: "Automatic ads tracking", desc: "Facebook Pixel/CAPI + TikTok Events API — see how much each ad sells." },
-      { icon: "BarChart3", title: "Live profit report", desc: "Sales, revenue, due, returns — all in real time." },
-      { icon: "ShieldCheck", title: "Fully private data", desc: "Every reseller's orders and customer data are kept separate." },
-      { icon: "Sparkles", title: "Team & commission system", desc: "Staff permissions, leader resellers — grow your income." },
+      {
+        icon: "Boxes",
+        title: "Thousands of products, listed in one click",
+        desc: "Verified catalog, HD images, SEO content — no need to buy stock.",
+      },
+      {
+        icon: "Wallet",
+        title: "Set your own profit",
+        desc: "See the cost, set your margin — the full profit is yours.",
+      },
+      {
+        icon: "Truck",
+        title: "We handle courier booking",
+        desc: "Steadfast, Pathao, CarryBee — from packaging to tracking.",
+      },
+      {
+        icon: "Globe",
+        title: "Your own branded store",
+        desc: "Custom domain, logo, colors, theme — customers only see you.",
+      },
+      {
+        icon: "Wallet",
+        title: "Easiest payments",
+        desc: "bKash, Nagad, Rocket, SSLCommerz, EPS — COD + online.",
+      },
+      {
+        icon: "Megaphone",
+        title: "Automatic ads tracking",
+        desc: "Facebook Pixel/CAPI + TikTok Events API — see how much each ad sells.",
+      },
+      {
+        icon: "BarChart3",
+        title: "Live profit report",
+        desc: "Sales, revenue, due, returns — all in real time.",
+      },
+      {
+        icon: "ShieldCheck",
+        title: "Fully private data",
+        desc: "Every reseller's orders and customer data are kept separate.",
+      },
+      {
+        icon: "Sparkles",
+        title: "Team & commission system",
+        desc: "Staff permissions, leader resellers — grow your income.",
+      },
     ],
   },
   how: { title: "How to get started", subtitle: "", steps: [] },
@@ -117,16 +188,46 @@ const FALLBACK: LandingContent = {
     title: "Frequently asked questions",
     subtitle: "Common questions resellers ask, answered",
     items: [
-      { q: "How can I become a reseller?", a: "Sign up, set up your store, list products, and take customer orders in the panel. You get full access once the admin approves." },
-      { q: "How much money do I need to start?", a: "There is no setup fee or monthly fee. You don't need to buy stock — the admin packs and delivers once an order comes in." },
-      { q: "Who sets the product price?", a: "The admin provides the base cost and delivery charge. The reseller adds their own margin/profit on top of that cost to set the selling price." },
-      { q: "Who handles delivery and courier?", a: "The admin books any active courier — Steadfast, Pathao, CarryBee. You just need to share the tracking ID with the customer." },
-      { q: "How do I receive profit?", a: "Profit is credited to your panel from every successfully delivered order. Submit a withdrawal request and get paid via bKash/Nagad/bank." },
-      { q: "Will customers see anything outside my store?", a: "No. Customers only see your branded store, your listings, and the information you provide. No admin or platform details are ever leaked." },
-      { q: "How do I set up a custom domain?", a: "Buy your own domain and point the Cloudflare nameserver to the target we provide. Add and verify the domain in reseller settings — we handle the HTTPS certificate automatically." },
-      { q: "How do returns/refunds work?", a: "If a customer wants a refund, the reseller raises a request in the order panel. The refund/replacement is processed after the admin receives and verifies the product from the courier." },
-      { q: "Who provides customer support?", a: "The reseller handles all customer communication and support. The admin only handles packing, courier booking, and delivery status." },
-      { q: "Is there a mobile app?", a: "There isn't a full mobile app yet, but the store and panel are fully mobile-responsive — you can view orders, tracking, and profit from your phone." },
+      {
+        q: "How can I become a reseller?",
+        a: "Sign up, set up your store, list products, and take customer orders in the panel. You get full access once the admin approves.",
+      },
+      {
+        q: "How much money do I need to start?",
+        a: "There is no setup fee or monthly fee. You don't need to buy stock — the admin packs and delivers once an order comes in.",
+      },
+      {
+        q: "Who sets the product price?",
+        a: "The admin provides the base cost and delivery charge. The reseller adds their own margin/profit on top of that cost to set the selling price.",
+      },
+      {
+        q: "Who handles delivery and courier?",
+        a: "The admin books any active courier — Steadfast, Pathao, CarryBee. You just need to share the tracking ID with the customer.",
+      },
+      {
+        q: "How do I receive profit?",
+        a: "Profit is credited to your panel from every successfully delivered order. Submit a withdrawal request and get paid via bKash/Nagad/bank.",
+      },
+      {
+        q: "Will customers see anything outside my store?",
+        a: "No. Customers only see your branded store, your listings, and the information you provide. No admin or platform details are ever leaked.",
+      },
+      {
+        q: "How do I set up a custom domain?",
+        a: "Buy your own domain and point the Cloudflare nameserver to the target we provide. Add and verify the domain in reseller settings — we handle the HTTPS certificate automatically.",
+      },
+      {
+        q: "How do returns/refunds work?",
+        a: "If a customer wants a refund, the reseller raises a request in the order panel. The refund/replacement is processed after the admin receives and verifies the product from the courier.",
+      },
+      {
+        q: "Who provides customer support?",
+        a: "The reseller handles all customer communication and support. The admin only handles packing, courier booking, and delivery status.",
+      },
+      {
+        q: "Is there a mobile app?",
+        a: "There isn't a full mobile app yet, but the store and panel are fully mobile-responsive — you can view orders, tracking, and profit from your phone.",
+      },
     ],
   },
   cta: { badge: "", title: "Get started", subtitle: "", button: "Sign up" },
@@ -199,7 +300,6 @@ function RootResolver() {
   return <Landing c={content} siteName={siteName} logoUrl={logoUrl} stats={stats} />;
 }
 
-
 function Landing({
   c,
   siteName,
@@ -211,8 +311,6 @@ function Landing({
   logoUrl: string | null;
   stats: LandingStats | null;
 }) {
-
-
   const copy = (txt: string) => {
     navigator.clipboard.writeText(txt);
     toast.success("Copied to clipboard");
@@ -232,9 +330,8 @@ function Landing({
     : [];
   const statItems = customStats.length ? customStats : autoStats;
 
-
   return (
-    <div className="min-h-screen overflow-x-hidden bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       {/* ── Nav ─────────────────────────────────────────── */}
       <PublicHeader siteName={siteName} logoUrl={logoUrl} content={c} />
 
@@ -253,7 +350,9 @@ function Landing({
 
             <h1 className="mt-5 text-balance text-[30px] font-black leading-[1.22] tracking-tight sm:text-5xl sm:leading-[1.12] lg:text-[56px] animate-fade-in-up animation-delay-200">
               {c.hero.titleStart}{" "}
-              <span className="bg-[image:var(--gradient-brand)] bg-clip-text text-transparent">{c.hero.titleHighlight}</span>
+              <span className="bg-[image:var(--gradient-brand)] bg-clip-text text-transparent">
+                {c.hero.titleHighlight}
+              </span>
             </h1>
 
             <p className="mx-auto mt-5 max-w-xl text-pretty text-[15px] leading-relaxed text-muted-foreground sm:text-base lg:mx-0 lg:text-lg animate-fade-in-up animation-delay-300">
@@ -279,7 +378,10 @@ function Landing({
             {c.hero.badges.length > 0 && (
               <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-[11px] font-semibold sm:text-xs lg:justify-start animate-fade-in-up animation-delay-500">
                 {c.hero.badges.map((b) => (
-                  <span key={b} className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5">
+                  <span
+                    key={b}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5"
+                  >
                     <Check className="h-3.5 w-3.5 shrink-0 text-primary" /> {b}
                   </span>
                 ))}
@@ -306,7 +408,6 @@ function Landing({
               <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-foreground/10" />
             </div>
           </div>
-
         </div>
       </section>
 
@@ -322,7 +423,9 @@ function Landing({
                     <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 text-primary">
                       <Icon className="h-5 w-5" />
                     </span>
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">{s.label}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
+                      {s.label}
+                    </span>
                   </div>
                   <div className="mt-2 text-2xl font-black sm:text-3xl">
                     <CountUp value={s.value ?? ""} />
@@ -334,19 +437,27 @@ function Landing({
         </section>
       )}
 
-
       {/* ── Features ────────────────────────────────────── */}
       <section id="features" className="border-t border-border/60 bg-muted/30">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
           <div className="mx-auto max-w-2xl text-center">
-            {c.features.title && <h2 className="text-xl font-extrabold sm:text-3xl">{c.features.title}</h2>}
-            {c.features.subtitle && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{c.features.subtitle}</p>}
+            {c.features.title && (
+              <h2 className="text-xl font-extrabold sm:text-3xl">{c.features.title}</h2>
+            )}
+            {c.features.subtitle && (
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {c.features.subtitle}
+              </p>
+            )}
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {c.features.items.map((f, i) => {
               const Icon = ICON_MAP[f.icon] ?? Sparkles;
               return (
-                <div key={i} className="surface-card surface-card-hover group relative flex flex-col overflow-hidden p-4">
+                <div
+                  key={i}
+                  className="surface-card surface-card-hover group relative flex flex-col overflow-hidden p-4"
+                >
                   <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/20 opacity-0 blur-2xl transition-opacity group-hover:opacity-100" />
                   <div className="relative flex items-start gap-2.5">
                     <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[image:var(--gradient-brand)] text-primary-foreground">
@@ -354,7 +465,9 @@ function Landing({
                     </span>
                     <h3 className="flex-1 pt-0.5 text-[13px] font-bold leading-tight">{f.title}</h3>
                   </div>
-                  <p className="relative mt-2 text-xs leading-relaxed text-muted-foreground">{f.desc}</p>
+                  <p className="relative mt-2 text-xs leading-relaxed text-muted-foreground">
+                    {f.desc}
+                  </p>
                 </div>
               );
             })}
@@ -369,7 +482,9 @@ function Landing({
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center">
               {c.about?.title && (
-                <h2 className="mt-3 text-xl font-extrabold leading-snug sm:text-3xl">{c.about.title}</h2>
+                <h2 className="mt-3 text-xl font-extrabold leading-snug sm:text-3xl">
+                  {c.about.title}
+                </h2>
               )}
               {c.about?.body && (
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{c.about.body}</p>
@@ -386,14 +501,12 @@ function Landing({
               <ol className="relative flex flex-col gap-6 lg:flex-row lg:justify-between lg:gap-4">
                 {(c.about?.flow ?? []).map((f, i) => {
                   const Icon = ICON_MAP[f.icon] ?? Sparkles;
-                  const stepLabel = ["01", "02", "03", "04", "05"][i] ?? String(i + 1).padStart(2, "0");
-                  const iconClass = [
-                    "flow-icon-1",
-                    "flow-icon-2",
-                    "flow-icon-3",
-                    "flow-icon-4",
-                    "flow-icon-5",
-                  ][i] ?? "flow-icon-1";
+                  const stepLabel =
+                    ["01", "02", "03", "04", "05"][i] ?? String(i + 1).padStart(2, "0");
+                  const iconClass =
+                    ["flow-icon-1", "flow-icon-2", "flow-icon-3", "flow-icon-4", "flow-icon-5"][
+                      i
+                    ] ?? "flow-icon-1";
 
                   return (
                     <li
@@ -410,11 +523,18 @@ function Landing({
 
                       {/* Card — side-by-side with icon on mobile, below icon on desktop */}
                       <div className="flow-card flex-1 px-4 py-4 text-left transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-elegant lg:mt-6 lg:w-full lg:px-5 lg:py-5 lg:text-center">
-                        <span className={`mb-1 block text-[11px] font-bold uppercase tracking-wider`} style={{ color: `var(--flow-step-${i + 1})` }}>
+                        <span
+                          className={`mb-1 block text-[11px] font-bold uppercase tracking-wider`}
+                          style={{ color: `var(--flow-step-${i + 1})` }}
+                        >
                           Step {stepLabel}
                         </span>
-                        <h3 className="text-sm font-bold leading-tight sm:text-[15px]">{f.title}</h3>
-                        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{f.desc}</p>
+                        <h3 className="text-sm font-bold leading-tight sm:text-[15px]">
+                          {f.title}
+                        </h3>
+                        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                          {f.desc}
+                        </p>
                       </div>
                     </li>
                   );
@@ -423,10 +543,18 @@ function Landing({
             </div>
 
             <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
-              <Link to="/login" search={{ mode: "signup" }} className="btn-brand btn-live inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold">
+              <Link
+                to="/login"
+                search={{ mode: "signup" }}
+                className="btn-brand btn-live inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold"
+              >
                 {c.hero.ctaPrimary} <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link to="/catalog" search={{}} className="btn-live inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-bold hover:bg-muted">
+              <Link
+                to="/catalog"
+                search={{}}
+                className="btn-live inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-bold hover:bg-muted"
+              >
                 View Master Catalog
               </Link>
             </div>
@@ -439,7 +567,9 @@ function Landing({
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
           <div className="mx-auto max-w-2xl text-center">
             {c.how.title && <h2 className="text-xl font-extrabold sm:text-3xl">{c.how.title}</h2>}
-            {c.how.subtitle && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{c.how.subtitle}</p>}
+            {c.how.subtitle && (
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{c.how.subtitle}</p>
+            )}
           </div>
           <div className="relative mt-10 grid gap-6 md:grid-cols-3">
             {c.how.steps.map((s, i) => (
@@ -461,7 +591,9 @@ function Landing({
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-xl font-extrabold sm:text-3xl">Categories</h2>
-              <p className="mt-2 text-sm text-muted-foreground">Pick a category that matches your niche and start listing products</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Pick a category that matches your niche and start listing products
+              </p>
             </div>
             <div className="mt-8 grid grid-cols-5 gap-2 sm:grid-cols-6 sm:gap-3 md:grid-cols-8 lg:grid-cols-10">
               {(stats?.categories ?? []).map((cat: any) => (
@@ -501,11 +633,16 @@ function Landing({
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-xl font-extrabold sm:text-3xl">Featured Products</h2>
-              <p className="mt-2 text-sm text-muted-foreground">The best-selling products of the month</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                The best-selling products of the month
+              </p>
             </div>
             <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {stats.products.map((p: any) => (
-                <div key={p.id} className="group surface-card surface-card-hover flex flex-col overflow-hidden">
+                <div
+                  key={p.id}
+                  className="group surface-card surface-card-hover flex flex-col overflow-hidden"
+                >
                   <div className="relative aspect-square overflow-hidden bg-primary/5">
                     {p.main_image ? (
                       <img
@@ -522,7 +659,9 @@ function Landing({
                   </div>
                   <div className="flex flex-1 flex-col p-3">
                     <h3 className="line-clamp-2 text-sm font-bold leading-tight">{p.name}</h3>
-                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{p.description}</p>
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                      {p.description}
+                    </p>
                     <div className="mt-auto pt-3">
                       <span className="text-sm font-black text-primary">{bdt(p.price)}</span>
                     </div>
@@ -550,7 +689,11 @@ function Landing({
           <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
             <div className="mx-auto max-w-2xl text-center">
               {c.faq.title && <h2 className="text-xl font-extrabold sm:text-3xl">{c.faq.title}</h2>}
-              {c.faq.subtitle && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{c.faq.subtitle}</p>}
+              {c.faq.subtitle && (
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {c.faq.subtitle}
+                </p>
+              )}
             </div>
             <div className="mt-8">
               <Accordion type="single" collapsible className="w-full">
@@ -578,8 +721,16 @@ function Landing({
         <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-[image:var(--gradient-brand)] px-6 py-12 text-center sm:px-12 sm:py-16">
           <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-primary-foreground/10 blur-3xl" />
           <div className="relative mx-auto max-w-2xl">
-            {c.cta.title && <h2 className="text-2xl font-extrabold text-primary-foreground sm:text-3xl">{c.cta.title}</h2>}
-            {c.cta.subtitle && <p className="mt-3 text-sm leading-relaxed text-primary-foreground/85">{c.cta.subtitle}</p>}
+            {c.cta.title && (
+              <h2 className="text-2xl font-extrabold text-primary-foreground sm:text-3xl">
+                {c.cta.title}
+              </h2>
+            )}
+            {c.cta.subtitle && (
+              <p className="mt-3 text-sm leading-relaxed text-primary-foreground/85">
+                {c.cta.subtitle}
+              </p>
+            )}
           </div>
           <div className="relative mt-7 flex flex-wrap justify-center gap-3">
             <Link
@@ -605,26 +756,76 @@ function Landing({
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
             <Brand siteName={siteName} logoUrl={logoUrl} size="sm" />
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">{c.footer.tagline}</p>
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
+              {c.footer.tagline}
+            </p>
             <PwaInstallButton variant="inline" className="mt-4" label="Install app" />
           </div>
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Platform</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Platform
+            </h4>
             <ul className="mt-3 space-y-2 text-sm">
-              <li><a href="#about" className="text-muted-foreground hover:text-primary">How we work</a></li>
-              <li><a href="#features" className="text-muted-foreground hover:text-primary">{c.nav.features}</a></li>
-              <li><a href="#how" className="text-muted-foreground hover:text-primary">{c.nav.how}</a></li>
-              <li><a href="#faq" className="text-muted-foreground hover:text-primary">{c.nav.faq || "FAQ"}</a></li>
+              <li>
+                <a href="#about" className="text-muted-foreground hover:text-primary">
+                  How we work
+                </a>
+              </li>
+              <li>
+                <a href="#features" className="text-muted-foreground hover:text-primary">
+                  {c.nav.features}
+                </a>
+              </li>
+              <li>
+                <a href="#how" className="text-muted-foreground hover:text-primary">
+                  {c.nav.how}
+                </a>
+              </li>
+              <li>
+                <a href="#faq" className="text-muted-foreground hover:text-primary">
+                  {c.nav.faq || "FAQ"}
+                </a>
+              </li>
             </ul>
           </div>
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Account</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Account
+            </h4>
             <ul className="mt-3 space-y-2 text-sm">
-              <li><Link to="/login" search={{ mode: "signup" }} className="text-muted-foreground hover:text-primary">{c.nav.cta}</Link></li>
-              <li><Link to="/login" className="text-muted-foreground hover:text-primary">{c.nav.signIn}</Link></li>
-              <li><Link to="/catalog" search={{}} className="text-muted-foreground hover:text-primary">Products</Link></li>
-              <li><Link to="/tutorials" className="text-muted-foreground hover:text-primary">Video tutorials</Link></li>
-              <li><Link to="/privacy" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
+              <li>
+                <Link
+                  to="/login"
+                  search={{ mode: "signup" }}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  {c.nav.cta}
+                </Link>
+              </li>
+              <li>
+                <Link to="/login" className="text-muted-foreground hover:text-primary">
+                  {c.nav.signIn}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/catalog"
+                  search={{}}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  Products
+                </Link>
+              </li>
+              <li>
+                <Link to="/tutorials" className="text-muted-foreground hover:text-primary">
+                  Video tutorials
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacy" className="text-muted-foreground hover:text-primary">
+                  Privacy Policy
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

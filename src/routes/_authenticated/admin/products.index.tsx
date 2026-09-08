@@ -2,7 +2,23 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, EmptyState } from "@/components/ui-kit";
-import { Plus, Loader2, Pencil, Trash2, Eye, EyeOff, Check, X, CheckSquare, Square, Copy, Download, CloudDownload, Lock, Unlock } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  Pencil,
+  Trash2,
+  Eye,
+  EyeOff,
+  Check,
+  X,
+  CheckSquare,
+  Square,
+  Copy,
+  Download,
+  CloudDownload,
+  Lock,
+  Unlock,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   DataToolbar,
@@ -23,7 +39,6 @@ import { useCan } from "@/lib/use-auth";
 import { BulkValuePanel, computeBulkPatch } from "@/components/bulk-value-panel";
 import { useAdvancedSettings } from "@/lib/advanced-settings";
 import { deliveryLabel } from "@/lib/delivery";
-
 
 type Row = {
   id: string;
@@ -53,7 +68,6 @@ type Row = {
   delivery_sub?: number | null;
 };
 
-
 type SupplierOpt = { id: string; name: string; code: string; status: string };
 
 type Opt = { id: string; name: string };
@@ -73,7 +87,12 @@ const PRODUCT_COLS =
   "id,product_code,name,buying_price,reseller_price,suggested_price,packaging_cost,stock,weight_grams,is_active,is_featured,og_image_url,brand_id,category_id,supplier_id,supplier_price,approval_status,approval_note,pending_changes,delivery_mode,delivery_flat,delivery_inside,delivery_outside,delivery_sub";
 
 /** Keeps the list alive across navigation so editing one product never reloads the page. */
-let catalogCache: { products: Row[]; brands: Opt[]; categories: Opt[]; suppliers: SupplierOpt[] } | null = null;
+let catalogCache: {
+  products: Row[];
+  brands: Opt[];
+  categories: Opt[];
+  suppliers: SupplierOpt[];
+} | null = null;
 
 /** Filters / paging survive a trip to the edit page and back. */
 type ListState = {
@@ -122,7 +141,12 @@ function ProductsPage() {
 
   // A link that carries filters in the URL wins; otherwise restore the last state.
   const fromUrl = Boolean(
-    search.brand || search.category || search.status || search.approval || search.stock || search.supplier,
+    search.brand ||
+    search.category ||
+    search.status ||
+    search.approval ||
+    search.stock ||
+    search.supplier,
   );
   const restored = !fromUrl ? listStateCache : null;
 
@@ -131,12 +155,13 @@ function ProductsPage() {
   const [category, setCategory] = useState(restored?.category ?? search.category ?? "");
   const [status, setStatus] = useState(restored?.status ?? search.status ?? search.approval ?? "");
   const [stockFilter, setStockFilter] = useState(restored?.stockFilter ?? search.stock ?? "");
-  const [supplierFilter, setSupplierFilter] = useState(restored?.supplierFilter ?? search.supplier ?? "");
+  const [supplierFilter, setSupplierFilter] = useState(
+    restored?.supplierFilter ?? search.supplier ?? "",
+  );
   const [sort, setSort] = useState(restored?.sort ?? "");
 
   const [perPage, setPerPage] = useState(restored?.perPage ?? 20);
   const [page, setPage] = useState(restored?.page ?? 1);
-
 
   async function load() {
     setLoading(true);
@@ -158,11 +183,17 @@ function ProductsPage() {
 
   /** Re-fetch a single row (or drop it when deleted) — no full page reload. */
   async function refreshOne(id: string) {
-    const { data } = await supabase.from("products").select(PRODUCT_COLS).eq("id", id).maybeSingle();
+    const { data } = await supabase
+      .from("products")
+      .select(PRODUCT_COLS)
+      .eq("id", id)
+      .maybeSingle();
     setItems((s) => {
       if (!data) return s.filter((i) => i.id !== id);
       const row = data as unknown as Row;
-      return s.some((i) => i.id === id) ? s.map((i) => (i.id === id ? { ...i, ...row } : i)) : [row, ...s];
+      return s.some((i) => i.id === id)
+        ? s.map((i) => (i.id === id ? { ...i, ...row } : i))
+        : [row, ...s];
     });
   }
 
@@ -200,21 +231,40 @@ function ProductsPage() {
 
   // Remember filters + paging for the next mount.
   useEffect(() => {
-    listStateCache = { q, brand, category, status, stockFilter, supplierFilter, sort, perPage, page };
+    listStateCache = {
+      q,
+      brand,
+      category,
+      status,
+      stockFilter,
+      supplierFilter,
+      sort,
+      perPage,
+      page,
+    };
   }, [q, brand, category, status, stockFilter, supplierFilter, sort, perPage, page]);
-
-
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
 
   async function toggle(p: Row) {
-    const { error } = await supabase.from("products").update({ is_active: !p.is_active }).eq("id", p.id);
+    const { error } = await supabase
+      .from("products")
+      .update({ is_active: !p.is_active })
+      .eq("id", p.id);
     if (error) return toast.error(error.message);
     setItems((s) => s.map((i) => (i.id === p.id ? { ...i, is_active: !p.is_active } : i)));
   }
   async function remove(p: Row) {
-    if (!(await confirmAction({ title: "Delete product", description: "This product will be permanently deleted.", detail: p.name, confirmText: "Delete" }))) return;
+    if (
+      !(await confirmAction({
+        title: "Delete product",
+        description: "This product will be permanently deleted.",
+        detail: p.name,
+        confirmText: "Delete",
+      }))
+    )
+      return;
     const { error } = await supabase.from("products").delete().eq("id", p.id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
@@ -261,7 +311,15 @@ function ProductsPage() {
   async function bulkDelete() {
     const ids = Array.from(selected);
     if (!ids.length) return;
-    if (!(await confirmAction({ title: "Delete products", description: "Products used in orders are protected.", detail: `${ids.length} selected`, confirmText: "Delete" }))) return;
+    if (
+      !(await confirmAction({
+        title: "Delete products",
+        description: "Products used in orders are protected.",
+        detail: `${ids.length} selected`,
+        confirmText: "Delete",
+      }))
+    )
+      return;
     setBulkBusy(true);
     const { error } = await supabase.from("products").delete().in("id", ids);
     setBulkBusy(false);
@@ -276,7 +334,9 @@ function ProductsPage() {
     const ids = Array.from(selected);
     if (!ids.length) return;
     const targets = items.filter(
-      (i) => ids.includes(i.id) && ((i.approval_status ?? "approved") !== "approved" || i.pending_changes),
+      (i) =>
+        ids.includes(i.id) &&
+        ((i.approval_status ?? "approved") !== "approved" || i.pending_changes),
     );
     if (!targets.length) return toast.error("No pending submission in the selection");
     if (
@@ -318,7 +378,10 @@ function ProductsPage() {
     for (const t of targets) {
       const patch = computeBulkPatch(t, state);
       if (!Object.keys(patch).length) continue;
-      const { error } = await supabase.from("products").update(patch as never).eq("id", t.id);
+      const { error } = await supabase
+        .from("products")
+        .update(patch as never)
+        .eq("id", t.id);
       if (error) failed += 1;
       else updated[t.id] = patch;
     }
@@ -335,7 +398,8 @@ function ProductsPage() {
     return items.filter((i) => {
       if (q) {
         const t = q.trim().toLowerCase();
-        if (t && !i.name.toLowerCase().includes(t) && !i.product_code.toLowerCase().includes(t)) return false;
+        if (t && !i.name.toLowerCase().includes(t) && !i.product_code.toLowerCase().includes(t))
+          return false;
       }
       if (brand && i.brand_id !== brand) return false;
       if (category && i.category_id !== category) return false;
@@ -343,7 +407,8 @@ function ProductsPage() {
       if (stockFilter === "low" && (i.stock === 0 || i.stock > 5)) return false;
       if (stockFilter === "in" && i.stock <= 0) return false;
       if (supplierFilter === "admin" && i.supplier_id) return false;
-      if (supplierFilter && supplierFilter !== "admin" && i.supplier_id !== supplierFilter) return false;
+      if (supplierFilter && supplierFilter !== "admin" && i.supplier_id !== supplierFilter)
+        return false;
       return true;
     });
   }, [items, q, brand, category, stockFilter, supplierFilter]);
@@ -370,7 +435,8 @@ function ProductsPage() {
       hidden: lowerFiltered.filter((i) => !i.is_active).length,
       featured: lowerFiltered.filter((i) => i.is_featured).length,
       pending: lowerFiltered.filter((i) => i.approval_status === "pending").length,
-      approved: lowerFiltered.filter((i) => (i.approval_status ?? "approved") === "approved").length,
+      approved: lowerFiltered.filter((i) => (i.approval_status ?? "approved") === "approved")
+        .length,
       rejected: lowerFiltered.filter((i) => i.approval_status === "rejected").length,
     }),
     [lowerFiltered],
@@ -450,43 +516,51 @@ function ProductsPage() {
         description="Master catalog resellers create listings from."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-          {canManage && (
-          <button
-            type="button"
-            onClick={() => setInlineEdit((v) => !v)}
-            title={inlineEdit ? "Inline editing is ON — click to lock" : "Inline editing is locked — click to enable"}
-            className={`inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
-              inlineEdit
-                ? "border-amber-500/60 bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                : "hover:bg-muted"
-            }`}
-          >
-            {inlineEdit ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-            {inlineEdit ? "Inline edit: ON" : "Inline edit: OFF"}
-          </button>
-          )}
-          {canManage && (
-          <button
-            type="button"
-            onClick={() => setImportOpen(true)}
-            className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
-          >
-            <CloudDownload className="h-4 w-4" /> Import from URL
-          </button>
-          )}
-          {canManage && (
-          <Link
-            to="/admin/products/new"
-            className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
-          >
-            <Plus className="h-4 w-4" /> New product
-          </Link>
-          )}
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => setInlineEdit((v) => !v)}
+                title={
+                  inlineEdit
+                    ? "Inline editing is ON — click to lock"
+                    : "Inline editing is locked — click to enable"
+                }
+                className={`inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
+                  inlineEdit
+                    ? "border-amber-500/60 bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                    : "hover:bg-muted"
+                }`}
+              >
+                {inlineEdit ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                {inlineEdit ? "Inline edit: ON" : "Inline edit: OFF"}
+              </button>
+            )}
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => setImportOpen(true)}
+                className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+              >
+                <CloudDownload className="h-4 w-4" /> Import from URL
+              </button>
+            )}
+            {canManage && (
+              <Link
+                to="/admin/products/new"
+                className="btn-brand inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+              >
+                <Plus className="h-4 w-4" /> New product
+              </Link>
+            )}
           </div>
         }
       />
 
-      <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} onSaved={() => load()} />
+      <ProductImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSaved={() => load()}
+      />
 
       <div className="mb-2 flex overflow-x-auto rounded-md border bg-muted/30 p-1">
         <div className="flex min-w-max items-center gap-1 pr-2">
@@ -496,10 +570,15 @@ function ProductsPage() {
               type="button"
               onClick={() => setStatus(value)}
               className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-colors ${
-                status === value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background hover:text-foreground"
+                status === value
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-background hover:text-foreground"
               }`}
             >
-              {label}<span className={status === value ? "opacity-90" : "text-foreground/70"}>({count})</span>
+              {label}
+              <span className={status === value ? "opacity-90" : "text-foreground/70"}>
+                ({count})
+              </span>
             </button>
           ))}
         </div>
@@ -541,49 +620,49 @@ function ProductsPage() {
               <span className="font-medium">{selected.size} selected</span>
               <div className="ml-auto flex flex-wrap gap-2">
                 {canManage && (
-                <button
-                  disabled={bulkBusy}
-                  onClick={() => bulkSetActive(true)}
-                  className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-background disabled:opacity-50"
-                >
-                  <Eye className="h-3.5 w-3.5" /> Activate
-                </button>
+                  <button
+                    disabled={bulkBusy}
+                    onClick={() => bulkSetActive(true)}
+                    className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-background disabled:opacity-50"
+                  >
+                    <Eye className="h-3.5 w-3.5" /> Activate
+                  </button>
                 )}
                 {canManage && (
-                <button
-                  disabled={bulkBusy}
-                  onClick={() => bulkSetActive(false)}
-                  className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-background disabled:opacity-50"
-                >
-                  <EyeOff className="h-3.5 w-3.5" /> Hide
-                </button>
+                  <button
+                    disabled={bulkBusy}
+                    onClick={() => bulkSetActive(false)}
+                    className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-background disabled:opacity-50"
+                  >
+                    <EyeOff className="h-3.5 w-3.5" /> Hide
+                  </button>
                 )}
                 {canManage && (
-                <button
-                  disabled={bulkBusy}
-                  onClick={() => bulkReview(true)}
-                  className="inline-flex items-center gap-1 rounded-md border border-emerald-500/50 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50"
-                >
-                  <Check className="h-3.5 w-3.5" /> Approve
-                </button>
+                  <button
+                    disabled={bulkBusy}
+                    onClick={() => bulkReview(true)}
+                    className="inline-flex items-center gap-1 rounded-md border border-emerald-500/50 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50"
+                  >
+                    <Check className="h-3.5 w-3.5" /> Approve
+                  </button>
                 )}
                 {canManage && (
-                <button
-                  disabled={bulkBusy}
-                  onClick={() => bulkReview(false)}
-                  className="inline-flex items-center gap-1 rounded-md border border-amber-500/50 px-3 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-500/10 disabled:opacity-50"
-                >
-                  <X className="h-3.5 w-3.5" /> Reject
-                </button>
+                  <button
+                    disabled={bulkBusy}
+                    onClick={() => bulkReview(false)}
+                    className="inline-flex items-center gap-1 rounded-md border border-amber-500/50 px-3 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-500/10 disabled:opacity-50"
+                  >
+                    <X className="h-3.5 w-3.5" /> Reject
+                  </button>
                 )}
                 {canDelete && (
-                <button
-                  disabled={bulkBusy}
-                  onClick={bulkDelete}
-                  className="inline-flex items-center gap-1 rounded-md border border-destructive/50 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                >
-                  <Trash2 className="h-3.5 w-3.5" /> Delete
-                </button>
+                  <button
+                    disabled={bulkBusy}
+                    onClick={bulkDelete}
+                    className="inline-flex items-center gap-1 rounded-md border border-destructive/50 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </button>
                 )}
                 <button
                   onClick={() => setSelected(new Set())}
@@ -637,7 +716,10 @@ function ProductsPage() {
               </thead>
               <tbody className="divide-y">
                 {paged.map((p) => (
-                  <tr key={p.id} className={`hover:bg-muted/50 ${selected.has(p.id) ? "bg-primary/5" : ""}`}>
+                  <tr
+                    key={p.id}
+                    className={`hover:bg-muted/50 ${selected.has(p.id) ? "bg-primary/5" : ""}`}
+                  >
                     <td className="px-2 py-3">
                       <button
                         type="button"
@@ -652,17 +734,25 @@ function ProductsPage() {
                         className="text-muted-foreground hover:text-primary"
                         aria-label="Select"
                       >
-                        {selected.has(p.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
+                        {selected.has(p.id) ? (
+                          <CheckSquare className="h-4 w-4 text-primary" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
                       </button>
                     </td>
                     <td className="min-w-[240px] px-3 py-3">
                       <div className="flex items-center gap-2">
-                        <div 
+                        <div
                           className="h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-muted cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
                           onClick={() => setDetailId(p.id)}
                         >
                           {p.og_image_url && (
-                            <img src={p.og_image_url} className="h-full w-full object-cover" alt="" />
+                            <img
+                              src={p.og_image_url}
+                              className="h-full w-full object-cover"
+                              alt=""
+                            />
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -692,29 +782,83 @@ function ProductsPage() {
                       </div>
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <div className="flex justify-center"><SupplierCell row={p} suppliers={suppliers} /></div>
+                      <div className="flex justify-center">
+                        <SupplierCell row={p} suppliers={suppliers} />
+                      </div>
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <PriceCell locked={!inlineEdit || !canManage} row={p} field="buying_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, buying_price: v } : i)))} />
+                      <PriceCell
+                        locked={!inlineEdit || !canManage}
+                        row={p}
+                        field="buying_price"
+                        onSaved={(v) =>
+                          setItems((s) =>
+                            s.map((i) => (i.id === p.id ? { ...i, buying_price: v } : i)),
+                          )
+                        }
+                      />
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <PriceCell locked={!inlineEdit || !canManage} row={p} field="reseller_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, reseller_price: v } : i)))} />
+                      <PriceCell
+                        locked={!inlineEdit || !canManage}
+                        row={p}
+                        field="reseller_price"
+                        onSaved={(v) =>
+                          setItems((s) =>
+                            s.map((i) => (i.id === p.id ? { ...i, reseller_price: v } : i)),
+                          )
+                        }
+                      />
                     </td>
                     <td className="px-3 py-3 text-center">
-                    <PriceCell locked={!inlineEdit || !canManage} row={p} field="suggested_price" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)))} />
+                      <PriceCell
+                        locked={!inlineEdit || !canManage}
+                        row={p}
+                        field="suggested_price"
+                        onSaved={(v) =>
+                          setItems((s) =>
+                            s.map((i) => (i.id === p.id ? { ...i, suggested_price: v } : i)),
+                          )
+                        }
+                      />
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <PriceCell locked={!inlineEdit || !canManage} row={p} field="packaging_cost" onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, packaging_cost: v } : i)))} />
+                      <PriceCell
+                        locked={!inlineEdit || !canManage}
+                        row={p}
+                        field="packaging_cost"
+                        onSaved={(v) =>
+                          setItems((s) =>
+                            s.map((i) => (i.id === p.id ? { ...i, packaging_cost: v } : i)),
+                          )
+                        }
+                      />
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <StockCell locked={!inlineEdit || !canManage} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))} />
+                      <StockCell
+                        locked={!inlineEdit || !canManage}
+                        row={p}
+                        onSaved={(v) =>
+                          setItems((s) => s.map((i) => (i.id === p.id ? { ...i, stock: v } : i)))
+                        }
+                      />
                     </td>
                     <td className="px-3 py-3 text-center tabular-nums text-muted-foreground">
-                      <WeightCell locked={!inlineEdit || !canManage} row={p} onSaved={(v) => setItems((s) => s.map((i) => (i.id === p.id ? { ...i, weight_grams: v } : i)))} />
-                      <div className="mt-0.5 whitespace-nowrap text-[10px] leading-tight text-muted-foreground" title="Applicable delivery charge">
+                      <WeightCell
+                        locked={!inlineEdit || !canManage}
+                        row={p}
+                        onSaved={(v) =>
+                          setItems((s) =>
+                            s.map((i) => (i.id === p.id ? { ...i, weight_grams: v } : i)),
+                          )
+                        }
+                      />
+                      <div
+                        className="mt-0.5 whitespace-nowrap text-[10px] leading-tight text-muted-foreground"
+                        title="Applicable delivery charge"
+                      >
                         {deliveryLabel(p, settings.delivery)}
                       </div>
-
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
@@ -725,7 +869,9 @@ function ProductsPage() {
                               : "bg-muted text-muted-foreground"
                           }`}
                         >
-                          <span className={`h-1.5 w-1.5 rounded-full ${p.is_active ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${p.is_active ? "bg-emerald-500" : "bg-muted-foreground"}`}
+                          />
                           {p.is_active ? "Active" : "Hidden"}
                         </span>
                         {(p.approval_status ?? "approved") !== "approved" && (
@@ -738,71 +884,84 @@ function ProductsPage() {
                             {p.approval_status}
                           </div>
                         )}
-                        {canManage && p.pending_changes && Object.keys(p.pending_changes).length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setReviewFor(p)}
-                            className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 hover:bg-amber-500/25 dark:text-amber-400"
-                          >
-                            {Object.keys(p.pending_changes).length} change
-                            {Object.keys(p.pending_changes).length === 1 ? "" : "s"} to review
-                          </button>
-                        )}
+                        {canManage &&
+                          p.pending_changes &&
+                          Object.keys(p.pending_changes).length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setReviewFor(p)}
+                              className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 hover:bg-amber-500/25 dark:text-amber-400"
+                            >
+                              {Object.keys(p.pending_changes).length} change
+                              {Object.keys(p.pending_changes).length === 1 ? "" : "s"} to review
+                            </button>
+                          )}
                         <ActionMenu vertical>
                           <DropdownMenuItem onSelect={() => setDetailId(p.id)}>
                             <Eye className="mr-2 h-4 w-4" /> View Details
                           </DropdownMenuItem>
                           {canManage && (
-                          <DropdownMenuItem onSelect={() => nav({ to: "/admin/products/$id/edit", params: { id: p.id } })}>
-                            <Pencil className="mr-2 h-4 w-4" /> Edit
-                          </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={() =>
+                                nav({ to: "/admin/products/$id/edit", params: { id: p.id } })
+                              }
+                            >
+                              <Pencil className="mr-2 h-4 w-4" /> Edit
+                            </DropdownMenuItem>
                           )}
                           {canManage && (
-                          <DropdownMenuItem onSelect={() => nav({ to: "/admin/products/new", search: { from: p.id } })}>
-                            <Copy className="mr-2 h-4 w-4" /> Duplicate
-                          </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={() =>
+                                nav({ to: "/admin/products/new", search: { from: p.id } })
+                              }
+                            >
+                              <Copy className="mr-2 h-4 w-4" /> Duplicate
+                            </DropdownMenuItem>
                           )}
                           {canManage && (
-                          <DropdownMenuItem onSelect={() => setAssignFor(p)}>
-                            <Truck className="mr-2 h-4 w-4" /> {p.supplier_id ? "Change / remove supplier" : "Assign supplier"}
-                          </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setAssignFor(p)}>
+                              <Truck className="mr-2 h-4 w-4" />{" "}
+                              {p.supplier_id ? "Change / remove supplier" : "Assign supplier"}
+                            </DropdownMenuItem>
                           )}
-                           {canManage && ((p.approval_status ?? "approved") !== "approved" || p.pending_changes) && (
-                             <>
-                               <DropdownMenuItem onSelect={() => setReviewFor(p)}>
-                                 <Eye className="mr-2 h-4 w-4" /> Review changes
-                               </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => review(p, true)}>
-                                <Check className="mr-2 h-4 w-4" /> Approve submission
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => review(p, false)}>
-                                <X className="mr-2 h-4 w-4" /> Reject submission
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                          {canManage && (
-                          <DropdownMenuItem onSelect={() => toggle(p)}>
-                            {p.is_active ? (
+                          {canManage &&
+                            ((p.approval_status ?? "approved") !== "approved" ||
+                              p.pending_changes) && (
                               <>
-                                <EyeOff className="mr-2 h-4 w-4" /> Hide
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="mr-2 h-4 w-4" /> Show
+                                <DropdownMenuItem onSelect={() => setReviewFor(p)}>
+                                  <Eye className="mr-2 h-4 w-4" /> Review changes
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => review(p, true)}>
+                                  <Check className="mr-2 h-4 w-4" /> Approve submission
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => review(p, false)}>
+                                  <X className="mr-2 h-4 w-4" /> Reject submission
+                                </DropdownMenuItem>
                               </>
                             )}
-                          </DropdownMenuItem>
+                          {canManage && (
+                            <DropdownMenuItem onSelect={() => toggle(p)}>
+                              {p.is_active ? (
+                                <>
+                                  <EyeOff className="mr-2 h-4 w-4" /> Hide
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="mr-2 h-4 w-4" /> Show
+                                </>
+                              )}
+                            </DropdownMenuItem>
                           )}
                           {canDelete && (
-                          <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onSelect={() => remove(p)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete
-                          </DropdownMenuItem>
-                          </>
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onSelect={() => remove(p)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                              </DropdownMenuItem>
+                            </>
                           )}
                         </ActionMenu>
                       </div>
@@ -843,32 +1002,33 @@ function ProductsPage() {
         />
       )}
       {detailId && (
-        <ProductDetailModal 
-          id={detailId} 
-          onClose={() => setDetailId(null)} 
-          brands={brands} 
-          categories={categories} 
+        <ProductDetailModal
+          id={detailId}
+          onClose={() => setDetailId(null)}
+          brands={brands}
+          categories={categories}
         />
       )}
     </div>
   );
 }
 
-function ProductDetailModal({ 
-  id, 
-  onClose, 
-  brands, 
-  categories 
-}: { 
-  id: string; 
-  onClose: () => void; 
-  brands: Opt[]; 
-  categories: Opt[] 
+function ProductDetailModal({
+  id,
+  onClose,
+  brands,
+  categories,
+}: {
+  id: string;
+  onClose: () => void;
+  brands: Opt[];
+  categories: Opt[];
 }) {
   const { settings } = useAdvancedSettings();
   const [p, setP] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [images, setImages] = useState<{url: string}[]>([]);
+  const [images, setImages] = useState<{ url: string }[]>([]);
+  const [activeUrl, setActiveUrl] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -881,55 +1041,77 @@ function ProductDetailModal({
       if (data) {
         setP(data);
         setImages(data.product_images || []);
+        setActiveUrl(data.og_image_url ?? data.product_images?.[0]?.url ?? null);
       }
       setLoading(false);
     }
     load();
   }, [id]);
 
-  if (loading) return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm">
-      <Loader2 className="h-8 w-8 animate-spin text-white" />
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm">
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
+      </div>
+    );
 
   if (!p) return null;
 
-  const brandName = brands.find(b => b.id === p.brand_id)?.name;
-  const categoryName = categories.find(c => c.id === p.category_id)?.name;
-  const imageUrls = [p.og_image_url, ...images.map(i => i.url)].filter(Boolean) as string[];
+  const brandName = brands.find((b) => b.id === p.brand_id)?.name;
+  const categoryName = categories.find((c) => c.id === p.category_id)?.name;
+  const imageUrls = [p.og_image_url, ...images.map((i) => i.url)].filter(Boolean) as string[];
   const detailsText = stripHtml([p.short_description, p.description].filter(Boolean).join("\n\n"));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="w-full max-w-4xl surface-card max-h-[90vh] modal-scroll" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-4xl surface-card max-h-[90vh] modal-scroll"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 px-6 py-4 backdrop-blur-md">
           <h3 className="text-lg font-bold">Product Details</h3>
           <button onClick={onClose} className="rounded-full p-2 hover:bg-muted">
             <X className="h-5 w-5" />
           </button>
         </div>
-        
+
         <div className="p-6">
           <div className="grid gap-8 md:grid-cols-2">
             <div className="space-y-4">
               <div className="relative aspect-square overflow-hidden rounded-xl border bg-muted">
-                {p.og_image_url ? (
-                  <img src={p.og_image_url} className="h-full w-full object-cover" alt="" />
+                {activeUrl ? (
+                  <img src={activeUrl} className="h-full w-full object-cover" alt="" />
                 ) : (
-                  <div className="grid h-full w-full place-items-center text-muted-foreground">No image</div>
+                  <div className="grid h-full w-full place-items-center text-muted-foreground">
+                    No image
+                  </div>
                 )}
                 <div className="absolute right-3 top-3 flex flex-col gap-2">
-                  <ImageDownloadTools compact images={imageUrls} activeUrl={p.og_image_url} baseName={p.name} />
+                  <ImageDownloadTools
+                    compact
+                    images={imageUrls}
+                    activeUrl={activeUrl}
+                    baseName={p.name}
+                  />
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {images.map((img, i) => (
-                  <div key={i} className="h-16 w-16 overflow-hidden rounded-lg border bg-muted">
-                    <img src={img.url} className="h-full w-full object-cover" alt="" />
-                  </div>
-                ))}
-              </div>
+              {imageUrls.length > 1 && (
+                <div className="flex flex-wrap gap-2">
+                  {imageUrls.map((url, i) => (
+                    <button
+                      key={url + i}
+                      type="button"
+                      onClick={() => setActiveUrl(url)}
+                      className={`h-16 w-16 overflow-hidden rounded-lg border-2 bg-muted transition ${url === activeUrl ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"}`}
+                    >
+                      <img src={url} className="h-full w-full object-cover" alt="" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-6">
@@ -942,45 +1124,73 @@ function ProductDetailModal({
                   <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     ID #{p.product_code}
                   </span>
-                  {brandName && <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{brandName}</span>}
-                  {categoryName && <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{categoryName}</span>}
+                  {brandName && (
+                    <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      {brandName}
+                    </span>
+                  )}
+                  {categoryName && (
+                    <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      {categoryName}
+                    </span>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 rounded-xl border bg-muted/30 p-4">
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Buying Price</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Buying Price
+                  </div>
                   <div className="text-lg font-bold">৳{p.buying_price}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Reseller Price</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Reseller Price
+                  </div>
                   <div className="text-lg font-bold">৳{p.reseller_price}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Suggested Sell</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Suggested Sell
+                  </div>
                   <div className="text-lg font-bold">৳{p.suggested_price}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Stock Available</div>
-                  <div className={`text-lg font-bold ${p.stock <= 5 ? "text-destructive" : ""}`}>{p.stock} units</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Stock Available
+                  </div>
+                  <div className={`text-lg font-bold ${p.stock <= 5 ? "text-destructive" : ""}`}>
+                    {p.stock} units
+                  </div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Weight</div>
-                  <div className="text-lg font-bold">{p.weight_grams ? `${(p.weight_grams / 1000).toFixed(2)} kg` : "—"}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Weight
+                  </div>
+                  <div className="text-lg font-bold">
+                    {p.weight_grams ? `${(p.weight_grams / 1000).toFixed(2)} kg` : "—"}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Delivery Charge</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Delivery Charge
+                  </div>
                   <div className="text-sm font-semibold">{deliveryLabel(p, settings.delivery)}</div>
                 </div>
               </div>
-
 
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="font-bold">Description</h4>
                   <CopyButton value={detailsText} label="details" />
                 </div>
-                <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: p.description || p.short_description || 'No description provided.' }} />
+                <div
+                  className="prose prose-sm max-w-none text-muted-foreground"
+                  dangerouslySetInnerHTML={{
+                    __html: p.description || p.short_description || "No description provided.",
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -990,7 +1200,15 @@ function ProductDetailModal({
   );
 }
 
-function StockCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) => void; locked?: boolean }) {
+function StockCell({
+  row,
+  onSaved,
+  locked,
+}: {
+  row: Row;
+  onSaved: (v: number) => void;
+  locked?: boolean;
+}) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(String(row.stock));
   const [busy, setBusy] = useState(false);
@@ -1055,17 +1273,32 @@ function StockCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =>
         }}
         className="w-20 rounded-md border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
       />
-      <button onClick={save} disabled={busy} className="rounded-md p-1 text-primary hover:bg-primary/10">
+      <button
+        onClick={save}
+        disabled={busy}
+        className="rounded-md p-1 text-primary hover:bg-primary/10"
+      >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
       </button>
-      <button onClick={() => setEditing(false)} className="rounded-md p-1 text-muted-foreground hover:bg-muted">
+      <button
+        onClick={() => setEditing(false)}
+        className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+      >
         <X className="h-4 w-4" />
       </button>
     </div>
   );
 }
 
-function WeightCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) => void; locked?: boolean }) {
+function WeightCell({
+  row,
+  onSaved,
+  locked,
+}: {
+  row: Row;
+  onSaved: (v: number) => void;
+  locked?: boolean;
+}) {
   const current = row.weight_grams ?? 0;
   const currentKg = current / 1000;
   const [editing, setEditing] = useState(false);
@@ -1093,7 +1326,10 @@ function WeightCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =
 
   if (locked) {
     return (
-      <span className="whitespace-nowrap px-2 py-0.5 text-xs" title="Turn on Inline edit to change weight">
+      <span
+        className="whitespace-nowrap px-2 py-0.5 text-xs"
+        title="Turn on Inline edit to change weight"
+      >
         {current ? `${currentKg} kg` : "—"}
       </span>
     );
@@ -1129,17 +1365,34 @@ function WeightCell({ row, onSaved, locked }: { row: Row; onSaved: (v: number) =
         }}
         className="w-20 rounded-md border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
       />
-      <button onClick={save} disabled={busy} className="rounded-md p-1 text-primary hover:bg-primary/10">
+      <button
+        onClick={save}
+        disabled={busy}
+        className="rounded-md p-1 text-primary hover:bg-primary/10"
+      >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
       </button>
-      <button onClick={() => setEditing(false)} className="rounded-md p-1 text-muted-foreground hover:bg-muted">
+      <button
+        onClick={() => setEditing(false)}
+        className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+      >
         <X className="h-4 w-4" />
       </button>
     </div>
   );
 }
 
-function PriceCell({ row, field, onSaved, locked }: { row: Row; field: "buying_price" | "reseller_price" | "suggested_price" | "packaging_cost"; onSaved: (v: number) => void; locked?: boolean }) {
+function PriceCell({
+  row,
+  field,
+  onSaved,
+  locked,
+}: {
+  row: Row;
+  field: "buying_price" | "reseller_price" | "suggested_price" | "packaging_cost";
+  onSaved: (v: number) => void;
+  locked?: boolean;
+}) {
   const current = row[field] ?? 0;
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(String(current));
@@ -1155,7 +1408,12 @@ function PriceCell({ row, field, onSaved, locked }: { row: Row; field: "buying_p
     if (Number.isNaN(n)) return toast.error("Invalid price");
     if (n === current) return setEditing(false);
     setBusy(true);
-    const payload: { buying_price?: number; reseller_price?: number; suggested_price?: number; packaging_cost?: number } = {};
+    const payload: {
+      buying_price?: number;
+      reseller_price?: number;
+      suggested_price?: number;
+      packaging_cost?: number;
+    } = {};
     payload[field] = n;
     const { error } = await supabase.from("products").update(payload).eq("id", row.id);
     setBusy(false);
@@ -1203,10 +1461,17 @@ function PriceCell({ row, field, onSaved, locked }: { row: Row; field: "buying_p
         }}
         className="w-20 rounded-md border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
       />
-      <button onClick={save} disabled={busy} className="rounded-md p-1 text-primary hover:bg-primary/10">
+      <button
+        onClick={save}
+        disabled={busy}
+        className="rounded-md p-1 text-primary hover:bg-primary/10"
+      >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
       </button>
-      <button onClick={() => setEditing(false)} className="rounded-md p-1 text-muted-foreground hover:bg-muted">
+      <button
+        onClick={() => setEditing(false)}
+        className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+      >
         <X className="h-4 w-4" />
       </button>
     </div>
@@ -1215,11 +1480,14 @@ function PriceCell({ row, field, onSaved, locked }: { row: Row; field: "buying_p
 
 function SupplierCell({ row, suppliers }: { row: Row; suppliers: SupplierOpt[] }) {
   const s = row.supplier_id ? suppliers.find((x) => x.id === row.supplier_id) : null;
-  if (!row.supplier_id) return <span className="text-xs text-muted-foreground">Admin&apos;s own</span>;
+  if (!row.supplier_id)
+    return <span className="text-xs text-muted-foreground">Admin&apos;s own</span>;
   return (
     <div className="text-xs">
       <div className="font-medium">{s?.name ?? "Supplier"}</div>
-      <div className="text-[10px] text-muted-foreground">৳{row.supplier_price ?? row.buying_price}</div>
+      <div className="text-[10px] text-muted-foreground">
+        ৳{row.supplier_price ?? row.buying_price}
+      </div>
     </div>
   );
 }
@@ -1260,7 +1528,10 @@ function AssignSupplierModal({
       subtitle={row.name}
       footer={
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted">
+          <button
+            onClick={onClose}
+            className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+          >
             Cancel
           </button>
           <button
@@ -1287,7 +1558,8 @@ function AssignSupplierModal({
         ))}
       </select>
       <p className="mt-2 text-[11px] text-muted-foreground">
-        If you select a supplier, the admin cost will be treated as their due amount. Removing it will make the product the admin's own.
+        If you select a supplier, the admin cost will be treated as their due amount. Removing it
+        will make the product the admin's own.
       </p>
     </AppModal>
   );

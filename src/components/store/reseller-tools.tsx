@@ -37,12 +37,15 @@ export function useResellerTools() {
 }
 
 function fileNameFor(url: string, base: string, i: number) {
-  const clean = base
-    .toLowerCase()
-    .replace(/[^a-z0-9\u0980-\u09FF]+/gi, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60) || "product";
-  const ext = (url.split("?")[0].match(/\.(jpe?g|png|webp|gif|avif)$/i)?.[1] ?? "jpg").toLowerCase();
+  const clean =
+    base
+      .toLowerCase()
+      .replace(/[^a-z0-9\u0980-\u09FF]+/gi, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "product";
+  const ext = (
+    url.split("?")[0].match(/\.(jpe?g|png|webp|gif|avif)$/i)?.[1] ?? "jpg"
+  ).toLowerCase();
   return `${clean}-${i + 1}.${ext}`;
 }
 
@@ -128,7 +131,9 @@ export function CopyButton({
       className={cx(toolBtn, borderc, muted, "justify-center", className)}
     >
       {done ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-      {label && !className?.includes("rounded-full") ? <span>{done ? "Copied" : `Copy ${label}`}</span> : null}
+      {label && !className?.includes("rounded-full") ? (
+        <span>{done ? "Copied" : `Copy ${label}`}</span>
+      ) : null}
     </button>
   );
 }
@@ -167,26 +172,55 @@ export function ImageDownloadTools({
 
   if (compact)
     return (
-      <button
-        type="button"
-        onClick={one}
-        title="Download this image"
-        aria-label="Download this image"
-        className="grid h-9 w-9 place-items-center rounded-full border-2 border-foreground/80 bg-destructive text-destructive-foreground shadow-lg transition hover:brightness-110 active:scale-95"
-      >
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-      </button>
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={one}
+          title="Download this image"
+          aria-label="Download this image"
+          className="grid h-9 w-9 place-items-center rounded-full border-2 border-foreground/80 bg-destructive text-destructive-foreground shadow-lg transition hover:brightness-110 active:scale-95"
+        >
+          {busy === "one" ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+        </button>
+        {list.length > 1 && (
+          <button
+            type="button"
+            onClick={all}
+            title={`Download all ${list.length} images`}
+            aria-label={`Download all ${list.length} images`}
+            className="grid h-9 w-9 place-items-center rounded-full border-2 border-foreground/80 bg-card text-foreground shadow-lg transition hover:brightness-110 active:scale-95"
+          >
+            {busy === "all" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ImageDown className="h-4 w-4" />
+            )}
+          </button>
+        )}
+      </div>
     );
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button type="button" onClick={one} className={cx(toolBtn, borderc, muted)}>
-        {busy === "one" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+        {busy === "one" ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <Download className="h-3.5 w-3.5" />
+        )}
         <span>This image</span>
       </button>
       {list.length > 1 && (
         <button type="button" onClick={all} className={cx(toolBtn, borderc, muted)}>
-          {busy === "all" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageDown className="h-3.5 w-3.5" />}
+          {busy === "all" ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <ImageDown className="h-3.5 w-3.5" />
+          )}
           <span>All {list.length} images</span>
         </button>
       )}
