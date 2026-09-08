@@ -173,8 +173,8 @@ function AdminSupplierReturnsPage() {
     try {
       const res = await impersonateFn({ data: { userId: s.user_id } });
       await startImpersonation({
-        email: res.email,
-        password: res.password,
+        accessToken: res.accessToken,
+        refreshToken: res.refreshToken,
         label: name,
         returnTo: window.location.pathname + window.location.search,
       });
