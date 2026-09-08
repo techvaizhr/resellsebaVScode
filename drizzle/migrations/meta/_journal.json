@@ -141,6 +141,13 @@
       "when": 1788758400000,
       "tag": "0019_shipments_tracking_url",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1788857518153,
+      "tag": "0020_orders_page_shipment_tracking_url",
+      "breakpoints": true
     }
   ]
 }
