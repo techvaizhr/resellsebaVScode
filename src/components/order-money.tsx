@@ -228,7 +228,19 @@ export function OrderMoneyPanel({
           <div className="rounded-lg border border-primary/20 bg-primary/[0.04] px-2.5 py-2">
             <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-primary">Admin only</div>
             <Row label="Reseller invoice (product + packaging)" value={bdt(n(order.sa_cost_total))} />
-            <Row label="Delivery cost set by admin" value={bdt(delivery)} dashed={false} />
+            <Row label="Delivery cost set by admin" value={bdt(delivery)} />
+            <Row
+              label="Cash that reached admin"
+              value={bdt(Math.max(received - heldByReseller, 0))}
+              hint={
+                heldByReseller > 0
+                  ? `Advance ${bdt(heldByReseller)} stayed with the reseller — not admin income, it only lowers their payout`
+                  : advance > 0
+                    ? "Advance was collected by admin, so it is part of admin cash"
+                    : undefined
+              }
+              dashed={false}
+            />
           </div>
         )}
       </div>
