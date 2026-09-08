@@ -200,6 +200,15 @@ export function finalProfit(o: BizOrder | ProfitOrder) {
 }
 
 /**
+ * Cash that actually reached admin (0 while running). An advance the reseller
+ * collected stays in the reseller's hand — it is never admin income, it only
+ * lowers the payout, so it must be excluded from every admin profit line.
+ */
+export function finalAdminReceived(o: BizOrder | ProfitOrder) {
+  return isMoneyFinal(o.status) ? adminReceived(o) : 0;
+}
+
+/**
  * What admin really paid the courier for this parcel: the booked shipment cost
  * when we have it, otherwise the admin-set delivery cost of the order.
  * Cancelled orders never went to the courier, so they cost nothing.
