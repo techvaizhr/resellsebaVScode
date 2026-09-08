@@ -29,16 +29,9 @@ export async function ensureActiveSupplierRole(supabase: DbClient, userId: strin
   return supplier as { id: string; status: string; display_name: string | null };
 }
 
-/** Creates temporary credentials the browser can exchange for a supplier session. */
+/** Opens a supplier session for the admin without changing the supplier's password. */
 export async function createSupplierImpersonationLogin(supabase: DbClient, userId: string) {
   await ensureActiveSupplierRole(supabase, userId);
-  const { confirmEmail, loadAuthUsers, setPassword } = await import("@/lib/auth-admin.server");
-  const account = (await loadAuthUsers(supabase)).find((u: any) => u.user_id === userId);
-  if (!account?.email) throw new Response("Supplier account has no email", { status: 400 });
-
-  const password = easyPassword();
-  await confirmEmail(supabase, userId);
-  await setPassword(supabase, userId, password);
-
-  return { ok: true as const, email: account.email, password };
+  const { mintImpersonationSession } = await import("@/lib/impersonation.server");
+  return mintImpersonationSession(supabase, userId);
 }
