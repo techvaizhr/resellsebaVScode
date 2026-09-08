@@ -1,4 +1,5 @@
 import {
+  adminReceived,
   isFailedOrder,
   isRealizedStatus,
   orderProfit,
@@ -200,6 +201,15 @@ export function finalProfit(o: BizOrder | ProfitOrder) {
 }
 
 /**
+ * Cash that actually reached admin (0 while running). An advance the reseller
+ * collected stays in the reseller's hand — it is never admin income, it only
+ * lowers the payout, so it must be excluded from every admin profit line.
+ */
+export function finalAdminReceived(o: BizOrder | ProfitOrder) {
+  return isMoneyFinal(o.status) ? adminReceived(o) : 0;
+}
+
+/**
  * What admin really paid the courier for this parcel: the booked shipment cost
  * when we have it, otherwise the admin-set delivery cost of the order.
  * Cancelled orders never went to the courier, so they cost nothing.
@@ -253,7 +263,7 @@ export function orderBuyingCost(
 
 /** Admin profit of one order (see ADMIN_PROFIT_HINT). */
 export function adminOrderProfit(o: BizOrder, buyingCost: number) {
-  return orderReceived(o) - orderProfit(o) - buyingCost;
+  return adminReceived(o) - orderProfit(o) - buyingCost;
 }
 
 /* ----------------------------- product report ---------------------------- */
@@ -385,6 +395,7 @@ export function buildResellerRows(
     const final = isMoneyFinal(o.status);
     const buy = final ? orderBuyingCost(myItems, o.status, products) : 0;
     const received = finalReceived(ord);
+    const adminCash = finalAdminReceived(ord);
     const profit = finalProfit(ord);
     const ship = adminDeliverySpend(o, shipCost.get(o.id));
     const pack = final && o.status !== "cancelled" ? orderPackaging(o) : 0;
@@ -399,8 +410,8 @@ export function buildResellerRows(
     row.resellerProfit += profit;
     row.deliverySpend += ship;
     row.packaging += pack;
-    row.adminMargin += received - profit - buy;
-    row.adminProfit += received - profit - buy - ship - pack;
+    row.adminMargin += adminCash - profit - buy;
+    row.adminProfit += adminCash - profit - buy - ship - pack;
     map.set(key, row);
   }
   return Array.from(map.values()).sort((a, b) => b.orders - a.orders);
@@ -467,6 +478,7 @@ export function buildCourierRows(
     const final = isMoneyFinal(o.status);
     const buy = final ? orderBuyingCost(myItems, o.status, products) : 0;
     const received = finalReceived(ord);
+    const adminCash = finalAdminReceived(ord);
     const profit = finalProfit(ord);
     const bill = sh ? adminDeliverySpend(o, sh.cost) : adminDeliverySpend(o);
     const charged = final && o.status !== "cancelled" ? orderDeliveryCost(o) : 0;
@@ -480,7 +492,7 @@ export function buildCourierRows(
     row.deliveryCharged += charged;
     row.courierBill += bill;
     row.deliveryMargin += charged - bill;
-    row.adminProfit += received - profit - buy - bill - pack;
+    row.adminProfit += adminCash - profit - buy - bill - pack;
     map.set(key, row);
   }
   return Array.from(map.values()).sort((a, b) => b.parcels - a.parcels);
@@ -532,6 +544,7 @@ export function buildPnL(
   let value = 0;
   let runningValue = 0;
   let received = 0;
+  let adminCash = 0;
   let advance = 0;
   let resellerPayout = 0;
   let buyCost = 0;
@@ -556,6 +569,7 @@ export function buildPnL(
     if (PARTIAL_STATUSES.includes(o.status)) partialOrders += 1;
     if (FAILED_STATUSES.includes(o.status)) failedOrders += 1;
     received += orderReceived(ord);
+    adminCash += adminReceived(ord);
     advance += Math.max(n(o.advance_amount), 0);
     resellerPayout += orderProfit(ord);
     buyCost += orderBuyingCost(myItems, o.status, products);
@@ -576,7 +590,7 @@ export function buildPnL(
     expenseTotal += n(e.amount);
     catMap.set(e.category, (catMap.get(e.category) ?? 0) + n(e.amount));
   }
-  const grossProfit = received - resellerPayout - buyCost - deliverySpend - packaging;
+  const grossProfit = adminCash - resellerPayout - buyCost - deliverySpend - packaging;
   return {
     orders: orders.length,
     deliveredOrders,
@@ -702,6 +716,7 @@ export function buildDailyTrend(
     const myItems = itemsByOrder.get(o.id) ?? [];
     const ord = withKeptCost(o, myItems);
     const received = finalReceived(ord);
+    const adminCash = finalAdminReceived(ord);
     const payout = finalProfit(ord);
     const buy = orderBuyingCost(myItems, o.status, products);
     const ship = adminDeliverySpend(o, shipCost.get(o.id));
@@ -726,7 +741,7 @@ export function buildDailyTrend(
     row.buyCost += buy;
     row.deliverySpend += ship;
     row.packaging += pack;
-    row.adminProfit += received - payout - buy - ship - pack;
+    row.adminProfit += adminCash - payout - buy - ship - pack;
     map.set(key, row);
   }
   return Array.from(map.values()).sort((a, b) => (a.key < b.key ? -1 : 1));
@@ -758,6 +773,7 @@ export function buildPotential(
   const itemsByOrder = groupItems(items);
   let value = 0;
   let received = 0;
+  let adminCash = 0;
   let resellerProfit = 0;
   let buyCost = 0;
   let deliverySpend = 0;
@@ -770,12 +786,13 @@ export function buildPotential(
     count += 1;
     value += n(o.total);
     received += orderReceived(ord);
+    adminCash += adminReceived(ord);
     resellerProfit += orderProfit(ord);
     buyCost += orderBuyingCost(myItems, o.status, products);
     deliverySpend += orderDeliveryCost(ord);
     packaging += orderPackaging(ord);
   }
-  const adminProfit = received - resellerProfit - buyCost - deliverySpend - packaging;
+  const adminProfit = adminCash - resellerProfit - buyCost - deliverySpend - packaging;
   return { orders: count, value, resellerProfit, buyCost, deliverySpend, packaging, adminProfit };
 }
 

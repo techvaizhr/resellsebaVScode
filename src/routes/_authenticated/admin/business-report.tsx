@@ -24,6 +24,7 @@ import {
   buildProductRows,
   buildSupplierRows,
   finalProfit,
+  finalAdminReceived,
   finalReceived,
   groupItems,
   isMoneyFinal,
@@ -339,13 +340,14 @@ function BusinessReportPage() {
         const ord = withKeptCost(o, myItems);
         const final = isMoneyFinal(o.status);
         const received = finalReceived(ord);
+        const adminCash = finalAdminReceived(ord);
         const profit = finalProfit(ord);
         const buy = final ? orderBuyingCost(myItems, o.status, productMap) : 0;
         const ship = adminDeliverySpend(o, shipCost.get(o.id));
         const pack = final && o.status !== "cancelled" ? Number(o.packaging_total ?? 0) || 0 : 0;
         sales += received;
         base += profit;
-        adminProfit += received - profit - buy - ship - pack;
+        adminProfit += adminCash - profit - buy - ship - pack;
       }
       const target = Number(ag.sale_target ?? 0) || 0;
       const rate = Number(ag.commission_rate ?? 0) || 0;
