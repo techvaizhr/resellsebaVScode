@@ -32,6 +32,8 @@ export type BizItem = {
   /** Cost snapshot frozen when the line was created (see snapshotCost). */
   buying_price?: number | string | null;
   packaging_cost?: number | string | null;
+  /** Supplier snapshot frozen when the line was created. */
+  supplier_id?: string | null;
 };
 
 export type BizProduct = {
@@ -41,6 +43,8 @@ export type BizProduct = {
   buying_price: number | string;
   packaging_cost: number | string;
   og_image_url: string | null;
+  /** Fallback only — real per-order attribution uses BizItem.supplier_id (frozen on the line). */
+  supplier_id?: string | null;
 };
 
 export type Expense = {
@@ -75,7 +79,12 @@ export const ADMIN_PROFIT_HINT =
  * quantity, otherwise a pending order would look like it had zero product cost.
  */
 export function keptQty(item: BizItem, status: string) {
-  if (status === "cancelled" || status === "returned" || status === "pending_return" || status === "partial_delivery")
+  if (
+    status === "cancelled" ||
+    status === "returned" ||
+    status === "pending_return" ||
+    status === "partial_delivery"
+  )
     return 0;
   return Math.max(Number(item.quantity) - Number(item.returned_qty ?? 0), 0);
 }
@@ -108,7 +117,13 @@ export function withKeptCost<T extends BizOrder | ProfitOrder>(o: T, items: BizI
 export type ReportScope = "completed" | "delivered" | "partial" | "failed" | "running" | "all";
 
 export const DELIVERED_STATUSES = ["delivered"];
-export const PARTIAL_STATUSES = ["partial", "partial_full", "partial_item", "partial_delivery", "damaged"];
+export const PARTIAL_STATUSES = [
+  "partial",
+  "partial_full",
+  "partial_item",
+  "partial_delivery",
+  "damaged",
+];
 export const COMPLETED_STATUSES = [...DELIVERED_STATUSES, ...PARTIAL_STATUSES];
 export const FAILED_STATUSES = ["returned", "pending_return", "cancelled"];
 export const RUNNING_STATUSES = [
@@ -133,11 +148,27 @@ export const SCOPE_STATUSES: Record<ReportScope, string[] | null> = {
 };
 
 export const SCOPE_OPTIONS: { value: ReportScope; label: string; hint: string }[] = [
-  { value: "completed", label: "Completed (delivered + partial)", hint: "Default — every finished parcel, partial amounts added or subtracted" },
+  {
+    value: "completed",
+    label: "Completed (delivered + partial)",
+    hint: "Default — every finished parcel, partial amounts added or subtracted",
+  },
   { value: "delivered", label: "Delivered only", hint: "Full delivery, full money collected" },
-  { value: "partial", label: "Partial / damaged", hint: "Parcels where only part of the money or the items came through" },
-  { value: "failed", label: "Returned / cancelled", hint: "Money lost — only delivery charge and packaging burned" },
-  { value: "running", label: "In progress", hint: "Not finished yet — money not counted as earned" },
+  {
+    value: "partial",
+    label: "Partial / damaged",
+    hint: "Parcels where only part of the money or the items came through",
+  },
+  {
+    value: "failed",
+    label: "Returned / cancelled",
+    hint: "Money lost — only delivery charge and packaging burned",
+  },
+  {
+    value: "running",
+    label: "In progress",
+    hint: "Not finished yet — money not counted as earned",
+  },
   { value: "all", label: "All orders", hint: "Everything, running orders shown as pipeline only" },
 ];
 
@@ -197,10 +228,6 @@ export function groupItems(items: BizItem[]) {
   return m;
 }
 
-
-
-
-
 /**
  * Buying price used for reporting: always the value frozen on the order line, so
  * changing a product's price later never rewrites past orders. Only very old
@@ -214,7 +241,11 @@ export function lineBuyingPrice(it: BizItem, products: Map<string, BizProduct>) 
 }
 
 /** Admin buying cost of the kept items of one order. */
-export function orderBuyingCost(items: BizItem[], status: string, products: Map<string, BizProduct>) {
+export function orderBuyingCost(
+  items: BizItem[],
+  status: string,
+  products: Map<string, BizProduct>,
+) {
   let cost = 0;
   for (const it of items) cost += lineBuyingPrice(it, products) * keptQty(it, status);
   return cost;
@@ -289,7 +320,11 @@ export function buildProductRows(
     if (kept > 0) row.resellerProfit += (n(it.profit) / Math.max(Number(it.quantity), 1)) * kept;
   }
   return Array.from(map.values())
-    .map(({ _orders, ...r }) => ({ ...r, orders: _orders.size, adminProfit: r.adminRevenue - r.buyCost }))
+    .map(({ _orders, ...r }) => ({
+      ...r,
+      orders: _orders.size,
+      adminProfit: r.adminRevenue - r.buyCost,
+    }))
     .sort((a, b) => b.saleQty - a.saleQty);
 }
 
@@ -404,7 +439,8 @@ export function buildCourierRows(
   const itemsByOrder = groupItems(items);
   const shipByOrder = new Map<string, { provider: string; cost: number }>();
   for (const s of shipments) {
-    if (!shipByOrder.has(s.order_id)) shipByOrder.set(s.order_id, { provider: s.provider, cost: n(s.cost) });
+    if (!shipByOrder.has(s.order_id))
+      shipByOrder.set(s.order_id, { provider: s.provider, cost: n(s.cost) });
   }
   const map = new Map<string, CourierRow>();
   for (const o of orders) {
@@ -568,6 +604,133 @@ export function buildPnL(
   };
 }
 
+/* ----------------------------- supplier report ---------------------------- */
+
+export type SupplierLite = { display_name: string; code: string };
+
+export type SupplierRow = {
+  key: string;
+  name: string;
+  code: string;
+  orders: number;
+  qty: number;
+  returnedQty: number;
+  /** What admin owes/paid this supplier for the items customers actually kept. */
+  buyCost: number;
+};
+
+/**
+ * Per-supplier cost report. Attribution comes from the order line's own
+ * frozen supplier_id (stamped once, at order-creation time, by the same
+ * DB trigger that freezes buying_price — see snapshot_order_item_costs).
+ * Falls back to the product's current supplier only for the rare legacy
+ * line saved before that trigger existed.
+ */
+export function buildSupplierRows(
+  orders: BizOrder[],
+  items: BizItem[],
+  products: Map<string, BizProduct>,
+  suppliers: Map<string, SupplierLite>,
+): SupplierRow[] {
+  const byId = new Map(orders.map((o) => [o.id, o]));
+  const map = new Map<string, SupplierRow & { _orders: Set<string> }>();
+  for (const it of items) {
+    const o = byId.get(it.order_id);
+    if (!o) continue;
+    const final = isMoneyFinal(o.status);
+    const kept = final ? keptQty(it, o.status) : 0;
+    const p = it.product_id ? products.get(it.product_id) : undefined;
+    const supplierId = it.supplier_id || p?.supplier_id || null;
+    const key = supplierId ?? "none";
+    let row = map.get(key);
+    if (!row) {
+      const s = supplierId ? suppliers.get(supplierId) : undefined;
+      row = {
+        key,
+        name: s?.display_name ?? "No supplier set",
+        code: s?.code ?? "—",
+        orders: 0,
+        qty: 0,
+        returnedQty: 0,
+        buyCost: 0,
+        _orders: new Set<string>(),
+      };
+      map.set(key, row);
+    }
+    row._orders.add(it.order_id);
+    row.qty += kept;
+    if (final) row.returnedQty += Math.max(Number(it.quantity) - kept, 0);
+    row.buyCost += lineBuyingPrice(it, products) * kept;
+  }
+  return Array.from(map.values())
+    .map(({ _orders, ...r }) => ({ ...r, orders: _orders.size }))
+    .sort((a, b) => b.buyCost - a.buyCost);
+}
+
+/* ------------------------------ daily trend ------------------------------- */
+
+export type DailyPoint = {
+  key: string; // YYYY-MM-DD
+  label: string; // MM-DD, chart x-axis label
+  orders: number;
+  received: number;
+  resellerPayout: number;
+  buyCost: number;
+  deliverySpend: number;
+  packaging: number;
+  /** Gross admin profit for the day, before shared expenses/agent commission (matches PnL's gross line when summed). */
+  adminProfit: number;
+};
+
+/**
+ * Day-by-day admin money flow, built with the exact same per-order formulas
+ * as buildPnL, so the Overview chart always reconciles with the P&L tab.
+ * Only settled (money-final) orders move the trend — a running order hasn't
+ * earned or lost anything yet.
+ */
+export function buildDailyTrend(
+  orders: BizOrder[],
+  items: BizItem[],
+  products: Map<string, BizProduct>,
+  shipments: { order_id: string; cost: number | string | null }[] = [],
+): DailyPoint[] {
+  const itemsByOrder = groupItems(items);
+  const shipCost = shipmentCostMap(shipments);
+  const map = new Map<string, DailyPoint>();
+  for (const o of orders) {
+    if (!isMoneyFinal(o.status)) continue;
+    const myItems = itemsByOrder.get(o.id) ?? [];
+    const ord = withKeptCost(o, myItems);
+    const received = finalReceived(ord);
+    const payout = finalProfit(ord);
+    const buy = orderBuyingCost(myItems, o.status, products);
+    const ship = adminDeliverySpend(o, shipCost.get(o.id));
+    const pack = o.status !== "cancelled" ? orderPackaging(o) : 0;
+    const key = String(o.created_at).slice(0, 10);
+    const row =
+      map.get(key) ??
+      ({
+        key,
+        label: key.slice(5),
+        orders: 0,
+        received: 0,
+        resellerPayout: 0,
+        buyCost: 0,
+        deliverySpend: 0,
+        packaging: 0,
+        adminProfit: 0,
+      } satisfies DailyPoint);
+    row.orders += 1;
+    row.received += received;
+    row.resellerPayout += payout;
+    row.buyCost += buy;
+    row.deliverySpend += ship;
+    row.packaging += pack;
+    row.adminProfit += received - payout - buy - ship - pack;
+    map.set(key, row);
+  }
+  return Array.from(map.values()).sort((a, b) => (a.key < b.key ? -1 : 1));
+}
 
 /* ------------------------------ sorting helper --------------------------- */
 
