@@ -256,9 +256,28 @@ export async function applyCourierUpdate(
   });
 
   if (shipment?.id) {
+    // Steadfast (and friends) sometimes echo the real per-consignment tracking page
+    // on later events. Keep it if we don't have one saved yet — never overwrite.
+    const pl: any = args.payload ?? {};
+    const echoedLink =
+      typeof pl?.tracking_link === "string" && pl.tracking_link
+        ? pl.tracking_link
+        : typeof pl?.consignment?.tracking_link === "string" && pl.consignment.tracking_link
+          ? pl.consignment.tracking_link
+          : null;
+    let keepLink: string | undefined = undefined;
+    if (echoedLink) {
+      const { data: cur } = await db
+        .from("shipments")
+        .select("tracking_url")
+        .eq("id", shipment.id)
+        .maybeSingle();
+      if (!cur?.tracking_url) keepLink = echoedLink;
+    }
     await db
       .from("shipments")
       .update({
+        tracking_url: keepLink,
         status: mapped.ship,
         courier_status: statusKey,
         cod_amount: args.codAmount ?? undefined,
