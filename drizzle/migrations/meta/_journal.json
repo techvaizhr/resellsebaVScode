@@ -148,6 +148,13 @@
       "when": 1788857518153,
       "tag": "0020_orders_page_shipment_tracking_url",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1788875483958,
+      "tag": "0021_impersonation_without_password_reset",
+      "breakpoints": true
     }
   ]
 }

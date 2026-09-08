@@ -32,16 +32,9 @@ export async function ensureActiveResellerRole(supabase: DbClient, userId: strin
   return reseller as { id: string; status: string; business_name: string | null };
 }
 
-/** Creates temporary email/password credentials the browser can exchange for a reseller session. */
+/** Opens a reseller session for the admin without changing the reseller's password. */
 export async function createImpersonationLogin(supabase: DbClient, userId: string) {
   await ensureActiveResellerRole(supabase, userId);
-  const { confirmEmail, loadAuthUsers, setPassword } = await import("@/lib/auth-admin.server");
-  const account = (await loadAuthUsers(supabase)).find((u) => u.user_id === userId);
-  if (!account?.email) throw new Response("Reseller account has no email", { status: 400 });
-
-  const password = easyPassword();
-  await confirmEmail(supabase, userId);
-  await setPassword(supabase, userId, password);
-
-  return { ok: true as const, email: account.email, password };
+  const { mintImpersonationSession } = await import("@/lib/impersonation.server");
+  return mintImpersonationSession(supabase, userId);
 }

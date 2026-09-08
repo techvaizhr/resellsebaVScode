@@ -3105,6 +3105,17 @@ export type Database = {
         Args: { _ids: string[]; _undo?: boolean }
         Returns: number
       }
+      admin_impersonation_begin: {
+        Args: { _password: string; _user_id: string }
+        Returns: {
+          email: string
+          prev_hash: string
+        }[]
+      }
+      admin_impersonation_finish: {
+        Args: { _prev_hash: string; _user_id: string }
+        Returns: undefined
+      }
       admin_lookups: { Args: never; Returns: Json }
       admin_orders_page: { Args: { _statuses?: string[] }; Returns: Json }
       admin_reseller_metrics: {
