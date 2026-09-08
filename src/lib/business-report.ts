@@ -732,6 +732,53 @@ export function buildDailyTrend(
   return Array.from(map.values()).sort((a, b) => (a.key < b.key ? -1 : 1));
 }
 
+/* ------------------------------ potential (pipeline) ---------------------- */
+
+export type Potential = {
+  orders: number;
+  value: number;
+  resellerProfit: number;
+  buyCost: number;
+  deliverySpend: number;
+  packaging: number;
+  adminProfit: number;
+};
+
+/**
+ * "If every order currently in progress gets delivered in full" projection —
+ * uses the exact same formulas as buildPnL, just without the isMoneyFinal
+ * gate, so it reconciles with the real numbers the moment an order settles.
+ * Not a probability-weighted forecast — a best-case ceiling on the pipeline.
+ */
+export function buildPotential(
+  orders: BizOrder[],
+  items: BizItem[],
+  products: Map<string, BizProduct>,
+): Potential {
+  const itemsByOrder = groupItems(items);
+  let value = 0;
+  let received = 0;
+  let resellerProfit = 0;
+  let buyCost = 0;
+  let deliverySpend = 0;
+  let packaging = 0;
+  let count = 0;
+  for (const o of orders) {
+    if (isMoneyFinal(o.status)) continue;
+    const myItems = itemsByOrder.get(o.id) ?? [];
+    const ord = withKeptCost(o, myItems);
+    count += 1;
+    value += n(o.total);
+    received += orderReceived(ord);
+    resellerProfit += orderProfit(ord);
+    buyCost += orderBuyingCost(myItems, o.status, products);
+    deliverySpend += orderDeliveryCost(ord);
+    packaging += orderPackaging(ord);
+  }
+  const adminProfit = received - resellerProfit - buyCost - deliverySpend - packaging;
+  return { orders: count, value, resellerProfit, buyCost, deliverySpend, packaging, adminProfit };
+}
+
 /* ------------------------------ sorting helper --------------------------- */
 
 export type SortDir = "asc" | "desc";

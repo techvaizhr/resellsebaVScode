@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, StatCard } from "@/components/ui-kit";
 import {
@@ -20,6 +20,7 @@ import {
   buildCourierRows,
   buildDailyTrend,
   buildPnL,
+  buildPotential,
   buildProductRows,
   buildSupplierRows,
   finalProfit,
@@ -46,6 +47,7 @@ import {
   type SupplierLite,
   type SupplierRow,
 } from "@/lib/business-report";
+import { ORDER_TABS } from "@/lib/courier-status";
 
 import {
   ResponsiveContainer,
@@ -71,6 +73,16 @@ import {
   LayoutGrid,
   Factory,
   ArrowRight,
+  Sparkles,
+  Percent,
+  Send,
+  ClipboardCheck,
+  PackageCheck,
+  PackageSearch,
+  Undo2,
+  Ban,
+  AlertTriangle,
+  CircleDot,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/business-report")({
@@ -241,6 +253,26 @@ function BusinessReportPage() {
     () => items.filter((i) => scopedIds.has(i.order_id)),
     [items, scopedIds],
   );
+  const filteredIds = useMemo(() => new Set(filtered.map((o) => o.id)), [filtered]);
+  const filteredItems = useMemo(
+    () => items.filter((i) => filteredIds.has(i.order_id)),
+    [items, filteredIds],
+  );
+  const potential = useMemo(
+    () => buildPotential(filtered, filteredItems, productMap),
+    [filtered, filteredItems, productMap],
+  );
+  const statusBreakdown = useMemo(() => {
+    return ORDER_TABS.filter((t) => t.key !== "all").map((t) => {
+      const rows = filtered.filter((o) => (t.statuses as string[]).includes(o.status));
+      return {
+        key: t.key,
+        label: t.label,
+        count: rows.length,
+        value: rows.reduce((s, o) => s + Number(o.total ?? 0), 0),
+      };
+    });
+  }, [filtered]);
   const scopeCount = useMemo(() => {
     const c: Record<string, number> = {};
     for (const s of SCOPE_OPTIONS) c[s.value] = scopeOrders(filtered, s.value).length;
@@ -574,30 +606,38 @@ function BusinessReportPage() {
           Which orders to count — money is only counted once a parcel is finished
         </div>
         <div className="flex flex-wrap gap-2">
-          {SCOPE_OPTIONS.map((s) => (
-            <button
-              key={s.value}
-              type="button"
-              title={s.hint}
-              onClick={() => setScope(s.value)}
-              className={
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition " +
-                (scope === s.value
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "hover:bg-accent")
-              }
-            >
-              {s.label}
-              <span
+          {SCOPE_OPTIONS.map((s) => {
+            const scopeColors: Record<string, string> = {
+              completed: "border-primary bg-primary text-primary-foreground",
+              delivered: "border-emerald-500 bg-emerald-500 text-white",
+              partial: "border-amber-500 bg-amber-500 text-white",
+              failed: "border-rose-500 bg-rose-500 text-white",
+              running: "border-sky-500 bg-sky-500 text-white",
+              all: "border-slate-600 bg-slate-600 text-white",
+            };
+            const active = scope === s.value;
+            return (
+              <button
+                key={s.value}
+                type="button"
+                title={s.hint}
+                onClick={() => setScope(s.value)}
                 className={
-                  "ml-1.5 tabular-nums " +
-                  (scope === s.value ? "opacity-80" : "text-muted-foreground")
+                  "rounded-full border px-3 py-1.5 text-xs font-semibold transition " +
+                  (active ? (scopeColors[s.value] ?? scopeColors.completed) : "hover:bg-accent")
                 }
               >
-                {scopeCount[s.value] ?? 0}
-              </span>
-            </button>
-          ))}
+                {s.label}
+                <span
+                  className={
+                    "ml-1.5 tabular-nums " + (active ? "opacity-90" : "text-muted-foreground")
+                  }
+                >
+                  {scopeCount[s.value] ?? 0}
+                </span>
+              </button>
+            );
+          })}
         </div>
         <div className="mt-2 text-[11px] text-muted-foreground">
           {SCOPE_OPTIONS.find((s) => s.value === scope)?.hint}
@@ -644,6 +684,115 @@ function BusinessReportPage() {
 
       {tab === "overview" && (
         <div className="space-y-4">
+          {/* Potential profit + achievement — the pipeline, at a glance */}
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500/15 text-amber-600">
+                  <Sparkles className="h-4 w-4" />
+                </span>
+                <div>
+                  <div className="text-xs font-black uppercase tracking-widest text-amber-700">
+                    Potential admin profit
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {potential.orders} order(s) in the pipeline, worth {bdt(potential.value)}
+                  </div>
+                </div>
+              </div>
+              <div className="text-2xl font-black tabular-nums text-amber-700">
+                {bdt(potential.adminProfit)}
+              </div>
+              <div className="mt-1 text-[10px] text-muted-foreground">
+                If every in-progress order gets delivered in full — not a promise, just the ceiling
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-sky-500/5 to-transparent p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-sky-500/15 text-sky-600">
+                  <Users className="h-4 w-4" />
+                </span>
+                <div>
+                  <div className="text-xs font-black uppercase tracking-widest text-sky-700">
+                    Potential reseller profit
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    Same {potential.orders} pending order(s)
+                  </div>
+                </div>
+              </div>
+              <div className="text-2xl font-black tabular-nums text-sky-700">
+                {bdt(potential.resellerProfit)}
+              </div>
+              <div className="mt-1 text-[10px] text-muted-foreground">
+                What resellers stand to earn once these are confirmed delivered
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-500/15 text-emerald-600">
+                  <Percent className="h-4 w-4" />
+                </span>
+                <div>
+                  <div className="text-xs font-black uppercase tracking-widest text-emerald-700">
+                    Achievement
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    Delivery success rate, this range
+                  </div>
+                </div>
+              </div>
+              {(() => {
+                const finished = pnl.deliveredOrders + pnl.partialOrders + pnl.failedOrders;
+                const rate =
+                  finished > 0 ? ((pnl.deliveredOrders + pnl.partialOrders) / finished) * 100 : 0;
+                return (
+                  <>
+                    <div className="text-2xl font-black tabular-nums text-emerald-700">
+                      {rate.toFixed(0)}%
+                    </div>
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-emerald-500/10">
+                      <div
+                        className="h-full rounded-full bg-emerald-500"
+                        style={{ width: `${Math.min(100, rate)}%` }}
+                      />
+                    </div>
+                    <div className="mt-1 text-[10px] text-muted-foreground">
+                      {pnl.deliveredOrders + pnl.partialOrders} delivered/partial out of {finished}{" "}
+                      finished order(s)
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Order status breakdown — every status, with count and value */}
+          <ReportCard
+            title="Order status overview"
+            hint="Every order in the current filter, grouped by exact status — count and order value"
+          >
+            <div className="grid grid-cols-2 gap-2.5 p-4 sm:grid-cols-3 lg:grid-cols-5">
+              {statusBreakdown.map((s) => {
+                const style = STATUS_STYLES[s.key] ?? STATUS_STYLES.default;
+                return (
+                  <div key={s.key} className={"rounded-lg border p-3 " + style.bg}>
+                    <div className="mb-1.5 flex items-center gap-1.5">
+                      <span className={style.text}>{style.icon}</span>
+                      <span className="truncate text-[11px] font-semibold text-muted-foreground">
+                        {s.label}
+                      </span>
+                    </div>
+                    <div className={"text-lg font-black tabular-nums " + style.text}>{s.count}</div>
+                    <div className="text-[10px] text-muted-foreground">{bdt(s.value)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </ReportCard>
+
           <ReportCard
             title="Revenue & profit trend"
             hint="Only settled orders (delivered / partial / returned / cancelled) move this chart — running orders haven't earned anything yet"
@@ -1639,6 +1788,89 @@ function BusinessReportPage() {
 }
 
 /* -------------------------------- overview bits -------------------------------- */
+
+const STATUS_STYLES: Record<string, { bg: string; text: string; icon: ReactNode }> = {
+  new: {
+    bg: "bg-slate-500/5 border-slate-500/15",
+    text: "text-slate-600",
+    icon: <CircleDot className="h-3.5 w-3.5" />,
+  },
+  forwarded: {
+    bg: "bg-indigo-500/5 border-indigo-500/15",
+    text: "text-indigo-600",
+    icon: <Send className="h-3.5 w-3.5" />,
+  },
+  confirmed: {
+    bg: "bg-blue-500/5 border-blue-500/15",
+    text: "text-blue-600",
+    icon: <ClipboardCheck className="h-3.5 w-3.5" />,
+  },
+  packaging: {
+    bg: "bg-violet-500/5 border-violet-500/15",
+    text: "text-violet-600",
+    icon: <Package className="h-3.5 w-3.5" />,
+  },
+  handover: {
+    bg: "bg-purple-500/5 border-purple-500/15",
+    text: "text-purple-600",
+    icon: <PackageSearch className="h-3.5 w-3.5" />,
+  },
+  courier: {
+    bg: "bg-cyan-500/5 border-cyan-500/15",
+    text: "text-cyan-600",
+    icon: <Truck className="h-3.5 w-3.5" />,
+  },
+  delivered: {
+    bg: "bg-emerald-500/5 border-emerald-500/15",
+    text: "text-emerald-600",
+    icon: <PackageCheck className="h-3.5 w-3.5" />,
+  },
+  pending_partial: {
+    bg: "bg-amber-500/5 border-amber-500/15",
+    text: "text-amber-600",
+    icon: <AlertTriangle className="h-3.5 w-3.5" />,
+  },
+  partial_full: {
+    bg: "bg-amber-500/5 border-amber-500/15",
+    text: "text-amber-600",
+    icon: <AlertTriangle className="h-3.5 w-3.5" />,
+  },
+  partial_item: {
+    bg: "bg-amber-500/5 border-amber-500/15",
+    text: "text-amber-600",
+    icon: <AlertTriangle className="h-3.5 w-3.5" />,
+  },
+  partial_delivery: {
+    bg: "bg-amber-500/5 border-amber-500/15",
+    text: "text-amber-600",
+    icon: <AlertTriangle className="h-3.5 w-3.5" />,
+  },
+  pending_return: {
+    bg: "bg-orange-500/5 border-orange-500/15",
+    text: "text-orange-600",
+    icon: <Undo2 className="h-3.5 w-3.5" />,
+  },
+  returned: {
+    bg: "bg-rose-500/5 border-rose-500/15",
+    text: "text-rose-600",
+    icon: <Undo2 className="h-3.5 w-3.5" />,
+  },
+  damaged: {
+    bg: "bg-red-500/5 border-red-500/15",
+    text: "text-red-600",
+    icon: <AlertTriangle className="h-3.5 w-3.5" />,
+  },
+  cancelled: {
+    bg: "bg-gray-500/8 border-gray-500/20",
+    text: "text-gray-600",
+    icon: <Ban className="h-3.5 w-3.5" />,
+  },
+  default: {
+    bg: "bg-muted/30 border-border",
+    text: "text-muted-foreground",
+    icon: <CircleDot className="h-3.5 w-3.5" />,
+  },
+};
 
 const FLOW_TONES: Record<string, string> = {
   sky: "bg-sky-500",
