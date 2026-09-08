@@ -36,8 +36,17 @@ export function rememberImpersonationReturnTarget(target: string) {
   if (typeof window !== "undefined") sessionStorage.setItem(RETURN_KEY, target);
 }
 
-/** Swaps the current admin session for the reseller session, remembering where the admin came from. */
-export async function startImpersonation(opts: { email: string; password: string; label: string; returnTo: string }) {
+/**
+ * Swaps the current admin session for the target account's session, remembering
+ * where the admin came from. The target account's own password is untouched —
+ * the server hands us a ready session instead of temporary credentials.
+ */
+export async function startImpersonation(opts: {
+  accessToken: string;
+  refreshToken: string;
+  label: string;
+  returnTo: string;
+}) {
   const { data: current } = await supabase.auth.getSession();
   const session = current.session;
   if (!session) throw new Error("Your admin session expired — sign in again.");
@@ -50,9 +59,9 @@ export async function startImpersonation(opts: { email: string; password: string
   };
   localStorage.setItem(KEY, JSON.stringify(snapshot));
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: opts.email,
-    password: opts.password,
+  const { error } = await supabase.auth.setSession({
+    access_token: opts.accessToken,
+    refresh_token: opts.refreshToken,
   });
   if (error) {
     clearImpersonation();
