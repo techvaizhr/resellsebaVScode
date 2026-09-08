@@ -25,10 +25,10 @@ export function courierTrackingUrl(
 
   switch (provider) {
     case "steadfast": {
+      // Only the real per-consignment link works. A URL built from the tracking
+      // code (https://steadfast.com.bd/t/<code>) 404s, so never fall back to it.
       const saved = (shipment.tracking_url || "").toString().trim();
-      if (saved) return saved;
-      // Fallback only — see note above, this link will usually say "Link Unavailable".
-      return `https://steadfast.com.bd/t/${encodeURIComponent(tracking || consignment)}`;
+      return saved || null;
     }
     case "pathao": {
       const id = consignment || tracking;
