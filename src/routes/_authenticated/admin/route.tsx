@@ -21,7 +21,6 @@ import {
   BadgeCheck,
   Eraser,
   Globe,
-
   Bell,
   FileText,
   Handshake,
@@ -37,6 +36,7 @@ import {
   Receipt,
   Undo2,
   ScrollText,
+  Home,
 } from "lucide-react";
 import { AppShell, type NavEntry } from "@/components/AppShell";
 import { BulkScanButton } from "@/components/BulkScanModal";
@@ -47,14 +47,11 @@ import { Loader2 } from "lucide-react";
 import { useOrderNavCount, applyOrderBadge } from "@/lib/use-order-nav-count";
 import { ROUTE_PERMISSIONS } from "@/lib/permissions";
 
-
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminLayout,
 });
 
 /** Which permission unlocks each admin route (see src/lib/permissions.ts). */
-
-
 
 const NAV: NavEntry[] = [
   { label: "Dashboard", to: "/admin", icon: <LayoutDashboard className="h-4 w-4" />, end: true },
@@ -74,13 +71,29 @@ const NAV: NavEntry[] = [
     label: "Finance",
     icon: <Wallet className="h-4 w-4" />,
     items: [
-      { label: "Transaction Report", to: "/admin/transactions", icon: <LineChart className="h-4 w-4" /> },
-      { label: "Business report", to: "/admin/business-report", icon: <PieChart className="h-4 w-4" /> },
+      {
+        label: "Transaction Report",
+        to: "/admin/transactions",
+        icon: <LineChart className="h-4 w-4" />,
+      },
+      {
+        label: "Business report",
+        to: "/admin/business-report",
+        icon: <PieChart className="h-4 w-4" />,
+      },
       { label: "Expenses", to: "/admin/expenses", icon: <Receipt className="h-4 w-4" /> },
       { label: "Payouts", to: "/admin/payouts", icon: <Wallet className="h-4 w-4" /> },
       { label: "Commissions", to: "/admin/commissions", icon: <Percent className="h-4 w-4" /> },
-      { label: "Subscriptions", to: "/admin/subscriptions", icon: <BadgeCheck className="h-4 w-4" /> },
-      { label: "Deposit transactions", to: "/admin/deposit-transactions", icon: <ShieldCheck className="h-4 w-4" /> },
+      {
+        label: "Subscriptions",
+        to: "/admin/subscriptions",
+        icon: <BadgeCheck className="h-4 w-4" />,
+      },
+      {
+        label: "Deposit transactions",
+        to: "/admin/deposit-transactions",
+        icon: <ShieldCheck className="h-4 w-4" />,
+      },
     ],
   },
   { label: "Resellers", to: "/admin/resellers", icon: <Handshake className="h-4 w-4" /> },
@@ -89,9 +102,21 @@ const NAV: NavEntry[] = [
     icon: <Truck className="h-4 w-4" />,
     items: [
       { label: "Supplier accounts", to: "/admin/suppliers", icon: <Truck className="h-4 w-4" /> },
-      { label: "Supplier report", to: "/admin/supplier-report", icon: <Target className="h-4 w-4" /> },
-      { label: "Return handover", to: "/admin/supplier-returns", icon: <Undo2 className="h-4 w-4" /> },
-      { label: "Supplier payouts", to: "/admin/supplier-payouts", icon: <Wallet className="h-4 w-4" /> },
+      {
+        label: "Supplier report",
+        to: "/admin/supplier-report",
+        icon: <Target className="h-4 w-4" />,
+      },
+      {
+        label: "Return handover",
+        to: "/admin/supplier-returns",
+        icon: <Undo2 className="h-4 w-4" />,
+      },
+      {
+        label: "Supplier payouts",
+        to: "/admin/supplier-payouts",
+        icon: <Wallet className="h-4 w-4" />,
+      },
     ],
   },
 
@@ -101,8 +126,11 @@ const NAV: NavEntry[] = [
     items: [
       { label: "Commission Agents", to: "/admin/agents", icon: <UserCheck className="h-4 w-4" /> },
       { label: "Agent report", to: "/admin/agent-report", icon: <Target className="h-4 w-4" /> },
-      { label: "Commission payout", to: "/admin/agent-payouts", icon: <Percent className="h-4 w-4" /> },
-
+      {
+        label: "Commission payout",
+        to: "/admin/agent-payouts",
+        icon: <Percent className="h-4 w-4" />,
+      },
     ],
   },
   { label: "Store visitors", to: "/admin/visitors", icon: <Activity className="h-4 w-4" /> },
@@ -113,7 +141,11 @@ const NAV: NavEntry[] = [
       { label: "Marketing", to: "/admin/marketing", icon: <Megaphone className="h-4 w-4" /> },
       { label: "Notifications", to: "/admin/notifications", icon: <Bell className="h-4 w-4" /> },
       { label: "Reseller notices", to: "/admin/notices", icon: <Megaphone className="h-4 w-4" /> },
-      { label: "Video tutorials", to: "/admin/tutorials", icon: <GraduationCap className="h-4 w-4" /> },
+      {
+        label: "Video tutorials",
+        to: "/admin/tutorials",
+        icon: <GraduationCap className="h-4 w-4" />,
+      },
     ],
   },
   {
@@ -129,10 +161,13 @@ const NAV: NavEntry[] = [
       { label: "Cache & cleanup", to: "/admin/maintenance", icon: <Eraser className="h-4 w-4" /> },
       { label: "Advanced settings", to: "/admin/advanced", icon: <Sliders className="h-4 w-4" /> },
 
-      { label: "Reseller policies", to: "/admin/policies", icon: <ScrollText className="h-4 w-4" /> },
+      {
+        label: "Reseller policies",
+        to: "/admin/policies",
+        icon: <ScrollText className="h-4 w-4" />,
+      },
       { label: "Privacy policy", to: "/admin/privacy", icon: <Shield className="h-4 w-4" /> },
       { label: "Settings", to: "/admin/settings", icon: <Settings className="h-4 w-4" /> },
-
     ],
   },
 ];
@@ -183,7 +218,8 @@ function AdminLayout() {
   const pathname = useLocation({ select: (location) => location.pathname });
   const isSuperAdmin = roles.includes("super_admin");
   const navWithBadge = useMemo(
-    () => applyOrderBadge(filterNav(NAV, permissions, isSuperAdmin), "/admin/orders", orderNavCount),
+    () =>
+      applyOrderBadge(filterNav(NAV, permissions, isSuperAdmin), "/admin/orders", orderNavCount),
     [orderNavCount, permissions, isSuperAdmin],
   );
   const isStaff = roles.includes("staff");
@@ -193,12 +229,21 @@ function AdminLayout() {
     .find(([route]) => pathname === route || pathname.startsWith(`${route}/`))?.[1];
   const canViewRoute =
     isSuperAdmin ||
-    (isStaff && routePermission != null && routePermission.some((permission) => permissions.includes(permission)));
+    (isStaff &&
+      routePermission != null &&
+      routePermission.some((permission) => permissions.includes(permission)));
   const landing = isSuperAdmin ? "/admin" : firstAllowedRoute(NAV, permissions);
-  const canCatalog = isSuperAdmin || permissions.includes("products.view") || permissions.includes("products.manage");
+  const canCatalog =
+    isSuperAdmin ||
+    permissions.includes("products.view") ||
+    permissions.includes("products.manage");
   const canScan = isSuperAdmin || permissions.includes("orders.status");
 
-  const [brand, setBrand] = useState<{ name: string; logoUrl: string | null; primary: string | null }>({
+  const [brand, setBrand] = useState<{
+    name: string;
+    logoUrl: string | null;
+    primary: string | null;
+  }>({
     name: "Admin",
     logoUrl: null,
     primary: null,
@@ -224,7 +269,19 @@ function AdminLayout() {
     if (landing && landing !== pathname) {
       nav({ to: landing, replace: true });
     }
-  }, [loading, user, canEnter, canViewRoute, roles, permissions, pathname, nav, isStaff, isSuperAdmin, landing]);
+  }, [
+    loading,
+    user,
+    canEnter,
+    canViewRoute,
+    roles,
+    permissions,
+    pathname,
+    nav,
+    isStaff,
+    isSuperAdmin,
+    landing,
+  ]);
 
   useEffect(() => {
     let alive = true;
@@ -285,23 +342,55 @@ function AdminLayout() {
         right: { label: "Catalog", to: "/admin/products", icon: Package },
       }}
 
+      mobileFooterLinks={
+        canCatalog
+          ? [
+              {
+                label: "Public catalog",
+                to: "/catalog",
+                icon: <Store className="h-4 w-4" />,
+                external: true,
+              },
+              { label: "Homepage", to: "/", icon: <Home className="h-4 w-4" />, external: true },
+            ]
+          : undefined
+      }
+
       headerRight={
         <>
           {canCatalog ? (
-            <Link
-              to="/admin/products"
-              title="Catalog"
-              className="hidden md:inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
-            >
-              <Store className="h-4 w-4" />
-              <span className="hidden sm:inline">Catalog</span>
-            </Link>
+            <>
+              <a
+                href="/catalog"
+                target="_blank"
+                rel="noreferrer"
+                title="Open public catalog"
+                className="hidden md:inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
+              >
+                <Store className="h-4 w-4" />
+                <span className="hidden sm:inline">Catalog</span>
+              </a>
+              <a
+                href="/"
+                target="_blank"
+                rel="noreferrer"
+                title="Open homepage"
+                className="hidden md:inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
+              >
+                <Home className="h-4 w-4" />
+                <span className="hidden sm:inline">Home</span>
+              </a>
+            </>
           ) : null}
           {canScan ? <BulkScanButton compact /> : null}
         </>
       }
 
-      brand={{ name: brand.name, sub: isSuperAdmin ? "Admin panel" : "Staff panel", logoUrl: brand.logoUrl }}
+      brand={{
+        name: brand.name,
+        sub: isSuperAdmin ? "Admin panel" : "Staff panel",
+        logoUrl: brand.logoUrl,
+      }}
       nav={navWithBadge}
       user={{
         name: user.user_metadata?.full_name ?? (isSuperAdmin ? "Admin" : "Staff"),

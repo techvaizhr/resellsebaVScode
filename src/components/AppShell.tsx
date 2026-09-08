@@ -1,5 +1,14 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LogOut, ChevronRight, ChevronDown, Menu, X, PanelLeftClose, PanelLeftOpen, ExternalLink } from "lucide-react";
+import {
+  LogOut,
+  ChevronRight,
+  ChevronDown,
+  Menu,
+  X,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ExternalLink,
+} from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ResellerAvatar } from "@/components/reseller-avatar";
@@ -40,6 +49,8 @@ export function AppShell({
   headerRight,
   homeTo = "/dashboard",
   bottomNav,
+  /** Extra links shown only in the mobile drawer, above Sign out. */
+  mobileFooterLinks,
   children,
 }: {
   title: string;
@@ -47,6 +58,7 @@ export function AppShell({
   nav: NavEntry[];
   user: { name: string; email: string; avatarUrl?: string | null };
   headerRight?: ReactNode;
+  mobileFooterLinks?: { label: string; to: string; icon: ReactNode; external?: boolean }[];
   /** Panel dashboard URL — logo and user name link here. */
   homeTo?: string;
   /** Optional mobile bottom navigation bar (3 items: left, center home, right). */
@@ -58,7 +70,12 @@ export function AppShell({
   const activeGroupIdx = useMemo(() => {
     for (let i = 0; i < nav.length; i++) {
       const e = nav[i];
-      if (isGroup(e) && e.items.some((it) => currentPath === it.to || (!it.end && currentPath.startsWith(it.to + "/")))) {
+      if (
+        isGroup(e) &&
+        e.items.some(
+          (it) => currentPath === it.to || (!it.end && currentPath.startsWith(it.to + "/")),
+        )
+      ) {
         return i;
       }
     }
@@ -85,9 +102,14 @@ export function AppShell({
     }
   }, [desktopCollapsed]);
 
-  const renderSidebar = (collapsed: boolean) => (
+  const renderSidebar = (collapsed: boolean, isMobile = false) => (
     <>
-      <div className={cn("flex h-16 items-center gap-2 border-b border-sidebar-border", collapsed ? "px-2 justify-center" : "px-4")}>
+      <div
+        className={cn(
+          "flex h-16 items-center gap-2 border-b border-sidebar-border",
+          collapsed ? "px-2 justify-center" : "px-4",
+        )}
+      >
         <Link
           to={homeTo}
           title={brand.name}
@@ -100,7 +122,12 @@ export function AppShell({
               className={cn("object-contain", collapsed ? "h-9 w-9" : "h-10 w-full max-w-full")}
             />
           ) : (
-            <div className={cn("grid shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-primary/70 font-bold text-primary-foreground", collapsed ? "h-9 w-9 text-sm" : "h-10 w-full text-lg")}>
+            <div
+              className={cn(
+                "grid shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-primary/70 font-bold text-primary-foreground",
+                collapsed ? "h-9 w-9 text-sm" : "h-10 w-full text-lg",
+              )}
+            >
               {brand.name.charAt(0)}
             </div>
           )}
@@ -158,7 +185,10 @@ export function AppShell({
                 <span className="text-current">{entry.icon}</span>
                 <span className="flex-1 text-left">{entry.label}</span>
                 <ChevronDown
-                  className={cn("h-3.5 w-3.5 transition-transform", isOpen ? "rotate-0" : "-rotate-90")}
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform",
+                    isOpen ? "rotate-0" : "-rotate-90",
+                  )}
                 />
               </button>
               {isOpen && (
@@ -173,6 +203,36 @@ export function AppShell({
         })}
       </nav>
       <div className={cn("border-t border-sidebar-border", collapsed ? "p-2" : "p-3")}>
+        {isMobile && !collapsed && mobileFooterLinks && mobileFooterLinks.length > 0 && (
+          <div className="mb-2 space-y-1 border-b border-sidebar-border pb-2">
+            {mobileFooterLinks.map((l) =>
+              l.external ? (
+                <a
+                  key={l.to}
+                  href={l.to}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 rounded-md px-2 py-2 text-[13px] font-medium text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                  {l.icon}
+                  <span className="flex-1">{l.label}</span>
+                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                </a>
+              ) : (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 rounded-md px-2 py-2 text-[13px] font-medium text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                  {l.icon}
+                  <span className="flex-1">{l.label}</span>
+                </Link>
+              ),
+            )}
+          </div>
+        )}
         {!collapsed && (
           <Link
             to={homeTo}
@@ -233,10 +293,15 @@ export function AppShell({
             mobileOpen ? "translate-x-0" : "-translate-x-full",
           )}
         >
-          {renderSidebar(false)}
+          {renderSidebar(false, true)}
         </aside>
 
-        <main className={cn("min-w-0 max-w-full flex-1 overflow-x-hidden transition-[margin] duration-200", desktopCollapsed ? "md:ml-16" : "md:ml-64")}>
+        <main
+          className={cn(
+            "min-w-0 max-w-full flex-1 overflow-x-hidden transition-[margin] duration-200",
+            desktopCollapsed ? "md:ml-16" : "md:ml-64",
+          )}
+        >
           <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur md:px-6">
             <div className="flex flex-1 items-center gap-2 overflow-hidden">
               <button
@@ -254,7 +319,11 @@ export function AppShell({
                 aria-label={desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 title={desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               >
-                {desktopCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+                {desktopCollapsed ? (
+                  <PanelLeftOpen className="h-5 w-5" />
+                ) : (
+                  <PanelLeftClose className="h-5 w-5" />
+                )}
               </button>
               <Link
                 to={homeTo}
@@ -268,7 +337,9 @@ export function AppShell({
                     className="md:hidden h-7 w-auto max-w-[140px] object-contain"
                   />
                 ) : (
-                  <span className="truncate text-base font-bold tracking-tight sm:text-lg md:hidden">{title}</span>
+                  <span className="truncate text-base font-bold tracking-tight sm:text-lg md:hidden">
+                    {title}
+                  </span>
                 )}
               </Link>
             </div>
@@ -288,7 +359,15 @@ export function AppShell({
   );
 }
 
-function LeafLink({ item, nested = false, collapsed = false }: { item: NavItem; nested?: boolean; collapsed?: boolean }) {
+function LeafLink({
+  item,
+  nested = false,
+  collapsed = false,
+}: {
+  item: NavItem;
+  nested?: boolean;
+  collapsed?: boolean;
+}) {
   if (item.external) {
     return (
       <a
