@@ -705,15 +705,41 @@ function SupplierOrdersPage() {
   );
 }
 
-function CourierCell({ shipment }: { shipment: SupplierOrderRow["shipment"] }) {
+function CourierCell({
+  shipment,
+  customerPhone,
+}: {
+  shipment: SupplierOrderRow["shipment"];
+  customerPhone?: string | null;
+}) {
   if (!shipment?.provider) {
     return <span className="text-[10px] italic text-muted-foreground/60">Not booked yet</span>;
   }
+  const url = courierTrackingUrl(shipment.provider, shipment, customerPhone);
+  const label = (
+    <span className="inline-flex items-center gap-0.5 truncate text-[11px] font-semibold text-primary">
+      {courierLabel(shipment.provider as never)}
+      {url && <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-60" />}
+    </span>
+  );
   return (
     <div className="flex min-w-0 items-center gap-1.5">
       <CourierLogo provider={shipment.provider as never} size={16} />
       <div className="min-w-0">
-        <div className="truncate text-[11px] font-semibold text-primary">{courierLabel(shipment.provider as never)}</div>
+        {url ? (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Track on courier website"
+            onClick={(e) => e.stopPropagation()}
+            className="hover:underline"
+          >
+            {label}
+          </a>
+        ) : (
+          label
+        )}
         <div className="truncate text-[10px] text-muted-foreground">
           {shipment.consignment_id || shipment.tracking_id || "—"}
         </div>
