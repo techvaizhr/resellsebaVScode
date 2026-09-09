@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CheckSquare,
   ChevronDown,
+  ExternalLink,
   Loader2,
   PackageCheck,
   Printer,
@@ -15,6 +16,7 @@ import { PageHeader, EmptyState } from "@/components/ui-kit";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { ShipmentBookingModal } from "@/components/ShipmentBookingModal";
 import { CourierLogo, courierLabel } from "@/components/courier-brand";
+import { courierTrackingUrl } from "@/lib/courier-tracking";
 import { OrderSearch, type OrderSearchMode } from "@/components/order-search";
 import { OrderTabs } from "@/components/OrderTabs";
 import { OrderNotePreview, OrderNotesModal, useOrderMeta } from "@/components/order-last-update";
@@ -555,7 +557,7 @@ function SupplierOrdersPage() {
 
                     <div className="flex items-center justify-between gap-2">
                       {isBooked(o) ? (
-                        <CourierCell shipment={o.shipment} />
+                        <CourierCell shipment={o.shipment} customerPhone={o.customer_phone} />
                       ) : (
                         <button
                           onClick={() => setBooking({ open: true, orderIds: [o.id] })}
@@ -622,7 +624,7 @@ function SupplierOrdersPage() {
 
                     <div className="flex justify-center">
                       {isBooked(o) ? (
-                        <CourierCell shipment={o.shipment} />
+                        <CourierCell shipment={o.shipment} customerPhone={o.customer_phone} />
                       ) : (
                         <button
                           onClick={() => setBooking({ open: true, orderIds: [o.id] })}
