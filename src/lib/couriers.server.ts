@@ -179,7 +179,9 @@ export function fullAddress(order: {
   area?: string | null;
   landmark?: string | null;
 }) {
-  const parts = [order.address_line, order.landmark, order.city, (order.area ?? "").replace(/_/g, " ")]
+  // The inside/outside Dhaka zone is a pricing flag, not part of the customer's
+  // address — never send it to any courier.
+  const parts = [order.address_line, order.landmark, order.city]
     .map((p) => (p ?? "").trim())
     .filter(Boolean);
   return parts.join(", ").slice(0, 250);

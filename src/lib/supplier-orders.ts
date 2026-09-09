@@ -15,6 +15,7 @@ export type SupplierOrderShipment = {
   provider: string | null;
   tracking_id: string | null;
   consignment_id: string | null;
+  tracking_url: string | null;
   status: string | null;
   courier_status: string | null;
   booked_at: string | null;

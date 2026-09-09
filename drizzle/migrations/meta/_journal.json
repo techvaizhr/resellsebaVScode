@@ -155,6 +155,13 @@
       "when": 1788875483958,
       "tag": "0021_impersonation_without_password_reset",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1788946452477,
+      "tag": "0022_supplier_orders_page_tracking_url",
+      "breakpoints": true
     }
   ]
 }

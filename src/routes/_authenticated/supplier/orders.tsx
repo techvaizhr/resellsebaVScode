@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CheckSquare,
   ChevronDown,
+  ExternalLink,
   Loader2,
   PackageCheck,
   Printer,
@@ -15,6 +16,7 @@ import { PageHeader, EmptyState } from "@/components/ui-kit";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { ShipmentBookingModal } from "@/components/ShipmentBookingModal";
 import { CourierLogo, courierLabel } from "@/components/courier-brand";
+import { courierTrackingUrl } from "@/lib/courier-tracking";
 import { OrderSearch, type OrderSearchMode } from "@/components/order-search";
 import { OrderTabs } from "@/components/OrderTabs";
 import { OrderNotePreview, OrderNotesModal, useOrderMeta } from "@/components/order-last-update";
@@ -555,7 +557,7 @@ function SupplierOrdersPage() {
 
                     <div className="flex items-center justify-between gap-2">
                       {isBooked(o) ? (
-                        <CourierCell shipment={o.shipment} />
+                        <CourierCell shipment={o.shipment} customerPhone={o.customer_phone} />
                       ) : (
                         <button
                           onClick={() => setBooking({ open: true, orderIds: [o.id] })}
@@ -622,7 +624,7 @@ function SupplierOrdersPage() {
 
                     <div className="flex justify-center">
                       {isBooked(o) ? (
-                        <CourierCell shipment={o.shipment} />
+                        <CourierCell shipment={o.shipment} customerPhone={o.customer_phone} />
                       ) : (
                         <button
                           onClick={() => setBooking({ open: true, orderIds: [o.id] })}
@@ -705,15 +707,41 @@ function SupplierOrdersPage() {
   );
 }
 
-function CourierCell({ shipment }: { shipment: SupplierOrderRow["shipment"] }) {
+function CourierCell({
+  shipment,
+  customerPhone,
+}: {
+  shipment: SupplierOrderRow["shipment"];
+  customerPhone?: string | null;
+}) {
   if (!shipment?.provider) {
     return <span className="text-[10px] italic text-muted-foreground/60">Not booked yet</span>;
   }
+  const url = courierTrackingUrl(shipment.provider, shipment, customerPhone);
+  const label = (
+    <span className="inline-flex items-center gap-0.5 truncate text-[11px] font-semibold text-primary">
+      {courierLabel(shipment.provider as never)}
+      {url && <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-60" />}
+    </span>
+  );
   return (
     <div className="flex min-w-0 items-center gap-1.5">
       <CourierLogo provider={shipment.provider as never} size={16} />
       <div className="min-w-0">
-        <div className="truncate text-[11px] font-semibold text-primary">{courierLabel(shipment.provider as never)}</div>
+        {url ? (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Track on courier website"
+            onClick={(e) => e.stopPropagation()}
+            className="hover:underline"
+          >
+            {label}
+          </a>
+        ) : (
+          label
+        )}
         <div className="truncate text-[10px] text-muted-foreground">
           {shipment.consignment_id || shipment.tracking_id || "—"}
         </div>
