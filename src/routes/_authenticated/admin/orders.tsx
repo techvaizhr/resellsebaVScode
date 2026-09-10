@@ -501,9 +501,14 @@ function AdminOrdersPage() {
     }
     const q = filters.q.trim().toLowerCase();
     if (!q) return base;
+    const has = (v?: string | null) => (v ?? "").toLowerCase().includes(q);
     return base.filter((o) => {
         if (searchMode === "product") return (itemsByOrder.get(o.id) ?? []).some((it) => it.product_name.toLowerCase().includes(q));
-        const has = (v?: string | null) => (v ?? "").toLowerCase().includes(q);
+        if (searchMode === "consignment") {
+          return shipments
+            .filter((s: any) => s.order_id === o.id)
+            .some((s: any) => has(s.consignment_id) || has(s.tracking_id) || has(s.provider));
+        }
         return has(o.order_number) || has(o.customer_name) || has(o.customer_phone);
     });
   }, [orders, filters, itemsByOrder, searchMode, shipments]);
