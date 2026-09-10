@@ -1,6 +1,6 @@
 import { Search, X } from "lucide-react";
 
-export type OrderSearchMode = "order" | "product";
+export type OrderSearchMode = "order" | "product" | "consignment";
 
 /** One merged search box: mode select sits inside the input shell. */
 export function OrderSearch({
@@ -16,6 +16,13 @@ export function OrderSearch({
   onChange: (v: string) => void;
   className?: string;
 }) {
+  const placeholder =
+    mode === "product"
+      ? "Product name…"
+      : mode === "consignment"
+        ? "Consignment ID / tracking ID / courier…"
+        : "Order no / customer name / mobile…";
+
   return (
     <div
       className={`flex h-10 min-w-[260px] flex-1 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring ${className}`}
@@ -23,19 +30,18 @@ export function OrderSearch({
       <select
         value={mode}
         onChange={(e) => onMode(e.target.value as OrderSearchMode)}
-        className="h-full shrink-0 rounded-l-md border-0 border-r bg-muted/40 px-2 text-xs font-medium outline-none"
+        className="h-full shrink-0 rounded-l-md border-0 border-r bg-primary px-2 text-xs font-medium text-primary-foreground outline-none"
         title="Search type"
       >
         <option value="order">Order search</option>
         <option value="product">Product search</option>
+        <option value="consignment">Consignment / booking</option>
       </select>
       <Search className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={
-          mode === "product" ? "Product name…" : "Order no / customer name / mobile…"
-        }
+        placeholder={placeholder}
         className="h-full w-full bg-transparent px-2 text-sm outline-none"
       />
       {value && (
