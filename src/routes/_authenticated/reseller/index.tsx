@@ -32,7 +32,7 @@ import {
   Package,
   Plus,
 } from "lucide-react";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend, BarChart, Bar, Cell } from "recharts";
 
 type Listing = {
   id: string;
@@ -55,6 +55,8 @@ type Listing = {
 export const Route = createFileRoute("/_authenticated/reseller/")({
   component: ResellerDashboard,
 });
+
+const BAR_COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ec4899", "#06b6d4", "#a855f7", "#f97316", "#14b8a6"];
 
 type PayoutRow = { amount: number | string; status: string; created_at: string };
 type CommissionRow = { amount: number | string; status: string; created_at: string };
