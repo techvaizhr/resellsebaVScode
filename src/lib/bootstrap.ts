@@ -138,6 +138,7 @@ export type ResellerDashboard = {
   listings_total: number;
   listings_active: number;
   products: any[];
+  top_resellers: { name: string; sales: number }[];
 };
 
 /** Reseller dashboard: reseller + orders + items + payouts + commissions + listings in one call. */
