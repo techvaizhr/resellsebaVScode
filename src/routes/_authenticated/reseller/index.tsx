@@ -103,6 +103,7 @@ function ResellerDashboard() {
       setCommissions((data.commissions ?? []) as CommissionRow[]);
       setListings((data.listings ?? []) as Listing[]);
       setAllProducts((data.products ?? []) as any[]);
+      setTopResellers((data.top_resellers ?? []) as { name: string; sales: number }[]);
       const s = data.summary;
       setLifetime({
         delivered: Number(s?.delivered_profit ?? 0),
