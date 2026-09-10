@@ -347,48 +347,74 @@ function ResellerDashboard() {
           )}
 
 
-          <div className="surface-card group p-6 hover:border-primary/50">
-            <div className="mb-4 flex items-center justify-between border-b pb-2">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/80">Profit & Order Insights</h3>
+          <div className="mt-8 grid gap-4 lg:grid-cols-[2fr_1fr]">
+            <div className="surface-card group p-6 hover:border-primary/50">
+              <div className="mb-4 flex items-center justify-between border-b pb-2">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/80">Profit & Order Insights</h3>
+              </div>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chart}>
+                    <defs>
+                      <linearGradient id="gradOrders" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#6366f1" stopOpacity={0.5} />
+                        <stop offset="100%" stopColor="#6366f1" stopOpacity={0.02} />
+                      </linearGradient>
+                      <linearGradient id="gradProfit" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#22c55e" stopOpacity={0.5} />
+                        <stop offset="100%" stopColor="#22c55e" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                    />
+                    <Legend />
+                    <Area
+                      type="monotone"
+                      dataKey="orders"
+                      stroke="#6366f1"
+                      strokeWidth={2.5}
+                      fill="url(#gradOrders)"
+                      name="Orders"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="profit"
+                      stroke="#22c55e"
+                      strokeWidth={2.5}
+                      fill="url(#gradProfit)"
+                      name="Profit ৳"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chart}>
-                  <defs>
-                    <linearGradient id="gradOrders" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6366f1" stopOpacity={0.5} />
-                      <stop offset="100%" stopColor="#6366f1" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="gradProfit" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#22c55e" stopOpacity={0.5} />
-                      <stop offset="100%" stopColor="#22c55e" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                  />
-                  <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="orders"
-                    stroke="#6366f1"
-                    strokeWidth={2.5}
-                    fill="url(#gradOrders)"
-                    name="Orders"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="profit"
-                    stroke="#22c55e"
-                    strokeWidth={2.5}
-                    fill="url(#gradProfit)"
-                    name="Profit ৳"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+
+            <div className="surface-card group p-6 hover:border-primary/50">
+              <div className="mb-4 flex items-center justify-between border-b pb-2">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/80">Top Reseller Performance</h3>
+              </div>
+              <div className="h-72">
+                {topResellers.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topResellers} layout="vertical" margin={{ left: 20 }}>
+                      <XAxis type="number" tick={{ fontSize: 11 }} />
+                      <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
+                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
+                      <Bar dataKey="sales" radius={[0, 6, 6, 0]}>
+                        {topResellers.map((_, i) => (
+                          <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="grid h-full place-items-center text-sm text-muted-foreground">No reseller data for this range.</div>
+                )}
+              </div>
             </div>
           </div>
 
