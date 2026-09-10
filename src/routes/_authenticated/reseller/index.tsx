@@ -77,6 +77,7 @@ function ResellerDashboard() {
   const [commissions, setCommissions] = useState<CommissionRow[]>([]);
   const [lifetime, setLifetime] = useState({ delivered: 0, pendingPayout: 0, paidOut: 0, available: 0 });
   const [toCourierCount, setToCourierCount] = useState(0);
+  const [topResellers, setTopResellers] = useState<{ name: string; sales: number }[]>([]);
   const { status: deposit } = useDepositStatus(rid);
   const { notices: adminNotices, dismiss: dismissNotice } = useLiveNotices(user?.id, rid);
 
