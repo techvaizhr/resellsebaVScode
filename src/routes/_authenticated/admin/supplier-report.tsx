@@ -4,6 +4,7 @@ import { Loader2, Search, Download, PackageCheck, Undo2, Wallet, TrendingUp } fr
 import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { toast } from "sonner";
 import { PageHeader, StatCard, EmptyState } from "@/components/ui-kit";
+import { SupplierMoneyFlow, SupplierProductBreakdown } from "@/components/supplier-report-summary";
 import {
   bdtNum,
   loadAdminSupplierOverview,
@@ -36,7 +37,7 @@ function AdminSupplierReportPage() {
   const [to, setTo] = useState("");
   const [q, setQ] = useState("");
   const [detail, setDetail] = useState<SupplierReport | null>(null);
-  const [tab, setTab] = useState<"sold" | "upcoming" | "returns">("sold");
+  const [tab, setTab] = useState<"products" | "sold" | "upcoming" | "returns">("products");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
@@ -71,6 +72,10 @@ function AdminSupplierReportPage() {
     () => ({
       earning: suppliers.reduce((s, r) => s + r.earning, 0),
       sold: suppliers.reduce((s, r) => s + r.sold_qty, 0),
+      supplied: suppliers.reduce((s, r) => s + r.supplied_value, 0),
+      suppliedQty: suppliers.reduce((s, r) => s + r.supplied_qty, 0),
+      pending: suppliers.reduce((s, r) => s + r.pending_amount, 0),
+      paid: suppliers.reduce((s, r) => s + r.paid, 0),
       returned: suppliers.reduce((s, r) => s + r.returned_amount, 0),
       due: suppliers.reduce((s, r) => s + Math.max(r.earning - r.paid - r.pending_payout, 0), 0),
     }),
@@ -101,9 +106,11 @@ function AdminSupplierReportPage() {
     <div>
       <PageHeader title="Supplier report" description="Sales, returns, paid, and outstanding amounts per supplier." />
 
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Sold qty" value={totals.sold} icon={<PackageCheck className="h-4 w-4" />} />
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-6">
+        <StatCard label="Supplied value" value={bdtNum(totals.supplied)} hint={`${totals.suppliedQty} pcs`} icon={<PackageCheck className="h-4 w-4" />} />
+        <StatCard label="Sold qty" value={totals.sold} tone="sky" icon={<PackageCheck className="h-4 w-4" />} />
         <StatCard label="Supplier earning" value={bdtNum(totals.earning)} tone="emerald" icon={<TrendingUp className="h-4 w-4" />} />
+        <StatCard label="In progress" value={bdtNum(totals.pending)} tone="amber" icon={<TrendingUp className="h-4 w-4" />} />
         <StatCard label="Returned value" value={bdtNum(totals.returned)} tone="rose" icon={<Undo2 className="h-4 w-4" />} />
         <StatCard label="Payable now" value={bdtNum(totals.due)} tone="violet" icon={<Wallet className="h-4 w-4" />} />
       </div>
@@ -139,20 +146,64 @@ function AdminSupplierReportPage() {
           <button
             onClick={() =>
               csv(
-                [
-                  ["Supplier", "Code", "Sold qty", "Earning", "Returned qty", "Returned amount", "Paid", "Payable"],
-                  ...listed.map((s) => [
-                    s.display_name,
-                    s.code,
-                    s.sold_qty,
-                    s.earning,
-                    s.returned_qty,
-                    s.returned_amount,
-                    s.paid,
-                    Math.max(s.earning - s.paid - s.pending_payout, 0),
-                  ]),
-                ],
-                "supplier-report.csv",
+                detail
+                  ? [
+                      [
+                        "Product",
+                        "Unit price",
+                        "Orders",
+                        "Supplied qty",
+                        "Supplied value",
+                        "Delivered qty",
+                        "Earned",
+                        "In progress qty",
+                        "In progress value",
+                        "Returned qty",
+                        "Returned value",
+                      ],
+                      ...detail.products.map((p) => [
+                        p.product_name,
+                        p.unit_price,
+                        p.orders,
+                        p.supplied_qty,
+                        p.supplied_value,
+                        p.delivered_qty,
+                        p.delivered_value,
+                        p.pending_qty,
+                        p.pending_value,
+                        p.returned_qty,
+                        p.returned_value,
+                      ]),
+                    ]
+                  : [
+                      [
+                        "Supplier",
+                        "Code",
+                        "Supplied qty",
+                        "Supplied value",
+                        "Sold qty",
+                        "Earning",
+                        "In progress",
+                        "Returned qty",
+                        "Returned amount",
+                        "Paid",
+                        "Payable",
+                      ],
+                      ...listed.map((s) => [
+                        s.display_name,
+                        s.code,
+                        s.supplied_qty,
+                        s.supplied_value,
+                        s.sold_qty,
+                        s.earning,
+                        s.pending_amount,
+                        s.returned_qty,
+                        s.returned_amount,
+                        s.paid,
+                        Math.max(s.earning - s.paid - s.pending_payout, 0),
+                      ]),
+                    ],
+                detail ? "supplier-products.csv" : "supplier-report.csv",
               )
             }
             className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
@@ -172,8 +223,11 @@ function AdminSupplierReportPage() {
                 <tr>
                   <th className="p-2">Supplier</th>
                   <th>Products</th>
+                  <th>Supplied</th>
+                  <th>Supplied value</th>
                   <th>Sold qty</th>
                   <th>Earning</th>
+                  <th>In progress</th>
                   <th>Returned</th>
                   <th>Paid</th>
                   <th>Pending</th>
@@ -188,8 +242,13 @@ function AdminSupplierReportPage() {
                       <div className="text-[10px] text-muted-foreground">{s.code}</div>
                     </td>
                     <td className="tabular-nums">{s.products}</td>
+                    <td className="tabular-nums">{s.supplied_qty}</td>
+                    <td className="tabular-nums">{bdtNum(s.supplied_value)}</td>
                     <td className="tabular-nums">{s.sold_qty}</td>
-                    <td className="font-semibold tabular-nums">{bdtNum(s.earning)}</td>
+                    <td className="font-semibold tabular-nums text-emerald-600">{bdtNum(s.earning)}</td>
+                    <td className="tabular-nums text-amber-600">
+                      {s.pending_qty} · {bdtNum(s.pending_amount)}
+                    </td>
                     <td className="tabular-nums text-muted-foreground">
                       {s.returned_qty} · {bdtNum(s.returned_amount)}
                     </td>
@@ -210,8 +269,13 @@ function AdminSupplierReportPage() {
         </div>
       ) : (
         <div className="surface-card p-4">
+          {detail && (
+            <div className="mb-4">
+              <SupplierMoneyFlow totals={detail.totals} />
+            </div>
+          )}
           <div className="mb-3 flex flex-wrap gap-2">
-            {(["sold", "upcoming", "returns"] as const).map((k) => (
+            {(["products", "sold", "upcoming", "returns"] as const).map((k) => (
               <button
                 key={k}
                 onClick={() => setTab(k)}
@@ -220,16 +284,20 @@ function AdminSupplierReportPage() {
                   (tab === k ? "border-transparent bg-primary text-primary-foreground" : "hover:bg-muted")
                 }
               >
-                {k === "sold"
-                  ? `Sold (${detail?.sold.length ?? 0})`
-                  : k === "upcoming"
-                    ? `In progress (${detail?.upcoming.length ?? 0})`
-                    : `Returns (${detail?.returns.length ?? 0})`}
+                {k === "products"
+                  ? `Product-wise (${detail?.products.length ?? 0})`
+                  : k === "sold"
+                    ? `Sold (${detail?.sold.length ?? 0})`
+                    : k === "upcoming"
+                      ? `In progress (${detail?.upcoming.length ?? 0})`
+                      : `Returns (${detail?.returns.length ?? 0})`}
               </button>
             ))}
           </div>
 
-          {tab === "returns" ? (
+          {tab === "products" ? (
+            <SupplierProductBreakdown products={detail?.products ?? []} />
+          ) : tab === "returns" ? (
             (detail?.returns.length ?? 0) === 0 ? (
               <EmptyState title="No returns" description="No returns." />
             ) : (

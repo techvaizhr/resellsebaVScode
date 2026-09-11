@@ -4,6 +4,7 @@ import { Loader2, Search } from "lucide-react";
 import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { PageHeader, StatCard } from "@/components/ui-kit";
 import { StatusTabs } from "@/components/status-tabs";
+import { SupplierMoneyFlow, SupplierProductBreakdown } from "@/components/supplier-report-summary";
 
 import { useSupplier } from "@/components/supplier-context";
 import {
@@ -37,7 +38,7 @@ function SupplierReportPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [q, setQ] = useState("");
-  const [tab, setTab] = useState<"sold" | "upcoming">("sold");
+  const [tab, setTab] = useState<"products" | "sold" | "upcoming">("products");
   const [busy, setBusy] = useState(false);
 
   async function applyFilter() {
@@ -53,7 +54,7 @@ function SupplierReportPage() {
   }
 
   const rows = useMemo(() => {
-    const list = tab === "sold" ? data.sold : data.upcoming;
+    const list = tab === "upcoming" ? data.upcoming : data.sold;
     const needle = q.trim().toLowerCase();
     if (!needle) return list;
     return list.filter(
@@ -72,11 +73,16 @@ function SupplierReportPage() {
         description="Accounting of delivered (kept) items — this is your due earning."
       />
 
-      <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Sold qty" value={t.sold_qty} />
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
+        <StatCard label="Supplied value" value={bdtNum(t.supplied_value)} hint={`${t.supplied_qty} pcs`} />
+        <StatCard label="Sold qty" value={t.sold_qty} tone="sky" />
         <StatCard label="Earning" value={bdtNum(t.earning)} tone="emerald" />
         <StatCard label="In progress" value={bdtNum(t.upcoming_amount)} hint={`${t.upcoming_qty} pcs`} tone="amber" />
         <StatCard label="Returned" value={bdtNum(t.returned_amount)} hint={`${t.returned_qty} pcs`} tone="rose" />
+      </div>
+
+      <div className="mb-4">
+        <SupplierMoneyFlow totals={t} />
       </div>
 
       <div className="surface-card mb-4 grid gap-3 p-4 sm:grid-cols-[repeat(3,1fr)_auto]">
@@ -105,16 +111,21 @@ function SupplierReportPage() {
 
       <StatusTabs
         tabs={[
+          { key: "products", label: "Product-wise" },
           { key: "sold", label: "Sold" },
           { key: "upcoming", label: "In progress" },
         ]}
         tab={tab}
         onChange={(k) => setTab(k as typeof tab)}
-        count={(k) => (k === "sold" ? data.sold.length : data.upcoming.length)}
+        count={(k) =>
+          k === "products" ? data.products.length : k === "sold" ? data.sold.length : data.upcoming.length
+        }
         className="mb-3 w-full min-w-0"
       />
 
-
+      {tab === "products" ? (
+        <SupplierProductBreakdown products={data.products} />
+      ) : (
       <div className="surface-card p-4">
         {rows.length === 0 ? (
           <div className="rounded-lg border border-dashed p-8 text-center text-xs text-muted-foreground">
@@ -154,6 +165,7 @@ function SupplierReportPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
