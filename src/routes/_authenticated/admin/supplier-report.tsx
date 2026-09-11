@@ -105,9 +105,11 @@ function AdminSupplierReportPage() {
     <div>
       <PageHeader title="Supplier report" description="Sales, returns, paid, and outstanding amounts per supplier." />
 
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Sold qty" value={totals.sold} icon={<PackageCheck className="h-4 w-4" />} />
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-6">
+        <StatCard label="Supplied value" value={bdtNum(totals.supplied)} hint={`${totals.suppliedQty} pcs`} icon={<PackageCheck className="h-4 w-4" />} />
+        <StatCard label="Sold qty" value={totals.sold} tone="sky" icon={<PackageCheck className="h-4 w-4" />} />
         <StatCard label="Supplier earning" value={bdtNum(totals.earning)} tone="emerald" icon={<TrendingUp className="h-4 w-4" />} />
+        <StatCard label="In progress" value={bdtNum(totals.pending)} tone="amber" icon={<TrendingUp className="h-4 w-4" />} />
         <StatCard label="Returned value" value={bdtNum(totals.returned)} tone="rose" icon={<Undo2 className="h-4 w-4" />} />
         <StatCard label="Payable now" value={bdtNum(totals.due)} tone="violet" icon={<Wallet className="h-4 w-4" />} />
       </div>
