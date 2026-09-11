@@ -54,7 +54,7 @@ function SupplierReportPage() {
   }
 
   const rows = useMemo(() => {
-    const list = tab === "sold" ? data.sold : data.upcoming;
+    const list = tab === "upcoming" ? data.upcoming : data.sold;
     const needle = q.trim().toLowerCase();
     if (!needle) return list;
     return list.filter(
