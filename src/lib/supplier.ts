@@ -27,11 +27,31 @@ export type SupplierTotals = {
   earning: number;
   upcoming_qty: number;
   upcoming_amount: number;
+  supplied_qty: number;
+  supplied_value: number;
   returned_qty: number;
   returned_amount: number;
+  returns_received_qty: number;
+  returns_received_amount: number;
+  returns_pending_qty: number;
+  returns_pending_amount: number;
   returns_pending_handover: number;
   paid: number;
   pending_payout: number;
+};
+
+export type SupplierProductStat = {
+  product_name: string;
+  unit_price: number;
+  orders: number;
+  supplied_qty: number;
+  supplied_value: number;
+  delivered_qty: number;
+  delivered_value: number;
+  pending_qty: number;
+  pending_value: number;
+  returned_qty: number;
+  returned_value: number;
 };
 
 export type SupplierItemRow = {
