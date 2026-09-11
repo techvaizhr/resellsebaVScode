@@ -27,11 +27,31 @@ export type SupplierTotals = {
   earning: number;
   upcoming_qty: number;
   upcoming_amount: number;
+  supplied_qty: number;
+  supplied_value: number;
   returned_qty: number;
   returned_amount: number;
+  returns_received_qty: number;
+  returns_received_amount: number;
+  returns_pending_qty: number;
+  returns_pending_amount: number;
   returns_pending_handover: number;
   paid: number;
   pending_payout: number;
+};
+
+export type SupplierProductStat = {
+  product_name: string;
+  unit_price: number;
+  orders: number;
+  supplied_qty: number;
+  supplied_value: number;
+  delivered_qty: number;
+  delivered_value: number;
+  pending_qty: number;
+  pending_value: number;
+  returned_qty: number;
+  returned_value: number;
 };
 
 export type SupplierItemRow = {
@@ -91,6 +111,7 @@ export type SupplierPayoutRow = {
 export type SupplierReport = {
   supplier: SupplierRow | null;
   totals: SupplierTotals;
+  products: SupplierProductStat[];
   sold: SupplierItemRow[];
   upcoming: SupplierItemRow[];
   returns: SupplierReturnRow[];
@@ -102,6 +123,10 @@ export type AdminSupplierRow = SupplierRow & {
   products: number;
   sold_qty: number;
   earning: number;
+  supplied_qty: number;
+  supplied_value: number;
+  pending_qty: number;
+  pending_amount: number;
   returned_qty: number;
   returned_amount: number;
   paid: number;
@@ -120,8 +145,14 @@ const EMPTY_TOTALS: SupplierTotals = {
   earning: 0,
   upcoming_qty: 0,
   upcoming_amount: 0,
+  supplied_qty: 0,
+  supplied_value: 0,
   returned_qty: 0,
   returned_amount: 0,
+  returns_received_qty: 0,
+  returns_received_amount: 0,
+  returns_pending_qty: 0,
+  returns_pending_amount: 0,
   returns_pending_handover: 0,
   paid: 0,
   pending_payout: 0,
@@ -136,17 +167,35 @@ function normalizeReport(raw: any): SupplierReport {
   return {
     supplier: (raw?.supplier ?? null) as SupplierRow | null,
     totals: {
-      ...EMPTY_TOTALS,
       sold_qty: num(t.sold_qty),
       earning: num(t.earning),
       upcoming_qty: num(t.upcoming_qty),
       upcoming_amount: num(t.upcoming_amount),
+      supplied_qty: num(t.supplied_qty),
+      supplied_value: num(t.supplied_value),
       returned_qty: num(t.returned_qty),
       returned_amount: num(t.returned_amount),
+      returns_received_qty: num(t.returns_received_qty),
+      returns_received_amount: num(t.returns_received_amount),
+      returns_pending_qty: num(t.returns_pending_qty),
+      returns_pending_amount: num(t.returns_pending_amount),
       returns_pending_handover: num(t.returns_pending_handover),
       paid: num(t.paid),
       pending_payout: num(t.pending_payout),
     },
+    products: ((raw?.products ?? []) as any[]).map((p) => ({
+      product_name: String(p.product_name ?? ""),
+      unit_price: num(p.unit_price),
+      orders: num(p.orders),
+      supplied_qty: num(p.supplied_qty),
+      supplied_value: num(p.supplied_value),
+      delivered_qty: num(p.delivered_qty),
+      delivered_value: num(p.delivered_value),
+      pending_qty: num(p.pending_qty),
+      pending_value: num(p.pending_value),
+      returned_qty: num(p.returned_qty),
+      returned_value: num(p.returned_value),
+    })),
     sold: (raw?.sold ?? []) as SupplierItemRow[],
     upcoming: (raw?.upcoming ?? []) as SupplierItemRow[],
     returns: (raw?.returns ?? []) as SupplierReturnRow[],
@@ -194,6 +243,10 @@ export async function loadAdminSupplierOverview(
       products: num(s.products),
       sold_qty: num(s.sold_qty),
       earning: num(s.earning),
+      supplied_qty: num(s.supplied_qty),
+      supplied_value: num(s.supplied_value),
+      pending_qty: num(s.pending_qty),
+      pending_amount: num(s.pending_amount),
       returned_qty: num(s.returned_qty),
       returned_amount: num(s.returned_amount),
       paid: num(s.paid),
