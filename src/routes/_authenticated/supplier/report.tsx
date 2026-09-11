@@ -4,6 +4,7 @@ import { Loader2, Search } from "lucide-react";
 import { CopyOrderNumber } from "@/components/CopyOrderNumber";
 import { PageHeader, StatCard } from "@/components/ui-kit";
 import { StatusTabs } from "@/components/status-tabs";
+import { SupplierMoneyFlow, SupplierProductBreakdown } from "@/components/supplier-report-summary";
 
 import { useSupplier } from "@/components/supplier-context";
 import {
