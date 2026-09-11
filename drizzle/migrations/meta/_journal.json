@@ -169,6 +169,13 @@
       "when": 1789046251726,
       "tag": "0023_reseller_dashboard_top_resellers",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789136892957,
+      "tag": "0024_supplier_report_product_breakdown",
+      "breakpoints": true
     }
   ]
 }
