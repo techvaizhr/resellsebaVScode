@@ -111,16 +111,21 @@ function SupplierReportPage() {
 
       <StatusTabs
         tabs={[
+          { key: "products", label: "Product-wise" },
           { key: "sold", label: "Sold" },
           { key: "upcoming", label: "In progress" },
         ]}
         tab={tab}
         onChange={(k) => setTab(k as typeof tab)}
-        count={(k) => (k === "sold" ? data.sold.length : data.upcoming.length)}
+        count={(k) =>
+          k === "products" ? data.products.length : k === "sold" ? data.sold.length : data.upcoming.length
+        }
         className="mb-3 w-full min-w-0"
       />
 
-
+      {tab === "products" ? (
+        <SupplierProductBreakdown products={data.products} />
+      ) : (
       <div className="surface-card p-4">
         {rows.length === 0 ? (
           <div className="rounded-lg border border-dashed p-8 text-center text-xs text-muted-foreground">
