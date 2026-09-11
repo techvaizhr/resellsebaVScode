@@ -178,8 +178,11 @@ function AdminSupplierReportPage() {
                 <tr>
                   <th className="p-2">Supplier</th>
                   <th>Products</th>
+                  <th>Supplied</th>
+                  <th>Supplied value</th>
                   <th>Sold qty</th>
                   <th>Earning</th>
+                  <th>In progress</th>
                   <th>Returned</th>
                   <th>Paid</th>
                   <th>Pending</th>
@@ -194,8 +197,13 @@ function AdminSupplierReportPage() {
                       <div className="text-[10px] text-muted-foreground">{s.code}</div>
                     </td>
                     <td className="tabular-nums">{s.products}</td>
+                    <td className="tabular-nums">{s.supplied_qty}</td>
+                    <td className="tabular-nums">{bdtNum(s.supplied_value)}</td>
                     <td className="tabular-nums">{s.sold_qty}</td>
-                    <td className="font-semibold tabular-nums">{bdtNum(s.earning)}</td>
+                    <td className="font-semibold tabular-nums text-emerald-600">{bdtNum(s.earning)}</td>
+                    <td className="tabular-nums text-amber-600">
+                      {s.pending_qty} · {bdtNum(s.pending_amount)}
+                    </td>
                     <td className="tabular-nums text-muted-foreground">
                       {s.returned_qty} · {bdtNum(s.returned_amount)}
                     </td>
