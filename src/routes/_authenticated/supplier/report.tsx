@@ -38,7 +38,7 @@ function SupplierReportPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [q, setQ] = useState("");
-  const [tab, setTab] = useState<"sold" | "upcoming">("sold");
+  const [tab, setTab] = useState<"products" | "sold" | "upcoming">("products");
   const [busy, setBusy] = useState(false);
 
   async function applyFilter() {
