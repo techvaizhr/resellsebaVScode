@@ -146,20 +146,64 @@ function AdminSupplierReportPage() {
           <button
             onClick={() =>
               csv(
-                [
-                  ["Supplier", "Code", "Sold qty", "Earning", "Returned qty", "Returned amount", "Paid", "Payable"],
-                  ...listed.map((s) => [
-                    s.display_name,
-                    s.code,
-                    s.sold_qty,
-                    s.earning,
-                    s.returned_qty,
-                    s.returned_amount,
-                    s.paid,
-                    Math.max(s.earning - s.paid - s.pending_payout, 0),
-                  ]),
-                ],
-                "supplier-report.csv",
+                detail
+                  ? [
+                      [
+                        "Product",
+                        "Unit price",
+                        "Orders",
+                        "Supplied qty",
+                        "Supplied value",
+                        "Delivered qty",
+                        "Earned",
+                        "In progress qty",
+                        "In progress value",
+                        "Returned qty",
+                        "Returned value",
+                      ],
+                      ...detail.products.map((p) => [
+                        p.product_name,
+                        p.unit_price,
+                        p.orders,
+                        p.supplied_qty,
+                        p.supplied_value,
+                        p.delivered_qty,
+                        p.delivered_value,
+                        p.pending_qty,
+                        p.pending_value,
+                        p.returned_qty,
+                        p.returned_value,
+                      ]),
+                    ]
+                  : [
+                      [
+                        "Supplier",
+                        "Code",
+                        "Supplied qty",
+                        "Supplied value",
+                        "Sold qty",
+                        "Earning",
+                        "In progress",
+                        "Returned qty",
+                        "Returned amount",
+                        "Paid",
+                        "Payable",
+                      ],
+                      ...listed.map((s) => [
+                        s.display_name,
+                        s.code,
+                        s.supplied_qty,
+                        s.supplied_value,
+                        s.sold_qty,
+                        s.earning,
+                        s.pending_amount,
+                        s.returned_qty,
+                        s.returned_amount,
+                        s.paid,
+                        Math.max(s.earning - s.paid - s.pending_payout, 0),
+                      ]),
+                    ],
+                detail ? "supplier-products.csv" : "supplier-report.csv",
               )
             }
             className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
