@@ -73,11 +73,16 @@ function SupplierReportPage() {
         description="Accounting of delivered (kept) items — this is your due earning."
       />
 
-      <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Sold qty" value={t.sold_qty} />
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
+        <StatCard label="Supplied value" value={bdtNum(t.supplied_value)} hint={`${t.supplied_qty} pcs`} />
+        <StatCard label="Sold qty" value={t.sold_qty} tone="sky" />
         <StatCard label="Earning" value={bdtNum(t.earning)} tone="emerald" />
         <StatCard label="In progress" value={bdtNum(t.upcoming_amount)} hint={`${t.upcoming_qty} pcs`} tone="amber" />
         <StatCard label="Returned" value={bdtNum(t.returned_amount)} hint={`${t.returned_qty} pcs`} tone="rose" />
+      </div>
+
+      <div className="mb-4">
+        <SupplierMoneyFlow totals={t} />
       </div>
 
       <div className="surface-card mb-4 grid gap-3 p-4 sm:grid-cols-[repeat(3,1fr)_auto]">
