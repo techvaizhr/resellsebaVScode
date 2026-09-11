@@ -224,8 +224,13 @@ function AdminSupplierReportPage() {
         </div>
       ) : (
         <div className="surface-card p-4">
+          {detail && (
+            <div className="mb-4">
+              <SupplierMoneyFlow totals={detail.totals} />
+            </div>
+          )}
           <div className="mb-3 flex flex-wrap gap-2">
-            {(["sold", "upcoming", "returns"] as const).map((k) => (
+            {(["products", "sold", "upcoming", "returns"] as const).map((k) => (
               <button
                 key={k}
                 onClick={() => setTab(k)}
@@ -234,16 +239,20 @@ function AdminSupplierReportPage() {
                   (tab === k ? "border-transparent bg-primary text-primary-foreground" : "hover:bg-muted")
                 }
               >
-                {k === "sold"
-                  ? `Sold (${detail?.sold.length ?? 0})`
-                  : k === "upcoming"
-                    ? `In progress (${detail?.upcoming.length ?? 0})`
-                    : `Returns (${detail?.returns.length ?? 0})`}
+                {k === "products"
+                  ? `Product-wise (${detail?.products.length ?? 0})`
+                  : k === "sold"
+                    ? `Sold (${detail?.sold.length ?? 0})`
+                    : k === "upcoming"
+                      ? `In progress (${detail?.upcoming.length ?? 0})`
+                      : `Returns (${detail?.returns.length ?? 0})`}
               </button>
             ))}
           </div>
 
-          {tab === "returns" ? (
+          {tab === "products" ? (
+            <SupplierProductBreakdown products={detail?.products ?? []} />
+          ) : tab === "returns" ? (
             (detail?.returns.length ?? 0) === 0 ? (
               <EmptyState title="No returns" description="No returns." />
             ) : (
