@@ -165,6 +165,7 @@ function SupplierReportPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
