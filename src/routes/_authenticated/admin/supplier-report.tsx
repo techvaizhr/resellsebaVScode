@@ -71,6 +71,10 @@ function AdminSupplierReportPage() {
     () => ({
       earning: suppliers.reduce((s, r) => s + r.earning, 0),
       sold: suppliers.reduce((s, r) => s + r.sold_qty, 0),
+      supplied: suppliers.reduce((s, r) => s + r.supplied_value, 0),
+      suppliedQty: suppliers.reduce((s, r) => s + r.supplied_qty, 0),
+      pending: suppliers.reduce((s, r) => s + r.pending_amount, 0),
+      paid: suppliers.reduce((s, r) => s + r.paid, 0),
       returned: suppliers.reduce((s, r) => s + r.returned_amount, 0),
       due: suppliers.reduce((s, r) => s + Math.max(r.earning - r.paid - r.pending_payout, 0), 0),
     }),
