@@ -36,7 +36,7 @@ function AdminSupplierReportPage() {
   const [to, setTo] = useState("");
   const [q, setQ] = useState("");
   const [detail, setDetail] = useState<SupplierReport | null>(null);
-  const [tab, setTab] = useState<"sold" | "upcoming" | "returns">("sold");
+  const [tab, setTab] = useState<"products" | "sold" | "upcoming" | "returns">("products");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
