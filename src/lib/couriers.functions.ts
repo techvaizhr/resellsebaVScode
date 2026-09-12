@@ -6,6 +6,8 @@ import {
   applyCourierUpdate,
   assertAdmin,
   courierActorClient,
+  bookingCodAmount,
+  DEFAULT_ITEM_WEIGHT_GRAMS,
   fullAddress,
   getCourierConfig,
   getOrderForBooking,
@@ -46,7 +48,7 @@ export const bookSteadfast = createServerFn({ method: "POST" })
       .select("product_name, quantity")
       .eq("order_id", order.id);
 
-    const codAmount = order.payment_method === "cod" ? Number(order.total) : 0;
+    const codAmount = bookingCodAmount(order);
     const payload = {
       invoice: order.order_number,
       recipient_name: String(order.customer_name).slice(0, 100),
@@ -320,7 +322,7 @@ export const bookPathao = createServerFn({ method: "POST" })
     const quantity =
       (items ?? []).reduce((s: number, i: any) => s + Number(i.quantity || 0), 0) || 1;
 
-    const codAmount = order.payment_method === "cod" ? Math.round(Number(order.total)) : 0;
+    const codAmount = bookingCodAmount(order);
     // recipient_city/zone/area are intentionally omitted — Pathao resolves them
     // from the address, and sending nulls is rejected by the API.
     const payload: Record<string, unknown> = {
@@ -332,7 +334,7 @@ export const bookPathao = createServerFn({ method: "POST" })
       delivery_type: data.deliveryType ?? 48,
       item_type: 2,
       item_quantity: quantity,
-      item_weight: String(data.itemWeight ?? 0.5),
+      item_weight: String(data.itemWeight ?? DEFAULT_ITEM_WEIGHT_GRAMS / 1000),
       amount_to_collect: codAmount,
       item_description:
         (items ?? [])
@@ -525,7 +527,7 @@ export const bookCarrybee = createServerFn({ method: "POST" })
       area: order.area,
     });
 
-    const codAmount = order.payment_method === "cod" ? Math.round(Number(order.total)) : 0;
+    const codAmount = bookingCodAmount(order);
     const payload: Record<string, unknown> = {
       store_id: storeId,
       merchant_order_id: order.order_number,
@@ -537,7 +539,7 @@ export const bookCarrybee = createServerFn({ method: "POST" })
       city_id: loc.cityId,
       zone_id: loc.zoneId,
       ...(loc.areaId ? { area_id: loc.areaId } : {}),
-      item_weight: data.itemWeight ?? Math.min(25000, Math.max(500, quantity * 500)),
+      item_weight: data.itemWeight ?? DEFAULT_ITEM_WEIGHT_GRAMS,
       item_quantity: Math.min(200, quantity),
       collectable_amount: Math.min(100000, codAmount),
       product_description:
