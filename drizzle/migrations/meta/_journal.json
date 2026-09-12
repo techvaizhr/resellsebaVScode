@@ -176,6 +176,13 @@
       "when": 1789136892957,
       "tag": "0024_supplier_report_product_breakdown",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1789238690124,
+      "tag": "0025_transaction_report_admin_direct_orders",
+      "breakpoints": true
     }
   ]
 }
