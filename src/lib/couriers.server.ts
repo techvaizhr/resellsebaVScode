@@ -157,7 +157,7 @@ export async function getOrderForBooking(supabase: any, orderId: string) {
   const { data: order, error } = await supabase
     .from("orders")
     .select(
-      "id, order_number, status, customer_name, customer_phone, address_line, city, area, landmark, total, payment_method, notes, reseller_note",
+      "id, order_number, status, customer_name, customer_phone, address_line, city, area, landmark, total, advance_amount, advance_by, payment_method, notes, reseller_note",
     )
 
     .eq("id", orderId)
