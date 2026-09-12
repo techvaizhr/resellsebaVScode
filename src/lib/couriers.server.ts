@@ -157,7 +157,7 @@ export async function getOrderForBooking(supabase: any, orderId: string) {
   const { data: order, error } = await supabase
     .from("orders")
     .select(
-      "id, order_number, status, customer_name, customer_phone, address_line, city, area, landmark, total, payment_method, notes, reseller_note",
+      "id, order_number, status, customer_name, customer_phone, address_line, city, area, landmark, total, advance_amount, advance_by, payment_method, notes, reseller_note",
     )
 
     .eq("id", orderId)
@@ -165,6 +165,24 @@ export async function getOrderForBooking(supabase: any, orderId: string) {
   if (error || !order) throw new Response("Order not found", { status: 404 });
   return order;
 }
+
+/** Default parcel weight sent to every courier when nothing else is given. */
+export const DEFAULT_ITEM_WEIGHT_GRAMS = 200;
+
+/**
+ * Money the courier must actually collect: the order total minus any advance
+ * already paid by the customer (whoever holds it — admin or reseller).
+ */
+export function bookingCodAmount(order: {
+  payment_method?: string | null;
+  total: number | string;
+  advance_amount?: number | string | null;
+}) {
+  if (order.payment_method !== "cod") return 0;
+  const advance = Math.max(Number(order.advance_amount ?? 0) || 0, 0);
+  return Math.max(Math.round(Number(order.total ?? 0) - advance), 0);
+}
+
 
 export function normalizePhone(phone: string) {
   const digits = String(phone ?? "").replace(/\D/g, "");
