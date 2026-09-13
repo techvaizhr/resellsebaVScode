@@ -1,0 +1,1583 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/laravel/client";
+import { ResellerAvatar } from "@/components/reseller-avatar";
+import { PageHeader, EmptyState } from "@/components/ui-kit";
+import { Pagination, usePaginated } from "@/components/data-list";
+import { SearchableSelect } from "@/components/searchable-select";
+import {
+  Check,
+  X,
+  Loader2,
+  Pencil,
+  Trash2,
+  Pause,
+  Play,
+  MoreHorizontal,
+  BadgeCheck,
+  ShieldOff,
+  ExternalLink,
+  Copy,
+  MailCheck,
+  SmartphoneNfc,
+  
+  ShieldCheck,
+  AlertTriangle,
+  Lock,
+  Wallet,
+  Plus,
+  UserCircle,
+  IdCard,
+  Eye,
+  Receipt,
+  PackageSearch,
+  Phone,
+  PhoneCall,
+  MessageCircle,
+  KeyRound,
+  LogIn,
+
+} from "lucide-react";
+import { toast } from "sonner";
+import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
+import { useServerFn } from "@tanstack/react-start";
+import { confirmUserEmail, listResellerEmailStatus, deleteAuthUser } from "@/lib/admin-users.functions";
+import { impersonateReseller, resetResellerPassword } from "@/lib/reseller-access.functions";
+import { formatDate } from "@/lib/date";
+import { startImpersonation } from "@/lib/impersonation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ResellerProfile, type ResellerProfileData } from "@/components/ResellerProfile";
+import { DepositLedger } from "@/components/deposit-ledger";
+import { confirmAction } from "@/lib/confirm";
+import { PasswordResetModal } from "@/components/password-reset-modal";
+import { useAdvancedSettings } from "@/lib/advanced-settings";
+import { VerifyBadges, verifyPending, type VerifyFlags } from "@/components/verify-badges";
+import {
+  resellerStatusActions,
+  resellerStatusClass,
+  resellerStatusLabel,
+  type ResellerStatus,
+} from "@/lib/reseller-status";
+import { useCan } from "@/lib/use-auth";
+
+type Status = ResellerStatus;
+
+
+type Reseller = {
+  id: string;
+  user_id: string;
+  avatar_url?: string | null;
+  business_name: string;
+  code: string;
+  contact_phone: string | null;
+  address: string | null;
+  nid_number: string | null;
+  status: Status;
+  commission_rate: number;
+  leader_id: string | null;
+  agent_id: string | null;
+  notes: string | null;
+  approved_at: string | null;
+  created_at: string;
+  payout_method: string | null;
+  payout_account_name: string | null;
+  payout_account_number: string | null;
+  payout_bank_name: string | null;
+  payout_branch: string | null;
+  payout_routing: string | null;
+  deposit_required: boolean;
+  deposit_required_amount: number;
+  frozen_amount: number;
+};
+
+type Summary = {
+  delivered_profit: number;
+  pending_payout: number;
+  paid_out: number;
+  available: number;
+  deposit_balance: number;
+  frozen_amount: number;
+};
+
+type ResellerSearch = { status?: string };
+
+export const Route = createFileRoute("/_authenticated/admin/resellers")({
+  validateSearch: (s: Record<string, unknown>): ResellerSearch => ({
+    status: typeof s.status === "string" ? s.status : undefined,
+  }),
+  component: ResellersPage,
+});
+
+const FILTERS = [
+  "all",
+  "pending",
+  "active",
+  "suspended",
+  "rejected",
+  "email_unverified",
+] as const;
+type Filter = (typeof FILTERS)[number];
+
+const FILTER_LABELS: Record<Filter, string> = {
+  pending: resellerStatusLabel("pending"),
+  active: resellerStatusLabel("active"),
+  suspended: resellerStatusLabel("suspended"),
+  rejected: resellerStatusLabel("rejected"),
+  email_unverified: "Unverified",
+  all: "All",
+};
+
+
+function ResellersPage() {
+  const nav = useNavigate();
+  const confirmEmailFn = useServerFn(confirmUserEmail);
+  const listEmailStatusFn = useServerFn(listResellerEmailStatus);
+  const deleteAuthUserFn = useServerFn(deleteAuthUser);
+  const resetPasswordFn = useServerFn(resetResellerPassword);
+  const impersonateFn = useServerFn(impersonateReseller);
+  const searchParams = Route.useSearch();
+  const [items, setItems] = useState<Reseller[]>([]);
+  const [emailStatus, setEmailStatus] = useState<Record<string, { email: string | null; verified: boolean }>>({});
+  /** profiles.email_verified_at / phone_verified_at keyed by user_id */
+  const [profileVerify, setProfileVerify] = useState<Record<string, { email: boolean; phone: boolean }>>({});
+  const [summaries, setSummaries] = useState<Record<string, Summary>>({});
+  const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<Filter>(
+    (FILTERS as readonly string[]).includes(searchParams.status ?? "") ? (searchParams.status as Filter) : "all",
+  );
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
+  const [editing, setEditing] = useState<Reseller | null>(null);
+  const [depositFor, setDepositFor] = useState<Reseller | null>(null);
+  const [profileFor, setProfileFor] = useState<Reseller | null>(null);
+  const [resetFor, setResetFor] = useState<Reseller | null>(null);
+  const [agents, setAgents] = useState<Array<{ id: string; display_name: string }>>([]);
+  const [agentFilter, setAgentFilter] = useState("");
+  const { settings: advanced } = useAdvancedSettings();
+  const autoApprove = advanced.resellerAutoApprove;
+  const can = useCan();
+  const canManage = can("resellers.manage");
+  const canImpersonate = can("resellers.impersonate");
+
+
+  async function load() {
+    setLoading(true);
+    const [listRes, metricsRes] = await Promise.all([
+      supabase
+        .from("resellers")
+        .select(
+          "id,user_id,avatar_url,business_name,code,contact_phone,address,nid_number,status,commission_rate,leader_id,agent_id,notes,approved_at,created_at,payout_method,payout_account_name,payout_account_number,payout_bank_name,payout_branch,payout_routing,deposit_required,deposit_required_amount,frozen_amount",
+        )
+        .order("created_at", { ascending: false }),
+      supabase.rpc("admin_reseller_metrics"),
+    ]);
+
+    const rows = (listRes.data ?? []) as Reseller[];
+    setItems(rows);
+
+    // App-level verification lives on profiles and users.
+    const ids = Array.from(new Set(rows.flatMap((r) => [r.user_id, r.id]).filter(Boolean)));
+    if (ids.length) {
+      const [profRes, usersRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id,email_verified_at,phone_verified_at,is_phone_verified")
+          .in("id", ids),
+        supabase
+          .from("users")
+          .select("id,email,email_verified_at,is_phone_verified,phone_verified_at")
+          .in("id", ids),
+      ]);
+      const verifyMap: Record<string, { email: boolean; phone: boolean }> = {};
+      for (const p of (profRes.data ?? [])) {
+        verifyMap[p.id] = {
+          email: Boolean(p.email_verified_at),
+          phone: Boolean(p.phone_verified_at || p.is_phone_verified),
+        };
+      }
+      for (const u of (usersRes.data ?? [])) {
+        const prev = verifyMap[u.id] || { email: false, phone: false };
+        verifyMap[u.id] = {
+          email: Boolean(prev.email || u.email_verified_at),
+          phone: Boolean(prev.phone || u.is_phone_verified || u.phone_verified_at),
+        };
+      }
+      for (const r of rows) {
+        const pV = verifyMap[r.user_id] || verifyMap[r.id];
+        const isPhone = Boolean(pV?.phone || (r as any).is_phone_verified || (r as any).phone_verified_at);
+        const isEmail = Boolean(pV?.email || (r as any).is_email_verified || (r as any).email_verified_at);
+        verifyMap[r.user_id] = { email: isEmail, phone: isPhone };
+        verifyMap[r.id] = { email: isEmail, phone: isPhone };
+      }
+      setProfileVerify(verifyMap);
+    }
+
+    const { data: agentRows } = await supabase.from("agents").select("id,display_name").order("display_name");
+    setAgents((agentRows ?? []) as Array<{ id: string; display_name: string }>);
+
+    const metrics = (metricsRes.data ?? []) as Array<{
+      reseller_id: string;
+      orders: number;
+      delivered_profit: number;
+      pending_payout: number;
+      paid_out: number;
+      available: number;
+      deposit_balance: number;
+      frozen_amount: number;
+    }>;
+    setSummaries(
+      Object.fromEntries(
+        metrics.map((m) => [
+          m.reseller_id,
+          {
+            delivered_profit: Number(m.delivered_profit ?? 0),
+            pending_payout: Number(m.pending_payout ?? 0),
+            paid_out: Number(m.paid_out ?? 0),
+            available: Number(m.available ?? 0),
+            deposit_balance: Number(m.deposit_balance ?? 0),
+            frozen_amount: Number(m.frozen_amount ?? 0),
+          } as Summary,
+        ]),
+      ),
+    );
+    setOrderCounts(Object.fromEntries(metrics.map((m) => [m.reseller_id, Number(m.orders ?? 0)])));
+    setLoading(false);
+  }
+
+  async function loadEmailStatus() {
+    try {
+      const { data } = await supabase.rpc("admin_auth_users");
+      const list = (data ?? []) as any[];
+      if (list && list.length > 0) {
+        const map: Record<string, { email: string | null; verified: boolean }> = {};
+        for (const u of list) {
+          map[u.user_id] = { email: u.email, verified: Boolean(u.email_confirmed) };
+        }
+        setEmailStatus(map);
+        return;
+      }
+    } catch {}
+
+    try {
+      const list = await listEmailStatusFn();
+      const map: Record<string, { email: string | null; verified: boolean }> = {};
+      for (const u of list) map[u.user_id] = { email: u.email, verified: u.email_confirmed };
+      setEmailStatus(map);
+    } catch {
+      // non-critical
+    }
+  }
+
+  useEffect(() => {
+    load();
+    loadEmailStatus();
+  }, []);
+
+  useEffect(() => {
+    const s = searchParams.status;
+    if (s && (FILTERS as readonly string[]).includes(s)) {
+      setFilter(s as Filter);
+      setPage(1);
+    }
+  }, [searchParams.status]);
+
+  /** Verification truth for one reseller: profiles/users first, auth confirm as fallback. */
+  const verifyFor = (r: Reseller): VerifyFlags => {
+    const uId = r.user_id;
+    const rId = r.id;
+    const emailVerified = Boolean(
+      profileVerify[uId]?.email ||
+      profileVerify[rId]?.email ||
+      emailStatus[uId]?.verified ||
+      emailStatus[rId]?.verified ||
+      (r as any).is_email_verified ||
+      (r as any).email_verified_at
+    );
+    const phoneVerified = Boolean(
+      profileVerify[uId]?.phone ||
+      profileVerify[rId]?.phone ||
+      (r as any).is_phone_verified ||
+      (r as any).phone_verified_at
+    );
+    const hasPhone = Boolean(r.contact_phone || (r as any).phone);
+    return {
+      emailVerified,
+      phoneVerified,
+      hasPhone,
+      requireEmail: advanced.verifyEnabled && advanced.verifyEmail,
+      requirePhone: advanced.verifyEnabled && advanced.verifySms,
+    };
+  };
+
+  const filtered = useMemo(() => {
+    let out = items;
+    if (filter === "email_unverified")
+      out = out.filter((r) => {
+        const f = verifyFor(r);
+        return verifyPending(f) || !f.emailVerified;
+      });
+    else if (filter !== "all") out = out.filter((r) => r.status === filter);
+    if (agentFilter) out = out.filter((r) => (agentFilter === "none" ? !r.agent_id : r.agent_id === agentFilter));
+    const q = query.trim().toLowerCase();
+    if (q)
+      out = out.filter(
+        (r) =>
+          r.business_name.toLowerCase().includes(q) ||
+          r.code.toLowerCase().includes(q) ||
+          (r.contact_phone ?? "").toLowerCase().includes(q) ||
+          (emailStatus[r.user_id]?.email ?? "").toLowerCase().includes(q),
+      );
+    return out;
+  }, [items, filter, query, emailStatus, profileVerify, advanced, agentFilter]);
+
+  const counts = useMemo(() => {
+    return {
+      pending: items.filter((r) => r.status === "pending").length,
+      active: items.filter((r) => r.status === "active").length,
+      suspended: items.filter((r) => r.status === "suspended").length,
+      rejected: items.filter((r) => r.status === "rejected").length,
+      email_unverified: items.filter((r) => {
+        const f = verifyFor(r);
+        return verifyPending(f) || !f.emailVerified;
+      }).length,
+      all: items.length,
+    } as Record<Filter, number>;
+  }, [items, emailStatus, profileVerify, advanced]);
+
+  async function setStatus(r: Reseller, status: string) {
+    if (status === r.status) return;
+    const patch: { status: string; approved_at?: string } = { status };
+    if (status === "active") patch.approved_at = new Date().toISOString();
+    
+    // Instant optimistic update
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === r.id ? { ...item, status: status as Status, approved_at: patch.approved_at || item.approved_at } : item
+      )
+    );
+
+    const { error } = await supabase.from("resellers").update(patch as never).eq("id", r.id);
+    if (error) {
+      toast.error(error.message);
+      load();
+      return;
+    }
+    toast.success(status === "active" ? `${r.business_name} activated` : `Status set to ${resellerStatusLabel(status)}`);
+  }
+
+  async function applyPasswordReset(r: Reseller, password: string) {
+    try {
+      await resetPasswordFn({ data: { userId: r.user_id || r.id, password } });
+      toast.success(`Password updated for ${r.business_name}`);
+      setResetFor(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to reset password");
+    }
+  }
+
+  async function loginAsReseller(r: Reseller) {
+    try {
+      const res = await impersonateFn({ data: { userId: r.user_id || r.id } });
+      if (!res?.accessToken) {
+        throw new Error("No session token returned");
+      }
+      await startImpersonation({
+        accessToken: res.accessToken,
+        refreshToken: res.refreshToken || res.accessToken,
+        label: r.business_name,
+        returnTo: window.location.pathname + window.location.search,
+      });
+      toast.success(`Logged in as ${r.business_name}`);
+      window.location.href = "/dashboard";
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not log in as reseller");
+    }
+  }
+
+  async function confirmEmail(r: Reseller) {
+    const uId = r.user_id || r.id;
+    // Optimistic UI update
+    setProfileVerify((prev) => ({
+      ...prev,
+      [r.user_id]: { email: true, phone: Boolean(prev[r.user_id]?.phone || prev[r.id]?.phone) },
+      [r.id]: { email: true, phone: Boolean(prev[r.id]?.phone || prev[r.user_id]?.phone) },
+    }));
+    setEmailStatus((prev) => ({
+      ...prev,
+      [r.user_id]: { email: prev[r.user_id]?.email || `${r.code}@resellseba.com`, verified: true },
+      [r.id]: { email: prev[r.id]?.email || `${r.code}@resellseba.com`, verified: true },
+    }));
+
+    try {
+      const { data, error } = await supabase.rpc("admin_confirm_user_email", { _user_id: uId });
+      if (error) {
+        const res = await confirmEmailFn({ data: { userId: uId } });
+        if (res.alreadyConfirmed) toast.info("Email already confirmed");
+        else toast.success(`Email confirmed for ${res.email ?? r.business_name}`);
+      } else {
+        const row = Array.isArray(data) ? data[0] : data;
+        toast.success(`Email confirmed for ${row?.email ?? r.business_name}`);
+      }
+      loadEmailStatus();
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to confirm email");
+      load();
+    }
+  }
+
+  /** Manual mobile verification (no OTP) — admin vouches for the number. */
+  async function setPhoneVerified(r: Reseller, verified: boolean): Promise<boolean> {
+    const uId = r.user_id || r.id;
+    // Optimistic UI update
+    setProfileVerify((prev) => ({
+      ...prev,
+      [r.user_id]: { email: Boolean(prev[r.user_id]?.email || prev[r.id]?.email), phone: verified },
+      [r.id]: { email: Boolean(prev[r.id]?.email || prev[r.user_id]?.email), phone: verified },
+    }));
+
+    const { error } = await supabase.rpc("admin_set_phone_verified", {
+      _user_id: uId,
+      _verified: verified,
+    });
+    if (error) {
+      toast.error(error.message);
+      load();
+      return false;
+    }
+    toast.success(verified ? `${r.business_name} mobile marked verified` : "Mobile verification cleared");
+    load();
+    return true;
+  }
+
+
+
+  async function remove(r: Reseller) {
+    if (
+      !(await confirmAction({
+        title: "Delete reseller",
+        description:
+          "This also deletes the login account and may remove related listings/orders.",
+        detail: r.business_name,
+        confirmText: "Delete reseller",
+      }))
+    )
+      return;
+    const { error } = await supabase.from("resellers").delete().eq("id", r.id);
+    if (error) return toast.error(error.message);
+    try {
+      await deleteAuthUserFn({ data: { userId: r.user_id } });
+    } catch {
+      /* ignore — reseller row already gone */
+    }
+    toast.success("Deleted");
+    load();
+    loadEmailStatus();
+  }
+
+  function copyStoreLink(r: Reseller) {
+    const url = `${window.location.origin}/s/${r.code}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Store link copied");
+  }
+
+  return (
+    <div>
+      <PageHeader
+        title="Reseller Network"
+        description="Monitor and manage all storefront applications, email verifications, and partner status."
+      />
+
+
+
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        {FILTERS.map((f) => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => {
+              setFilter(f);
+              setPage(1);
+            }}
+            className={
+              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors " +
+              (filter === f ? "border-transparent bg-primary text-primary-foreground" : "hover:bg-muted")
+            }
+          >
+            {FILTER_LABELS[f]}
+            <span className={"tabular-nums " + (filter === f ? "opacity-80" : "text-muted-foreground")}>
+              {counts[f]}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        <input
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Search name, code, phone, email…"
+          className="w-full min-w-0 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+        />
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="w-40 sm:w-48">
+            <SearchableSelect
+              value={agentFilter}
+              onChange={(v) => {
+                setAgentFilter(v);
+                setPage(1);
+              }}
+              placeholder="All agents"
+              options={[
+                { value: "", label: "All agents" },
+                { value: "none", label: "No agent assigned" },
+                ...agents.map((a) => ({ value: a.id, label: a.display_name })),
+              ]}
+            />
+          </div>
+          <select
+            value={perPage}
+            onChange={(e) => {
+              setPerPage(Number(e.target.value));
+              setPage(1);
+            }}
+            className="shrink-0 rounded-md border bg-background px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            title="Per page"
+          >
+            {[10, 20, 50, 100].map((n) => (
+              <option key={n} value={n}>
+                {n} / page
+              </option>
+            ))}
+            <option value={-1}>All</option>
+          </select>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="grid place-items-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <EmptyState title="Nothing here" description="No resellers match this filter." />
+      ) : (
+        <div className="space-y-3">
+          {usePaginated(filtered, page, perPage).map((r) => {
+            const s = summaries[r.id];
+            const em = emailStatus[r.user_id];
+            const vf = verifyFor(r);
+            const emailVerified = vf.emailVerified;
+            const phone = (r.contact_phone ?? "").trim();
+            const waPhone = phone.replace(/[^0-9]/g, "").replace(/^0/, "880");
+            return (
+              <div key={r.id} className="surface-card p-3 shadow-sm transition hover:shadow-md sm:p-4">
+                <div className="flex items-center gap-3">
+                  <ResellerAvatar url={r.avatar_url} name={r.business_name} size={40} />
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                    <span className="truncate min-w-0 font-medium">{r.business_name}</span>
+                    <div className="hidden sm:contents">
+                      <ResellerInfoBadges
+                        r={r}
+                        vf={vf}
+                        phone={phone}
+                        waPhone={waPhone}
+                        onSetStatus={setStatus}
+                        onConfirmEmail={confirmEmail}
+                        onSetPhoneVerified={setPhoneVerified}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <Link
+                      to="/admin/transactions"
+                      search={{ reseller: r.id } as never}
+                      title="Transaction report"
+                      aria-label={`Transaction report for ${r.business_name}`}
+                      className="grid h-8 w-8 place-items-center rounded-md border transition hover:bg-muted"
+                    >
+                      <Receipt className="h-4 w-4" />
+                    </Link>
+                    <Link
+                      to="/admin/orders"
+                      search={{ reseller: r.id, tab: "all" } as never}
+                      title="Order list"
+                      aria-label={`Orders for ${r.business_name}`}
+                      className="grid h-8 w-8 place-items-center rounded-md border transition hover:bg-muted"
+                    >
+                      <PackageSearch className="h-4 w-4" />
+                    </Link>
+                    <button
+                      type="button"
+                      title="View profile"
+                      onClick={() => setProfileFor(r)}
+                      className="grid h-8 w-8 place-items-center rounded-md border transition hover:bg-muted"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="grid h-8 w-8 shrink-0 place-items-center rounded-md border hover:bg-muted">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel>{r.business_name}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {canManage &&
+                          resellerStatusActions(r.status, autoApprove).map((a) => (
+                            <DropdownMenuItem
+                              key={a.status}
+                              onClick={() => setStatus(r, a.status)}
+                              className={a.tone === "danger" ? "text-destructive focus:text-destructive" : ""}
+                            >
+                              {a.status === "active" ? (
+                                <Play className="mr-2 h-4 w-4" />
+                              ) : a.status === "rejected" ? (
+                                <X className="mr-2 h-4 w-4" />
+                              ) : a.status === "suspended" ? (
+                                <ShieldOff className="mr-2 h-4 w-4" />
+                              ) : (
+                                <Check className="mr-2 h-4 w-4" />
+                              )}
+                              {a.label}
+                            </DropdownMenuItem>
+                          ))}
+                        {canManage && <DropdownMenuSeparator />}
+                        {canManage && !emailVerified && (
+                          <DropdownMenuItem onClick={() => confirmEmail(r)}>
+                            <MailCheck className="mr-2 h-4 w-4" /> Confirm email
+                          </DropdownMenuItem>
+                        )}
+                        {canManage && (
+                          <DropdownMenuItem onClick={() => void setPhoneVerified(r, !vf.phoneVerified)}>
+                            {vf.phoneVerified ? (
+                              <>
+                                <SmartphoneNfc className="mr-2 h-4 w-4" /> Clear mobile verification
+                              </>
+                            ) : (
+                              <>
+                                <SmartphoneNfc className="mr-2 h-4 w-4" /> Mark mobile verified
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setProfileFor(r)}>
+                          <UserCircle className="mr-2 h-4 w-4" /> View profile
+                        </DropdownMenuItem>
+                        {canManage && (
+                          <DropdownMenuItem onClick={() => setEditing(r)}>
+                            <Pencil className="mr-2 h-4 w-4" /> Edit details
+                          </DropdownMenuItem>
+                        )}
+                        {canManage && (
+                          <DropdownMenuItem onClick={() => setDepositFor(r)}>
+                            <Wallet className="mr-2 h-4 w-4" /> Deposit & freeze
+                          </DropdownMenuItem>
+                        )}
+                        {canManage && (
+                          <DropdownMenuItem onClick={() => setResetFor(r)}>
+                            <KeyRound className="mr-2 h-4 w-4" /> Reset password
+                          </DropdownMenuItem>
+                        )}
+                        {canImpersonate && (
+                          <DropdownMenuItem onClick={() => void loginAsReseller(r)}>
+                            <LogIn className="mr-2 h-4 w-4" /> Login as reseller
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={() => copyStoreLink(r)}>
+                          <Copy className="mr-2 h-4 w-4" /> Copy store link
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <a href={`/s/${r.code}`} target="_blank" rel="noreferrer">
+                            <ExternalLink className="mr-2 h-4 w-4" /> Visit storefront
+                          </a>
+                        </DropdownMenuItem>
+                        {canManage && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => remove(r)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete reseller
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:hidden">
+                  <ResellerInfoBadges
+                    r={r}
+                    vf={vf}
+                    phone={phone}
+                    waPhone={waPhone}
+                    onSetStatus={setStatus}
+                    onConfirmEmail={confirmEmail}
+                    onSetPhoneVerified={setPhoneVerified}
+                  />
+                </div>
+
+                {(r.deposit_required && Number(r.deposit_required_amount) > 0) || Number(r.frozen_amount) > 0 ? (
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    {r.deposit_required && Number(r.deposit_required_amount) > 0 && (
+                      (s?.deposit_balance ?? 0) >= Number(r.deposit_required_amount) ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success">
+                          <ShieldCheck className="h-3 w-3" /> Deposit ok
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-medium text-destructive">
+                          <AlertTriangle className="h-3 w-3" /> Deposit due ৳
+                          {(Number(r.deposit_required_amount) - (s?.deposit_balance ?? 0)).toLocaleString()}
+                        </span>
+                      )
+                    )}
+                    {Number(r.frozen_amount) > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        <Lock className="h-3 w-3" /> Frozen ৳{Number(r.frozen_amount).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                ) : null}
+
+                <div className="mt-3 grid grid-cols-4 gap-2 lg:grid-cols-4 xl:grid-cols-8">
+                  <Metric label="Orders" value={orderCounts[r.id] ?? 0} plain />
+                  <Metric label="Delivered profit" value={s?.delivered_profit} accent />
+                  <Metric label="Available" value={s?.available} />
+                  <Metric label="Paid out" value={s?.paid_out} />
+                  <Metric label="Payout pending" value={s?.pending_payout} muted />
+                  <Metric label="Deposit paid" value={s?.deposit_balance} />
+                  <Metric
+                    label="Deposit due"
+                    value={
+                      r.deposit_required
+                        ? Math.max(Number(r.deposit_required_amount ?? 0) - (s?.deposit_balance ?? 0), 0)
+                        : 0
+                    }
+                    muted={
+                      !r.deposit_required ||
+                      Math.max(Number(r.deposit_required_amount ?? 0) - (s?.deposit_balance ?? 0), 0) === 0
+                    }
+                  />
+                  <Metric label="Frozen" value={Number(r.frozen_amount ?? 0)} muted />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {!loading && filtered.length > 0 && (
+        <Pagination page={page} perPage={perPage} total={filtered.length} onPage={setPage} />
+      )}
+
+      {editing && (
+        <EditModal
+          reseller={editing}
+          agents={agents}
+          email={emailStatus[editing.user_id]}
+          verify={verifyFor(editing)}
+          onSetPhoneVerified={(v) => setPhoneVerified(editing, v)}
+          others={items.filter((i) => i.id !== editing.id && i.status === "active")}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            load();
+          }}
+        />
+      )}
+
+      {profileFor && (
+        <ProfileModal
+          reseller={profileFor}
+          summary={summaries[profileFor.id] ?? null}
+          orders={orderCounts[profileFor.id]}
+          email={emailStatus[profileFor.user_id]}
+          verify={verifyFor(profileFor)}
+          agentName={agents.find((a) => a.id === profileFor.agent_id)?.display_name ?? null}
+          leaderName={
+            profileFor.leader_id
+              ? (() => {
+                  const l = items.find((i) => i.id === profileFor.leader_id);
+                  return l ? `${l.business_name} (#${l.code})` : "Leader linked";
+                })()
+              : null
+          }
+          onClose={() => setProfileFor(null)}
+        />
+      )}
+
+      {resetFor && (
+        <PasswordResetModal
+          label={resetFor.business_name}
+          onClose={() => setResetFor(null)}
+          onReset={(pw) => applyPasswordReset(resetFor, pw)}
+        />
+      )}
+
+      {depositFor && (
+        <DepositModal
+          reseller={depositFor}
+          onClose={() => setDepositFor(null)}
+          onSaved={() => {
+            setDepositFor(null);
+            load();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  accent,
+  muted,
+  plain,
+}: {
+  label: string;
+  value: number | undefined;
+  accent?: boolean;
+  muted?: boolean;
+  plain?: boolean;
+}) {
+  return (
+    <div className="rounded-md border bg-muted/30 px-2 py-1.5">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div
+        className={
+          "text-sm font-semibold tabular-nums " +
+          (accent ? "text-success" : muted ? "text-muted-foreground" : "")
+        }
+      >
+        {value == null ? "—" : plain ? value.toLocaleString() : `৳${value.toLocaleString()}`}
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({
+  status,
+  onSetStatus,
+}: {
+  status: Status;
+  onSetStatus?: (newStatus: Status) => void;
+}) {
+  if (!onSetStatus) {
+    return (
+      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${resellerStatusClass(status)}`}>
+        {resellerStatusLabel(status)}
+      </span>
+    );
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className={`cursor-pointer rounded-full px-2.5 py-0.5 text-[10px] font-medium transition hover:opacity-80 ${resellerStatusClass(status)}`}>
+        {resellerStatusLabel(status)} ▾
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-40">
+        <DropdownMenuLabel className="text-xs">Change Status</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => onSetStatus("active")}>
+          <Play className="mr-2 h-3.5 w-3.5 text-success" /> Active
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onSetStatus("suspended")}>
+          <ShieldOff className="mr-2 h-3.5 w-3.5 text-amber-600" /> Inactive
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onSetStatus("pending")}>
+          <Pause className="mr-2 h-3.5 w-3.5 text-sky-600" /> Pending
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onSetStatus("rejected")} className="text-destructive focus:text-destructive">
+          <X className="mr-2 h-3.5 w-3.5" /> Rejected
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** Status + verification + ID + phone badges, reused inline (desktop) and below (mobile). */
+function ResellerInfoBadges({
+  r,
+  vf,
+  phone,
+  waPhone,
+  onSetStatus,
+  onConfirmEmail,
+  onSetPhoneVerified,
+}: {
+  r: Reseller;
+  vf: VerifyFlags;
+  phone: string;
+  waPhone: string;
+  onSetStatus?: (r: Reseller, status: string) => void;
+  onConfirmEmail?: (r: Reseller) => void;
+  onSetPhoneVerified?: (r: Reseller, verified: boolean) => void;
+}) {
+  return (
+    <>
+      <StatusBadge status={r.status} onSetStatus={onSetStatus ? (s) => onSetStatus(r, s) : undefined} />
+      <span className="inline-flex flex-nowrap items-center gap-1.5">
+        {vf.emailVerified ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success ring-1 ring-inset ring-success/25">
+            <MailCheck className="h-3 w-3" /> Email verified
+          </span>
+        ) : (
+          <button
+            type="button"
+            title="Click to confirm email"
+            onClick={() => onConfirmEmail && onConfirmEmail(r)}
+            className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-inset ring-amber-500/30 transition hover:bg-amber-500/25 dark:text-amber-400"
+          >
+            <MailCheck className="h-3 w-3" /> Verify email
+          </button>
+        )}
+        {phone ? (
+          vf.phoneVerified ? (
+            <button
+              type="button"
+              title="Click to clear phone verification"
+              onClick={() => onSetPhoneVerified && onSetPhoneVerified(r, false)}
+              className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success ring-1 ring-inset ring-success/25 transition hover:opacity-80"
+            >
+              <SmartphoneNfc className="h-3 w-3" /> Mobile verified
+            </button>
+          ) : (
+            <button
+              type="button"
+              title="Click to mark mobile verified"
+              onClick={() => onSetPhoneVerified && onSetPhoneVerified(r, true)}
+              className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-inset ring-amber-500/30 transition hover:bg-amber-500/25 dark:text-amber-400"
+            >
+              <SmartphoneNfc className="h-3 w-3" /> Verify mobile
+            </button>
+          )
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground ring-1 ring-inset ring-border">
+            No mobile
+          </span>
+        )}
+      </span>
+      <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5">
+        <IdCard className="h-3 w-3 text-primary" />
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">ID</span>
+        <span className="font-mono text-[11px] font-bold tracking-wider text-primary">{r.code}</span>
+        <button
+          type="button"
+          title="Copy reseller ID"
+          onClick={() => {
+            navigator.clipboard.writeText(r.code);
+            toast.success("Reseller ID copied");
+          }}
+          className="text-muted-foreground transition hover:text-foreground"
+        >
+          <Copy className="h-3 w-3" />
+        </button>
+      </span>
+      {phone ? (
+        <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5">
+          <Phone className="h-3 w-3 text-muted-foreground" />
+          <span className="font-mono text-[11px] font-medium">{phone}</span>
+          <button
+            type="button"
+            title="Copy phone"
+            onClick={() => {
+              navigator.clipboard.writeText(phone);
+              toast.success("Phone copied");
+            }}
+            className="text-muted-foreground transition hover:text-foreground"
+          >
+            <Copy className="h-3 w-3" />
+          </button>
+          <a href={`tel:${phone}`} title="Call" className="text-muted-foreground transition hover:text-primary">
+            <PhoneCall className="h-3 w-3" />
+          </a>
+          <a
+            href={`https://wa.me/${waPhone}`}
+            target="_blank"
+            rel="noreferrer"
+            title="WhatsApp"
+            className="text-muted-foreground transition hover:text-success"
+          >
+            <MessageCircle className="h-3 w-3" />
+          </a>
+        </span>
+      ) : (
+        <span className="rounded-md border px-2 py-0.5 text-[11px] text-muted-foreground">no phone</span>
+      )}
+    </>
+  );
+}
+
+function ReadOnlyBit({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={"truncate text-xs font-medium capitalize " + (mono ? "font-mono uppercase" : "")} title={value}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function EditModal({
+  reseller,
+  agents,
+  others,
+  email,
+  verify,
+  onSetPhoneVerified,
+  onClose,
+  onSaved,
+}: {
+  reseller: Reseller;
+  email?: { email: string | null; verified: boolean };
+  verify?: VerifyFlags;
+  agents: Array<{ id: string; display_name: string }>;
+  others: Reseller[];
+  onSetPhoneVerified: (verified: boolean) => Promise<boolean>;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [businessName, setBusinessName] = useState(reseller.business_name);
+  const [status, setStatusState] = useState<Status>(reseller.status);
+  const [code, setCode] = useState(reseller.code);
+  const [phone, setPhone] = useState(reseller.contact_phone ?? "");
+  const [phoneVerified, setPhoneVerified] = useState(Boolean(verify?.phoneVerified));
+  const [phoneBusy, setPhoneBusy] = useState(false);
+  const [address, setAddress] = useState(reseller.address ?? "");
+  const [commission, setCommission] = useState(String(reseller.commission_rate));
+  const [leaderId, setLeaderId] = useState(reseller.leader_id ?? "");
+  const [agentId, setAgentId] = useState(reseller.agent_id ?? "");
+  const [nid, setNid] = useState(reseller.nid_number ?? "");
+  const [notes, setNotes] = useState(reseller.notes ?? "");
+  const [payoutMethod, setPayoutMethod] = useState<string>(reseller.payout_method ?? "");
+  const [payoutAccountName, setPayoutAccountName] = useState(reseller.payout_account_name ?? "");
+  const [payoutAccountNumber, setPayoutAccountNumber] = useState(reseller.payout_account_number ?? "");
+  const [payoutBankName, setPayoutBankName] = useState(reseller.payout_bank_name ?? "");
+  const [payoutBranch, setPayoutBranch] = useState(reseller.payout_branch ?? "");
+  const [payoutRouting, setPayoutRouting] = useState(reseller.payout_routing ?? "");
+  const [busy, setBusy] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const isBank = payoutMethod === "bank";
+    const { error } = await supabase
+      .from("resellers")
+      .update({
+        business_name: businessName,
+        code: code.trim(),
+        status: status,
+        approved_at: status === "active" ? (reseller.approved_at || new Date().toISOString()) : reseller.approved_at,
+        contact_phone: phone || null,
+        address: address || null,
+        nid_number: nid || null,
+        commission_rate: Number(commission),
+        leader_id: leaderId || null,
+        agent_id: agentId || null,
+        notes: notes || null,
+        payout_method: payoutMethod || null,
+        payout_account_name: payoutAccountName || null,
+        payout_account_number: payoutAccountNumber || null,
+        payout_bank_name: isBank ? payoutBankName || null : null,
+        payout_branch: isBank ? payoutBranch || null : null,
+        payout_routing: isBank ? payoutRouting || null : null,
+      })
+      .eq("id", reseller.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Saved");
+    onSaved();
+  }
+
+  const cls =
+    "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/40 p-0 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <form
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={save}
+        className="surface-card flex max-h-[92dvh] w-full max-w-lg flex-col rounded-b-none sm:max-h-[88dvh] sm:rounded-lg"
+      >
+        <div className="flex items-center justify-between gap-3 border-b px-4 py-3 sm:px-6 sm:py-4">
+          <h3 className="truncate text-base font-semibold">Edit reseller</h3>
+          <button type="button" onClick={onClose} className="shrink-0 rounded-md p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-6">
+        <div className="grid grid-cols-2 gap-2 rounded-lg border bg-muted/30 p-3 sm:grid-cols-4">
+          <ReadOnlyBit label="Reseller ID" value={reseller.code} mono />
+          <ReadOnlyBit label="Login email" value={email?.email ?? "—"} />
+          <ReadOnlyBit
+            label="Status"
+            value={resellerStatusLabel(status)}
+          />
+          <ReadOnlyBit
+            label="Joined"
+            value={formatDate(reseller.created_at, "—", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          />
+          <ReadOnlyBit
+            label="Security deposit"
+            value={
+              reseller.deposit_required && Number(reseller.deposit_required_amount) > 0
+                ? `৳${Number(reseller.deposit_required_amount).toLocaleString()}`
+                : "Not required"
+            }
+          />
+          <ReadOnlyBit label="Frozen" value={`৳${Number(reseller.frozen_amount ?? 0).toLocaleString()}`} />
+          <ReadOnlyBit label="Approved" value={formatDate(reseller.approved_at)} />
+        </div>
+        {verify && (
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <div className="mb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">Verification</div>
+            <VerifyBadges {...verify} phoneVerified={phoneVerified} />
+            <button
+              type="button"
+              disabled={phoneBusy}
+              onClick={async () => {
+                setPhoneBusy(true);
+                const next = !phoneVerified;
+                const ok = await onSetPhoneVerified(next);
+                if (ok) setPhoneVerified(next);
+                setPhoneBusy(false);
+              }}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-muted disabled:opacity-60"
+            >
+              <SmartphoneNfc className="h-3.5 w-3.5" />
+              {phoneVerified ? "Clear mobile verification" : "Mark mobile verified"}
+            </button>
+          </div>
+        )}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium">Business name</label>
+            <input required value={businessName} onChange={(e) => setBusinessName(e.target.value)} className={cls} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Account Status</label>
+            <select value={status} onChange={(e) => setStatusState(e.target.value as Status)} className={cls}>
+              <option value="active">Active</option>
+              <option value="pending">Pending</option>
+              <option value="suspended">Inactive / Suspended</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+
+          <div>
+            <label className="mb-1 block text-xs font-medium">Store code</label>
+            <input required value={code} onChange={(e) => setCode(e.target.value)} className={cls} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Commission %</label>
+            <input
+              type="number"
+              step="0.1"
+              min={0}
+              max={100}
+              value={commission}
+              onChange={(e) => setCommission(e.target.value)}
+              className={cls}
+            />
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium">Phone</label>
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} className={cls} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Leader (optional)</label>
+            <select value={leaderId} onChange={(e) => setLeaderId(e.target.value)} className={cls}>
+              <option value="">— None —</option>
+              {others.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.business_name} (#{o.code})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium">Commission agent (optional)</label>
+          <select value={agentId} onChange={(e) => setAgentId(e.target.value)} className={cls}>
+            <option value="">— None —</option>
+            {agents.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.display_name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            The agent follows up with this reseller and sees their orders in the agent report.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium">Address</label>
+            <input value={address} onChange={(e) => setAddress(e.target.value)} className={cls} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">NID number</label>
+            <input value={nid} onChange={(e) => setNid(e.target.value)} className={cls} />
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium">Internal notes</label>
+          <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} className={cls} />
+        </div>
+
+        <div className="border-t pt-3">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Payout information
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium">Method</label>
+              <select value={payoutMethod} onChange={(e) => setPayoutMethod(e.target.value)} className={cls}>
+                <option value="">— Not set —</option>
+                <option value="bkash">bKash</option>
+                <option value="nagad">Nagad</option>
+                <option value="rocket">Rocket</option>
+                <option value="bank">Bank</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium">Account holder</label>
+              <input value={payoutAccountName} onChange={(e) => setPayoutAccountName(e.target.value)} className={cls} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs font-medium">
+                {payoutMethod === "bank" ? "Account number" : "Mobile number"}
+              </label>
+              <input value={payoutAccountNumber} onChange={(e) => setPayoutAccountNumber(e.target.value)} className={cls} />
+            </div>
+            {payoutMethod === "bank" && (
+              <>
+                <div>
+                  <label className="mb-1 block text-xs font-medium">Bank</label>
+                  <input value={payoutBankName} onChange={(e) => setPayoutBankName(e.target.value)} className={cls} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium">Branch</label>
+                  <input value={payoutBranch} onChange={(e) => setPayoutBranch(e.target.value)} className={cls} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-medium">Routing</label>
+                  <input value={payoutRouting} onChange={(e) => setPayoutRouting(e.target.value)} className={cls} />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        </div>
+
+        <div className="flex flex-col-reverse gap-2 border-t px-4 py-3 sm:flex-row sm:justify-end sm:px-6">
+          <button type="button" onClick={onClose} className="rounded-md border px-4 py-2 text-sm">
+            Cancel
+          </button>
+          <button
+            disabled={busy}
+            className="btn-brand inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+          >
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />} Save
+          </button>
+        </div>
+
+      </form>
+    </div>
+  );
+}
+
+type DepositRow = {
+  id: string;
+  amount: number;
+  method: string | null;
+  reference: string | null;
+  note: string | null;
+  created_at: string;
+};
+
+function DepositModal({
+  reseller,
+  onClose,
+  onSaved,
+}: {
+  reseller: Reseller;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [required, setRequired] = useState(Boolean(reseller.deposit_required));
+  const [requiredAmount, setRequiredAmount] = useState(String(reseller.deposit_required_amount ?? 0));
+  const [frozen, setFrozen] = useState(String(reseller.frozen_amount ?? 0));
+  const [rows, setRows] = useState<DepositRow[]>([]);
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("bkash");
+  const [reference, setReference] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const balance = rows.reduce((n, r) => n + Number(r.amount), 0);
+  const due = required ? Math.max(Number(requiredAmount || 0) - balance, 0) : 0;
+
+  const cls =
+    "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
+
+  async function loadRows() {
+    const { data, error } = await supabase
+      .from("reseller_deposits")
+      .select("id,amount,method,reference,note,created_at")
+      .eq("reseller_id", reseller.id)
+      .order("created_at", { ascending: false });
+    if (error) toast.error(error.message);
+    setRows((data ?? []) as DepositRow[]);
+  }
+
+  useEffect(() => {
+    loadRows();
+  }, [reseller.id]);
+
+  async function saveRules() {
+    setBusy(true);
+    const { error } = await supabase
+      .from("resellers")
+      .update({
+        deposit_required: required,
+        deposit_required_amount: Number(requiredAmount) || 0,
+        frozen_amount: Number(frozen) || 0,
+      })
+      .eq("id", reseller.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Deposit settings saved");
+    onSaved();
+  }
+
+  async function addEntry(e: React.FormEvent) {
+    e.preventDefault();
+    const amt = Number(amount);
+    if (!amt) return toast.error("Enter amount (use − for adjustment)");
+    setBusy(true);
+    const { error } = await supabase.from("reseller_deposits").insert({
+      reseller_id: reseller.id,
+      amount: amt,
+      method: method || null,
+      reference: reference || null,
+      note: note || null,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    setAmount("");
+    setNote("");
+    setReference("");
+    toast.success("Ledger entry added");
+    loadRows();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-3" onClick={onClose}>
+      <div
+        className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border bg-background shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6">
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold">Deposit & freeze — {reseller.business_name}</div>
+            <p className="text-[11px] text-muted-foreground">
+              If a deposit is due the reseller cannot confirm orders. Frozen amount cannot be withdrawn.
+            </p>
+          </div>
+          <button onClick={onClose} className="rounded-md p-1 hover:bg-muted" aria-label="Close">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div className="rounded-md border bg-muted/30 p-3">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Balance</div>
+              <div className="text-base font-bold">৳{balance.toLocaleString()}</div>
+            </div>
+            <div className="rounded-md border bg-muted/30 p-3">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Due</div>
+              <div className={"text-base font-bold " + (due > 0 ? "text-destructive" : "text-success")}>
+                ৳{due.toLocaleString()}
+              </div>
+            </div>
+            <div className="rounded-md border bg-muted/30 p-3">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Frozen</div>
+              <div className="text-base font-bold">৳{(Number(frozen) || 0).toLocaleString()}</div>
+            </div>
+          </div>
+
+          <div className="space-y-3 rounded-md border p-3">
+            <label className="flex cursor-pointer items-center gap-2 text-xs font-medium">
+              <input
+                type="checkbox"
+                checked={required}
+                onChange={(e) => setRequired(e.target.checked)}
+                className="h-4 w-4"
+              />
+              Enable deposit trigger
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-medium">Required deposit (৳)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={requiredAmount}
+                  onChange={(e) => setRequiredAmount(e.target.value)}
+                  className={cls}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium">Freeze amount (৳)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={frozen}
+                  onChange={(e) => setFrozen(e.target.value)}
+                  className={cls}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={saveRules}
+                disabled={busy}
+                className="btn-brand rounded-md px-4 py-1.5 text-xs font-medium disabled:opacity-50"
+              >
+                Save settings
+              </button>
+            </div>
+          </div>
+
+          <form onSubmit={addEntry} className="space-y-3 rounded-md border p-3">
+            <div className="text-xs font-semibold">New entry</div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-medium">Amount (৳) — use − for refund</label>
+                <input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" className={cls} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium">Method</label>
+                <select value={method} onChange={(e) => setMethod(e.target.value)} className={cls}>
+                  <option value="bkash">bKash</option>
+                  <option value="nagad">Nagad</option>
+                  <option value="rocket">Rocket</option>
+                  <option value="bank">Bank</option>
+                  <option value="cash">Cash</option>
+                  <option value="adjustment">Adjustment</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium">Reference / TrxID</label>
+                <input value={reference} onChange={(e) => setReference(e.target.value)} className={cls} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium">Note</label>
+                <input value={note} onChange={(e) => setNote(e.target.value)} className={cls} />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                disabled={busy}
+                className="inline-flex items-center gap-1.5 rounded-md border px-4 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                <Plus className="h-3.5 w-3.5" /> Add entry
+              </button>
+            </div>
+          </form>
+
+          <div className="space-y-2">
+            <div className="text-xs font-semibold">Deposit transactions</div>
+            <DepositLedger compact resellerId={reseller.id} onChanged={loadRows} />
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileModal({
+  reseller,
+  summary,
+  orders,
+  email,
+  verify,
+  leaderName,
+  agentName,
+  onClose,
+}: {
+  reseller: Reseller;
+  summary: Summary | null;
+  orders?: number;
+  email?: { email: string | null; verified: boolean };
+  verify?: VerifyFlags;
+  leaderName: string | null;
+  agentName: string | null;
+  onClose: () => void;
+}) {
+  const data: ResellerProfileData = {
+    ...reseller,
+    commission_rate: Number(reseller.commission_rate),
+    deposit_required_amount: Number(reseller.deposit_required_amount),
+    frozen_amount: Number(reseller.frozen_amount),
+    leader_name: leaderName,
+    agent_name: agentName,
+    email: email?.email ?? null,
+    email_verified: verify ? verify.emailVerified : email ? email.verified : null,
+    phone_verified: verify?.phoneVerified ?? null,
+    require_email_verify: verify?.requireEmail,
+    require_phone_verify: verify?.requirePhone,
+  };
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/40 p-0 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="surface-card flex max-h-[92dvh] w-full max-w-3xl flex-col rounded-b-none sm:max-h-[88dvh] sm:rounded-lg"
+      >
+        <div className="flex items-center justify-between gap-3 border-b px-4 py-3 sm:px-6 sm:py-4">
+          <h3 className="truncate text-base font-semibold">Reseller profile</h3>
+          <button type="button" onClick={onClose} className="shrink-0 rounded-md p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto bg-muted/20 px-4 py-4 sm:px-6">
+          <ResellerProfile reseller={data} summary={summary} orders={orders} admin />
+        </div>
+      </div>
+    </div>
+  );
+}

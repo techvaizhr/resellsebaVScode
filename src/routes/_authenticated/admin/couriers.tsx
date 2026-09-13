@@ -1,0 +1,611 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/laravel/client";
+import { PageHeader } from "@/components/ui-kit";
+import { Loader2, Truck, Copy, Wallet, RefreshCw, Store } from "lucide-react";
+import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { steadfastBalance, carrybeeStores, pathaoStores } from "@/lib/couriers.functions";
+import { Switch } from "@/components/ui/switch";
+import { CourierLogo, courierLabel } from "@/components/courier-brand";
+
+/** Server fns reject with a raw Response; read its body so the toast is useful. */
+async function errText(e: unknown, fallback: string) {
+  if (e instanceof Response) {
+    try {
+      const t = await e.text();
+      if (t) return t;
+    } catch {}
+  }
+  return e instanceof Error && e.message ? e.message : fallback;
+}
+
+/** Pickup stores already saved in courier_configs.config.stores_json. */
+function savedStores(config: Record<string, string> | undefined) {
+  try {
+    const raw = config?.stores_json;
+    const list = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((s: any) => ({
+        id: String(s?.id ?? ""),
+        name: String(s?.name ?? s?.id ?? ""),
+        address: "",
+        isActive: true,
+        isApproved: true,
+        isDefaultPickup: false,
+      }))
+      .filter((s) => s.id);
+  } catch {
+    return [];
+  }
+}
+
+
+
+
+export const Route = createFileRoute("/_authenticated/admin/couriers")({
+  component: CouriersPage,
+});
+
+type Row = {
+  id: string;
+  provider: string;
+  display_name: string;
+  is_active: boolean;
+  config: Record<string, string>;
+};
+
+const PROVIDER_ORDER = ["steadfast", "pathao", "carrybee"];
+
+const FIELDS: Record<string, { key: string; label: string; type?: string; hint?: string }[]> = {
+  steadfast: [
+    { key: "api_key", label: "API Key" },
+    { key: "secret_key", label: "Secret Key" },
+  ],
+  pathao: [
+    { key: "client_id", label: "Client ID" },
+    { key: "client_secret", label: "Client Secret" },
+    { key: "username", label: "Username" },
+    { key: "password", label: "Password" },
+    { key: "store_id", label: "Default Store ID", hint: "Load stores, then set default" },
+  ],
+  carrybee: [
+    { key: "client_id", label: "Client ID" },
+    { key: "client_secret", label: "Client Secret" },
+    { key: "client_context", label: "Client Context" },
+    { key: "store_id", label: "Default Pickup Store ID", hint: "Copy from store list" },
+  ],
+};
+
+
+
+function CouriersPage() {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function load() {
+    const { data } = await supabase.from("courier_configs").select("*").order("display_name");
+    const sorted = [...((data ?? []) as Row[])]
+      .filter((r) => PROVIDER_ORDER.includes(r.provider))
+      .sort((a, b) => PROVIDER_ORDER.indexOf(a.provider) - PROVIDER_ORDER.indexOf(b.provider));
+    setRows(sorted);
+    setLoading(false);
+  }
+
+  async function save(row: Row) {
+    const { error } = await supabase
+      .from("courier_configs")
+      .update({ is_active: row.is_active, config: row.config })
+      .eq("id", row.id);
+    if (error) toast.error(error.message);
+    else toast.success(`${row.display_name} saved`);
+  }
+
+  if (loading) return <div className="grid place-items-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+
+  return (
+    <div>
+      <PageHeader title="Courier providers" description="Save credentials to enable direct booking from the admin panel." />
+      <div className="grid gap-4 lg:grid-cols-2">
+        {(rows ?? []).map((r, idx) => {
+          const fields = FIELDS[r.provider] ?? [];
+          return (
+            <div key={r.id} className="surface-card p-5">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="grid h-10 w-10 place-items-center rounded-md border bg-background">
+                  <CourierLogo provider={r.provider} size={26} />
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold">{courierLabel(r.provider) || r.display_name}</div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{r.provider}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={r.is_active}
+                    onCheckedChange={(v) => {
+                      const copy = [...rows];
+                      copy[idx] = { ...r, is_active: v };
+                      setRows(copy);
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">{r.is_active ? "Active" : "Inactive"}</span>
+                </div>
+
+              </div>
+              <div className="grid gap-3">
+                {fields.map((f) => (
+                  <div key={f.key}>
+                    <label className="mb-1 block text-xs font-medium">{f.label}</label>
+                    <input
+                      type={f.type || "text"}
+                      value={r.config?.[f.key] ?? ""}
+                      placeholder={f.hint}
+                      onChange={(e) => {
+                        const copy = [...rows];
+                        copy[idx] = { ...r, config: { ...r.config, [f.key]: e.target.value } };
+                        setRows(copy);
+                      }}
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+                ))}
+              </div>
+              {r.provider === "steadfast" && (
+                <SteadfastExtras
+                  token={r.config?.webhook_token ?? ""}
+                  onToken={(t) => {
+                    const copy = [...rows];
+                    copy[idx] = { ...r, config: { ...r.config, webhook_token: t } };
+                    setRows(copy);
+                  }}
+                />
+              )}
+              {r.provider === "pathao" && (
+                <PathaoExtras
+                  config={r.config ?? {}}
+                  onConfig={(patch) => {
+                    const copy = [...rows];
+                    copy[idx] = { ...r, config: { ...r.config, ...patch } };
+                    setRows(copy);
+                  }}
+                />
+              )}
+              {r.provider === "carrybee" && (
+                <CarrybeeExtras
+                  config={r.config ?? {}}
+                  onConfig={(patch) => {
+                    const copy = [...rows];
+                    copy[idx] = { ...r, config: { ...r.config, ...patch } };
+                    setRows(copy);
+                  }}
+                />
+              )}
+
+
+
+              <button onClick={() => save(r)} className="btn-brand mt-4 rounded-md px-3 py-1.5 text-xs font-medium">Save</button>
+
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SteadfastExtras({ token, onToken }: { token: string; onToken: (t: string) => void }) {
+  const [balance, setBalance] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const getBalance = useServerFn(steadfastBalance);
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const webhookUrl = `${origin}/api/public/courier/steadfast?token=${token || "<generate-token-first>"}`;
+
+  function generate() {
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    const t = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+    onToken(t);
+    toast.success("Token generated — remember to save");
+  }
+
+  return (
+    <div className="mt-4 space-y-3 rounded-lg border bg-muted/30 p-3">
+      <div>
+        <div className="mb-1 text-xs font-medium">Webhook Token</div>
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={token}
+            placeholder="Click generate button"
+            className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1.5 font-mono text-[11px]"
+          />
+          <button type="button" onClick={generate} className="shrink-0 rounded-md border px-2 py-1.5 text-xs hover:bg-accent">
+            <RefreshCw className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!token) return;
+              navigator.clipboard.writeText(token);
+              toast.success("Token copied");
+            }}
+            className="shrink-0 rounded-md border p-1.5 hover:bg-accent"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+      <div>
+        <div className="mb-1 text-xs font-medium">Webhook URL (set in Steadfast panel)</div>
+
+        <div className="flex items-center gap-2">
+          <code className="flex-1 truncate rounded-md border bg-background px-2 py-1.5 text-[11px]">
+            {webhookUrl}
+          </code>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(webhookUrl);
+              toast.success("Webhook URL copied");
+            }}
+            className="rounded-md border p-1.5 hover:bg-accent"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              const res = await fetch("/api/public/courier/actions?action=steadfast-balance");
+              const data = await res.json();
+              if (data && data.success && typeof data.balance === "number") {
+                setBalance(data.balance);
+                toast.success(`Steadfast Balance: ৳${data.balance.toFixed(2)}`);
+              } else {
+                const r = await getBalance();
+                setBalance(r?.balance ?? 0);
+                toast.success(`Steadfast Balance: ৳${(r?.balance ?? 0).toFixed(2)}`);
+              }
+            } catch (e) {
+              try {
+                const r = await getBalance();
+                setBalance(r?.balance ?? 0);
+              } catch (e2) {
+                toast.error(await errText(e2, "Balance fetch failed"));
+              }
+            } finally {
+              setBusy(false);
+            }
+          }}
+          className="inline-flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs hover:bg-accent"
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wallet className="h-3.5 w-3.5" />}
+          Check balance
+        </button>
+        {balance !== null && <span className="text-xs font-semibold">৳{balance.toFixed(2)}</span>}
+      </div>
+    </div>
+  );
+}
+
+function CarrybeeExtras({
+  config,
+  onConfig,
+}: {
+  config: Record<string, string>;
+  onConfig: (patch: Record<string, string>) => void;
+}) {
+  const [stores, setStores] = useState<
+    { id: string; name: string; isApproved: boolean; isDefaultPickup: boolean }[]
+  >([]);
+  const [busy, setBusy] = useState(false);
+  const loadStores = useServerFn(carrybeeStores);
+  // show the stores already saved in config, so a reload keeps the list
+  useEffect(() => {
+    if (stores.length === 0) setStores(savedStores(config) as any);
+  }, [config?.stores_json]);
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const secret = config?.webhook_secret ?? "";
+  const webhookUrl = `${origin}/api/public/courier/carrybee`;
+
+  function generate() {
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    onConfig({
+      webhook_secret: Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(""),
+    });
+    toast.success("Secret generated — remember to save");
+  }
+
+  return (
+    <div className="mt-4 space-y-3 rounded-lg border bg-muted/30 p-3">
+      <div>
+        <div className="mb-1 text-xs font-medium">Webhook Secret</div>
+        <div className="flex items-center gap-2">
+          <input
+            value={secret}
+            onChange={(e) => onConfig({ webhook_secret: e.target.value })}
+            placeholder="Generate or paste secret from Carrybee panel"
+            className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1.5 font-mono text-[11px]"
+          />
+          <button type="button" onClick={generate} className="shrink-0 rounded-md border px-2 py-1.5 text-xs hover:bg-accent">
+            <RefreshCw className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!secret) return;
+              navigator.clipboard.writeText(secret);
+              toast.success("Secret copied");
+            }}
+            className="shrink-0 rounded-md border p-1.5 hover:bg-accent"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div className="mb-1 text-xs font-medium">Webhook URL (Carrybee → Webhook Integration)</div>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 truncate rounded-md border bg-background px-2 py-1.5 text-[11px]">
+            {webhookUrl}
+          </code>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(webhookUrl);
+              toast.success("Webhook URL copied");
+            }}
+            className="rounded-md border p-1.5 hover:bg-accent"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              let list: any[] = [];
+              let defStore = "";
+              const res = await fetch("/api/public/courier/actions?action=carrybee-stores");
+              const data = await res.json();
+              if (data && data.success && Array.isArray(data.stores)) {
+                list = data.stores;
+                defStore = data.defaultStoreId || "";
+              } else {
+                const r = await loadStores();
+                list = r?.stores ?? [];
+                defStore = r?.defaultStoreId || "";
+              }
+
+              setStores(list);
+              const saved = list.map((s: any) => ({ id: String(s.id), name: String(s.name) }));
+              onConfig({
+                stores_json: JSON.stringify(saved),
+                ...(defStore ? { store_id: String(defStore) } : {}),
+              });
+              if (list.length === 0) toast.info("No stores — create one in the Carrybee panel");
+              else toast.success(`${list.length} Carrybee stores loaded`);
+            } catch (e) {
+              try {
+                const r = await loadStores();
+                const list = r?.stores ?? [];
+                setStores(list);
+                if (list.length > 0) toast.success(`${list.length} Carrybee stores loaded`);
+              } catch (e2) {
+                toast.error(await errText(e2, "Failed to load store list"));
+              }
+            } finally {
+              setBusy(false);
+            }
+          }}
+          className="inline-flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs hover:bg-accent"
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Store className="h-3.5 w-3.5" />}
+          Load pickup stores
+        </button>
+      </div>
+      {(stores ?? []).length > 0 && (
+        <div className="divide-y rounded-md border bg-background">
+          {(stores ?? []).map((s) => (
+            <div key={s.id} className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs">
+              <div className="min-w-0">
+                <div className="truncate font-medium">{s.name}</div>
+                <div className="font-mono text-[10px] text-muted-foreground">{s.id}</div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {s.isDefaultPickup && <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary">default</span>}
+                {!s.isApproved && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] text-amber-600">unapproved</span>}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onConfig({ store_id: s.id });
+                    toast.success("Default store set — remember to save");
+                  }}
+                  className={`rounded-md border px-2 py-0.5 text-[10px] hover:bg-accent ${
+                    config?.store_id === s.id ? "border-primary bg-primary/10 text-primary" : ""
+                  }`}
+                >
+                  {config?.store_id === s.id ? "Default" : "Set default"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PathaoExtras({
+  config,
+  onConfig,
+}: {
+  config: Record<string, string>;
+  onConfig: (patch: Record<string, string>) => void;
+}) {
+  const [stores, setStores] = useState<
+    { id: string; name: string; address: string; isActive: boolean }[]
+  >([]);
+  const [busy, setBusy] = useState(false);
+  const loadStores = useServerFn(pathaoStores);
+  // show the stores already saved in config, so a reload keeps the list
+  useEffect(() => {
+    if (stores.length === 0) setStores(savedStores(config) as any);
+  }, [config?.stores_json]);
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const secret = config?.webhook_secret ?? "";
+  const webhookUrl = `${origin}/api/public/courier/pathao`;
+
+  function generate() {
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    onConfig({
+      webhook_secret: Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(""),
+    });
+    toast.success("Secret generated — remember to save");
+  }
+
+  return (
+    <div className="mt-4 space-y-3 rounded-lg border bg-muted/30 p-3">
+      <div>
+        <div className="mb-1 text-xs font-medium">Webhook Secret</div>
+        <div className="flex items-center gap-2">
+          <input
+            value={secret}
+            onChange={(e) => onConfig({ webhook_secret: e.target.value })}
+            placeholder="Generate or paste secret from Pathao panel"
+            className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1.5 font-mono text-[11px]"
+          />
+          <button type="button" onClick={generate} className="shrink-0 rounded-md border px-2 py-1.5 text-xs hover:bg-accent">
+            <RefreshCw className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!secret) return;
+              navigator.clipboard.writeText(secret);
+              toast.success("Secret copied");
+            }}
+            className="shrink-0 rounded-md border p-1.5 hover:bg-accent"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div className="mb-1 text-xs font-medium">Webhook URL (Pathao → Webhook Integration)</div>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 truncate rounded-md border bg-background px-2 py-1.5 text-[11px]">
+            {webhookUrl}
+          </code>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(webhookUrl);
+              toast.success("Webhook URL copied");
+            }}
+            className="rounded-md border p-1.5 hover:bg-accent"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              let list: any[] = [];
+              let defStore = "";
+              const res = await fetch("/api/public/courier/actions?action=pathao-stores");
+              const data = await res.json();
+              if (data && data.success && Array.isArray(data.stores)) {
+                list = data.stores;
+                defStore = data.defaultStoreId || "";
+              } else {
+                const r = await loadStores();
+                list = r?.stores ?? [];
+                defStore = r?.defaultStoreId || "";
+              }
+
+              setStores(list);
+              const saved = list.map((s: any) => ({ id: String(s.id), name: String(s.name) }));
+              onConfig({
+                stores_json: JSON.stringify(saved),
+                ...(defStore ? { store_id: String(defStore) } : {}),
+              });
+              if (list.length === 0) toast.info("No stores — create one in the Pathao panel");
+              else toast.success(`${list.length} Pathao stores loaded`);
+            } catch (e) {
+              try {
+                const r = await loadStores();
+                const list = r?.stores ?? [];
+                setStores(list);
+                if (list.length > 0) toast.success(`${list.length} Pathao stores loaded`);
+              } catch (e2) {
+                toast.error(await errText(e2, "Failed to load store list"));
+              }
+            } finally {
+              setBusy(false);
+            }
+          }}
+          className="inline-flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs hover:bg-accent"
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Store className="h-3.5 w-3.5" />}
+          Load stores
+        </button>
+      </div>
+      {(stores ?? []).length > 0 && (
+        <div className="divide-y rounded-md border bg-background">
+          {(stores ?? []).map((s) => (
+            <div key={s.id} className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs">
+              <div className="min-w-0">
+                <div className="truncate font-medium">{s.name}</div>
+                <div className="truncate font-mono text-[10px] text-muted-foreground">{s.id} · {s.address}</div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {!s.isActive && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] text-amber-600">inactive</span>}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onConfig({ store_id: s.id });
+                    toast.success("Default store set — remember to save");
+                  }}
+                  className={`rounded-md border px-2 py-0.5 text-[10px] hover:bg-accent ${
+                    config?.store_id === s.id ? "border-primary bg-primary/10 text-primary" : ""
+                  }`}
+                >
+                  {config?.store_id === s.id ? "Default" : "Set default"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

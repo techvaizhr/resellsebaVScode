@@ -1,0 +1,245 @@
+import { useState, type ReactNode } from "react";
+import { MoreHorizontal, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+export type FilterOption = { value: string; label: string };
+export type FilterDef = {
+  key: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: FilterOption[];
+};
+
+export function DataToolbar({
+  search,
+  onSearch,
+  searchPlaceholder = "Search…",
+  filters = [],
+  perPage,
+  onPerPage,
+  perPageOptions = [10, 20, 50, 100],
+  right,
+}: {
+  search: string;
+  onSearch: (v: string) => void;
+  searchPlaceholder?: string;
+  filters?: FilterDef[];
+  perPage: number;
+  onPerPage: (n: number) => void;
+  perPageOptions?: number[];
+  right?: ReactNode;
+  /** @deprecated layout is now global */
+  inline?: boolean;
+}) {
+  const searchInput = (
+    <input
+      value={search}
+      onChange={(e) => onSearch(e.target.value)}
+      placeholder={searchPlaceholder}
+      className="w-full min-w-0 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+    />
+  );
+
+  const perPageSelect = (
+    <select
+      value={perPage}
+      onChange={(e) => onPerPage(Number(e.target.value))}
+      className="shrink-0 rounded-md border bg-background px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+      title="Per page"
+    >
+      {perPageOptions.map((n) => (
+        <option key={n} value={n}>
+          {n} / page
+        </option>
+      ))}
+      <option value={-1}>All</option>
+    </select>
+  );
+
+  const filterSelects = filters.map((f) => (
+    <select
+      key={f.key}
+      value={f.value}
+      onChange={(e) => f.onChange(e.target.value)}
+      className="w-full rounded-md border bg-background px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+      title={f.label}
+    >
+      <option value="">{f.label}: All</option>
+      {f.options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  ));
+
+  // One global toolbar layout everywhere: search + per-page on the first row,
+  // filters in an equal-width grid — 2 per row on mobile, 3 on tablet, 6 on desktop.
+  return (
+    <div className="mb-4 space-y-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        {searchInput}
+        <div className="flex shrink-0 items-center gap-2">
+          {perPageSelect}
+          {right}
+        </div>
+      </div>
+      {filters.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          {filterSelects}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function pageWindow(page: number, pages: number): (number | "…")[] {
+  if (pages <= 7) return Array.from({ length: pages }, (_, i) => i + 1);
+  // Show a 3-page window centered on the current page (compact for mobile).
+  const half = 1;
+  let start = Math.max(1, page - half);
+  let end = Math.min(pages, page + half);
+  if (end - start + 1 < 3) {
+    if (start === 1) end = Math.min(pages, start + 2);
+    else if (end === pages) start = Math.max(1, end - 2);
+  }
+  const out: (number | "…")[] = [];
+  if (start > 1) out.push(1);
+  if (start > 2) out.push("…");
+  for (let i = start; i <= end; i++) out.push(i);
+  if (end < pages - 1) out.push("…");
+  if (end < pages) out.push(pages);
+  return out;
+}
+
+export function Pagination({
+  page,
+  perPage,
+  total,
+  onPage,
+}: {
+  page: number;
+  perPage: number;
+  total: number;
+  onPage: (p: number) => void;
+}) {
+  const showAll = perPage <= 0;
+  const effectivePer = showAll ? Math.max(total, 1) : perPage;
+  const pages = Math.max(1, Math.ceil(total / effectivePer));
+  const from = total === 0 ? 0 : showAll ? 1 : (page - 1) * perPage + 1;
+  const to = showAll ? total : Math.min(page * perPage, total);
+  const [goTo, setGoTo] = useState("");
+  const current = Math.min(Math.max(1, page), pages);
+
+  const go = (p: number) => onPage(Math.min(pages, Math.max(1, p)));
+  const submitGoTo = () => {
+    const n = Number.parseInt(goTo, 10);
+    if (Number.isFinite(n)) go(n);
+    setGoTo("");
+  };
+
+  return (
+    <div className="mt-3 flex flex-nowrap items-center justify-between gap-1.5 text-xs text-muted-foreground">
+      <span className="whitespace-nowrap">
+        {from}–{to} of {total}
+      </span>
+      {!showAll && pages > 1 && (
+        <div className="flex flex-nowrap items-center gap-0.5">
+          <button
+            onClick={() => go(current - 1)}
+            disabled={current <= 1}
+            title="Previous"
+            className="inline-flex h-6 shrink-0 items-center rounded border px-1 disabled:opacity-40"
+          >
+            <ChevronLeft className="h-3 w-3" />
+          </button>
+          {pageWindow(current, pages).map((p, i) =>
+            p === "…" ? (
+              <span key={`gap-${i}`} className="px-0.5 text-muted-foreground">
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                onClick={() => go(p)}
+                aria-current={p === current ? "page" : undefined}
+                className={
+                  p === current
+                    ? "inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded border border-primary bg-primary px-1 text-[11px] font-medium text-primary-foreground"
+                    : "inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded border px-1 text-[11px] hover:bg-muted"
+                }
+              >
+                {p}
+              </button>
+            ),
+          )}
+          <button
+            onClick={() => go(current + 1)}
+            disabled={current >= pages}
+            title="Next"
+            className="inline-flex h-6 shrink-0 items-center rounded border px-1 disabled:opacity-40"
+          >
+            <ChevronRight className="h-3 w-3" />
+          </button>
+          <div className="flex flex-nowrap items-center gap-0.5 pl-1">
+            <input
+              type="number"
+              min={1}
+              max={pages}
+              value={goTo}
+              onChange={(e) => setGoTo(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  submitGoTo();
+                }
+              }}
+              placeholder={String(current)}
+              aria-label="Go to page"
+              className="h-6 w-9 shrink-0 rounded border bg-background px-1 text-center text-[11px] text-foreground"
+            />
+            <button
+              onClick={submitGoTo}
+              disabled={!goTo}
+              className="inline-flex h-6 shrink-0 items-center rounded border px-1 text-[11px] hover:bg-muted disabled:opacity-40"
+            >
+              Go
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+export function ActionMenu({ children, vertical = false }: { children: ReactNode; vertical?: boolean }) {
+  const Icon = vertical ? MoreVertical : MoreHorizontal;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="rounded-md p-2 text-muted-foreground hover:bg-muted"
+          title="Actions"
+        >
+          <Icon className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[160px]">
+        {children}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export function usePaginated<T>(items: T[], page: number, perPage: number) {
+  if (perPage <= 0) return items;
+  const start = (page - 1) * perPage;
+  return items.slice(start, start + perPage);
+}

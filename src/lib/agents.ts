@@ -1,0 +1,259 @@
+import { orderProfit, orderReceived, type ProfitOrder } from "@/lib/finance-report";
+import type { LedgerRow } from "@/components/ledger-timeline";
+import { formatMonthYear, safeIsoString } from "@/lib/date";
+
+export type Agent = {
+  id: string;
+  user_id: string;
+  display_name: string;
+  phone: string | null;
+  email: string | null;
+  whatsapp: string | null;
+  sale_target: number;
+  commission_rate: number;
+  is_active: boolean;
+  notes: string | null;
+  created_at: string;
+};
+
+export type AgentOrder = ProfitOrder & {
+  id: string;
+  reseller_id: string | null;
+  created_at: string;
+};
+
+export type AgentPayout = {
+  id: string;
+  agent_id: string;
+  amount: number | string;
+  kind: string; // payment | advance
+  status: string; // pending | approved | paid | rejected
+  method: string | null;
+  reference: string | null;
+  note: string | null;
+  admin_note: string | null;
+  period_from: string | null;
+  period_to: string | null;
+  created_at: string;
+  approved_at: string | null;
+  paid_at: string | null;
+};
+
+export type AgentResellerRow = {
+  reseller_id: string;
+  business_name: string;
+  code: string;
+  phone: string | null;
+  status: string;
+  orders: number;
+  delivered: number;
+  failed: number;
+  sales: number;
+  profit: number;
+  lastOrderAt: string | null;
+};
+
+export type AgentPerformance = {
+  agentId: string;
+  resellers: AgentResellerRow[];
+  resellerCount: number;
+  activeResellers: number;
+  /** Resellers with at least one order in the selected range. */
+  sellingResellers: number;
+  orders: number;
+  delivered: number;
+  failed: number;
+  sales: number;
+  profit: number;
+  target: number;
+  achievedPct: number;
+  gap: number;
+  /** Commission percentage configured for this agent. */
+  rate: number;
+  /** Net profit of settled (delivered / partial / failed) orders — the commission base. */
+  commissionBase: number;
+  /** rate % of the commission base. */
+  commission: number;
+};
+
+export const AGENT_SALES_HINT =
+  "Sales = money actually received for the orders of this agent's resellers in the selected period. Profit uses the same formula as every report: received amount − delivery charge − product cost − packaging cost.";
+
+export const AGENT_COMMISSION_HINT =
+  "Commission = agent rate % × settled net profit of the assigned resellers' orders. Net profit uses the same formula everywhere: final delivered (received) amount − delivery charge − product cost − packaging cost. Returned / cancelled orders reduce the base, so commission is always paid on real delivered money.";
+
+/** rate % of the settled net profit. */
+export function agentCommission(base: number, rate: number | string) {
+  return (base * (Number(rate ?? 0) || 0)) / 100;
+}
+
+
+/** Aggregate reseller-level and agent-level performance from raw orders. */
+export function buildAgentPerformance(
+  agent: { id: string; sale_target: number | string; commission_rate?: number | string | null },
+  resellers: Array<{ id: string; business_name: string; code: string; contact_phone: string | null; status: string }>,
+  orders: AgentOrder[],
+): AgentPerformance {
+  const byReseller = new Map<string, AgentResellerRow>();
+  for (const r of resellers) {
+    byReseller.set(r.id, {
+      reseller_id: r.id,
+      business_name: r.business_name,
+      code: r.code,
+      phone: r.contact_phone,
+      status: r.status,
+      orders: 0,
+      delivered: 0,
+      failed: 0,
+      sales: 0,
+      profit: 0,
+      lastOrderAt: null,
+    });
+  }
+
+  for (const o of orders) {
+    if (!o.reseller_id) continue;
+    const row = byReseller.get(o.reseller_id);
+    if (!row) continue;
+    row.orders += 1;
+    if (o.status === "delivered" || o.status === "partial") {
+      row.delivered += 1;
+      row.sales += orderReceived(o);
+      row.profit += orderProfit(o);
+    } else if (o.status === "returned" || o.status === "cancelled") {
+      row.failed += 1;
+      row.profit += orderProfit(o);
+    }
+    if (!row.lastOrderAt || o.created_at > row.lastOrderAt) row.lastOrderAt = o.created_at;
+  }
+
+  const rows = Array.from(byReseller.values()).sort((a, b) => b.sales - a.sales);
+  const target = Number(agent.sale_target ?? 0) || 0;
+  const sales = rows.reduce((s, r) => s + r.sales, 0);
+  const rate = Number(agent.commission_rate ?? 0) || 0;
+  const commissionBase = rows.reduce((s, r) => s + r.profit, 0);
+
+  return {
+    agentId: agent.id,
+    resellers: rows,
+    resellerCount: rows.length,
+    activeResellers: rows.filter((r) => r.status === "active").length,
+    sellingResellers: rows.filter((r) => r.orders > 0).length,
+    orders: rows.reduce((s, r) => s + r.orders, 0),
+    delivered: rows.reduce((s, r) => s + r.delivered, 0),
+    failed: rows.reduce((s, r) => s + r.failed, 0),
+    sales,
+    profit: commissionBase,
+    target,
+    achievedPct: target > 0 ? Math.round((sales / target) * 100) : 0,
+    gap: Math.max(target - sales, 0),
+    rate,
+    commissionBase,
+    commission: agentCommission(commissionBase, rate),
+  };
+}
+
+/** Money summary for one agent: earned commission vs what admin already paid. */
+export type AgentSettlement = {
+  earned: number;
+  pending: number; // requested, not approved yet
+  approved: number; // approved, not paid yet
+  paid: number; // money actually handed over (includes advances)
+  advance: number; // paid amount beyond earned commission
+  balance: number; // earned − paid (negative = advance given)
+  payable: number; // balance minus approved-but-unpaid, floored at 0
+};
+
+const num = (v: number | string | null | undefined) => Number(v ?? 0) || 0;
+
+export function buildAgentSettlement(earned: number, payouts: AgentPayout[]): AgentSettlement {
+  const sum = (s: string) => payouts.filter((p) => p.status === s).reduce((t, p) => t + num(p.amount), 0);
+  const paid = sum("paid");
+  const approved = sum("approved");
+  const pending = sum("pending");
+  const balance = earned - paid;
+  return {
+    earned,
+    pending,
+    approved,
+    paid,
+    advance: Math.max(paid - earned, 0),
+    balance,
+    payable: Math.max(balance - approved, 0),
+  };
+}
+
+/** Commission earned per month, from settled orders of the assigned resellers. */
+export function agentCommissionMonths(orders: AgentOrder[], rate: number | string) {
+  const map = new Map<string, { key: string; base: number; commission: number; orders: number }>();
+  for (const o of orders) {
+    if (!["delivered", "partial", "returned", "cancelled"].includes(String(o.status))) continue;
+    const d = new Date(o.created_at);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const row = map.get(key) ?? { key, base: 0, commission: 0, orders: 0 };
+    row.base += orderProfit(o);
+    row.orders += 1;
+    row.commission = agentCommission(row.base, rate);
+    map.set(key, row);
+  }
+  return Array.from(map.values()).sort((a, b) => (a.key < b.key ? 1 : -1));
+}
+
+const monthLabel = (key: string) => formatMonthYear(key);
+
+/**
+ * Same timeline format as the reseller money ledger:
+ * commission earned = money in, admin payments = money out, rejected = void.
+ */
+export function buildAgentLedger(orders: AgentOrder[], rate: number | string, payouts: AgentPayout[]): LedgerRow[] {
+  const rows: Omit<LedgerRow, "running">[] = [];
+
+  for (const m of agentCommissionMonths(orders, rate)) {
+    if (m.commission === 0) continue;
+    rows.push({
+      at: `${m.key}-28T23:59:00`,
+      kind: "commission",
+      direction: m.commission >= 0 ? "in" : "out",
+      label: `Commission earned · ${monthLabel(m.key)}`,
+      reference: `${m.orders} settled order(s) · net profit ৳${Math.round(m.base).toLocaleString()} × ${Number(rate) || 0}%`,
+      status: "earned",
+      amount: Math.abs(m.commission),
+    });
+  }
+
+  for (const p of payouts) {
+    const advance = p.kind === "advance";
+    const at = safeIsoString(p.paid_at || p.approved_at || p.created_at);
+    rows.push({
+      at,
+      kind: "payout",
+      direction: p.status === "rejected" ? "void" : "out",
+      label: advance ? "Advance payment" : p.status === "paid" ? "Commission paid" : `Payment ${p.status}`,
+      reference: [p.method, p.reference, p.note, p.admin_note].filter(Boolean).join(" · ") || null,
+      status: p.status,
+      amount: num(p.amount),
+    });
+  }
+
+  rows.sort((a, b) => (a.at < b.at ? -1 : 1));
+  let running = 0;
+  const ordered: LedgerRow[] = rows.map((r) => {
+    if (r.direction === "in") running += r.amount;
+    else if (r.direction === "out" && r.status === "paid") running -= r.amount;
+    return { ...r, running };
+  });
+  return ordered.reverse();
+}
+
+
+export function bdt(v: number) {
+  return `৳${Math.round(v).toLocaleString()}`;
+}
+
+/** WhatsApp-safe Bangladeshi number. */
+export function waNumber(phone: string) {
+  let d = phone.replace(/[^\d+]/g, "").replace(/^\+/, "");
+  if (d.startsWith("0")) d = "88" + d.slice(1);
+  if (d.startsWith("1") && d.length === 10) d = "880" + d;
+  return d;
+}
