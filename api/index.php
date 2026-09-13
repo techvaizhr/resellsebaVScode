@@ -7,13 +7,27 @@ ini_set('display_errors', '1');
 $uri = $_SERVER['REQUEST_URI'] ?? '';
 if (isset($_GET['test']) || str_starts_with($uri, '/api/test')) {
     header('Content-Type: application/json');
+    $disabled = explode(',', ini_get('disable_functions') ?: '');
+    $disabled = array_map('trim', $disabled);
+
     echo json_encode([
         'status' => 'ok',
         'php_version' => PHP_VERSION,
         'vendor_exists' => file_exists(__DIR__ . '/../backend/vendor/autoload.php'),
         'bootstrap_exists' => file_exists(__DIR__ . '/../backend/bootstrap/app.php'),
         'env_exists' => file_exists(__DIR__ . '/../backend/.env'),
+        'pdo_mysql' => extension_loaded('pdo_mysql'),
+        'zip' => extension_loaded('zip'),
+        'exec_enabled' => function_exists('exec') && !in_array('exec', $disabled),
+        'shell_exec_enabled' => function_exists('shell_exec') && !in_array('shell_exec', $disabled),
+        'disabled_functions' => $disabled,
     ]);
+    exit;
+}
+
+// If request is for Admin Backup, handle it via standalone engine
+if (str_contains($uri, 'admin/backup')) {
+    require_once __DIR__ . '/standalone_backup.php';
     exit;
 }
 
