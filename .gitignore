@@ -17,13 +17,12 @@ dist-ssr
 .nitro
 *.local
 
-# Environment files
-.env
-.env.*
-!.env.example
-backend/.env
-backend/.env.*
-!backend/.env.example
+# Environment files (Tracked for private deployment)
+.env.local
+.env.*.local
+backend/.env.local
+backend/.env.*.local
+
 
 # Laravel Backend
 backend/vendor/
