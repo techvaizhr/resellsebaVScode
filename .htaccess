@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Forward Authorization Header for Laravel API Bearer Tokens
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # 2. Route all API requests directly to Laravel Backend
+    RewriteRule ^api$ backend/public/index.php [L,QSA]
+    RewriteRule ^api/(.*)$ backend/public/index.php [L,QSA]
+
+    # 3. Route product uploads to Laravel public/uploads
+    RewriteCond %{REQUEST_URI} ^/uploads/
+    RewriteRule ^uploads/(.*)$ backend/public/uploads/$1 [L]
+</IfModule>
+
+# cPanel CloudLinux Passenger Node.js Configuration
+<IfModule mod_passenger.c>
+    PassengerAppType node
+    PassengerStartupFile app.js
+</IfModule>
