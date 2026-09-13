@@ -25,12 +25,26 @@ if (isset($_GET['test']) || str_starts_with($uri, '/api/test')) {
         $dbError = $e->getMessage();
     }
 
+    $nodevenv = [];
+    $nodeDir = '/home/zhroni367/nodevenv';
+    if (is_dir($nodeDir)) {
+        $nodevenv = scandir($nodeDir);
+    }
+
+    $petzavoNode = [];
+    $pDir = '/home/zhroni367/nodevenv/petzavo.com';
+    if (is_dir($pDir)) {
+        $petzavoNode = scandir($pDir);
+    }
+
     echo json_encode([
         'status' => 'ok',
         'php_version' => PHP_VERSION,
         'db_status' => $dbStatus,
         'db_tables_count' => $tablesCount,
         'db_error' => $dbError,
+        'nodevenv' => $nodevenv,
+        'petzavo_node' => $petzavoNode,
         'vendor_exists' => file_exists(__DIR__ . '/../backend/vendor/autoload.php'),
         'bootstrap_exists' => file_exists(__DIR__ . '/../backend/bootstrap/app.php'),
         'env_exists' => file_exists(__DIR__ . '/../backend/.env'),
