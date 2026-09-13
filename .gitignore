@@ -9,7 +9,7 @@ lerna-debug.log*
 
 # Node / Frontend Build
 node_modules
-dist
+dist/client/uploads/
 dist-ssr
 .output
 .vinxi

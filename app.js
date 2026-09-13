@@ -33,11 +33,17 @@ const server = http.createServer(async (req, res) => {
     const parsedUrl = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     const pathname = decodeURIComponent(parsedUrl.pathname);
 
-    // 1. Try to serve static file from dist/client
+    // 1. Try to serve static file from dist/client or public
     if (pathname !== "/" && !pathname.endsWith("/")) {
-      const filePath = path.join(CLIENT_DIR, pathname);
+      let filePath = path.join(CLIENT_DIR, pathname);
+      if (!fs.existsSync(filePath) && pathname.startsWith("/uploads/")) {
+        filePath = path.join(__dirname, "public", pathname);
+      }
+      if (!fs.existsSync(filePath) && pathname.startsWith("/uploads/")) {
+        filePath = path.join(__dirname, "backend", "public", pathname);
+      }
       // Prevent directory traversal
-      if (filePath.startsWith(CLIENT_DIR) && fs.existsSync(filePath)) {
+      if (fs.existsSync(filePath)) {
         const stat = fs.statSync(filePath);
         if (stat.isFile()) {
           const ext = path.extname(filePath).toLowerCase();
