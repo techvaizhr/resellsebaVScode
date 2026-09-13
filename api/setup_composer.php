@@ -114,12 +114,19 @@ header('Content-Type: text/html; charset=utf-8');
                 echo "composer.phar already present.\n";
             }
 
+            $composerHome = $backendDir . '/.composer';
+            if (!is_dir($composerHome)) {
+                @mkdir($composerHome, 0755, true);
+            }
+            putenv("COMPOSER_HOME={$composerHome}");
+            putenv("HOME={$backendDir}");
+
             // 3. Execute composer install
             echo "Running: {$phpBin} composer.phar install --no-dev --optimize-autoloader --no-interaction\n";
             echo "------------------------------------------------------------\n";
             flush();
 
-            $cmd = "cd " . escapeshellarg($backendDir) . " && {$phpBin} composer.phar install --no-dev --optimize-autoloader --no-interaction 2>&1";
+            $cmd = "export COMPOSER_HOME=" . escapeshellarg($composerHome) . " && export HOME=" . escapeshellarg($backendDir) . " && cd " . escapeshellarg($backendDir) . " && {$phpBin} composer.phar install --no-dev --optimize-autoloader --no-interaction 2>&1";
             $output = @shell_exec($cmd);
 
             echo htmlspecialchars($output ?: "(No shell output returned - checking vendor existence...)");
