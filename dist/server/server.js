@@ -23,7 +23,8 @@ function consumeLastCapturedError() {
 }
 //#endregion
 //#region src/lib/error-page.ts
-function renderErrorPage() {
+function renderErrorPage(error) {
+	const errStr = error ? error.stack || error.message || String(error) : "";
 	return `<!doctype html>
 <html lang="en">
   <head>
@@ -32,7 +33,7 @@ function renderErrorPage() {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa; color: #111; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 1.5rem; }
-      .card { max-width: 28rem; width: 100%; text-align: center; padding: 2rem; }
+      .card { max-width: 32rem; width: 100%; text-align: center; padding: 2rem; }
       h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
       p { color: #4b5563; margin: 0 0 1.5rem; }
       .actions { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
@@ -45,6 +46,7 @@ function renderErrorPage() {
     <div class="card">
       <h1>This page didn't load</h1>
       <p>Something went wrong on our end. You can try refreshing or head back home.</p>
+      ${errStr ? `<pre style="font-size: 11px; text-align: left; background: #f3f4f6; color: #dc2626; padding: 12px; border-radius: 6px; overflow-x: auto; max-height: 250px; white-space: pre-wrap; margin-bottom: 1.5rem;">${errStr.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>` : ""}
       <div class="actions">
         <button class="primary" onclick="location.reload()">Try again</button>
         <a class="secondary" href="/">Go home</a>
@@ -57,7 +59,7 @@ function renderErrorPage() {
 //#region src/server.ts
 var serverEntryPromise;
 async function getServerEntry() {
-	if (!serverEntryPromise) serverEntryPromise = import("./assets/server-COT_QjjM.js").then((m) => m.default ?? m);
+	if (!serverEntryPromise) serverEntryPromise = import("./assets/server-Be3q9ZCZ.js").then((m) => m.default ?? m);
 	return serverEntryPromise;
 }
 async function normalizeCatastrophicSsrResponse(response) {
@@ -65,8 +67,9 @@ async function normalizeCatastrophicSsrResponse(response) {
 	if (!(response.headers.get("content-type") ?? "").includes("application/json")) return response;
 	const body = await response.clone().text();
 	if (!isH3SwallowedErrorBody(body)) return response;
-	console.error(consumeLastCapturedError() ?? /* @__PURE__ */ new Error(`h3 swallowed SSR error: ${body}`));
-	return new Response(renderErrorPage(), {
+	const swallowedErr = consumeLastCapturedError() ?? /* @__PURE__ */ new Error(`h3 swallowed SSR error: ${body}`);
+	console.error(swallowedErr);
+	return new Response(renderErrorPage(swallowedErr), {
 		status: 500,
 		headers: { "content-type": "text/html; charset=utf-8" }
 	});
@@ -84,7 +87,7 @@ var server_default = { async fetch(request, env, ctx) {
 		return await normalizeCatastrophicSsrResponse(await (await getServerEntry()).fetch(request, env, ctx));
 	} catch (error) {
 		console.error(error);
-		return new Response(renderErrorPage(), {
+		return new Response(renderErrorPage(error), {
 			status: 500,
 			headers: { "content-type": "text/html; charset=utf-8" }
 		});
