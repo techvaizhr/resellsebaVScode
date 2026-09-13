@@ -1,1 +1,0 @@
-import{s as e}from"./vendor-editor-_X2_vRjM.js";import{qt as t}from"./index-Cj1XPZch.js";var n=e(),r=()=>(0,n.jsx)(t,{});export{r as component};

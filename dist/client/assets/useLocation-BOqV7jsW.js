@@ -1,0 +1,1 @@
+import{t as e}from"./useStore-CS1maFo5.js";import{t}from"./useRouter-CqUDDOHC.js";import{n}from"./useMatch-BwAgRZDb.js";function r(r){let i=t();return e(i.stores.location,n(r,i))}export{r as t};

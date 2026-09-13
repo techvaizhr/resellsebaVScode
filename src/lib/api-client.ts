@@ -4138,31 +4138,9 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
       throw new ApiError(502, "Failed to parse API response as JSON: " + (parseError?.message || String(parseError)));
     }
   } catch (error: any) {
-    // Never silently swallow admin/backup real server errors into mock mode!
-    const isBackupEndpoint = cleanEndpoint.startsWith("admin/backup");
-    if (isBackupEndpoint && error instanceof ApiError) {
-      throw error;
-    }
-
-    // If backend is offline, unreachable, network connection refused, returned HTML, or explicit mock mode:
-    // Seamlessly fallback to local data so that UI, admin, reseller, and supplier testing always works!
-    const isNetworkDown =
-      error instanceof TypeError ||
-      error instanceof SyntaxError ||
-      error.name === "AbortError" ||
-      (typeof error?.message === "string" &&
-        (error.message.includes("fetch") ||
-          error.message.includes("NetworkError") ||
-          error.message.includes("network") ||
-          error.message.includes("Failed") ||
-          error.message.includes("JSON")));
-
-    if (
-      !isBackupEndpoint &&
-      (isMockMode ||
-      isNetworkDown ||
-      (error instanceof ApiError && (error.status === 404 || error.status >= 500)))
-    ) {
+    // STRICT LIVE MODE:
+    // Only use client-side mock if explicitly configured via VITE_USE_MOCK=true in .env
+    if (isMockMode) {
       let bodyData: any = undefined;
       if (typeof options.body === "string") {
         try {
@@ -4174,6 +4152,7 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
       return await getMockResponse(cleanEndpoint, options.method || "GET", bodyData);
     }
 
+    // Always throw real server errors so data is guaranteed to go to MySQL
     throw error;
   }
 }

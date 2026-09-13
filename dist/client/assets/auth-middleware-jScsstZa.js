@@ -1,0 +1,1 @@
+import{t as e}from"./createMiddleware-DQnh37QV.js";var t=e({type:`function`});export{t};

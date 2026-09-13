@@ -1,0 +1,1 @@
+import{n as e,t}from"./createServerFn-Bi_fWk9I.js";var n=t({method:`GET`}).handler(e(`2a45d9b79d4ba9547992f1eac18039c2bae0ddf7df7670a8638b3bf5e0a6962f`)),r=t({method:`GET`}).handler(e(`007261ee9d86e87592cfcd5491f56565cca84574c79db98974ab1951a1437f9d`));export{r as n,n as t};
