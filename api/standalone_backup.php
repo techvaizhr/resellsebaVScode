@@ -13,24 +13,29 @@ function get_env_map() {
     static $env = null;
     if ($env !== null) return $env;
     $env = [];
-    $envFile = __DIR__ . '/../backend/.env';
-    if (!file_exists($envFile)) {
-        $envFile = __DIR__ . '/../backend/.env.example';
-    }
-    if (file_exists($envFile)) {
-        $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if ($line === '' || str_starts_with($line, '#')) continue;
-            if (str_contains($line, '=')) {
-                list($key, $val) = explode('=', $line, 2);
-                $key = trim($key);
-                $val = trim($val);
-                if ((str_starts_with($val, '"') && str_ends_with($val, '"')) ||
-                    (str_starts_with($val, "'") && str_ends_with($val, "'"))) {
-                    $val = substr($val, 1, -1);
+    $candidates = [
+        __DIR__ . '/../backend/.env',
+        __DIR__ . '/../.env',
+        __DIR__ . '/../backend/.env.example',
+    ];
+    foreach ($candidates as $envFile) {
+        if (file_exists($envFile)) {
+            $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line === '' || str_starts_with($line, '#')) continue;
+                if (str_contains($line, '=')) {
+                    list($key, $val) = explode('=', $line, 2);
+                    $key = trim($key);
+                    $val = trim($val);
+                    if ((str_starts_with($val, '"') && str_ends_with($val, '"')) ||
+                        (str_starts_with($val, "'") && str_ends_with($val, "'"))) {
+                        $val = substr($val, 1, -1);
+                    }
+                    if (!isset($env[$key])) {
+                        $env[$key] = $val;
+                    }
                 }
-                $env[$key] = $val;
             }
         }
     }

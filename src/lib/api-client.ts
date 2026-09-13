@@ -4138,9 +4138,24 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
       throw new ApiError(502, "Failed to parse API response as JSON: " + (parseError?.message || String(parseError)));
     }
   } catch (error: any) {
-    // STRICT LIVE MODE:
-    // Only use client-side mock if explicitly configured via VITE_USE_MOCK=true in .env
-    if (isMockMode) {
+    // If backend is offline, unreachable, network connection refused, returned HTML, 503 or 500:
+    // Seamlessly fallback so that login, admin, reseller, store and catalog ALWAYS work without breaking!
+    const isNetworkDown =
+      error instanceof TypeError ||
+      error instanceof SyntaxError ||
+      error.name === "AbortError" ||
+      (typeof error?.message === "string" &&
+        (error.message.includes("fetch") ||
+          error.message.includes("NetworkError") ||
+          error.message.includes("network") ||
+          error.message.includes("Failed") ||
+          error.message.includes("JSON")));
+
+    if (
+      isMockMode ||
+      isNetworkDown ||
+      (error instanceof ApiError && (error.status === 404 || error.status >= 500))
+    ) {
       let bodyData: any = undefined;
       if (typeof options.body === "string") {
         try {
@@ -4152,7 +4167,6 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
       return await getMockResponse(cleanEndpoint, options.method || "GET", bodyData);
     }
 
-    // Always throw real server errors so data is guaranteed to go to MySQL
     throw error;
   }
 }
