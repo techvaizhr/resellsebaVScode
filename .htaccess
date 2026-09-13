@@ -9,9 +9,54 @@
     RewriteRule ^api$ backend/public/index.php [L,QSA]
     RewriteRule ^api/(.*)$ backend/public/index.php [L,QSA]
 
-    # 3. Route product uploads to Laravel public/uploads
+    # 3. Direct fast serving for frontend assets (JS/CSS/Fonts)
+    RewriteCond %{REQUEST_URI} ^/assets/
+    RewriteRule ^assets/(.*)$ dist/client/assets/$1 [L]
+
+    # 4. Direct fast serving for static uploads from single root storage
     RewriteCond %{REQUEST_URI} ^/uploads/
-    RewriteRule ^uploads/(.*)$ backend/public/uploads/$1 [L]
+    RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]
+</IfModule>
+
+# High-Performance Gzip Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+    AddOutputFilterByType DEFLATE image/x-icon
+    AddOutputFilterByType DEFLATE font/ttf
+    AddOutputFilterByType DEFLATE font/otf
+    AddOutputFilterByType DEFLATE font/woff
+    AddOutputFilterByType DEFLATE font/woff2
+</IfModule>
+
+# Browser Caching (1 Year Immutable for Fingerprinted Static Assets)
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/javascript "access plus 1 year"
+
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/ttf "access plus 1 year"
 </IfModule>
 
 # cPanel CloudLinux Passenger Node.js Configuration

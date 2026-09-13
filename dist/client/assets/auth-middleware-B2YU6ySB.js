@@ -1,0 +1,1 @@
+import{Kt as e}from"./index-9JHL-UOp.js";var t=e({type:`function`});export{t};

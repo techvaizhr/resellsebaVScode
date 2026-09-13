@@ -156,7 +156,8 @@ function Landing({
     toast.success("Copied to clipboard");
   };
 
-  const banner = c.hero.bannerImage?.url;
+  const [bannerError, setBannerError] = useState(false);
+  const banner = c.hero.bannerImage?.url || "/uploads/branding/1746e3c9-7c6f-49cb-95a3-a18724e47970.webp";
 
   const statIcons = [Boxes, Layers, ShoppingBag, Users];
   const customStats = c.stats?.items?.filter((s) => s.value?.trim() || s.label?.trim()) ?? [];
@@ -233,9 +234,14 @@ function Landing({
             {/* soft ambient glow behind the banner so any image blends in */}
             <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] bg-[image:var(--gradient-brand)] opacity-20 blur-2xl" />
             <div className="animate-float relative overflow-hidden rounded-2xl shadow-[var(--shadow-elegant)]">
-              {banner ? (
+              {banner && !bannerError ? (
                 <>
-                  <img src={banner} alt={siteName} className="aspect-[4/3] w-full object-cover" />
+                  <img
+                    src={banner}
+                    alt={siteName}
+                    className="aspect-[4/3] w-full object-cover"
+                    onError={() => setBannerError(true)}
+                  />
                   {/* gentle vignette + tint keeps bright, dark or busy images looking consistent */}
                   <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-background/35 via-transparent to-background/10" />
                 </>
@@ -437,30 +443,7 @@ function Landing({
             </div>
             <div className="mt-8 grid grid-cols-5 gap-2 sm:grid-cols-6 sm:gap-3 md:grid-cols-8 lg:grid-cols-10">
               {(stats?.categories ?? []).map((cat: any) => (
-                <Link
-                  key={cat.id}
-                  to="/catalog"
-                  search={{ category: cat.slug }}
-                  className="group flex flex-col items-center gap-2 rounded-2xl border border-border/60 bg-card p-2 text-center transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-[var(--shadow-elegant)]"
-                >
-                  <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-primary/5">
-                    {cat.image_url ? (
-                      <img
-                        src={cat.image_url}
-                        alt={cat.name}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                    ) : (
-                      <div className="grid h-full w-full place-items-center text-lg font-black text-primary">
-                        {cat.name.charAt(0)}
-                      </div>
-                    )}
-                  </div>
-                  <span className="line-clamp-2 min-w-0 text-[11px] font-bold leading-tight group-hover:text-primary sm:text-xs">
-                    {cat.name}
-                  </span>
-                </Link>
+                <CategoryCardItem key={cat.id} cat={cat} />
               ))}
             </div>
           </div>
@@ -676,3 +659,35 @@ function Landing({
     </div>
   );
 }
+
+function CategoryCardItem({ cat }: { cat: any }) {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  return (
+    <Link
+      to="/catalog"
+      search={{ category: cat.slug }}
+      className="group flex flex-col items-center gap-2 rounded-2xl border border-border/60 bg-card p-2 text-center transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-[var(--shadow-elegant)]"
+    >
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-primary/5">
+        {cat.image_url && !imgFailed ? (
+          <img
+            src={cat.image_url}
+            alt={cat.name}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <div className="grid h-full w-full place-items-center bg-primary/10 text-lg font-black text-primary">
+            {(cat.name || "C").charAt(0).toUpperCase()}
+          </div>
+        )}
+      </div>
+      <span className="line-clamp-2 min-w-0 text-[11px] font-bold leading-tight group-hover:text-primary sm:text-xs">
+        {cat.name}
+      </span>
+    </Link>
+  );
+}
+

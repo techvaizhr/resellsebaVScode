@@ -257,24 +257,13 @@ export const saveUploadedFileServer = createServerFn({ method: "POST" })
     const base64Data = base64.replace(/^data:image\/\w+;base64,/, "");
     const buffer = Buffer.from(base64Data, "base64");
 
-    // 1. Save to frontend public/uploads/<folder>
+    // Save to single canonical storage: public/uploads/<folder>
     const frontendDir = path.resolve(process.cwd(), "public", "uploads", safeFolder);
     if (!fs.existsSync(frontendDir)) {
       fs.mkdirSync(frontendDir, { recursive: true });
     }
     const frontendFilePath = path.join(frontendDir, filename);
     fs.writeFileSync(frontendFilePath, buffer);
-
-    // 2. Mirror to backend/public/uploads/<folder>
-    try {
-      const backendDir = path.resolve(process.cwd(), "backend", "public", "uploads", safeFolder);
-      if (!fs.existsSync(backendDir)) {
-        fs.mkdirSync(backendDir, { recursive: true });
-      }
-      fs.writeFileSync(path.join(backendDir, filename), buffer);
-    } catch {
-      // ignore if backend folder not reachable
-    }
 
     const relPath = `${safeFolder}/${filename}`;
     const url = `/uploads/${relPath}`;
@@ -366,16 +355,10 @@ export const deleteUploadedFileServer = createServerFn({ method: "POST" })
     invalidateMediaCache();
     const relativePath = data.path.replace(/^\/?uploads\//, "");
     const frontendFile = path.resolve(process.cwd(), "public", "uploads", relativePath);
-    const backendFile = path.resolve(process.cwd(), "backend", "public", "uploads", relativePath);
 
     if (fs.existsSync(frontendFile)) {
       try {
         fs.unlinkSync(frontendFile);
-      } catch {}
-    }
-    if (fs.existsSync(backendFile)) {
-      try {
-        fs.unlinkSync(backendFile);
       } catch {}
     }
 

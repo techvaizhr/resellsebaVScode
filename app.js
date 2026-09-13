@@ -39,9 +39,6 @@ const server = http.createServer(async (req, res) => {
       if (!fs.existsSync(filePath) && pathname.startsWith("/uploads/")) {
         filePath = path.join(__dirname, "public", pathname);
       }
-      if (!fs.existsSync(filePath) && pathname.startsWith("/uploads/")) {
-        filePath = path.join(__dirname, "backend", "public", pathname);
-      }
       // Prevent directory traversal
       if (fs.existsSync(filePath)) {
         const stat = fs.statSync(filePath);

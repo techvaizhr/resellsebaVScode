@@ -379,9 +379,9 @@ class RpcController extends Controller
             'border_radius' => '0.875rem',
             'contact_phone' => null,
             'contact_email' => null,
-            'logo_url' => null,
-            'favicon_url' => null,
-            'og_image_url' => null,
+            'logo_url' => '/uploads/branding/166777d0-f627-4904-8b3d-ae5b024b9b50.webp',
+            'favicon_url' => '/uploads/branding/0ab29621-3af4-42ff-96ff-c6ae8aa32b25.webp',
+            'og_image_url' => '/uploads/branding/be5ffbde-52a4-4a5f-aaae-2d3c4a9a3836.webp',
             'meta_title_template' => null,
             'meta_description' => null,
             'flagship_reseller_code' => null,
@@ -402,6 +402,26 @@ class RpcController extends Controller
 
         $cols = DB::getSchemaBuilder()->getColumnListing('global_settings');
         if (in_array('key', $cols)) {
+            // Auto-heal missing branding settings directly into DB so user never has to run manual SQL
+            try {
+                $hasLogo = DB::table('global_settings')->where('key', 'logo_url')->exists();
+                if (!$hasLogo) {
+                    DB::table('global_settings')->insert([
+                        ['id' => (string) Str::uuid(), 'key' => 'logo_url', 'value' => '/uploads/branding/166777d0-f627-4904-8b3d-ae5b024b9b50.webp', 'created_at' => now(), 'updated_at' => now()],
+                        ['id' => (string) Str::uuid(), 'key' => 'favicon_url', 'value' => '/uploads/branding/0ab29621-3af4-42ff-96ff-c6ae8aa32b25.webp', 'created_at' => now(), 'updated_at' => now()],
+                        ['id' => (string) Str::uuid(), 'key' => 'og_image_url', 'value' => '/uploads/branding/be5ffbde-52a4-4a5f-aaae-2d3c4a9a3836.webp', 'created_at' => now(), 'updated_at' => now()],
+                    ]);
+                }
+                if (DB::getSchemaBuilder()->hasTable('brands')) {
+                    DB::table('brands')->where('slug', 'aura')->whereNull('logo_url')->update([
+                        'logo_url' => '/uploads/brands/12ebcacf-9aed-4b5c-9425-20c9e98c254a.webp'
+                    ]);
+                    DB::table('brands')->where('slug', 'novatech')->whereNull('logo_url')->update([
+                        'logo_url' => '/uploads/brands/ea035f56-66ae-4482-9b58-bbfbe29dad4e.webp'
+                    ]);
+                }
+            } catch (\Exception $e) {}
+
             $rows = DB::table('global_settings')->get();
             foreach ($rows as $r) {
                 if (!empty($r->key)) {
@@ -433,29 +453,33 @@ class RpcController extends Controller
 
     private function lpBootstrap($args)
     {
-        $products = Product::where('is_active', true)
-            ->with('images')
-            ->orderBy('created_at', 'desc')
-            ->limit(12)
-            ->get();
+        $data = Cache::remember('lp_bootstrap_cache', 30, function () {
+            $products = Product::where('is_active', true)
+                ->with('images')
+                ->orderBy('created_at', 'desc')
+                ->limit(12)
+                ->get();
 
-        $categories = Category::where('is_active', true)
-            ->orderBy('sort_order', 'asc')
-            ->get();
+            $categories = Category::where('is_active', true)
+                ->orderBy('sort_order', 'asc')
+                ->get();
 
-        $settings = $this->getGlobalSettingsArray();
+            $settings = $this->getGlobalSettingsArray();
 
-        return response()->json([
-            'settings' => $settings,
-            'store' => null,
-            'stats' => [
-                'totalProducts' => Product::count(),
-                'totalCategories' => Category::count(),
-                'totalSales' => Order::where('status', 'delivered')->count(),
-            ],
-            'categories' => $categories,
-            'products' => $products,
-        ]);
+            return [
+                'settings' => $settings,
+                'store' => null,
+                'stats' => [
+                    'totalProducts' => Product::count(),
+                    'totalCategories' => Category::count(),
+                    'totalSales' => Order::where('status', 'delivered')->count(),
+                ],
+                'categories' => $categories,
+                'products' => $products,
+            ];
+        });
+
+        return response()->json($data);
     }
 
     private function adminDashboard($args)
@@ -508,35 +532,6 @@ class RpcController extends Controller
             'listings_active' => 0,
             'products' => [],
             'top_resellers' => [],
-        ]);
-    }
-
-    private function lpBootstrap($args)
-    {
-        $products = Product::where('is_active', true)->limit(16)->get();
-        $categories = Category::where('is_active', true)->get();
-        $resellersCount = Reseller::count();
-        $productsCount = Product::count();
-        $ordersCount = Order::count();
-
-        return response()->json([
-            'settings' => [
-                'site_name' => 'ResellSeba',
-                'tagline' => 'Launch your own online store with zero investment',
-                'primary_color' => '#4f46e5',
-                'accent_color' => '#f59e0b',
-                'border_radius' => '0.875rem',
-            ],
-            'content' => [],
-            'categories' => $categories,
-            'products' => $products,
-            'stats' => [
-                'resellers' => max($resellersCount, 1250),
-                'products' => max($productsCount, 3400),
-                'orders' => max($ordersCount, 18500),
-                'delivered_pct' => 98,
-            ],
-            'flagship' => Reseller::first(),
         ]);
     }
 
@@ -823,7 +818,12 @@ class RpcController extends Controller
 
     private function resellerCatalogPage($user, $args)
     {
-        $products = Product::where('is_active', true)->with(['brand', 'category', 'images'])->orderBy('created_at', 'desc')->get();
+        $products = Cache::remember('reseller_catalog_products', 30, function () {
+            return Product::where('is_active', true)
+                ->with(['brand', 'category', 'images'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
         return response()->json($products);
     }
 

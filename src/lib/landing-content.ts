@@ -52,7 +52,10 @@ export const DEFAULT_LANDING_CONTENT: LandingContent = {
     ctaPrimary: "Sign up as Reseller",
     ctaSecondary: "Sign in",
     badges: ["No setup fee", "Verified Suppliers", "Automated Courier Tracking", "Weekly Payouts"],
-    bannerImage: null,
+    bannerImage: {
+      url: "/uploads/branding/1746e3c9-7c6f-49cb-95a3-a18724e47970.webp",
+      path: "uploads/branding/1746e3c9-7c6f-49cb-95a3-a18724e47970.webp",
+    },
   },
   stats: {
     title: "Platform at a glance",

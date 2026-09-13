@@ -40,7 +40,8 @@ class UploadController extends Controller
             default => 'products',
         };
 
-        $uploadDir = public_path('uploads/' . $folder);
+        // Single Source of Truth: root public/uploads directory
+        $uploadDir = $this->getUploadBasePath($folder);
         if (!File::isDirectory($uploadDir)) {
             File::makeDirectory($uploadDir, 0755, true, true);
         }
@@ -63,7 +64,7 @@ class UploadController extends Controller
         }
 
         $relativePath = 'uploads/' . $folder . '/' . $filename;
-        $url = asset($relativePath);
+        $url = '/' . $relativePath;
 
         return response()->json([
             'path' => $relativePath,
@@ -71,9 +72,21 @@ class UploadController extends Controller
             'fullPath' => $url,
             'filename' => $filename,
             'folder' => $folder,
-            'size' => File::exists(public_path($relativePath)) ? File::size(public_path($relativePath)) : 0,
+            'size' => File::exists($uploadDir . '/' . $filename) ? File::size($uploadDir . '/' . $filename) : 0,
             'created_at' => now()->toIso8601String(),
         ]);
+    }
+
+    /**
+     * Helper to get the canonical upload directory.
+     */
+    private function getUploadBasePath($subpath = '')
+    {
+        $rootPath = base_path('../public/uploads' . ($subpath ? '/' . ltrim($subpath, '/') : ''));
+        if (File::isDirectory(base_path('../public'))) {
+            return $rootPath;
+        }
+        return public_path('uploads' . ($subpath ? '/' . ltrim($subpath, '/') : ''));
     }
 
     /**
@@ -87,7 +100,7 @@ class UploadController extends Controller
         $search = strtolower($request->input('search', ''));
 
         $cachedData = Cache::remember('media_library_scanned_index', 60, function () {
-            $baseDir = public_path('uploads');
+            $baseDir = $this->getUploadBasePath();
             if (!File::isDirectory($baseDir)) {
                 File::makeDirectory($baseDir, 0755, true, true);
             }
@@ -246,9 +259,12 @@ class UploadController extends Controller
             $cleanPath = str_replace([url('/'), asset('')], '', $path);
             $cleanPath = ltrim($cleanPath, '/');
 
-            $fullPath = public_path($cleanPath);
-            if (File::exists($fullPath)) {
-                File::delete($fullPath);
+            $targetPath = base_path('../public/' . $cleanPath);
+            if (!File::exists($targetPath)) {
+                $targetPath = public_path($cleanPath);
+            }
+            if (File::exists($targetPath)) {
+                File::delete($targetPath);
                 $deleted[] = $path;
             }
         }

@@ -36,9 +36,18 @@ export function Brand({
   logoUrl: string | null;
   size?: "md" | "sm";
 }) {
+  const [imgError, setImgError] = useState(false);
+  const effectiveLogo = !imgError ? (logoUrl || "/uploads/branding/166777d0-f627-4904-8b3d-ae5b024b9b50.webp") : null;
   const h = size === "md" ? "h-12 sm:h-14" : "h-9";
-  if (logoUrl)
-    return <img src={logoUrl} alt={siteName} className={`${h} max-w-40 shrink-0 object-contain`} />;
+  if (effectiveLogo)
+    return (
+      <img
+        src={effectiveLogo}
+        alt={siteName}
+        className={`${h} max-w-40 shrink-0 object-contain`}
+        onError={() => setImgError(true)}
+      />
+    );
   return (
     <span
       className={`grid ${size === "md" ? "h-11 w-11" : "h-9 w-9"} shrink-0 place-items-center rounded-xl bg-[image:var(--gradient-brand)] text-lg font-black text-primary-foreground`}

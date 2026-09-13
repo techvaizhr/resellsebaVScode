@@ -18,6 +18,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (id.includes("node_modules/xlsx")) {
+            return "vendor-excel";
+          }
+          if (id.includes("node_modules/@zxing") || id.includes("node_modules/jsbarcode")) {
+            return "vendor-barcode";
+          }
           if (id.includes("node_modules/recharts")) {
             return "vendor-charts";
           }
@@ -27,7 +33,7 @@ export default defineConfig({
           if (id.includes("node_modules/lucide-react")) {
             return "vendor-icons";
           }
-          if (id.includes("node_modules/@radix-ui")) {
+          if (id.includes("node_modules/@radix-ui") || id.includes("node_modules/cmdk") || id.includes("node_modules/vaul")) {
             return "vendor-ui";
           }
         },

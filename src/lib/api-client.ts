@@ -179,8 +179,9 @@ async function getMockResponse(path: string, method: string, body?: any): Promis
       primary_color: "#4f46e5",
       accent_color: "#f59e0b",
       border_radius: "0.875rem",
-      logo_url: null,
-      favicon_url: null,
+      logo_url: "/uploads/branding/166777d0-f627-4904-8b3d-ae5b024b9b50.webp",
+      favicon_url: "/uploads/branding/0ab29621-3af4-42ff-96ff-c6ae8aa32b25.webp",
+      og_image_url: "/uploads/branding/be5ffbde-52a4-4a5f-aaae-2d3c4a9a3836.webp",
       tagline: "Launch your own online store with zero investment",
       advanced_settings: {
         delivery: {
@@ -2183,7 +2184,7 @@ async function getMockResponse(path: string, method: string, body?: any): Promis
         payouts: myPayouts,
         settings: {
           site_name: "ResellSeba",
-          logo_url: null,
+          logo_url: "/uploads/branding/166777d0-f627-4904-8b3d-ae5b024b9b50.webp",
           primary_color: "#4f46e5",
         },
       };
@@ -3600,9 +3601,9 @@ async function getMockResponse(path: string, method: string, body?: any): Promis
             border_radius: "0.875rem",
             contact_phone: "01700000000",
             contact_email: "support@resellseba.com",
-            logo_url: null,
-            favicon_url: null,
-            og_image_url: null,
+            logo_url: "/uploads/branding/166777d0-f627-4904-8b3d-ae5b024b9b50.webp",
+            favicon_url: "/uploads/branding/0ab29621-3af4-42ff-96ff-c6ae8aa32b25.webp",
+            og_image_url: "/uploads/branding/be5ffbde-52a4-4a5f-aaae-2d3c4a9a3836.webp",
             flagship_reseller_code: "RS1234",
             label_size: "3x4",
             landing_content: DEFAULT_LANDING_CONTENT,

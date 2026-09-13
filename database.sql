@@ -1296,8 +1296,8 @@ UNLOCK TABLES;
 -- Data for table: brands (2 records)
 LOCK TABLES `brands` WRITE;
 INSERT INTO `brands` (`id`, `name`, `slug`, `logo_url`, `is_active`, `created_at`, `updated_at`) VALUES
-('1ac755c1-17a0-49ee-a9a2-400e5692f5bf', 'Aura', 'aura', NULL, 1, '2026-08-27 06:49:01.805264+00', '2026-09-13T08:04:22.881Z'),
-('dca938ca-b958-4bfd-a35b-9bc079b802b1', 'NovaTech', 'novatech', NULL, 1, '2026-08-27 06:49:01.805264+00', '2026-09-13T08:04:22.881Z');
+('1ac755c1-17a0-49ee-a9a2-400e5692f5bf', 'Aura', 'aura', '/uploads/brands/12ebcacf-9aed-4b5c-9425-20c9e98c254a.webp', 1, '2026-08-27 06:49:01.805264+00', '2026-09-13T08:04:22.881Z'),
+('dca938ca-b958-4bfd-a35b-9bc079b802b1', 'NovaTech', 'novatech', '/uploads/brands/ea035f56-66ae-4482-9b58-bbfbe29dad4e.webp', 1, '2026-08-27 06:49:01.805264+00', '2026-09-13T08:04:22.881Z');
 UNLOCK TABLES;
 
 -- Data for table: suppliers (10 records)
@@ -7032,7 +7032,10 @@ INSERT INTO `global_settings` (`id`, `key`, `value`, `created_at`, `updated_at`)
 ('be39839e-241a-4eab-a9f8-e90b4b66fd8e', 'accent_color', '#f59e0b', '2026-09-13T08:04:22.903Z', '2026-09-13T08:04:22.903Z'),
 ('4a6736f4-3943-49ab-9c13-a65f87efad74', 'border_radius', '0.875rem', '2026-09-13T08:04:22.903Z', '2026-09-13T08:04:22.903Z'),
 ('852ac166-cda0-4510-b50a-e70529856964', 'tagline', 'Launch your own online store with zero investment', '2026-09-13T08:04:22.903Z', '2026-09-13T08:04:22.903Z'),
-('e023b431-fefe-4ed9-a35a-897d857c1413', 'advanced_settings', '{\"delivery\":{\"inside_dhaka\":60,\"outside_dhaka\":120,\"sub_dhaka\":100}}', '2026-09-13T08:04:22.903Z', '2026-09-13T08:04:22.903Z');
+('e023b431-fefe-4ed9-a35a-897d857c1413', 'advanced_settings', '{\"delivery\":{\"inside_dhaka\":60,\"outside_dhaka\":120,\"sub_dhaka\":100}}', '2026-09-13T08:04:22.903Z', '2026-09-13T08:04:22.903Z'),
+('a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', 'logo_url', '/uploads/branding/166777d0-f627-4904-8b3d-ae5b024b9b50.webp', '2026-09-13T08:04:22.903Z', '2026-09-13T08:04:22.903Z'),
+('b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e', 'favicon_url', '/uploads/branding/0ab29621-3af4-42ff-96ff-c6ae8aa32b25.webp', '2026-09-13T08:04:22.903Z', '2026-09-13T08:04:22.903Z'),
+('c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f', 'og_image_url', '/uploads/branding/be5ffbde-52a4-4a5f-aaae-2d3c4a9a3836.webp', '2026-09-13T08:04:22.903Z', '2026-09-13T08:04:22.903Z');
 UNLOCK TABLES;
 
 COMMIT;

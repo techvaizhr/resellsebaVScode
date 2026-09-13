@@ -1,1 +1,0 @@
-import{s as e}from"./vendor-editor-_X2_vRjM.js";import{d as t}from"./index-h7SlP0rc.js";import{t as n}from"./transaction-report-B9H4h2Ev.js";var r=e();function i(){let{reseller:e}=t.useSearch();return(0,r.jsx)(`div`,{className:`space-y-5`,children:(0,r.jsx)(n,{admin:!0,initialReseller:e??null})})}export{i as component};
