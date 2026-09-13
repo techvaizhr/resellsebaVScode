@@ -54,9 +54,12 @@ function CatalogDetails() {
   // Price/profit/delivery shown only when logged in as admin/staff/reseller/leader.
   const showPrices = useCatalogPrices();
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
     let mounted = true;
     setState("loading");
+    setLoadError(null);
     fetchProduct({ data: { slug } })
       .then((d) => {
         if (mounted) {
@@ -65,8 +68,10 @@ function CatalogDetails() {
           setState("done");
         }
       })
-      .catch(() => {
+      .catch((err: any) => {
         if (mounted) {
+          console.error("Product load error from live database:", err);
+          setLoadError(err?.message || "Failed to load product from live database.");
           setState("done");
         }
       });
@@ -82,10 +87,35 @@ function CatalogDetails() {
       </div>
     );
 
+  if (loadError)
+    return (
+      <div className="mx-auto max-w-xl px-4 py-20 text-center">
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-8">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/20 text-destructive text-xl">
+            ⚠️
+          </div>
+          <h2 className="text-lg font-bold text-destructive">ডাটাবেজ কানেকশন এরর</h2>
+          <p className="mt-2 text-xs text-muted-foreground">{loadError}</p>
+          <div className="mt-5 flex items-center justify-center gap-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center rounded-xl bg-destructive px-4 py-2 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90"
+            >
+              পুনরায় চেষ্টা করুন (Reload)
+            </button>
+            <Link to="/catalog" search={{}} className="text-xs font-semibold text-primary hover:underline">
+              ← Back to catalog
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+
   if (!p)
     return (
       <div className="mx-auto max-w-2xl px-4 py-24 text-center">
         <h1 className="text-2xl font-bold">Product not found</h1>
+        <p className="mt-2 text-sm text-muted-foreground">The requested product could not be found in the live catalog.</p>
         <Link to="/catalog" search={{}} className="mt-4 inline-block text-sm font-semibold text-primary hover:underline">
           ← Back to catalog
         </Link>

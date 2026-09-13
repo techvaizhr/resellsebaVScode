@@ -15,29 +15,20 @@ function isRefusedContext(): boolean {
 }
 
 export function registerPwa() {
-  if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+  if (typeof window === "undefined") return;
 
-  if (isRefusedContext()) {
-    return;
+  // Purge any stale cache to ensure strictly live database data
+  if ("caches" in window) {
+    window.caches.keys().then((keys) => {
+      for (const k of keys) window.caches.delete(k);
+    }).catch(() => {});
   }
 
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register(SW_PATH, { scope: "/" })
-      .then((reg) => {
-        reg.addEventListener("updatefound", () => {
-          const installing = reg.installing;
-          if (installing) {
-            installing.addEventListener("statechange", () => {
-              if (installing.state === "installed" && navigator.serviceWorker.controller) {
-                console.log("New PWA content available; please refresh.");
-              }
-            });
-          }
-        });
-      })
-      .catch((err) => {
-        console.warn("PWA Service Worker registration failed:", err);
-      });
-  });
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      for (const reg of regs) {
+        reg.unregister().catch(() => {});
+      }
+    }).catch(() => {});
+  }
 }

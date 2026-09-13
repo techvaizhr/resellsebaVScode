@@ -73,11 +73,11 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
         products,
       };
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error("getCatalog error from live database:", err);
+    throw new Error(err?.message || "Cannot fetch catalog from live database");
   }
 
-  // Live data only: if database is empty or disconnected, return empty
   return {
     categories: [],
     brands: [],
@@ -132,8 +132,8 @@ export const getCatalogProduct = createServerFn({ method: "GET" })
         brand: brand?.name ?? null,
         images: imgs,
       };
-    } catch (err) {
+    } catch (err: any) {
       console.error("getCatalogProduct error from live database:", err);
-      return null;
+      throw new Error(err?.message || "Cannot fetch product from live database");
     }
   });

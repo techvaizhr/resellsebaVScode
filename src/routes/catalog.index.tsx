@@ -92,6 +92,8 @@ function CatalogIndex() {
   const [term, setTerm] = useState(q ?? "");
   const [showSuggest, setShowSuggest] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   // Price/profit shown only when logged in as admin/staff/reseller/leader.
   const showPrices = useCatalogPrices();
   const perPage = 100;
@@ -99,40 +101,21 @@ function CatalogIndex() {
 
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
+    setLoadError(null);
     fetchCatalog()
       .then((d) => {
-        if (mounted && d) setData(d as never);
+        if (mounted) {
+          if (d) setData(d as never);
+          setLoading(false);
+        }
       })
-      .catch(async () => {
-        try {
-          const { data: res } = await supabase.rpc("reseller_catalog_page");
-          if (mounted && res) {
-            const prods = ((res as any).products ?? []).filter((p: any) => p.is_active !== false);
-            const cats = ((res as any).categories ?? []).filter((c: any) => c.is_active !== false);
-            const brands = ((res as any).brands ?? []).filter((b: any) => b.is_active !== false);
-            setData({
-              categories: cats.map((c: any) => ({
-                ...c,
-                count: prods.filter((p: any) => p.category_id === c.id).length,
-              })),
-              brands,
-              products: prods.map((p: any) => ({
-                id: p.id,
-                name: p.name,
-                slug: p.slug,
-                code: p.product_code || "",
-                short: p.short_description || "",
-                price: Number(p.suggested_price ?? 0),
-                resellerPrice: Number(p.reseller_price ?? 0),
-                categoryId: p.category_id,
-                brandId: p.brand_id,
-                createdAt: p.created_at || null,
-                image: p.main_image || p.image_url || p.og_image_url || null,
-                images: p.product_images?.map((i: any) => i.url) || (p.main_image ? [p.main_image] : []),
-              })),
-            });
-          }
-        } catch {}
+      .catch((err: any) => {
+        if (mounted) {
+          console.error("Catalog load error from live database:", err);
+          setLoadError(err?.message || "Failed to load products from live database.");
+          setLoading(false);
+        }
       });
     return () => {
       mounted = false;
@@ -300,7 +283,24 @@ function CatalogIndex() {
         </div>
       </section>
 
-      {!data ? (
+      {loadError ? (
+        <div className="mx-auto max-w-xl px-4 py-16 text-center">
+          <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-8">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/20 text-destructive text-xl">
+              ⚠️
+            </div>
+            <h2 className="text-lg font-bold text-destructive">ডাটাবেজ কানেকশন এরর / সংযোগ ত্রুটি</h2>
+            <p className="mt-2 text-xs text-muted-foreground">{loadError}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">লাইভ ডাটাবেজ ছাড়া কোনো ফেক ডেটা প্রদর্শন করা হবে না।</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-5 inline-flex items-center rounded-xl bg-destructive px-4 py-2 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90"
+            >
+              পুনরায় চেষ্টা করুন (Reload)
+            </button>
+          </div>
+        </div>
+      ) : loading ? (
         <div className="grid place-items-center py-24">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
