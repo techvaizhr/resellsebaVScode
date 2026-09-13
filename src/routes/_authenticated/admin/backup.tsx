@@ -95,7 +95,10 @@ function AdminBackupPage() {
     setCreatingDb(true);
     try {
       const res = await backupApi.createDb();
-      toast.success(res.message || `Database backup created! (${res.size})`);
+      if (res.ok === false) {
+        throw new Error((res as any).error || res.message || "Failed to create database backup");
+      }
+      toast.success(res.message || `Database backup created! (${res.size || 'Complete'})`);
       await loadData();
     } catch (e: any) {
       toast.error(e?.message || "Failed to create database backup");
@@ -109,7 +112,10 @@ function AdminBackupPage() {
     setCreatingFiles(true);
     try {
       const res = await backupApi.createFiles();
-      toast.success(res.message || `Images backup created! (${res.files_count} files, ${res.size})`);
+      if (res.ok === false) {
+        throw new Error((res as any).error || res.message || "Failed to create media backup");
+      }
+      toast.success(res.message || `Images backup created! (${res.files_count ?? 0} files, ${res.size || 'Complete'})`);
       await loadData();
     } catch (e: any) {
       toast.error(e?.message || "Failed to create media backup");

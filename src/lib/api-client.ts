@@ -4151,6 +4151,12 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
           error.message.includes("Failed") ||
           error.message.includes("JSON")));
 
+    // Backup operations must NEVER fallback to client-side mock!
+    // They are real server filesystem and MySQL operations.
+    if (cleanEndpoint.startsWith("admin/backup")) {
+      throw error;
+    }
+
     if (
       isMockMode ||
       isNetworkDown ||

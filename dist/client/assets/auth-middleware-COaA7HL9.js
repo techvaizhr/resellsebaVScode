@@ -1,1 +1,0 @@
-import{Kt as e}from"./index-BU7mpLj_.js";var t=e({type:`function`});export{t};

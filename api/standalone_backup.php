@@ -102,17 +102,19 @@ function json_out($data, $code = 200) {
     exit;
 }
 
-// Request path parsing
-$requestUri = $_SERVER['REQUEST_URI'] ?? '';
-$path = parse_url($requestUri, PHP_URL_PATH);
-$path = preg_replace('#^/api/#', '', ltrim($path, '/'));
-$path = preg_replace('#^admin/backup/#', '', $path);
-$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+function handle_backup_request() {
+    // Request path parsing
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+    $rawPath = parse_url($requestUri, PHP_URL_PATH) ?? '';
+    $path = trim($rawPath, '/');
+    $path = preg_replace('#^api/#i', '', $path);
+    $path = preg_replace('#^admin/backup/?#i', '', $path);
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-// -------------------------------------------------------------
-// 1. LIST BACKUPS: GET admin/backup/list
-// -------------------------------------------------------------
-if ($path === 'list' && $method === 'GET') {
+    // -------------------------------------------------------------
+    // 1. LIST BACKUPS: GET admin/backup/list
+    // -------------------------------------------------------------
+    if ($path === 'list' && $method === 'GET') {
     $backupDir = get_backup_dir();
     $items = [];
     $totalBackupBytes = 0;
@@ -522,5 +524,13 @@ if ($path === 'restore-files' && $method === 'POST') {
     }
 }
 
-// Fallback if no matching action found
-json_out(['ok' => false, 'error' => 'Unknown backup action: ' . $path], 404);
+    // Fallback if no matching action found
+    json_out(['ok' => false, 'error' => 'Unknown backup action: ' . $path], 404);
+}
+
+// Auto-run if accessed directly as a standalone script
+$scriptFile = basename($_SERVER['SCRIPT_FILENAME'] ?? '');
+if ($scriptFile === 'standalone_backup.php') {
+    handle_backup_request();
+}
+

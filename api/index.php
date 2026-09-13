@@ -59,6 +59,7 @@ if (isset($_GET['test']) || str_starts_with($uri, '/api/test')) {
 // If request is for Admin Backup, handle it via standalone engine
 if (str_contains($uri, 'admin/backup')) {
     require_once __DIR__ . '/standalone_backup.php';
+    handle_backup_request();
     exit;
 }
 
