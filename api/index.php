@@ -10,9 +10,27 @@ if (isset($_GET['test']) || str_starts_with($uri, '/api/test')) {
     $disabled = explode(',', ini_get('disable_functions') ?: '');
     $disabled = array_map('trim', $disabled);
 
+    $dbStatus = 'untested';
+    $dbError = null;
+    $tablesCount = 0;
+    try {
+        require_once __DIR__ . '/standalone_backup.php';
+        $pdo = get_pdo();
+        $stmt = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+        $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $tablesCount = count($tables);
+        $dbStatus = 'connected_ok';
+    } catch (\Throwable $e) {
+        $dbStatus = 'connection_failed';
+        $dbError = $e->getMessage();
+    }
+
     echo json_encode([
         'status' => 'ok',
         'php_version' => PHP_VERSION,
+        'db_status' => $dbStatus,
+        'db_tables_count' => $tablesCount,
+        'db_error' => $dbError,
         'vendor_exists' => file_exists(__DIR__ . '/../backend/vendor/autoload.php'),
         'bootstrap_exists' => file_exists(__DIR__ . '/../backend/bootstrap/app.php'),
         'env_exists' => file_exists(__DIR__ . '/../backend/.env'),
@@ -20,7 +38,6 @@ if (isset($_GET['test']) || str_starts_with($uri, '/api/test')) {
         'zip' => extension_loaded('zip'),
         'exec_enabled' => function_exists('exec') && !in_array('exec', $disabled),
         'shell_exec_enabled' => function_exists('shell_exec') && !in_array('shell_exec', $disabled),
-        'disabled_functions' => $disabled,
     ]);
     exit;
 }

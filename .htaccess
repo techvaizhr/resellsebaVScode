@@ -1,3 +1,5 @@
+Options -Indexes
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
@@ -5,9 +7,9 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # 2. Route all API requests directly to Laravel Backend
-    RewriteRule ^api$ backend/public/index.php [L,QSA]
-    RewriteRule ^api/(.*)$ backend/public/index.php [L,QSA]
+    # 2. Route all API requests through api/index.php gateway
+    RewriteRule ^api$ api/index.php [L,QSA]
+    RewriteRule ^api/(.*)$ api/index.php [L,QSA]
 
     # 3. Direct fast serving for frontend assets (JS/CSS/Fonts)
     RewriteCond %{REQUEST_URI} ^/assets/
@@ -61,6 +63,10 @@
 
 # cPanel CloudLinux Passenger Node.js Configuration
 <IfModule mod_passenger.c>
+    PassengerEnabled on
+    PassengerAppRoot "/home/zhroni367/petzavo.com"
+    PassengerBaseURI "/"
     PassengerAppType node
     PassengerStartupFile app.js
 </IfModule>
+
