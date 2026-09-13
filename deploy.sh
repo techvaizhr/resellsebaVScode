@@ -7,6 +7,10 @@ echo "🚀 Starting ResellSeba Automated Deployment..."
 echo "📥 Pulling latest code..."
 git pull origin main
 
+# Ensure .env files exist from templates
+[ ! -f .env ] && cp .env.example .env && echo "Created root .env from template"
+[ ! -f backend/.env ] && cp backend/.env.example backend/.env && echo "Created backend/.env from template"
+
 # 2. Update Backend
 echo "🐘 Updating Laravel Backend..."
 cd backend
