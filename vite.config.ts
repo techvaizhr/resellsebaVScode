@@ -8,6 +8,9 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  ssr: {
+    noExternal: true,
+  },
   build: {
     target: "es2022",
     cssCodeSplit: true,
