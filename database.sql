@@ -229,7 +229,7 @@ CREATE TABLE `resellers` (
 -- Table: orders
 DROP TABLE IF EXISTS `orders`;
 CREATE TABLE `orders` (
-  `id` char(36) DEFAULT DB::raw('(UUID(,
+  `id` char(36) NOT NULL PRIMARY KEY,
   `order_number` varchar(255) NOT NULL,
   `reseller_id` char(36) DEFAULT NULL,
   `customer_name` varchar(255) NOT NULL,
@@ -287,7 +287,7 @@ CREATE TABLE `reseller_settings` (
 -- Table: order_items
 DROP TABLE IF EXISTS `order_items`;
 CREATE TABLE `order_items` (
-  `id` char(36) DEFAULT DB::raw('(UUID(,
+  `id` char(36) NOT NULL PRIMARY KEY,
   `order_id` char(36) NOT NULL,
   `product_id` char(36) DEFAULT NULL,
   `product_name` varchar(255) NOT NULL,
