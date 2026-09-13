@@ -67,17 +67,7 @@ function collectAllUsedImageReferences(): Set<string> {
     }
   };
 
-  // 1. Traverse initial-data.json
-  try {
-    const initialDataPath = path.resolve(process.cwd(), "src", "lib", "initial-data.json");
-    if (fs.existsSync(initialDataPath)) {
-      const raw = fs.readFileSync(initialDataPath, "utf-8");
-      const parsed = JSON.parse(raw);
-      traverse(parsed);
-    }
-  } catch {}
-
-  // 2. Also check database.sql if present
+  // 1. Check database.sql if present
   try {
     const dbSqlPath = path.resolve(process.cwd(), "database.sql");
     if (fs.existsSync(dbSqlPath)) {
@@ -96,7 +86,7 @@ function collectAllUsedImageReferences(): Set<string> {
     }
   } catch {}
 
-  // 3. Also check any other json files in src/
+  // 2. Also check any content json files in src/
   try {
     const srcDir = path.resolve(process.cwd(), "src");
     const scanJson = (dir: string) => {
@@ -106,7 +96,7 @@ function collectAllUsedImageReferences(): Set<string> {
         const full = path.join(dir, item.name);
         if (item.isDirectory() && !["node_modules", ".git", "dist", ".output"].includes(item.name)) {
           scanJson(full);
-        } else if (item.isFile() && item.name.endsWith(".json") && item.name !== "initial-data.json") {
+        } else if (item.isFile() && item.name.endsWith(".json")) {
           try {
             const content = fs.readFileSync(full, "utf-8");
             traverse(JSON.parse(content));

@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('subscription_payments', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('subscription_payments', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('subscription_id')->constrained('reseller_subscriptions')->cascadeOnDelete();
             $table->decimal('amount', 10, 2);

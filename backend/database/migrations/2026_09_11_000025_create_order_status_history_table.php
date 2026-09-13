@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('order_status_history', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('order_status_history', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete();
             $table->string('old_status')->nullable();

@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('profiles', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('profiles', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('full_name');

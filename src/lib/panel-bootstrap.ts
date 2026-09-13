@@ -55,6 +55,7 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 /** True when a signed-in session is stored, so a bootstrap call is expected. */
 function hasStoredSession() {
   try {
+    if (localStorage.getItem("auth_token")) return true;
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (k && k.startsWith("sb-") && k.endsWith("-auth-token")) return true;

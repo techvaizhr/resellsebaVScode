@@ -86,12 +86,16 @@ class RpcController extends Controller
             'purge_store_visits' => $this->purgeStoreVisits(),
             'get_active_payment_gateways' => $this->getActivePaymentGateways(),
             'courier_booking_options' => $this->courierBookingOptions(),
-            'is_super_admin' => response()->json(['data' => true]),
-            'has_permission', 'has_any_permission', 'has_role', 'supplier_can_book_order', 'reseller_auto_approve' => response()->json(['data' => true]),
-            'verify_issue' => response()->json(['ok' => true, 'message' => 'Verification code sent']),
-            'verify_check' => response()->json(['data' => ['ok' => true]]),
-            'cleanup_counts' => response()->json(['abandoned_drafts' => 0, 'old_logs' => 0, 'temp_files' => 0, 'expired_sessions' => 0, 'orphaned_records' => 0]),
-            'cleanup_purge' => response()->json(['ok' => true, 'purged' => $args['targets'] ?? ['all'], 'freed_mb' => 1.2]),
+            'is_super_admin' => $this->isSuperAdminRpc($user, $args),
+            'has_permission' => $this->hasPermissionRpc($user, $args),
+            'has_any_permission' => $this->hasAnyPermissionRpc($user, $args),
+            'has_role' => $this->hasRoleRpc($user, $args),
+            'supplier_can_book_order' => $this->supplierCanBookOrderRpc($user, $args),
+            'reseller_auto_approve' => $this->resellerAutoApproveRpc($args),
+            'verify_issue' => $this->verifyIssueRpc($user, $args),
+            'verify_check' => $this->verifyCheckRpc($user, $args),
+            'cleanup_counts' => $this->cleanupCountsRpc(),
+            'cleanup_purge' => $this->cleanupPurgeRpc($args),
             'supplier_products' => $this->supplierProducts($user),
             'supplier_save_product' => $this->supplierSaveProduct($user, $args),
             'supplier_quick_update' => $this->supplierQuickUpdate($user, $args),
@@ -101,7 +105,7 @@ class RpcController extends Controller
             'admin_delete_supplier' => $this->adminDeleteSupplier($args),
             'admin_set_product_supplier' => $this->adminSetProductSupplier($args),
             'current_reseller_id' => response()->json(['data' => Reseller::where('user_id', $user?->id)->value('id')]),
-            'verify_state' => response()->json(['data' => ['email_verified_at' => now()->toISOString(), 'phone_verified_at' => now()->toISOString()]]),
+            'verify_state' => $this->verifyStateRpc($user, $args),
             'cf_config_get' => $this->cfConfigGet(),
             'cf_config_save' => $this->cfConfigSave($args),
             'cf_config_settings' => $this->cfConfigSettings(),
@@ -2667,6 +2671,238 @@ class RpcController extends Controller
             Product::where('id', $id)->update(['supplier_id' => $supplierId]);
         }
         return response()->json(['ok' => true]);
+    }
+
+    private function isSuperAdminRpc($user, $args)
+    {
+        $uid = $args['_user_id'] ?? $args['userId'] ?? $args['user_id'] ?? $user?->id;
+        if (!$uid) {
+            return response()->json(['data' => false]);
+        }
+        $role = DB::table('user_roles')->where('user_id', $uid)->value('role');
+        $isSuper = in_array(strtolower((string)$role), ['super_admin', 'admin']);
+        return response()->json(['data' => $isSuper]);
+    }
+
+    private function hasRoleRpc($user, $args)
+    {
+        $uid = $args['_user_id'] ?? $args['userId'] ?? $args['user_id'] ?? $user?->id;
+        $targetRole = $args['_role'] ?? $args['role'] ?? null;
+        if (!$uid || !$targetRole) {
+            return response()->json(['data' => false]);
+        }
+        $userRole = DB::table('user_roles')->where('user_id', $uid)->value('role');
+        if (strtolower((string)$userRole) === strtolower($targetRole)) {
+            return response()->json(['data' => true]);
+        }
+        if (in_array(strtolower((string)$userRole), ['super_admin', 'admin'])) {
+            return response()->json(['data' => true]);
+        }
+        return response()->json(['data' => false]);
+    }
+
+    private function hasPermissionRpc($user, $args)
+    {
+        $uid = $args['_user_id'] ?? $args['userId'] ?? $args['user_id'] ?? $user?->id;
+        $perm = $args['_permission'] ?? $args['permission'] ?? null;
+        if (!$uid || !$perm) {
+            return response()->json(['data' => false]);
+        }
+        $userRole = DB::table('user_roles')->where('user_id', $uid)->first();
+        if ($userRole && in_array(strtolower((string)$userRole->role), ['super_admin', 'admin'])) {
+            return response()->json(['data' => true]);
+        }
+        if ($userRole && $userRole->custom_role_id) {
+            $hasPerm = DB::table('role_permissions')
+                ->join('permissions', 'role_permissions.permission_id', '=', 'permissions.id')
+                ->where('role_permissions.role_id', $userRole->custom_role_id)
+                ->where('permissions.key', $perm)
+                ->exists();
+            return response()->json(['data' => $hasPerm]);
+        }
+        return response()->json(['data' => false]);
+    }
+
+    private function hasAnyPermissionRpc($user, $args)
+    {
+        $uid = $args['_user_id'] ?? $args['userId'] ?? $args['user_id'] ?? $user?->id;
+        $perms = $args['_permissions'] ?? $args['permissions'] ?? [];
+        if (!$uid || empty($perms)) {
+            return response()->json(['data' => false]);
+        }
+        $userRole = DB::table('user_roles')->where('user_id', $uid)->first();
+        if ($userRole && in_array(strtolower((string)$userRole->role), ['super_admin', 'admin'])) {
+            return response()->json(['data' => true]);
+        }
+        if ($userRole && $userRole->custom_role_id) {
+            $hasAny = DB::table('role_permissions')
+                ->join('permissions', 'role_permissions.permission_id', '=', 'permissions.id')
+                ->where('role_permissions.role_id', $userRole->custom_role_id)
+                ->whereIn('permissions.key', (array)$perms)
+                ->exists();
+            return response()->json(['data' => $hasAny]);
+        }
+        return response()->json(['data' => false]);
+    }
+
+    private function supplierCanBookOrderRpc($user, $args)
+    {
+        $supplierId = $args['_supplier_id'] ?? $args['supplier_id'] ?? null;
+        if ($supplierId) {
+            $can = DB::table('suppliers')->where('id', $supplierId)->value('can_book_order');
+            return response()->json(['data' => (bool)$can]);
+        }
+        if ($user) {
+            $can = DB::table('suppliers')->where('user_id', $user->id)->value('can_book_order');
+            return response()->json(['data' => (bool)$can]);
+        }
+        return response()->json(['data' => false]);
+    }
+
+    private function resellerAutoApproveRpc($args)
+    {
+        $val = DB::table('global_settings')->where('key', 'reseller_auto_approve')->value('value');
+        $isAuto = $val ? filter_var(trim($val, '"'), FILTER_VALIDATE_BOOLEAN) : true;
+        return response()->json(['data' => $isAuto]);
+    }
+
+    private function verifyStateRpc($user, $args)
+    {
+        $uid = $args['_user_id'] ?? $args['userId'] ?? $args['user_id'] ?? $user?->id;
+        if (!$uid) {
+            return response()->json(['data' => ['email_verified_at' => null, 'phone_verified_at' => null]]);
+        }
+        $target = User::find($uid);
+        return response()->json([
+            'data' => [
+                'email_verified_at' => $target?->email_verified_at ? Carbon::parse($target->email_verified_at)->toIso8601String() : null,
+                'phone_verified_at' => ($target?->is_phone_verified ? Carbon::parse($target->updated_at)->toIso8601String() : null),
+            ]
+        ]);
+    }
+
+    private function verifyIssueRpc($user, $args)
+    {
+        $channel = $args['_channel'] ?? $args['channel'] ?? 'email';
+        $target = $args['_target'] ?? $args['target'] ?? null;
+        $code = $args['_code'] ?? $args['code'] ?? null;
+
+        if (!$code) {
+            return response()->json(['error' => 'Code is required'], 400);
+        }
+
+        $userId = $user?->id;
+        if (!$userId && $target) {
+            $userId = User::where('email', $target)->orWhere('phone', $target)->value('id');
+        }
+
+        if (!$userId) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        DB::table('verification_codes')->insert([
+            'id' => (string) Str::uuid(),
+            'user_id' => $userId,
+            'channel' => $channel,
+            'code' => (string) $code,
+            'expires_at' => Carbon::now()->addMinutes(15),
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ]);
+
+        return response()->json(['ok' => true, 'message' => 'Verification code stored']);
+    }
+
+    private function verifyCheckRpc($user, $args)
+    {
+        $channel = $args['_channel'] ?? $args['channel'] ?? 'email';
+        $code = $args['_code'] ?? $args['code'] ?? null;
+        $userId = $user?->id ?? $args['_user_id'] ?? null;
+
+        if (!$code || !$userId) {
+            return response()->json(['error' => 'Code and user required'], 400);
+        }
+
+        $record = DB::table('verification_codes')
+            ->where('user_id', $userId)
+            ->where('channel', $channel)
+            ->where('code', (string) $code)
+            ->where('expires_at', '>', Carbon::now())
+            ->whereNull('verified_at')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$record) {
+            return response()->json(['error' => 'Invalid or expired verification code'], 400);
+        }
+
+        DB::table('verification_codes')->where('id', $record->id)->update([
+            'verified_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ]);
+
+        if ($channel === 'email') {
+            User::where('id', $userId)->update(['email_verified_at' => Carbon::now()]);
+        } elseif ($channel === 'sms' || $channel === 'phone') {
+            User::where('id', $userId)->update(['is_phone_verified' => true]);
+        }
+
+        return response()->json(['data' => ['ok' => true]]);
+    }
+
+    private function cleanupCountsRpc()
+    {
+        $now = Carbon::now();
+        $ninetyDaysAgo = Carbon::now()->subDays(90);
+
+        $expiredVerifications = DB::getSchemaBuilder()->hasTable('verification_codes')
+            ? DB::table('verification_codes')->where('expires_at', '<', $now)->count()
+            : 0;
+
+        $oldNotifications = DB::getSchemaBuilder()->hasTable('notification_logs')
+            ? DB::table('notification_logs')->where('created_at', '<', $ninetyDaysAgo)->count()
+            : 0;
+
+        $oldVisits = DB::getSchemaBuilder()->hasTable('store_visits')
+            ? DB::table('store_visits')->where('created_at', '<', $ninetyDaysAgo)->count()
+            : 0;
+
+        $oldAudits = DB::getSchemaBuilder()->hasTable('audit_log')
+            ? DB::table('audit_log')->where('created_at', '<', $ninetyDaysAgo)->count()
+            : 0;
+
+        $stats = [
+            ['key' => 'expired_verifications', 'rows' => $expiredVerifications],
+            ['key' => 'old_notification_logs', 'rows' => $oldNotifications],
+            ['key' => 'old_store_visits', 'rows' => $oldVisits],
+            ['key' => 'old_audit_logs', 'rows' => $oldAudits],
+        ];
+
+        return response()->json(['data' => $stats]);
+    }
+
+    private function cleanupPurgeRpc($args)
+    {
+        $keys = $args['_keys'] ?? $args['keys'] ?? [];
+        $now = Carbon::now();
+        $ninetyDaysAgo = Carbon::now()->subDays(90);
+
+        foreach ((array)$keys as $k) {
+            if ($k === 'expired_verifications' && DB::getSchemaBuilder()->hasTable('verification_codes')) {
+                DB::table('verification_codes')->where('expires_at', '<', $now)->delete();
+            }
+            if ($k === 'old_notification_logs' && DB::getSchemaBuilder()->hasTable('notification_logs')) {
+                DB::table('notification_logs')->where('created_at', '<', $ninetyDaysAgo)->delete();
+            }
+            if ($k === 'old_store_visits' && DB::getSchemaBuilder()->hasTable('store_visits')) {
+                DB::table('store_visits')->where('created_at', '<', $ninetyDaysAgo)->delete();
+            }
+            if ($k === 'old_audit_logs' && DB::getSchemaBuilder()->hasTable('audit_log')) {
+                DB::table('audit_log')->where('created_at', '<', $ninetyDaysAgo)->delete();
+            }
+        }
+
+        return $this->cleanupCountsRpc();
     }
 
     private function fallbackRpc($name, $args, $user)

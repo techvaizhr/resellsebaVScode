@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('reseller_policies', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('reseller_policies', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('reseller_id')->constrained('resellers')->cascadeOnDelete();
             $table->string('type');

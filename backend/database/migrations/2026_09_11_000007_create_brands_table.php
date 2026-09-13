@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('brands', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('brands', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('slug')->unique();

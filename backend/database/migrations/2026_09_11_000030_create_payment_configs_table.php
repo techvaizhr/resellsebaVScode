@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('payment_configs', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('payment_configs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('reseller_id')->nullable()->constrained('resellers')->cascadeOnDelete();
             $table->string('method');

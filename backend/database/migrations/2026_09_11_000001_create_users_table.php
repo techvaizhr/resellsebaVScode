@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('users', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('email')->unique();

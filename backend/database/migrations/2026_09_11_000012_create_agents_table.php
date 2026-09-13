@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('agents', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('agents', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->unique()->constrained('users')->cascadeOnDelete();
             $table->string('name');

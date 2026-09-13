@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('admin_notice_dismissals', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('admin_notice_dismissals', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('notice_id')->constrained('admin_notices')->cascadeOnDelete();
             $table->uuid('user_id');

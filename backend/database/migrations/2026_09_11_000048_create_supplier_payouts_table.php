@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('supplier_payouts', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('supplier_payouts', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('supplier_id')->constrained('suppliers')->cascadeOnDelete();
             $table->decimal('amount', 12, 2);

@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('cloudflare_config', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('cloudflare_config', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->text('api_token')->nullable();
             $table->string('zone_id')->nullable();

@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('roles', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('roles', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name')->unique();
             $table->string('display_name');

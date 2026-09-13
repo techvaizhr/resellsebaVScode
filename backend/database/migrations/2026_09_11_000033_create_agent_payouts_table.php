@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('agent_payouts', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('agent_payouts', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('agent_id')->constrained('agents')->cascadeOnDelete();
             $table->decimal('amount', 12, 2);

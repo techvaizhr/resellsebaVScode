@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('verification_codes', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('verification_codes', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('user_id');
             $table->string('channel');

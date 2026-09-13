@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('product_images', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('product_images', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('product_id')->constrained('products')->cascadeOnDelete();
             $table->text('url');

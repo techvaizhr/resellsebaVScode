@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('courier_events', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('courier_events', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('shipment_id')->nullable()->constrained('shipments')->nullOnDelete();
             $table->string('consignment_id')->nullable();

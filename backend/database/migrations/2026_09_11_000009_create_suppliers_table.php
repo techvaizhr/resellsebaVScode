@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('suppliers', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('suppliers', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->unique()->constrained('users')->cascadeOnDelete();
             $table->string('code')->unique();

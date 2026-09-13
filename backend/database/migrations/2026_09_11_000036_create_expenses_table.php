@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('expenses', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('expenses', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('title');
             $table->decimal('amount', 12, 2);

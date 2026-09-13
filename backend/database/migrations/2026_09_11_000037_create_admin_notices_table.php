@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('admin_notices', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('admin_notices', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('title');
             $table->text('body')->default('');

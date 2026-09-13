@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('system_notifications', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('system_notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('title');
             $table->text('message');

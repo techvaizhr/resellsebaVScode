@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('reseller_settings', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('reseller_settings', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('reseller_id')->unique()->constrained('resellers')->cascadeOnDelete();
             $table->text('logo_url')->nullable();

@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('tutorials', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('tutorials', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('topic_id')->nullable()->constrained('tutorial_topics')->nullOnDelete();
             $table->string('title');

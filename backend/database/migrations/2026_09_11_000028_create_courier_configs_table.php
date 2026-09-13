@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('courier_configs', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('courier_configs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('provider')->unique();
             $table->boolean('is_active')->default(false);

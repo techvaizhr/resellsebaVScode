@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('audit_log', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('audit_log', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('user_id')->nullable();
             $table->string('action');

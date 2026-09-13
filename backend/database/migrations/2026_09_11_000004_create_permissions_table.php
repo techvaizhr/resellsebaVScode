@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('permissions', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('permissions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('key')->unique();
             $table->string('label');

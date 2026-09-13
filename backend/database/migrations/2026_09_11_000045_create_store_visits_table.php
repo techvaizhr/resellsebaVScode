@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('store_visits', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('store_visits', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('store_code');
             $table->string('path')->nullable();

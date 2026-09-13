@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('leader_commissions', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('leader_commissions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('leader_id')->constrained('resellers')->cascadeOnDelete();
             $table->foreignUuid('order_id')->nullable()->constrained('orders')->nullOnDelete();
