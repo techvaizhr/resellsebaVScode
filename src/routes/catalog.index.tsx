@@ -53,7 +53,6 @@ export const Route = createFileRoute("/catalog/")({
   component: CatalogIndex,
 });
 
-type Cat = { id: string; name: string; slug: string; image_url: string | null; count: number };
 type Prod = {
   id: string;
   name: string;
@@ -69,6 +68,14 @@ type Prod = {
   images: string[];
 };
 
+type Cat = {
+  id: string;
+  name: string;
+  slug: string;
+  image_url: string | null;
+  count: number;
+};
+
 function CatalogIndex() {
   const { category, brand, q, page, sort } = Route.useSearch();
   const { banner, siteName, logoUrl } = useCatalogBrand();
@@ -78,66 +85,10 @@ function CatalogIndex() {
     categories: Cat[];
     brands: { id: string; name: string; slug: string }[];
     products: Prod[];
-  }>(() => {
-    let prods = (initialData.products || []).filter((p: any) => p.is_active !== false);
-    let cats = (initialData.categories || []).filter((c: any) => c.is_active !== false);
-    let brandsList = (initialData.brands || []).filter((b: any) => b.is_active !== false);
-
-    try {
-      if (typeof window !== "undefined") {
-        const sP = localStorage.getItem("mock:products");
-        if (sP) prods = JSON.parse(sP).filter((p: any) => p.is_active !== false);
-        const sC = localStorage.getItem("mock:categories");
-        if (sC) cats = JSON.parse(sC).filter((c: any) => c.is_active !== false);
-        const sB = localStorage.getItem("mock:brands");
-        if (sB) brandsList = JSON.parse(sB).filter((b: any) => b.is_active !== false);
-      }
-    } catch {}
-
-    const mappedProds = prods.map((row: any) => {
-      const rawImgs = row.product_images || row.images || [];
-      const sortedImgs = [...rawImgs].sort(
-        (a: any, b: any) => Number(!!b.is_primary) - Number(!!a.is_primary) || Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0)
-      );
-      const primaryImg = (typeof sortedImgs[0] === "string" ? sortedImgs[0] : sortedImgs[0]?.url) || row.main_image || row.image_url || row.og_image_url || null;
-      const allImgUrls = [...new Set([
-        ...(primaryImg ? [primaryImg] : []),
-        ...sortedImgs.map((i: any) => (typeof i === "string" ? i : i.url)),
-        ...(row.og_image_url ? [row.og_image_url] : []),
-        ...(row.main_image ? [row.main_image] : []),
-      ])].filter(Boolean);
-
-      return {
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
-        code: row.product_code || "",
-        short: row.short_description || "",
-        price: Number(row.suggested_price ?? 0),
-        resellerPrice: Number(row.reseller_price ?? 0),
-        categoryId: row.category_id || null,
-        brandId: row.brand_id || null,
-        createdAt: row.created_at || null,
-        image: primaryImg,
-        images: allImgUrls,
-      };
-    });
-
-    return {
-      categories: cats.map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        slug: c.slug,
-        image_url: c.image_url || null,
-        count: mappedProds.filter((p: any) => p.categoryId === c.id).length,
-      })),
-      brands: brandsList.map((b: any) => ({
-        id: b.id,
-        name: b.name,
-        slug: b.slug,
-      })),
-      products: mappedProds,
-    };
+  }>({
+    categories: [],
+    brands: [],
+    products: [],
   });
   const [term, setTerm] = useState(q ?? "");
   const [showSuggest, setShowSuggest] = useState(false);

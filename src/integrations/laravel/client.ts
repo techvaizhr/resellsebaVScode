@@ -362,16 +362,6 @@ export const db = {
         if (path.startsWith("http") || path.startsWith("blob:") || path.startsWith("data:")) {
           return { data: { publicUrl: path } };
         }
-        try {
-          if (typeof window !== "undefined") {
-            const raw = localStorage.getItem("mock:media_library");
-            if (raw) {
-              const list = JSON.parse(raw);
-              const found = list.find((i: any) => i.path === path || i.filename === path.split("/").pop());
-              if (found?.url) return { data: { publicUrl: found.url } };
-            }
-          }
-        } catch {}
         const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/api$/, "") || (typeof window !== "undefined" ? "" : "http://127.0.0.1:8000");
         const cleanPath = `${baseUrl}/storage/${bucket}/${path.replace(/^\//, "")}`;
         return { data: { publicUrl: cleanPath } };

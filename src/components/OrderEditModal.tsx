@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { AdvanceByToggle, MoneyField, SectionLabel } from "@/components/order-form-fields";
 import { packagingModeHint, packagingTotal } from "@/lib/packaging";
 import { useAdvancedSettings } from "@/lib/advanced-settings";
-import initialData from "@/lib/initial-data.json";
 
 type EditItem = {
   id?: string;

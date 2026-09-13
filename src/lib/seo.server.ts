@@ -8,7 +8,6 @@
  */
 import { getRequest } from "@tanstack/react-start/server";
 import { supabase } from "@/integrations/laravel/client";
-import initialData from "@/lib/initial-data.json";
 
 export type SeoPayload = {
   title: string;

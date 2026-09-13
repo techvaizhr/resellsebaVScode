@@ -54,7 +54,6 @@ import { OrderTabs } from "@/components/OrderTabs";
 import { PickListModal } from "@/components/pick-list-modal";
 import { OrderSearch, type OrderSearchMode } from "@/components/order-search";
 import { Pagination, usePaginated } from "@/components/data-list";
-import initialData from "@/lib/initial-data.json";
 import {
   OrderFilterBar,
   applyOrderFilters,

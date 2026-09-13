@@ -10,7 +10,6 @@ import { bdt } from "@/lib/finance-report";
 import { areaLabel } from "@/lib/delivery";
 import { ArrowLeft, Loader2, Truck } from "lucide-react";
 
-import initialData from "@/lib/initial-data.json";
 
 export const Route = createFileRoute("/catalog/$slug")({
   loader: ({ params }) => getCatalogProductSeo({ data: { slug: params.slug } }),
@@ -49,59 +48,8 @@ type P = Awaited<ReturnType<typeof getCatalogProduct>>;
 function CatalogDetails() {
   const { slug } = Route.useParams();
   const fetchProduct = useServerFn(getCatalogProduct);
-  const [p, setP] = useState<P>(() => {
-    let prods = initialData.products || [];
-    let cats = initialData.categories || [];
-    let brandsList = initialData.brands || [];
-    try {
-      if (typeof window !== "undefined") {
-        const sP = localStorage.getItem("mock:products");
-        if (sP) prods = JSON.parse(sP);
-      }
-    } catch {}
-
-    const row = prods.find((x: any) => x.slug === slug || x.id === slug);
-    if (!row) return null;
-
-    const rawImgs = row.product_images || row.images || [];
-    const sortedImgs = [...rawImgs].sort(
-      (a: any, b: any) => Number(!!b.is_primary) - Number(!!a.is_primary) || Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0)
-    );
-    const primaryImg = (typeof sortedImgs[0] === "string" ? sortedImgs[0] : sortedImgs[0]?.url) || row.main_image || row.image_url || row.og_image_url || null;
-    const allImgUrls = [...new Set([
-      ...(primaryImg ? [primaryImg] : []),
-      ...sortedImgs.map((i: any) => (typeof i === "string" ? i : i.url)),
-      ...(row.og_image_url ? [row.og_image_url] : []),
-      ...(row.main_image ? [row.main_image] : []),
-    ])].filter(Boolean);
-
-    const cat = cats.find((c: any) => c.id === row.category_id);
-    const brand = brandsList.find((b: any) => b.id === row.brand_id);
-
-    return {
-      id: row.id,
-      name: row.name,
-      slug: row.slug,
-      code: row.product_code || "",
-      short: row.short_description || "",
-      description: row.description || "",
-      price: Number(row.suggested_price ?? 0),
-      resellerPrice: Number(row.reseller_price ?? 0),
-      stock: Number(row.stock ?? 0),
-      weight: row.weight_grams ?? null,
-      deliveryMode: row.delivery_mode || "manual",
-      deliverySource: "product",
-      deliveryInside: Number(row.delivery_inside ?? 60),
-      deliverySub: Number(row.delivery_sub ?? 100),
-      deliveryOutside: Number(row.delivery_outside ?? 120),
-      deliveryFlat: Number(row.delivery_flat ?? 0),
-      category: cat?.name ?? null,
-      categorySlug: cat?.slug ?? null,
-      brand: brand?.name ?? null,
-      images: allImgUrls,
-    } as any;
-  });
-  const [state, setState] = useState<"loading" | "done">(() => (p ? "done" : "loading"));
+  const [p, setP] = useState<P>(null);
+  const [state, setState] = useState<"loading" | "done">("loading");
   const [idx, setIdx] = useState(0);
   // Price/profit/delivery shown only when logged in as admin/staff/reseller/leader.
   const showPrices = useCatalogPrices();

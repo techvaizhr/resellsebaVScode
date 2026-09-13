@@ -87,18 +87,6 @@ export function ShipmentBookingModal({
     let lastErrorMessage = "";
     for (const id of orderIds) {
       try {
-        let res: any = null;
-        let orderObj: any = null;
-        try {
-          if (typeof window !== "undefined") {
-            const rawOrders = localStorage.getItem("mock:orders");
-            if (rawOrders) {
-              const allLocalOrders = JSON.parse(rawOrders);
-              orderObj = allLocalOrders.find((o: any) => o.id === id || o.order_number === id);
-            }
-          }
-        } catch {}
-
         try {
           const apiRes = await fetch("/api/public/courier/actions", {
             method: "POST",
@@ -108,7 +96,6 @@ export function ShipmentBookingModal({
               provider,
               orderId: id,
               storeId: storeId || undefined,
-              order: orderObj || undefined,
             }),
           });
           const apiData = await apiRes.json();
@@ -125,56 +112,6 @@ export function ShipmentBookingModal({
           } else if (provider === "carrybee") {
             res = await doCarrybee({ data: { orderId: id, ...(storeId ? { storeId } : {}) } });
           }
-        }
-        
-        if (res && (res.trackingId || res.consignmentId || res.success)) {
-          try {
-            if (typeof window !== "undefined") {
-              const trackId = res.trackingId || res.consignmentId;
-              const trackUrl = res.trackingUrl || (provider === "steadfast" ? `https://steadfast.com.bd/tl/${trackId}` : undefined);
-              
-              // 1. Save shipment
-              const raw = localStorage.getItem("mock:shipments") || "[]";
-              const list = JSON.parse(raw);
-              const idx = list.findIndex((s: any) => s.order_id === id || (orderObj?.order_number && s.order_id === orderObj.order_number));
-              const total = Number(orderObj?.total || 0);
-              const advance = Number(orderObj?.advance_amount || orderObj?.received_amount || orderObj?.advance || 0);
-              const codAmount = orderObj?.payment_status === "paid" ? 0 : (orderObj?.payment_method === "cod" || !orderObj?.payment_method ? Math.max(0, total - advance) : 0);
-
-              const sData = {
-                id: res.shipmentId || `sh-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-                order_id: id,
-                provider,
-                tracking_id: trackId,
-                tracking_url: trackUrl,
-                consignment_id: res.consignmentId || trackId,
-                cod_amount: codAmount,
-                status: "booked",
-                courier_status: res.status || "in_review",
-                booked_at: new Date().toISOString(),
-              };
-              if (idx >= 0) list[idx] = { ...list[idx], ...sData };
-              else list.unshift(sData);
-              localStorage.setItem("mock:shipments", JSON.stringify(list));
-
-              // 2. Update order in mock:orders
-              const rawOrders = localStorage.getItem("mock:orders");
-              if (rawOrders) {
-                const oList = JSON.parse(rawOrders);
-                const oIdx = oList.findIndex((o: any) => o.id === id || o.order_number === id);
-                if (oIdx >= 0) {
-                  oList[oIdx] = {
-                    ...oList[oIdx],
-                    courier_provider: provider,
-                    courier_tracking_id: trackId,
-                    courier_status: res.status || "in_review",
-                    updated_at: new Date().toISOString(),
-                  };
-                  localStorage.setItem("mock:orders", JSON.stringify(oList));
-                }
-              }
-            }
-          } catch {}
         }
         successCount++;
       } catch (err: any) {

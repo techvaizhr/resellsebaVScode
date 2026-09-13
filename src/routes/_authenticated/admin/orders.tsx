@@ -58,7 +58,6 @@ import { CourierTimeline, type CourierEvent } from "@/components/CourierTimeline
 import { bookSteadfast } from "@/lib/couriers.functions";
 import { OrderTabs } from "@/components/OrderTabs";
 import { getAdminLookups } from "@/lib/bootstrap";
-import initialData from "@/lib/initial-data.json";
 import { Pencil, ExternalLink } from "lucide-react";
 import { courierTrackingUrl } from "@/lib/courier-tracking";
 import { PickListModal } from "@/components/pick-list-modal";
