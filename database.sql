@@ -45,7 +45,7 @@ DROP TABLE IF EXISTS `roles`;
 CREATE TABLE `roles` (
   `id` char(36) NOT NULL PRIMARY KEY,
   `name` varchar(255) NOT NULL,
-  `display_name` varchar(255) NOT NULL,
+  `display_name` varchar(255) DEFAULT NULL,
   `is_system` tinyint(1) DEFAULT 0,
   `slug` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
@@ -96,7 +96,7 @@ DROP TABLE IF EXISTS `brands`;
 CREATE TABLE `brands` (
   `id` char(36) NOT NULL PRIMARY KEY,
   `name` varchar(255) NOT NULL,
-  `slug` varchar(255) NOT NULL,
+  `slug` varchar(255) DEFAULT NULL,
   `image_url` text DEFAULT NULL,
   `sort_order` int DEFAULT 0,
   `is_active` tinyint(1) DEFAULT 1,
@@ -111,7 +111,7 @@ DROP TABLE IF EXISTS `categories`;
 CREATE TABLE `categories` (
   `id` char(36) NOT NULL PRIMARY KEY,
   `name` varchar(255) NOT NULL,
-  `slug` varchar(255) NOT NULL,
+  `slug` varchar(255) DEFAULT NULL,
   `image_url` text DEFAULT NULL,
   `parent_id` char(36) DEFAULT NULL,
   `sort_order` int DEFAULT 0,
@@ -128,7 +128,7 @@ CREATE TABLE `suppliers` (
   `id` char(36) NOT NULL PRIMARY KEY,
   `user_id` char(36) NOT NULL,
   `code` varchar(255) NOT NULL,
-  `display_name` varchar(255) NOT NULL,
+  `display_name` varchar(255) DEFAULT NULL,
   `contact_phone` varchar(255) DEFAULT NULL,
   `status` varchar(255) DEFAULT 'pending',
   `payout_method` varchar(255) DEFAULT NULL,
@@ -149,13 +149,13 @@ DROP TABLE IF EXISTS `products`;
 CREATE TABLE `products` (
   `id` char(36) NOT NULL PRIMARY KEY,
   `name` varchar(255) NOT NULL,
-  `slug` varchar(255) NOT NULL,
+  `slug` varchar(255) DEFAULT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `product_code` varchar(255) DEFAULT NULL,
   `brand_id` char(36) DEFAULT NULL,
   `category_id` char(36) DEFAULT NULL,
   `description` text DEFAULT NULL,
-  `price` decimal(12,2) NOT NULL,
+  `price` decimal(12,2) DEFAULT 0,
   `buying_price` decimal(12,2) DEFAULT 0,
   `base_price` decimal(12,2) DEFAULT 0,
   `package_cost` decimal(10,2) DEFAULT 0,
@@ -309,7 +309,7 @@ CREATE TABLE `order_items` (
   `id` char(36) NOT NULL PRIMARY KEY,
   `order_id` char(36) NOT NULL,
   `product_id` char(36) DEFAULT NULL,
-  `product_name` varchar(255) NOT NULL,
+  `product_name` varchar(255) DEFAULT NULL,
   `quantity` int DEFAULT 1,
   `unit_price` decimal(12,2) NOT NULL,
   `buying_price` decimal(12,2) DEFAULT 0,
@@ -331,7 +331,7 @@ CREATE TABLE `reseller_listings` (
   `id` char(36) NOT NULL PRIMARY KEY,
   `reseller_id` char(36) NOT NULL,
   `product_id` char(36) NOT NULL,
-  `price` decimal(12,2) NOT NULL,
+  `price` decimal(12,2) DEFAULT 0,
   `is_active` tinyint(1) DEFAULT 1,
   `sort_order` int DEFAULT 0,
   `selling_price` decimal(12,2) DEFAULT NULL,
@@ -379,8 +379,8 @@ CREATE TABLE `reseller_menu_items` (
 DROP TABLE IF EXISTS `reseller_policies`;
 CREATE TABLE `reseller_policies` (
   `id` char(36) NOT NULL PRIMARY KEY,
-  `reseller_id` char(36) NOT NULL,
-  `type` varchar(255) NOT NULL,
+  `reseller_id` char(36) DEFAULT NULL,
+  `type` varchar(255) DEFAULT 'general',
   `content` text DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `summary` text DEFAULT NULL,
@@ -412,9 +412,9 @@ DROP TABLE IF EXISTS `subscription_plans`;
 CREATE TABLE `subscription_plans` (
   `id` char(36) NOT NULL PRIMARY KEY,
   `name` varchar(255) NOT NULL,
-  `slug` varchar(255) NOT NULL,
-  `price` decimal(10,2) NOT NULL,
-  `duration_days` int NOT NULL,
+  `slug` varchar(255) DEFAULT NULL,
+  `price` decimal(10,2) DEFAULT 0,
+  `duration_days` int DEFAULT 30,
   `features` json DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT 1,
   `sort_order` int DEFAULT 0,
@@ -830,7 +830,7 @@ DROP TABLE IF EXISTS `tutorial_topics`;
 CREATE TABLE `tutorial_topics` (
   `id` char(36) NOT NULL PRIMARY KEY,
   `name` varchar(255) NOT NULL,
-  `slug` varchar(255) NOT NULL,
+  `slug` varchar(255) DEFAULT NULL,
   `sort_order` int DEFAULT 0,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -843,7 +843,7 @@ CREATE TABLE `tutorials` (
   `id` char(36) NOT NULL PRIMARY KEY,
   `topic_id` char(36) DEFAULT NULL,
   `title` varchar(255) NOT NULL,
-  `slug` varchar(255) NOT NULL,
+  `slug` varchar(255) DEFAULT NULL,
   `content` text DEFAULT NULL,
   `video_url` text DEFAULT NULL,
   `is_published` tinyint(1) DEFAULT 1,
@@ -6915,7 +6915,7 @@ UNLOCK TABLES;
 
 -- Data for table: subscription_plans (2 records)
 LOCK TABLES `subscription_plans` WRITE;
-INSERT INTO `subscription_plans` (`id`, `name`, `code`, `monthly_fee`, `features`, `is_active`, `created_at`, `updated_at`) VALUES
+INSERT INTO `subscription_plans` (`id`, `name`, `code`, `slug`, `price`, `duration_days`, `monthly_fee`, `features`, `is_active`, `created_at`, `updated_at`) VALUES
 ('265f1728-3f23-4677-92c7-9adeee24696b', 'Only Panel Use', 'panel', 0, '[]', 1, '2026-09-01 05:03:51.524343+00', '2026-09-01 05:17:55.812+00'),
 ('65b24f28-da11-4524-88ba-be1f492e4a40', 'Panel + Storefront Use', 'panel_store', 0, '[]', 1, '2026-09-01 05:03:51.524343+00', '2026-09-01 05:20:03.49+00');
 UNLOCK TABLES;
