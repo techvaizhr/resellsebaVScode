@@ -61,68 +61,142 @@ export function Hero() {
     </div>
   );
 
+  /* -------------------------------------------------------------
+   * THEME 3: BAZAAR (হাটবাজার / মার্কেটপ্লেস সুপার ডিল হিরো)
+   * High-energy BD marketplace banner with flash deal urgency
+   * ------------------------------------------------------------- */
   if (theme.layout.hero === "banner")
     return (
       <section className="mx-auto max-w-6xl px-4 pt-4">
-        <div className={cx("overflow-hidden rounded-[var(--st-radius)] border bg-[var(--st-surface)]", borderc)}>
-          <div className="grid md:grid-cols-[1.1fr_1fr]">
+        <div className={cx("overflow-hidden rounded-2xl border-2 bg-[var(--st-surface)] shadow-md", borderc)}>
+          {/* Top Deal Banner Ticker */}
+          <div className="flex items-center justify-between bg-gradient-to-r from-[var(--st-primary)] to-amber-600 px-4 py-2 text-xs font-bold text-white tracking-wide">
+            <span className="flex items-center gap-1.5">
+              <Sparkles className="h-4 w-4" /> 🔥 আজকের সেরা অফার — স্টক শেষ হওয়ার আগেই অর্ডার করুন!
+            </span>
+            <span className="hidden sm:inline bg-black/20 px-2 py-0.5 rounded text-[11px]">
+              সারা দেশে ক্যাশ অন ডেলিভারি
+            </span>
+          </div>
+
+          <div className="grid md:grid-cols-[1.2fr_1fr] items-center">
             <div className="p-6 md:p-10">
-              {badge && (
-                <span className="inline-block rounded-full bg-[var(--st-primary)]/12 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--st-primary)]">
-                  {badge}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--st-primary)]/15 px-3 py-1 text-xs font-bold text-[var(--st-primary)]">
+                  <BadgeCheck className="h-3.5 w-3.5" /> {badge || "সারা দেশে ক্যাশ অন ডেলিভারি"}
                 </span>
-              )}
-              <Heading as="h2" className="mt-3 text-2xl leading-tight md:text-4xl">
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-400">
+                  <Truck className="h-3 w-3" /> দ্রুততম ডেলিভারি
+                </span>
+              </div>
+
+              <Heading as="h2" className="mt-4 text-2xl font-extrabold leading-tight md:text-4xl text-[var(--st-fg)]">
                 {headline}
               </Heading>
-              <p className={cx("mt-3 max-w-md text-sm", muted)}>{sub}</p>
-              <div className="mt-5">{buttons}</div>
-              {note && <p className={cx("mt-3 text-xs", muted)}>{note}</p>}
+              <p className={cx("mt-3 max-w-md text-sm md:text-base leading-relaxed", muted)}>{sub}</p>
+
+              <div className="mt-6">{buttons}</div>
+
+              {/* Bangladesh Trust Badges */}
+              <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-[var(--st-border)] pt-4 text-xs font-medium text-[var(--st-fg)]">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600" /> পণ্য দেখে মূল্য পরিশোধ
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Truck className="h-4 w-4 text-[var(--st-primary)]" /> ২৪-৭২ ঘণ্টায় ডেলিভারি
+                </span>
+              </div>
             </div>
-            <div className="min-h-[220px] bg-[var(--st-bg-alt)]">
-              {media && <img src={media} alt={name} className="h-full w-full object-cover" />}
+
+            <div className="relative min-h-[260px] md:min-h-[340px] bg-[var(--st-bg-alt)] overflow-hidden">
+              {media && (
+                <img
+                  src={media}
+                  alt={name}
+                  loading="eager"
+                  decoding="async"
+                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                />
+              )}
             </div>
           </div>
         </div>
       </section>
     );
 
+  /* -------------------------------------------------------------
+   * THEME 2: NOIR LUXE (প্রিমিয়াম লাক্সারি বুটিক হিরো)
+   * High-fashion cinema spotlight hero with serif headlines
+   * ------------------------------------------------------------- */
   if (theme.layout.hero === "spotlight")
     return (
-      <section className="relative overflow-hidden">
-        {media && <img src={media} alt={name} className="absolute inset-0 h-full w-full object-cover opacity-35" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-[var(--st-bg)] via-[var(--st-bg)]/70 to-transparent" />
+      <section className="relative overflow-hidden border-b border-[var(--st-border)]">
+        {media && (
+          <img
+            src={media}
+            alt={name}
+            loading="eager"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover opacity-30 filter brightness-90"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--st-bg)] via-[var(--st-bg)]/80 to-transparent" />
         <div className="relative mx-auto max-w-3xl px-4 py-24 text-center md:py-32">
-          {badge && <span className="text-[11px] uppercase tracking-[0.4em] text-[var(--st-primary)]">{badge}</span>}
-          <Heading as="h2" className="mt-4 text-4xl leading-[1.1] md:text-6xl">
+          {badge && (
+            <span className="inline-block rounded-xs border border-[var(--st-border)] bg-black/40 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-[#d9c08a] backdrop-blur-md">
+              {badge}
+            </span>
+          )}
+          <Heading as="h2" className="mt-5 font-serif text-4xl leading-[1.1] md:text-6xl text-[var(--st-fg)]">
             {headline}
           </Heading>
-          <p className={cx("mx-auto mt-5 max-w-xl text-sm md:text-base", muted)}>{sub}</p>
+          <p className={cx("mx-auto mt-5 max-w-xl text-sm md:text-base leading-relaxed tracking-wide", muted)}>
+            {sub}
+          </p>
           <div className="mt-8 flex justify-center">{buttons}</div>
-          {note && <p className={cx("mt-4 text-xs", muted)}>{note}</p>}
+          {note && <p className={cx("mt-4 text-xs font-serif italic", muted)}>{note}</p>}
         </div>
       </section>
     );
 
+  /* -------------------------------------------------------------
+   * THEME 4: ATELIER (অর্গানিক ও ক্রাফট স্টোরিটেলিং হিরো)
+   * Warm natural editorial split hero with artisanal feel
+   * ------------------------------------------------------------- */
   if (theme.layout.hero === "split")
     return (
-      <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
+      <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-20">
         <div>
-          {badge && <span className="text-[11px] uppercase tracking-[0.3em] text-[var(--st-muted)]">{badge}</span>}
-          <Heading as="h2" className="mt-4 text-4xl leading-[1.05] md:text-6xl">
+          {badge && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--st-surface)] border border-[var(--st-border)] px-3 py-1 text-xs font-medium text-[var(--st-primary)] shadow-xs">
+              <Leaf className="h-3.5 w-3.5 text-emerald-600" /> {badge}
+            </span>
+          )}
+          <Heading as="h2" className="mt-4 text-3xl font-serif leading-[1.15] md:text-5xl text-[var(--st-fg)]">
             {headline}
           </Heading>
-          <p className={cx("mt-5 max-w-md text-base leading-relaxed", muted)}>{sub}</p>
+          <p className={cx("mt-4 max-w-md text-base leading-relaxed", muted)}>{sub}</p>
           <div className="mt-8">{buttons}</div>
           {note && <p className={cx("mt-3 text-xs", muted)}>{note}</p>}
         </div>
-        <div className="aspect-[4/5] overflow-hidden rounded-[var(--st-radius)] bg-[var(--st-bg-alt)]">
-          {media && <img src={media} alt={name} className="h-full w-full object-cover" />}
+        <div className="aspect-[4/5] overflow-hidden rounded-3xl border border-[var(--st-border)] bg-[var(--st-bg-alt)] shadow-lg">
+          {media && (
+            <img
+              src={media}
+              alt={name}
+              loading="eager"
+              decoding="async"
+              className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+            />
+          )}
         </div>
       </section>
     );
 
-  /* Aurora — gradient hero with product card, stats and offer chip */
+  /* -------------------------------------------------------------
+   * THEME 1: AURORA (মডার্ন ট্রেন্ডি গ্যাজেট হিরো — DEFAULT)
+   * Modern glow with live satisfaction pills & high-tech badge
+   * ------------------------------------------------------------- */
   const stat1 = content.text("aurora_stat1");
   const stat2 = content.text("aurora_stat2");
   const offer = content.text("aurora_offer");
@@ -139,35 +213,38 @@ export function Hero() {
       <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-20">
         <div>
           {badge && (
-            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--st-border)] bg-[var(--st-surface)] px-3 py-1.5 text-[11px] font-medium shadow-[var(--st-shadow)]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--st-border)] bg-[var(--st-surface)] px-3 py-1.5 text-[11px] font-medium shadow-xs backdrop-blur-md">
               <Sparkles className="h-3.5 w-3.5 text-[var(--st-primary)]" /> {badge}
             </span>
           )}
-          <Heading as="h2" className="mt-4 text-3xl leading-[1.12] md:text-5xl">
+          <Heading as="h2" className="mt-4 text-3xl font-extrabold leading-[1.12] md:text-5xl text-[var(--st-fg)]">
             {headline}
           </Heading>
-          <p className={cx("mt-4 max-w-md text-sm md:text-base", muted)}>{sub}</p>
+          <p className={cx("mt-4 max-w-md text-sm md:text-base leading-relaxed", muted)}>{sub}</p>
           <div className="mt-7">{buttons}</div>
           {note && <p className={cx("mt-3 text-xs", muted)}>{note}</p>}
           {(stat1 || stat2) && (
             <div className="mt-7 flex flex-wrap items-center gap-6">
               {[stat1, stat2].filter(Boolean).map((s) => (
-                <div key={s} className="flex items-center gap-2 text-sm font-medium">
+                <div key={s} className="flex items-center gap-2 text-sm font-semibold">
                   <BadgeCheck className="h-4 w-4 text-[var(--st-primary)]" /> {s}
                 </div>
               ))}
             </div>
           )}
         </div>
-
-        <div className="relative">
-          <div className="overflow-hidden rounded-[var(--st-radius)] bg-[var(--st-surface)] shadow-[var(--st-shadow)]">
-            <div className="aspect-[4/3] bg-[var(--st-bg-alt)]">
-              {media && <img src={media} alt={name} className="h-full w-full object-cover" />}
-            </div>
-          </div>
+        <div className="relative aspect-square overflow-hidden rounded-3xl border border-[var(--st-border)] bg-[var(--st-bg-alt)] shadow-xl">
+          {media && (
+            <img
+              src={media}
+              alt={name}
+              loading="eager"
+              decoding="async"
+              className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+            />
+          )}
           {offer && (
-            <span className="absolute -bottom-3 left-4 rounded-full bg-[var(--st-primary)] px-4 py-2 text-xs font-semibold text-[var(--st-on-primary)] shadow-[var(--st-shadow)]">
+            <span className="absolute -bottom-3 left-4 rounded-full bg-[var(--st-primary)] px-4 py-2 text-xs font-bold text-[var(--st-on-primary)] shadow-lg">
               {offer}
             </span>
           )}
@@ -430,17 +507,22 @@ export function Faq() {
 export function ThemeSignature({ slot = "mid" }: { slot?: "top" | "mid" }) {
   const { theme, content } = useStore();
 
+  /* Bazaar Top Deal Strip */
   if (theme.id === "bazaar" && slot === "top") {
-    const title = content.text("bazaar_deal_title");
-    const note = content.text("bazaar_deal_note");
-    if (!title && !note) return null;
+    const title = content.text("bazaar_deal_title") || "আজকের সেরা ধামাকা ডিল";
+    const note = content.text("bazaar_deal_note") || "সীমিত সময়ের স্টক — আগে আসলে আগে পাবেন!";
     return (
-      <section className="mx-auto max-w-6xl px-4 pt-6">
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--st-radius)] bg-[var(--st-primary)] px-4 py-3 text-[var(--st-on-primary)]">
-          <div className="flex items-center gap-2 text-sm font-bold uppercase">
-            <Sparkles className="h-4 w-4" /> {title}
+      <section className="mx-auto max-w-6xl px-4 pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 px-4 py-3 text-white shadow-md">
+          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide">
+            <Sparkles className="h-4 w-4 animate-pulse" /> {title}
           </div>
-          {note && <div className="text-xs font-medium opacity-90">{note}</div>}
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold opacity-95">{note}</span>
+            <span className="hidden md:inline-flex items-center gap-1 rounded-md bg-black/25 px-2 py-0.5 text-[11px] font-bold">
+              ক্যাশ অন ডেলিভারি
+            </span>
+          </div>
         </div>
       </section>
     );
@@ -448,36 +530,72 @@ export function ThemeSignature({ slot = "mid" }: { slot?: "top" | "mid" }) {
 
   if (slot === "top") return null;
 
-  if (theme.id === "noir") {
-    const eyebrow = content.text("noir_eyebrow");
-    const story = content.text("noir_story");
-    if (!eyebrow && !story) return null;
+  /* Aurora Tech & Lifestyle Signature */
+  if (theme.id === "aurora") {
     return (
-      <section className={cx("border-y bg-[var(--st-bg-alt)]", borderc)}>
-        <div className="mx-auto max-w-3xl px-4 py-16 text-center">
-          {eyebrow && (
-            <span className="text-[11px] uppercase tracking-[0.4em] text-[var(--st-primary)]">{eyebrow}</span>
-          )}
-          {story && (
-            <Heading as="h2" className="mt-5 text-2xl leading-snug md:text-3xl">
-              {story}
-            </Heading>
-          )}
+      <section className="mx-auto max-w-6xl px-4 py-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-2xl border border-[var(--st-border)] bg-[var(--st-surface)] p-6 shadow-xs">
+          <div className="flex items-center gap-3.5">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--st-primary)]/10 text-[var(--st-primary)]">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-[var(--st-fg)]">১০০% অথেনটিক গ্যাজেট</div>
+              <div className={cx("text-xs mt-0.5", muted)}>প্রতিটি পণ্য ল্যাব পরীক্ষিত ও ভেরিফাইড</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3.5">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <Truck className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-[var(--st-fg)]">সুপারফাস্ট হোম ডেলিভারি</div>
+              <div className={cx("text-xs mt-0.5", muted)}>সারা দেশে দ্রুততম সময়ে ডেলিভারি</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3.5">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-[var(--st-fg)]">ক্যাশ অন ডেলিভারি</div>
+              <div className={cx("text-xs mt-0.5", muted)}>পণ্য হাতে পেয়ে চেক করে টাকা দিন</div>
+            </div>
+          </div>
         </div>
       </section>
     );
   }
 
+  /* Noir Luxe Boutique Signature */
+  if (theme.id === "noir") {
+    const eyebrow = content.text("noir_eyebrow") || "THE SIGNATURE COLLECTION";
+    const story = content.text("noir_story") || "Curated luxury pieces crafted for those who appreciate distinction, elegance, and superior quality.";
+    return (
+      <section className={cx("border-y bg-[var(--st-bg-alt)]", borderc)}>
+        <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+          <span className="inline-block rounded-xs border border-[#d9c08a]/30 px-3 py-1 text-[10px] uppercase tracking-[0.4em] text-[#d9c08a]">
+            {eyebrow}
+          </span>
+          <Heading as="h2" className="mt-5 font-serif text-2xl leading-snug md:text-3xl text-[var(--st-fg)]">
+            “{story}”
+          </Heading>
+          <div className="mx-auto mt-6 h-px w-16 bg-[#d9c08a]/40" />
+        </div>
+      </section>
+    );
+  }
+
+  /* Atelier Organic Signature */
   if (theme.id === "atelier") {
-    const quote = content.text("atelier_quote");
-    const credit = content.text("atelier_credit");
-    if (!quote) return null;
+    const quote = content.text("atelier_quote") || "প্রকৃতির নিখাদ দান — প্রতিটি পণ্যে সততা ও শুদ্ধতার ছোঁয়া।";
+    const credit = content.text("atelier_credit") || "— আমাদের পারিবারিক প্রতিশ্রুতি";
     return (
       <section className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <Heading as="h2" className="text-3xl leading-tight md:text-5xl">
+        <Heading as="h2" className="font-serif text-2xl leading-relaxed md:text-4xl text-[var(--st-fg)]">
           {quote}
         </Heading>
-        {credit && <p className={cx("mt-4 text-xs uppercase tracking-[0.3em]", muted)}>{credit}</p>}
+        {credit && <p className={cx("mt-4 text-xs font-medium uppercase tracking-[0.25em]", muted)}>{credit}</p>}
       </section>
     );
   }

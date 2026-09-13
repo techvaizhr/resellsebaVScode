@@ -192,6 +192,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/admin/payments": ["payments.manage"],
   "/admin/staff": ["staff.manage"],
   "/admin/maintenance": ["maintenance.manage"],
+  "/admin/backup": ["maintenance.manage", "settings.manage"],
   "/admin/advanced": ["settings.advanced", "settings.manage"],
   "/admin/domains": ["domains.manage"],
   "/admin/deposits": ["deposits.manage"],

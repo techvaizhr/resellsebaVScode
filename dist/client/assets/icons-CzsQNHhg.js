@@ -1,1 +1,0 @@
-import{Ct as e,D as t,Dn as n,I as r,Mn as i,N as a,Qn as o,V as s,Vt as c,a as l,c as u,ht as d,ir as f,lr as p,m,sn as h}from"./vendor-icons-CDd3jCaH.js";var g={Boxes:f,Truck:m,Wallet:l,Megaphone:e,Globe:h,BarChart3:o,ShieldCheck:r,Sparkles:t,ClipboardList:i,Send:s,PackageCheck:d,Coins:n,BanknoteArrowDown:p,ShoppingBag:a,Users:u,Layers:c},_=Object.keys(g);export{_ as n,g as t};

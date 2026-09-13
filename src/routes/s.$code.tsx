@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useStoreVisitLog } from "@/lib/store-visits";
 import { storeThemeStyle } from "@/lib/store-theme";
 import { useStoreLoader } from "@/components/store/store-context";
-import { StoreFooter, StoreHeader } from "@/components/store/chrome";
+import { StoreFooter, StoreHeader, FloatingQuickOrder } from "@/components/store/chrome";
 import { getStoreSeo } from "@/lib/seo.functions";
 import { seoLinks, seoMeta } from "@/lib/seo-meta";
 
@@ -82,6 +82,7 @@ function StoreLayout() {
           <Outlet />
         </main>
         <StoreFooter />
+        <FloatingQuickOrder />
       </div>
     </Provider>
   );

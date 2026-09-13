@@ -6,6 +6,7 @@ use App\Http\Controllers\RpcController;
 use App\Http\Controllers\CrudController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\PublicController;
+use App\Http\Controllers\BackupController;
 
 // Universal RPC endpoint (used by bootstrap, dashboards, action triggers)
 Route::post('/rpc/{name}', [RpcController::class, 'handle']);
@@ -17,6 +18,17 @@ Route::post('/crud/{table}', [CrudController::class, 'handle']);
 Route::post('/upload/image', [UploadController::class, 'uploadImage']);
 Route::get('/upload/list', [UploadController::class, 'listImages']);
 Route::post('/upload/delete', [UploadController::class, 'deleteImage']);
+
+// Admin Backup & Restore endpoints
+Route::prefix('admin/backup')->group(function () {
+    Route::get('/list', [BackupController::class, 'listBackups']);
+    Route::post('/create-db', [BackupController::class, 'createDbBackup']);
+    Route::post('/create-files', [BackupController::class, 'createFilesBackup']);
+    Route::get('/download/{filename}', [BackupController::class, 'downloadBackup']);
+    Route::post('/restore-db', [BackupController::class, 'restoreDbBackup']);
+    Route::post('/restore-files', [BackupController::class, 'restoreFilesBackup']);
+    Route::post('/delete', [BackupController::class, 'deleteBackup']);
+});
 
 // Auth Routes
 Route::prefix('auth')->group(function () {

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ChevronDown, Menu, Phone, Search, ShoppingBag, X } from "lucide-react";
+import { ChevronDown, Menu, Phone, Search, ShoppingBag, X, MessageCircle } from "lucide-react";
 import { menuTarget, type MenuNode } from "@/lib/store-menu";
 
 import { useStore } from "./store-context";
@@ -357,12 +357,22 @@ export function StoreHeader() {
   const v = theme.layout.header;
 
   const announcement = settings?.announcement?.trim();
+  const defaultNotice =
+    theme.id === "bazaar"
+      ? "🇧🇩 সারা দেশে ক্যাশ অন ডেলিভারি | ডেলিভারির সময় পার্সেল চেক করে টাকা দিন | কোনো অগ্রিম পেমেন্ট নেই"
+      : theme.id === "noir"
+        ? "✨ LUXURY CURATION — 100% AUTHENTIC & PREMIUM QUALITY GUARANTEED"
+        : theme.id === "atelier"
+          ? "🌿 ১০০% খাঁটি ও নির্ভেজাল পণ্য — সরাসরি প্রাকৃতিক সোর্স থেকে সংগৃহীত"
+          : "⚡ দ্রুততম হোম ডেলিভারি ও শতভাগ অরিজিনাল প্রোডাক্ট গ্যারান্টি";
+
+  const bannerText = announcement || defaultNotice;
 
   return (
     <div className="sticky top-0 z-40">
-      {announcement && (
-        <div className="bg-[var(--st-primary)] px-4 py-1.5 text-center text-[12px] font-medium text-[var(--st-on-primary)]">
-          {announcement}
+      {bannerText && (
+        <div className="bg-[var(--st-primary)] px-4 py-1.5 text-center text-[12px] font-semibold text-[var(--st-on-primary)] tracking-wide shadow-xs">
+          {bannerText}
         </div>
       )}
 
@@ -565,5 +575,42 @@ export function StoreFooter() {
         {settings?.footer_text || `© ${year} ${name}. All rights reserved.`}
       </div>
     </footer>
+  );
+}
+
+export function FloatingQuickOrder() {
+  const { settings } = useStore();
+  const phone = settings?.support_phone || settings?.whatsapp;
+  const wa = settings?.whatsapp;
+
+  if (!phone && !wa) return null;
+
+  return (
+    <div className="fixed bottom-5 right-4 z-50 flex flex-col items-end gap-2 pointer-events-auto">
+      {wa && (
+        <a
+          href={`https://wa.me/${wa.replace(/[^\d]/g, "")}?text=${encodeURIComponent("হ্যালো! আমি আপনার স্টোর থেকে একটি প্রোডাক্ট অর্ডার করতে চাই।")}`}
+          target="_blank"
+          rel="noreferrer"
+          className="group flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-xl transition-all duration-200 hover:scale-105 hover:bg-emerald-700 active:scale-95 sm:text-sm"
+        >
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white"></span>
+          </span>
+          <MessageCircle className="h-4 w-4 fill-white" />
+          <span>হোয়াটসঅ্যাপে অর্ডার</span>
+        </a>
+      )}
+      {phone && (
+        <a
+          href={`tel:${phone}`}
+          className="flex items-center gap-2 rounded-full bg-[var(--st-primary)] px-4 py-2.5 text-xs font-bold text-[var(--st-on-primary)] shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 sm:text-sm"
+        >
+          <Phone className="h-4 w-4 fill-current" />
+          <span>কল করুন</span>
+        </a>
+      )}
+    </div>
   );
 }

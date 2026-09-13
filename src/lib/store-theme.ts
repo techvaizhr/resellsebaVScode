@@ -86,11 +86,11 @@ const pal = (
 export const STORE_THEMES: StoreTheme[] = [
   {
     id: "aurora",
-    name: "Aurora",
-    description: "Modern gradient commerce — soft cards, glass header, bold hero.",
+    name: "Aurora (মডার্ন ও ট্রেন্ডি)",
+    description: "আধুনিক গ্যাজেট ও লাইফস্টাইল স্টোর — সফট কার্ড, গ্লাস হেডার ও ট্রেন্ডিং ব্যাজ।",
     vars: {
-      "--st-radius": "16px",
-      "--st-radius-sm": "10px",
+      "--st-radius": "18px",
+      "--st-radius-sm": "12px",
       "--st-font-head": SYS_SANS,
       "--st-font-body": SYS_SANS,
       "--st-head-weight": "700",
@@ -150,15 +150,15 @@ export const STORE_THEMES: StoreTheme[] = [
   },
   {
     id: "noir",
-    name: "Noir Luxe",
-    description: "Dark premium boutique — serif headlines, metallic accents, spotlight hero.",
+    name: "Noir Luxe (লাক্সারি বুটিক)",
+    description: "ডার্ক প্রিমিয়াম ফ্যাশন ও কসমেটিকস — গোল্ড অ্যাকসেন্ট, সেরিফ ফন্ট ও সিগনেচার স্পটলাইট।",
     vars: {
-      "--st-radius": "4px",
-      "--st-radius-sm": "2px",
+      "--st-radius": "6px",
+      "--st-radius-sm": "3px",
       "--st-font-head": SYS_SERIF,
       "--st-font-body": SYS_SANS,
       "--st-head-weight": "600",
-      "--st-track": "0.01em",
+      "--st-track": "0.02em",
     },
     layout: {
       header: "classic",
@@ -214,10 +214,10 @@ export const STORE_THEMES: StoreTheme[] = [
   },
   {
     id: "bazaar",
-    name: "Bazaar",
-    description: "High-density marketplace — colored top bar, compact cards, deal strips.",
+    name: "Bazaar (হাটবাজার ও সুপার ডিল)",
+    description: "হাই-কনভার্সন বাংলাদেশি মার্কেটপ্লেস — ধামাকা অফার ব্যানার ও সরাসরি ১-ক্লিকে অর্ডার।",
     vars: {
-      "--st-radius": "8px",
+      "--st-radius": "10px",
       "--st-radius-sm": "6px",
       "--st-font-head": SYS_SANS,
       "--st-font-body": SYS_SANS,
@@ -278,14 +278,14 @@ export const STORE_THEMES: StoreTheme[] = [
   },
   {
     id: "atelier",
-    name: "Atelier",
-    description: "Editorial minimal — paper tones, serif display, generous whitespace.",
+    name: "Atelier (অর্গানিক ও ক্রাফট)",
+    description: "ন্যাচারাল, হেলথ ও বুক স্টোর — ওয়ার্ম ক্যানভাস টোন, ১০০% খাঁটি ট্রাস্ট সিল ও স্টোরিটেলিং।",
     vars: {
-      "--st-radius": "2px",
-      "--st-radius-sm": "2px",
+      "--st-radius": "14px",
+      "--st-radius-sm": "8px",
       "--st-font-head": SYS_SERIF,
       "--st-font-body": SYS_SANS,
-      "--st-head-weight": "400",
+      "--st-head-weight": "500",
       "--st-track": "-0.01em",
     },
     layout: {
