@@ -5,6 +5,7 @@ import { menuTarget, type MenuNode } from "@/lib/store-menu";
 
 import { useStore } from "./store-context";
 import { borderc, cx, Heading, muted } from "./ui";
+import { PwaInstallButton } from "@/components/pwa-install";
 
 function Logo() {
   const { code, name, settings, theme } = useStore();
@@ -536,6 +537,12 @@ export function StoreFooter() {
               ))}
             </div>
           )}
+          <div className="mt-4">
+            <PwaInstallButton
+              variant="footer"
+              label="অ্যাপ ইনস্টল করুন"
+            />
+          </div>
         </div>
 
         <div>

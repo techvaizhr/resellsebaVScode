@@ -13,8 +13,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { APP_ICONS } from "@/lib/icons";
-import { toast } from "sonner";
-import { PwaInstallButton } from "@/components/pwa-install";
+import { PwaInstallButton, PwaFooterOption } from "@/components/pwa-install";
 import {
   Accordion,
   AccordionContent,
@@ -576,13 +575,18 @@ function Landing({
 
       {/* ── Footer ──────────────────────────────────────── */}
       <footer className="border-t border-border/60 bg-card">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
+        <div className="mx-auto max-w-6xl px-4 pt-10 sm:px-6">
+          <PwaFooterOption />
+        </div>
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
             <Brand siteName={siteName} logoUrl={logoUrl} size="sm" />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
               {c.footer.tagline}
             </p>
-            <PwaInstallButton variant="inline" className="mt-4" label="Install app" />
+            <div className="mt-4">
+              <PwaInstallButton variant="footer" label="মোবাইল অ্যাপ ইনস্টল করুন" />
+            </div>
           </div>
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">

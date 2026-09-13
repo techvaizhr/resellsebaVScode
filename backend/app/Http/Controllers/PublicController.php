@@ -69,20 +69,48 @@ class PublicController extends Controller
         $settings = GlobalSetting::pluck('value', 'key')->toArray();
         $siteName = $settings['site_name'] ?? 'ResellSeba';
         $favicon = $settings['favicon_url'] ?? '/favicon.ico';
+        $iconType = str_ends_with(strtolower($favicon), '.ico') ? 'image/x-icon' : 'image/png';
 
         return response()->json([
             'short_name' => $siteName,
             'name' => $siteName . ' - Reseller Platform',
+            'description' => 'Bangladesh premier reseller platform.',
             'icons' => [
                 [
                     'src' => $favicon,
+                    'type' => $iconType,
+                    'sizes' => '192x192',
+                    'purpose' => 'any',
+                ],
+                [
+                    'src' => $favicon,
+                    'type' => $iconType,
+                    'sizes' => '512x512',
+                    'purpose' => 'any',
+                ],
+                [
+                    'src' => $favicon,
+                    'type' => $iconType,
+                    'sizes' => '512x512',
+                    'purpose' => 'maskable',
+                ],
+                [
+                    'src' => '/icon-192.png',
                     'type' => 'image/png',
                     'sizes' => '192x192',
-                ]
+                    'purpose' => 'any',
+                ],
+                [
+                    'src' => '/icon-512.png',
+                    'type' => 'image/png',
+                    'sizes' => '512x512',
+                    'purpose' => 'any',
+                ],
             ],
             'start_url' => '/',
+            'scope' => '/',
             'background_color' => '#ffffff',
-            'theme_color' => '#6366f1',
+            'theme_color' => '#4f46e5',
             'display' => 'standalone',
         ]);
     }

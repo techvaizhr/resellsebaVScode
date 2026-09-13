@@ -1,14 +1,37 @@
 {
-  "name": "Reseller Platform",
-  "short_name": "Reseller",
-  "start_url": "/dashboard",
+  "name": "ResellSeba - Reseller Platform",
+  "short_name": "ResellSeba",
+  "description": "Bangladesh's premier reseller platform. Start your online business with zero investment.",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "theme_color": "#4f46e5",
   "icons": [
-    { "src": "/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["shopping", "business", "productivity"]
 }

@@ -5,6 +5,7 @@ import { Copy, Download } from "lucide-react";
 import { toast } from "sonner";
 import { PublicHeaderContent } from "@/components/public-header";
 import { useAuth } from "@/lib/use-auth";
+import { PwaInstallButton } from "@/components/pwa-install";
 
 export type CatalogBrand = {
   siteName: string;
@@ -62,10 +63,11 @@ export function CatalogFooter() {
         <span>
           © {new Date().getFullYear()} {siteName} {tagline ? `· ${tagline}` : ""}
         </span>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link to="/" className="hover:text-primary">Home</Link>
           <Link to="/catalog" search={{}} className="hover:text-primary">Catalog</Link>
           <Link to="/privacy" className="font-semibold text-primary hover:text-primary/80">Privacy Policy</Link>
+          <PwaInstallButton variant="inline" label="অ্যাপ ইনস্টল করুন" />
         </div>
       </div>
     </footer>

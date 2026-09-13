@@ -26,6 +26,7 @@ const MIME_TYPES = {
   ".ttf": "font/ttf",
   ".txt": "text/plain",
   ".xml": "application/xml",
+  ".webmanifest": "application/manifest+json",
 };
 
 const server = http.createServer(async (req, res) => {
@@ -36,7 +37,7 @@ const server = http.createServer(async (req, res) => {
     // 1. Try to serve static file from dist/client or public
     if (pathname !== "/" && !pathname.endsWith("/")) {
       let filePath = path.join(CLIENT_DIR, pathname);
-      if (!fs.existsSync(filePath) && pathname.startsWith("/uploads/")) {
+      if (!fs.existsSync(filePath)) {
         filePath = path.join(__dirname, "public", pathname);
       }
       // Prevent directory traversal
