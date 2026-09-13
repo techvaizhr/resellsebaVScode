@@ -23,6 +23,10 @@ dist-ssr
 backend/.env.local
 backend/.env.*.local
 
+# User Uploads (Prevent repository bloat)
+public/uploads/products/*
+!public/uploads/products/.gitkeep
+
 
 # Laravel Backend
 backend/vendor/
