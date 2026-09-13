@@ -19,6 +19,7 @@ import {
   FileCode2,
   FolderArchive,
   ShieldCheck,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,6 +43,9 @@ function AdminBackupPage() {
   const [creatingDb, setCreatingDb] = useState(false);
   const [creatingFiles, setCreatingFiles] = useState(false);
   const [filterType, setFilterType] = useState<"all" | "database" | "files">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isDraggingDb, setIsDraggingDb] = useState(false);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
 
   // Confirm Modal state
   const [confirmModal, setConfirmModal] = useState<{
@@ -61,6 +65,7 @@ function AdminBackupPage() {
     onConfirm: async () => {},
   });
   const [actionLoading, setActionLoading] = useState(false);
+  const [activeActionLabel, setActiveActionLabel] = useState<string>("");
 
   // File upload inputs
   const dbFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -116,7 +121,7 @@ function AdminBackupPage() {
   // 3. Download Backup
   async function handleDownload(item: BackupItem) {
     try {
-      toast.loading(`Downloading ${item.filename}...`, { id: "download" });
+      toast.loading(`Starting download: ${item.filename}...`, { id: "download" });
       await backupApi.download(item.filename);
       toast.success("Download started!", { id: "download" });
     } catch (e: any) {
@@ -131,13 +136,14 @@ function AdminBackupPage() {
       isOpen: true,
       title: isDb ? "Restore Database" : "Restore Media & Images",
       description: isDb
-        ? "Warning: Restoring the database will overwrite current tables and records with the data from this backup file. Are you sure you want to proceed?"
-        : "Warning: Restoring media will extract and overwrite files in public/uploads with files from this archive. Are you sure?",
+        ? "Warning: Restoring the database will execute the tables and data from this backup file into MySQL. Are you sure you want to proceed?"
+        : "Warning: Restoring media will unpack all images into public/uploads/. Are you sure?",
       detail: `File: ${item.filename} (${item.size})`,
       variant: "danger",
       confirmText: "Yes, Restore Now",
       onConfirm: async () => {
         setActionLoading(true);
+        setActiveActionLabel(isDb ? "Restoring Database from server backup..." : "Restoring Media Images from archive...");
         try {
           if (isDb) {
             const res = await backupApi.restoreDb({ filename: item.filename });
@@ -152,6 +158,7 @@ function AdminBackupPage() {
           toast.error(e?.message || "Restore operation failed");
         } finally {
           setActionLoading(false);
+          setActiveActionLabel("");
         }
       },
     });
@@ -168,6 +175,7 @@ function AdminBackupPage() {
       confirmText: "Delete File",
       onConfirm: async () => {
         setActionLoading(true);
+        setActiveActionLabel("Deleting backup file...");
         try {
           const res = await backupApi.delete(item.filename);
           toast.success(res.message || "Backup deleted successfully");
@@ -177,6 +185,7 @@ function AdminBackupPage() {
           toast.error(e?.message || "Failed to delete backup");
         } finally {
           setActionLoading(false);
+          setActiveActionLabel("");
         }
       },
     });
@@ -196,6 +205,7 @@ function AdminBackupPage() {
       confirmText: "Upload & Restore",
       onConfirm: async () => {
         setActionLoading(true);
+        setActiveActionLabel(isDb ? "Uploading and executing SQL restore..." : "Uploading and unpacking images archive...");
         try {
           if (isDb) {
             const res = await backupApi.restoreDb({ file });
@@ -210,6 +220,7 @@ function AdminBackupPage() {
           toast.error(e?.message || "Restore from upload failed");
         } finally {
           setActionLoading(false);
+          setActiveActionLabel("");
           if (dbFileInputRef.current) dbFileInputRef.current.value = "";
           if (filesInputRef.current) filesInputRef.current.value = "";
         }
@@ -218,20 +229,37 @@ function AdminBackupPage() {
   }
 
   const filteredBackups = backups.filter((b) => {
-    if (filterType === "all") return true;
-    return b.type === filterType;
+    if (filterType !== "all" && b.type !== filterType) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return b.filename.toLowerCase().includes(q) || b.created_at.toLowerCase().includes(q);
+    }
+    return true;
   });
 
   return (
     <div className="space-y-6">
+      {/* Active Long-Running Restore Banner */}
+      {actionLoading && (
+        <div className="flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4 text-foreground shadow-xs animate-pulse">
+          <Loader2 className="h-5 w-5 animate-spin text-primary shrink-0" />
+          <div className="text-sm">
+            <p className="font-semibold text-primary">{activeActionLabel || "Operation in progress..."}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Please do not close, navigate away, or refresh this page until the operation completes.
+            </p>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         title="Backup & Restore"
         description="Dynamic 1-click database SQL backup, uploads media ZIP archive, and safe restoration."
         actions={
           <button
             onClick={loadData}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            disabled={loading || actionLoading}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
           >
             <RefreshCw className={"h-4 w-4 " + (loading ? "animate-spin" : "")} /> Refresh
           </button>
@@ -263,7 +291,24 @@ function AdminBackupPage() {
       {/* Action Panels: Create Backup & Upload Restore */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Database Backup & Restore Box */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-xs">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDraggingDb(true);
+          }}
+          onDragLeave={() => setIsDraggingDb(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDraggingDb(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) handleFileUpload(file, "database");
+          }}
+          className={`rounded-xl border transition-all p-5 shadow-xs ${
+            isDraggingDb
+              ? "border-indigo-500 bg-indigo-500/10 ring-2 ring-indigo-500/20"
+              : "border-border bg-card"
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
               <Database className="h-5 w-5" />
@@ -279,7 +324,7 @@ function AdminBackupPage() {
           <div className="mt-5 space-y-3">
             <button
               onClick={handleCreateDb}
-              disabled={creatingDb}
+              disabled={creatingDb || actionLoading}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 disabled:opacity-50"
             >
               {creatingDb ? (
@@ -307,16 +352,34 @@ function AdminBackupPage() {
               <button
                 type="button"
                 onClick={() => dbFileInputRef.current?.click()}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/40 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                disabled={actionLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/40 px-4 py-2.5 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
               >
-                <Upload className="h-3.5 w-3.5 text-indigo-500" /> Upload & Restore .SQL File
+                <Upload className="h-3.5 w-3.5 text-indigo-500" /> Upload or Drag & Drop .SQL File
               </button>
             </div>
           </div>
         </div>
 
         {/* Media / Images Backup & Restore Box */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-xs">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDraggingFiles(true);
+          }}
+          onDragLeave={() => setIsDraggingFiles(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDraggingFiles(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) handleFileUpload(file, "files");
+          }}
+          className={`rounded-xl border transition-all p-5 shadow-xs ${
+            isDraggingFiles
+              ? "border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/20"
+              : "border-border bg-card"
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <Archive className="h-5 w-5" />
@@ -332,7 +395,7 @@ function AdminBackupPage() {
           <div className="mt-5 space-y-3">
             <button
               onClick={handleCreateFiles}
-              disabled={creatingFiles}
+              disabled={creatingFiles || actionLoading}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-emerald-700 disabled:opacity-50"
             >
               {creatingFiles ? (
@@ -360,9 +423,10 @@ function AdminBackupPage() {
               <button
                 type="button"
                 onClick={() => filesInputRef.current?.click()}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/40 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                disabled={actionLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/40 px-4 py-2.5 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
               >
-                <Upload className="h-3.5 w-3.5 text-emerald-500" /> Upload & Restore .ZIP Archive
+                <Upload className="h-3.5 w-3.5 text-emerald-500" /> Upload or Drag & Drop .ZIP Archive
               </button>
             </div>
           </div>
@@ -379,38 +443,51 @@ function AdminBackupPage() {
             </p>
           </div>
 
-          {/* Filter tabs */}
-          <div className="flex items-center gap-1 rounded-lg bg-muted p-1 text-xs font-medium">
-            <button
-              onClick={() => setFilterType("all")}
-              className={`rounded-md px-3 py-1.5 transition-all ${
-                filterType === "all"
-                  ? "bg-card text-foreground shadow-xs font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              All ({backups.length})
-            </button>
-            <button
-              onClick={() => setFilterType("database")}
-              className={`rounded-md px-3 py-1.5 transition-all ${
-                filterType === "database"
-                  ? "bg-card text-foreground shadow-xs font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Database ({backups.filter((b) => b.type === "database").length})
-            </button>
-            <button
-              onClick={() => setFilterType("files")}
-              className={`rounded-md px-3 py-1.5 transition-all ${
-                filterType === "files"
-                  ? "bg-card text-foreground shadow-xs font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Images ({backups.filter((b) => b.type === "files").length})
-            </button>
+          {/* Search & Filter tabs */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search backups..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 rounded-lg border border-border bg-background pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            <div className="flex items-center gap-1 rounded-lg bg-muted p-1 text-xs font-medium">
+              <button
+                onClick={() => setFilterType("all")}
+                className={`rounded-md px-3 py-1 transition-all ${
+                  filterType === "all"
+                    ? "bg-card text-foreground shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                All ({backups.length})
+              </button>
+              <button
+                onClick={() => setFilterType("database")}
+                className={`rounded-md px-3 py-1 transition-all ${
+                  filterType === "database"
+                    ? "bg-card text-foreground shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Database ({backups.filter((b) => b.type === "database").length})
+              </button>
+              <button
+                onClick={() => setFilterType("files")}
+                className={`rounded-md px-3 py-1 transition-all ${
+                  filterType === "files"
+                    ? "bg-card text-foreground shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Images ({backups.filter((b) => b.type === "files").length})
+              </button>
+            </div>
           </div>
         </div>
 

@@ -1,0 +1,384 @@
+import { t as getRequest } from "./request-response-sNnPQJu-.js";
+import { r as gatewayBase } from "./registry-I6SFzk_W.js";
+//#region src/lib/gateways/core.server.ts
+async function admin() {
+	const { gatewayDatabase } = await import("./gateway-database.server-aJzuveu8.js");
+	return gatewayDatabase();
+}
+/**
+* Picks the gateway row that applies to a store, shared by credential loading
+* and the storefront gateway listing.
+*/
+function resolveGatewayRow(rows, resellerId) {
+	const platform = rows.find((r) => r.reseller_id === null) ?? null;
+	const mine = resellerId ? rows.find((r) => r.reseller_id === resellerId) ?? null : null;
+	if (mine) {
+		if (!mine.is_active) return null;
+		if ((mine.mode ?? "own") === "platform") return platform && platform.is_active ? platform : null;
+		return mine;
+	}
+	return platform && platform.is_active ? platform : null;
+}
+/**
+* Credential loader.
+
+*
+* A reseller row, when present, decides everything for that store:
+* - `is_active = false` → the gateway is off for this store (no platform fallback)
+* - `mode = 'platform'` → the store reuses the admin's global gateway (admin gets the money)
+* - `mode = 'own'`      → the reseller's own merchant credentials are used
+* With no reseller row at all the platform gateway is used, as before.
+*/
+async function getCredentials(provider, resellerId) {
+	const q = (await admin()).from("payment_gateway_configs").select("provider,api_key,api_secret,merchant_id,config,is_active,reseller_id,mode").eq("provider", provider);
+	const { data } = resellerId ? await q.or(`reseller_id.eq.${resellerId},reseller_id.is.null`) : await q.is("reseller_id", null);
+	const row = resolveGatewayRow(data ?? [], resellerId);
+	if (!row) return null;
+	const config = row.config ?? {};
+	return {
+		provider,
+		api_key: row.api_key ?? "",
+		api_secret: row.api_secret ?? "",
+		merchant_id: row.merchant_id ?? "",
+		config,
+		base: gatewayBase(provider, config),
+		owner: row.reseller_id ? "reseller" : "platform"
+	};
+}
+/** Same shape from a raw admin form, for the "Test connection" action. */
+function credsFromRaw(provider, raw) {
+	const config = raw.config ?? {};
+	return {
+		provider,
+		api_key: String(raw.api_key ?? ""),
+		api_secret: String(raw.api_secret ?? ""),
+		merchant_id: String(raw.merchant_id ?? ""),
+		config,
+		base: gatewayBase(provider, config),
+		owner: raw.reseller_id ? "reseller" : "platform"
+	};
+}
+/** Platform-level (admin) credentials only — used for security deposit payments. */
+async function getPlatformCredentials(provider) {
+	return getCredentials(provider, null);
+}
+async function loadOrder(orderNumber) {
+	const { data } = await (await admin()).from("orders").select("id,order_number,total,customer_name,customer_phone,customer_email,address_line,city,reseller_id,payment_status,payment_provider,paid_amount,transaction_id,advance_amount,advance_by").eq("order_number", orderNumber).maybeSingle();
+	if (!data) throw new Error("Order not found");
+	return data;
+}
+/** Public origin of this deployment, derived from the request (nothing hardcoded). */
+function siteOrigin() {
+	try {
+		const request = getRequest();
+		const headers = request?.headers;
+		if (headers) {
+			const host = headers.get("x-forwarded-host") ?? headers.get("host");
+			const proto = headers.get("x-forwarded-proto") ?? "https";
+			if (host) return `${proto}://${host}`;
+		}
+		if (request?.url) return new URL(request.url).origin;
+	} catch {}
+	return process.env["SITE_URL"] || "";
+}
+/** Every outbound create call is capped so a slow gateway can't hang checkout. */
+async function withTimeout(fn, ms = 1e4) {
+	const ctrl = new AbortController();
+	const timer = setTimeout(() => ctrl.abort(), ms);
+	try {
+		return await fn(ctrl.signal);
+	} catch (err) {
+		if (err?.name === "AbortError") throw new Error("Gateway timeout");
+		throw err;
+	} finally {
+		clearTimeout(timer);
+	}
+}
+async function jsonPost(url, body, headers = {}, signal) {
+	return parseBody(await callGateway(url, () => fetch(url, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			accept: "application/json",
+			...headers
+		},
+		body: JSON.stringify(body),
+		signal
+	})));
+}
+/**
+* A gateway host that does not resolve (wrong/renamed API URL) surfaces as a
+* bare "fetch failed", which tells nobody anything. Turn it into an actionable
+* message naming the host so the admin can correct the API base URL.
+*/
+async function callGateway(url, run) {
+	try {
+		return await run();
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		if (/abort|timeout|timed out/i.test(msg)) throw err;
+		let host = url;
+		try {
+			host = new URL(url).host;
+		} catch {}
+		throw new Error(`Could not reach the payment gateway at ${host}. Check the gateway's API base URL in Payment methods.`);
+	}
+}
+async function formPost(url, body, signal) {
+	return parseBody(await callGateway(url, () => fetch(url, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/x-www-form-urlencoded",
+			accept: "application/json"
+		},
+		body: body.toString(),
+		signal
+	})));
+}
+async function getJson(url, headers = {}, signal) {
+	return parseBody(await callGateway(url, () => fetch(url, {
+		headers: {
+			accept: "application/json",
+			...headers
+		},
+		signal
+	})));
+}
+async function parseBody(res) {
+	const text = await res.text();
+	try {
+		return JSON.parse(text);
+	} catch {
+		return {
+			__raw: text,
+			__status: res.status,
+			__url: res.url,
+			__redirected: res.redirected
+		};
+	}
+}
+/**
+* Final redirect targets on the storefront the shopper is actually browsing:
+* - success → the order "thanks" page (verified payment result shows there)
+* - cancel / fail → back to checkout, so the shopper can retry or pick COD
+*/
+function spaUrls(origin, code, orderNumber) {
+	const store = `${origin}/s/${encodeURIComponent(code)}`;
+	return {
+		success: `${store}/thanks?n=${encodeURIComponent(orderNumber)}`,
+		cancel: `${store}/checkout?pay=cancelled`
+	};
+}
+/**
+* The origin a payment starts on is derived from the incoming request, so it is
+* trustworthy at that moment — but the gateway returns to the platform origin,
+* where it arrives as a plain query parameter again. To keep the shopper (or
+* reseller) on the exact site they started from — a platform custom domain, a
+* reseller domain, the published site, anything — the success/cancel targets are
+* signed when the payment is created and the signature is checked on return.
+* A valid signature proves the URL is the one this server built.
+*/
+function returnSecret() {
+	const env = process.env;
+	return env["SUPABASE_SERVICE_ROLE_KEY"] || env["SUPABASE_PUBLISHABLE_KEY"] || env["SUPABASE_ANON_KEY"] || "lovable-return-secret";
+}
+async function hmacHex(message) {
+	const enc = new TextEncoder();
+	const key = await crypto.subtle.importKey("raw", enc.encode(returnSecret()), {
+		name: "HMAC",
+		hash: "SHA-256"
+	}, false, ["sign"]);
+	const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
+	return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+/** Signature over the return targets, attached to every gateway callback URL. */
+async function signTargets(success, cancel) {
+	return (await hmacHex(`${success}\n${cancel}`)).slice(0, 32);
+}
+async function verifyTargets(success, cancel, sig) {
+	if (!success || !cancel || !sig) return false;
+	const expected = await signTargets(success, cancel);
+	if (expected.length !== sig.length) return false;
+	let diff = 0;
+	for (let i = 0; i < expected.length; i += 1) diff |= expected.charCodeAt(i) ^ sig.charCodeAt(i);
+	if (diff !== 0) return false;
+	try {
+		const u = new URL(success);
+		const c = new URL(cancel);
+		return (u.protocol === "https:" || u.protocol === "http:") && (c.protocol === "https:" || c.protocol === "http:");
+	} catch {
+		return false;
+	}
+}
+/** Gateway return params are user-controlled, so only redirect inside this same storefront origin. */
+function safeReturnTarget(raw, origin) {
+	const fallback = origin || "/";
+	if (!raw) return fallback;
+	if (!origin) return raw.startsWith("/") && !raw.startsWith("//") ? raw : fallback;
+	try {
+		const base = new URL(origin);
+		const target = new URL(raw, base);
+		if (target.origin === base.origin) return target.toString();
+	} catch {}
+	return fallback;
+}
+/**
+* The gateway always returns to the origin that holds the privileged key, but
+* the shopper started on their own storefront (a reseller custom domain, the
+* published site, or a preview host). A same-origin-only check would drop them
+* on the wrong website, so any host the platform itself owns is allowed:
+* this origin, the configured callback origin, platform hosting hosts, and
+* every custom domain registered by a reseller. Everything else falls back.
+*/
+async function resolveReturnTarget(raw, origin) {
+	const fallback = safeReturnTarget(raw, origin);
+	if (!raw) return fallback;
+	let target;
+	try {
+		target = new URL(raw, origin || void 0);
+	} catch {
+		return fallback;
+	}
+	if (target.protocol !== "https:" && target.protocol !== "http:") return fallback;
+	if (origin) try {
+		if (target.origin === new URL(origin).origin) return target.toString();
+	} catch {}
+	const host = target.hostname.toLowerCase();
+	if (host === "localhost" || host.endsWith(".lovable.app") || host.endsWith(".lovableproject.com")) return target.toString();
+	try {
+		const { platformOrigin } = await import("./bridge.server-BzmxkLOk.js");
+		const base = await platformOrigin("");
+		if (base && new URL(base).hostname.toLowerCase() === host) return target.toString();
+	} catch {}
+	const bare = host.replace(/^www\./, "");
+	try {
+		const db = await admin();
+		const [{ data: domains }, { data: settings }] = await Promise.all([db.from("reseller_domains").select("hostname").ilike("hostname", host).limit(1), db.from("global_settings").select("allowed_origins").eq("id", 1).maybeSingle()]);
+		if (domains && domains.length > 0) return target.toString();
+		if ((settings?.allowed_origins ?? []).map((h) => String(h).trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "")).filter(Boolean).includes(bare)) return target.toString();
+	} catch {}
+	return fallback;
+}
+/** Return-URL base every gateway is pointed at (never the SPA directly). */
+function returnUrl(origin, provider, params) {
+	return `${origin}/api/public/payment/${provider}/return?${new URLSearchParams(params).toString()}`;
+}
+/**
+* Records the verified result of an online payment on the order.
+*
+* - Never trusts the redirect: the caller must pass a server-verified amount.
+* - Follows the normal payment-method logic: full amount → `paid`,
+*   part of the bill → `partial`, nothing → `unpaid`.
+* - The money is an advance the customer already paid, so it is stored as
+*   `advance_amount` with `advance_by` set from the merchant account owner:
+*   the admin's global gateway → "admin", the reseller's own gateway →
+*   "reseller". Profit math then credits the right side automatically.
+* - `received_amount` (courier COD collection) is deliberately untouched.
+*/
+async function settlePayment(opts) {
+	const db = await admin();
+	if (opts.order.payment_status === "paid") return "already";
+	if (!opts.paid || !(opts.amount > 0)) {
+		await db.from("orders").update({
+			payment_provider: opts.provider,
+			transaction_id: opts.txnId || null
+		}).eq("id", opts.order.id);
+		return "unpaid";
+	}
+	const expected = Number(opts.order.total || 0);
+	const already = Math.max(Number(opts.order.paid_amount ?? 0), 0);
+	const totalPaid = Math.round((already + opts.amount) * 100) / 100;
+	const full = totalPaid >= expected - .5;
+	const prevAdvance = Math.max(Number(opts.order.advance_amount ?? 0), 0);
+	const holder = opts.owner === "reseller" ? "reseller" : "admin";
+	const advanceBy = prevAdvance > 0 ? opts.order.advance_by ?? holder : holder;
+	const advanceAmount = Math.round((prevAdvance + opts.amount) * 100) / 100;
+	const overpaid = totalPaid > expected + 1;
+	await db.from("orders").update({
+		payment_status: full ? "paid" : "partial",
+		payment_provider: opts.provider,
+		transaction_id: opts.txnId || null,
+		paid_amount: totalPaid,
+		paid_at: full ? (/* @__PURE__ */ new Date()).toISOString() : null,
+		advance_amount: advanceAmount,
+		advance_by: advanceBy,
+		...overpaid ? { admin_note: `OVERPAID: gateway ${opts.provider} reported ${totalPaid}, order total ${expected} (txn ${opts.txnId || "-"})` } : {}
+	}).eq("id", opts.order.id);
+	return full ? "paid" : "partial";
+}
+function newDepositCode() {
+	const rnd = Math.random().toString(36).slice(2, 8).toUpperCase();
+	return `DEP${Date.now().toString(36).toUpperCase().slice(-5)}${rnd}`;
+}
+/** Adapters speak "order"; a deposit is presented to them as a 1-line order. */
+function depositAsOrder(intent, reseller) {
+	return {
+		id: intent.id,
+		order_number: intent.code,
+		total: Number(intent.amount || 0),
+		customer_name: reseller?.name || "Security deposit",
+		customer_phone: reseller?.phone || "01700000000",
+		customer_email: null,
+		address_line: "Security deposit",
+		city: "Dhaka",
+		reseller_id: intent.reseller_id,
+		payment_status: intent.status === "approved" ? "paid" : "unpaid",
+		payment_provider: intent.provider,
+		paid_amount: null,
+		transaction_id: intent.txn_id,
+		advance_amount: null,
+		advance_by: null
+	};
+}
+async function loadDepositIntent(code) {
+	const { data } = await (await admin()).from("deposit_requests").select("id,code,reseller_id,amount,status,provider,txn_id").eq("code", code).maybeSingle();
+	return data ?? null;
+}
+/**
+* Confirms a gateway-paid security deposit: credits the reseller ledger once
+* and marks the request approved. Idempotent on the deposit request status.
+*/
+async function settleDeposit(opts) {
+	const db = await admin();
+	if (opts.intent.status === "approved") return "already";
+	if (!opts.paid || !(opts.amount > 0)) {
+		await db.from("deposit_requests").update({
+			provider: opts.provider,
+			txn_id: opts.txnId || null
+		}).eq("id", opts.intent.id);
+		return "unpaid";
+	}
+	const { data: deposit } = await db.from("reseller_deposits").insert({
+		reseller_id: opts.intent.reseller_id,
+		amount: opts.amount,
+		method: opts.provider,
+		reference: opts.txnId || opts.intent.code,
+		note: `Online security deposit via ${opts.provider}`
+	}).select("id").single();
+	await db.from("deposit_requests").update({
+		status: "approved",
+		provider: opts.provider,
+		txn_id: opts.txnId || null,
+		amount: opts.amount,
+		paid_at: (/* @__PURE__ */ new Date()).toISOString(),
+		reviewed_at: (/* @__PURE__ */ new Date()).toISOString(),
+		admin_note: "Auto-approved: verified online payment",
+		deposit_id: deposit?.id ?? null
+	}).eq("id", opts.intent.id);
+	return "paid";
+}
+/** Gateways form-POST the return URL, so redirect with HTML, not a 302. */
+function htmlRedirect(target) {
+	const safe = target.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+	return new Response(`<!doctype html><meta http-equiv="refresh" content="0;url=${safe}"><script>location.replace(${JSON.stringify(target)})<\/script><p>Redirecting…</p>`, {
+		status: 200,
+		headers: { "Content-Type": "text/html; charset=utf-8" }
+	});
+}
+function appendFlag(url, flag, status, txnId) {
+	const sep = url.includes("?") ? "&" : "?";
+	const extra = txnId ? `&txn=${encodeURIComponent(txnId)}` : "";
+	return `${url}${sep}${flag}=1&pay=${encodeURIComponent(status)}${extra}`;
+}
+//#endregion
+export { admin, appendFlag, credsFromRaw, depositAsOrder, formPost, getCredentials, getJson, getPlatformCredentials, htmlRedirect, jsonPost, loadDepositIntent, loadOrder, newDepositCode, resolveGatewayRow, resolveReturnTarget, returnUrl, settleDeposit, settlePayment, signTargets, siteOrigin, spaUrls, verifyTargets, withTimeout };

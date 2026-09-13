@@ -24,7 +24,7 @@ Route::prefix('admin/backup')->group(function () {
     Route::get('/list', [BackupController::class, 'listBackups']);
     Route::post('/create-db', [BackupController::class, 'createDbBackup']);
     Route::post('/create-files', [BackupController::class, 'createFilesBackup']);
-    Route::get('/download/{filename}', [BackupController::class, 'downloadBackup']);
+    Route::get('/download/{filename}', [BackupController::class, 'downloadBackup'])->where('filename', '[a-zA-Z0-9_\-\.]+');
     Route::post('/restore-db', [BackupController::class, 'restoreDbBackup']);
     Route::post('/restore-files', [BackupController::class, 'restoreFilesBackup']);
     Route::post('/delete', [BackupController::class, 'deleteBackup']);

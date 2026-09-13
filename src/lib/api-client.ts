@@ -4086,8 +4086,12 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
   const url = `${BASE_URL.replace(/\/$/, "")}/${cleanEndpoint}`;
 
   try {
+    const isBackupEndpoint = cleanEndpoint.startsWith("admin/backup");
+    const defaultTimeout = isBackupEndpoint ? 300000 : 15000;
+    const timeoutMs = (options as any)?.timeout ?? defaultTimeout;
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch(url, {
       ...options,
@@ -4110,7 +4114,7 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
 
       try {
         const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
+        errorMessage = errorData.error || errorData.message || errorMessage;
         errors = errorData.errors;
       } catch (e) {
         errorMessage = response.statusText;
@@ -4134,6 +4138,12 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
       throw new ApiError(502, "Failed to parse API response as JSON: " + (parseError?.message || String(parseError)));
     }
   } catch (error: any) {
+    // Never silently swallow admin/backup real server errors into mock mode!
+    const isBackupEndpoint = cleanEndpoint.startsWith("admin/backup");
+    if (isBackupEndpoint && error instanceof ApiError) {
+      throw error;
+    }
+
     // If backend is offline, unreachable, network connection refused, returned HTML, or explicit mock mode:
     // Seamlessly fallback to local data so that UI, admin, reseller, and supplier testing always works!
     const isNetworkDown =
@@ -4148,9 +4158,10 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
           error.message.includes("JSON")));
 
     if (
-      isMockMode ||
+      !isBackupEndpoint &&
+      (isMockMode ||
       isNetworkDown ||
-      (error instanceof ApiError && (error.status === 404 || error.status >= 500))
+      (error instanceof ApiError && (error.status === 404 || error.status >= 500)))
     ) {
       let bodyData: any = undefined;
       if (typeof options.body === "string") {
@@ -4168,7 +4179,7 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
 }
 
 export const api = {
-  get<T>(path: string, params?: Record<string, any>): Promise<T> {
+  get<T>(path: string, params?: Record<string, any>, config?: RequestInit & { timeout?: number }): Promise<T> {
     let url = path;
     if (params) {
       const searchParams = new URLSearchParams();
@@ -4182,38 +4193,42 @@ export const api = {
         url += `${url.includes("?") ? "&" : "?"}${qs}`;
       }
     }
-    return fetchWithConfig(url, { method: "GET" });
+    return fetchWithConfig(url, { method: "GET", ...config });
   },
 
-  post<T>(path: string, body?: any): Promise<T> {
+  post<T>(path: string, body?: any, config?: RequestInit & { timeout?: number }): Promise<T> {
     return fetchWithConfig(path, {
       method: "POST",
       body: body ? JSON.stringify(body) : undefined,
+      ...config,
     });
   },
 
-  put<T>(path: string, body?: any): Promise<T> {
+  put<T>(path: string, body?: any, config?: RequestInit & { timeout?: number }): Promise<T> {
     return fetchWithConfig(path, {
       method: "PUT",
       body: body ? JSON.stringify(body) : undefined,
+      ...config,
     });
   },
 
-  patch<T>(path: string, body?: any): Promise<T> {
+  patch<T>(path: string, body?: any, config?: RequestInit & { timeout?: number }): Promise<T> {
     return fetchWithConfig(path, {
       method: "PATCH",
       body: body ? JSON.stringify(body) : undefined,
+      ...config,
     });
   },
 
-  delete<T>(path: string): Promise<T> {
-    return fetchWithConfig(path, { method: "DELETE" });
+  delete<T>(path: string, config?: RequestInit & { timeout?: number }): Promise<T> {
+    return fetchWithConfig(path, { method: "DELETE", ...config });
   },
 
-  upload<T>(path: string, formData: FormData): Promise<T> {
+  upload<T>(path: string, formData: FormData, config?: RequestInit & { timeout?: number }): Promise<T> {
     return fetchWithConfig(path, {
       method: "POST",
       body: formData,
+      ...config,
     });
   },
 };

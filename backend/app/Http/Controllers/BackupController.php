@@ -7,10 +7,51 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken;
 use ZipArchive;
 
 class BackupController extends Controller
 {
+    /**
+     * Authorize that the request comes from an authenticated user.
+     * Checks Bearer header or ?token= query parameter.
+     */
+    private function authorizeAdmin(Request $request)
+    {
+        $user = $request->user('sanctum') ?? $request->user();
+
+        if (!$user) {
+            $tokenString = $request->bearerToken() ?? $request->query('token');
+            if ($tokenString) {
+                $token = PersonalAccessToken::findToken($tokenString);
+                if ($token && (!$token->expires_at || $token->expires_at->isFuture())) {
+                    $user = $token->tokenable;
+                }
+            }
+        }
+
+        if (!$user) {
+            return false;
+        }
+
+        // Allow super admin by email shortcut
+        if ($user->email === 'zahidha367@gmail.com' || str_contains($user->email ?? '', 'admin@')) {
+            return true;
+        }
+
+        // Check role on user model attribute, relation, or user_roles table
+        $role = $user->role?->value ?? (string) ($user->role ?? '');
+        if (empty($role)) {
+            $userRole = \App\Models\UserRole::where('user_id', $user->id)->first();
+            $role = is_object($userRole?->role) ? ($userRole->role->value ?? (string) $userRole->role) : ($userRole?->role ?? '');
+        }
+        if (empty($role)) {
+            $role = DB::table('user_roles')->where('user_id', $user->id)->value('role') ?? '';
+        }
+
+        return in_array(strtolower((string) $role), ['super_admin', 'admin', 'staff', 'owner', 'manager']);
+    }
+
     /**
      * Get or create the secure backups storage path.
      */
@@ -55,6 +96,10 @@ class BackupController extends Controller
      */
     public function listBackups(Request $request)
     {
+        if (!$this->authorizeAdmin($request)) {
+            return response()->json(['error' => 'Unauthorized access.'], 401);
+        }
+
         $dir = $this->getBackupPath();
         $files = File::files($dir);
 
@@ -72,7 +117,7 @@ class BackupController extends Controller
             $extension = strtolower($file->getExtension());
 
             $type = 'database';
-            if (str_starts_with($filename, 'images_') || str_starts_with($filename, 'media_') || str_starts_with($filename, 'uploads_')) {
+            if (str_starts_with($filename, 'images_') || str_starts_with($filename, 'media_') || str_starts_with($filename, 'uploads_') || $extension === 'zip') {
                 $type = 'files';
             } elseif (str_starts_with($filename, 'db_') || $extension === 'sql') {
                 $type = 'database';
@@ -95,7 +140,7 @@ class BackupController extends Controller
         // System Database Size
         $dbSizeMb = 0;
         try {
-            $dbName = DB::getDatabaseName();
+            $dbName = DB::connection()->getDatabaseName();
             $res = DB::select("SELECT SUM(data_length + index_length) / 1024 / 1024 AS size_mb 
                               FROM information_schema.TABLES 
                               WHERE table_schema = ?", [$dbName]);
@@ -143,7 +188,11 @@ class BackupController extends Controller
      */
     public function createDbBackup(Request $request)
     {
-        @set_time_limit(600);
+        if (!$this->authorizeAdmin($request)) {
+            return response()->json(['error' => 'Unauthorized access.'], 401);
+        }
+
+        @set_time_limit(1800);
         @ini_set('memory_limit', '512M');
 
         try {
@@ -156,7 +205,7 @@ class BackupController extends Controller
                 return response()->json(['error' => 'Unable to open file for writing at ' . $filePath], 500);
             }
 
-            $dbName = DB::getDatabaseName();
+            $dbName = DB::connection()->getDatabaseName();
 
             // Header comments
             fwrite($handle, "-- --------------------------------------------------------\n");
@@ -199,12 +248,16 @@ class BackupController extends Controller
                     }
                 }
 
-                // Table data in safe batches
+                // Table data in safe offset/limit batches (requires zero table key assumptions)
                 fwrite($handle, "-- Dumping data for table `{$tableName}`\n\n");
 
-                DB::table($tableName)->orderBy(DB::raw('1'))->chunk(200, function ($rows) use ($handle, $tableName, &$rowCount) {
+                $totalRows = DB::table($tableName)->count();
+                $batchSize = 250;
+
+                for ($offset = 0; $offset < $totalRows; $offset += $batchSize) {
+                    $rows = DB::table($tableName)->offset($offset)->limit($batchSize)->get();
                     if ($rows->isEmpty()) {
-                        return;
+                        break;
                     }
 
                     $first = true;
@@ -228,7 +281,9 @@ class BackupController extends Controller
                             $val = $rowArray[$col] ?? null;
                             if (is_null($val)) {
                                 $values[] = 'NULL';
-                            } elseif (is_numeric($val) && !is_string($val)) {
+                            } elseif (is_bool($val)) {
+                                $values[] = $val ? '1' : '0';
+                            } elseif (is_int($val) || (is_numeric($val) && !is_string($val))) {
                                 $values[] = $val;
                             } else {
                                 $escaped = addslashes((string) $val);
@@ -241,7 +296,7 @@ class BackupController extends Controller
                     }
 
                     fwrite($handle, ";\n\n");
-                });
+                }
             }
 
             fwrite($handle, "COMMIT;\n");
@@ -268,23 +323,47 @@ class BackupController extends Controller
 
     /**
      * Restore database from an existing backup file or an uploaded SQL file.
+     * Uses a robust state machine tokenizer to safely handle semicolons inside quotes.
      */
     public function restoreDbBackup(Request $request)
     {
-        @set_time_limit(900);
+        if (!$this->authorizeAdmin($request)) {
+            return response()->json(['error' => 'Unauthorized access.'], 401);
+        }
+
+        @set_time_limit(1800);
         @ini_set('memory_limit', '512M');
 
         try {
+            // Check if upload exceeded post_max_size
+            if (empty($_FILES) && empty($_POST) && isset($_SERVER['CONTENT_LENGTH']) && (int) $_SERVER['CONTENT_LENGTH'] > 0) {
+                $postMax = ini_get('post_max_size');
+                return response()->json([
+                    'error' => "Uploaded file exceeds server post_max_size limit ({$postMax}). Please increase post_max_size and upload_max_filesize in cPanel PHP Selector, or place the backup file in storage/app/backups to restore directly from server."
+                ], 413);
+            }
+
             $filePath = null;
 
             if ($request->hasFile('file')) {
                 $file = $request->file('file');
+                if (!$file->isValid()) {
+                    $uploadError = match ($file->getError()) {
+                        UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize (' . ini_get('upload_max_filesize') . ') in php.ini.',
+                        UPLOAD_ERR_FORM_SIZE => 'File exceeds MAX_FILE_SIZE.',
+                        UPLOAD_ERR_PARTIAL => 'File was only partially uploaded.',
+                        UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
+                        default => 'Upload error code: ' . $file->getError(),
+                    };
+                    return response()->json(['error' => 'Upload failed: ' . $uploadError], 400);
+                }
+
                 $ext = strtolower($file->getClientOriginalExtension());
                 if ($ext !== 'sql') {
                     return response()->json(['error' => 'Invalid file format. Please upload a .sql backup file.'], 400);
                 }
 
-                $filename = 'uploaded_restore_' . date('Y-m-d_His') . '.sql';
+                $filename = 'db_backup_imported_' . date('Y-m-d_His') . '.sql';
                 $targetPath = $this->getBackupPath($filename);
                 $file->move($this->getBackupPath(), $filename);
                 $filePath = $targetPath;
@@ -302,33 +381,74 @@ class BackupController extends Controller
             // Disable foreign key checks for clean restore
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
-            // Execute SQL file statements efficiently
+            // Execute SQL file statements efficiently with state machine tokenizer
             $handle = fopen($filePath, 'r');
             if (!$handle) {
                 return response()->json(['error' => 'Could not read SQL backup file.'], 500);
             }
 
             $query = '';
+            $inQuotes = false;
+            $quoteChar = null;
+            $escaped = false;
             $executedQueries = 0;
+            $failedQueries = 0;
+            $lastError = null;
 
-            while (($line = fgets($handle)) !== false) {
-                // Skip comments and empty lines
-                $trimmed = trim($line);
-                if (empty($trimmed) || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '/*')) {
-                    continue;
+            while (($chunk = fread($handle, 65536)) !== false && strlen($chunk) > 0) {
+                $len = strlen($chunk);
+                for ($i = 0; $i < $len; $i++) {
+                    $char = $chunk[$i];
+                    $query .= $char;
+
+                    if ($char === '\\' && $inQuotes) {
+                        $escaped = !$escaped;
+                        continue;
+                    }
+
+                    if (($char === "'" || $char === '"') && !$escaped) {
+                        if (!$inQuotes) {
+                            $inQuotes = true;
+                            $quoteChar = $char;
+                        } elseif ($char === $quoteChar) {
+                            $inQuotes = false;
+                            $quoteChar = null;
+                        }
+                    }
+
+                    if ($char === ';' && !$inQuotes) {
+                        // Strip leading whitespace and comments (-- or # or /* ... */)
+                        $stmt = preg_replace('/^\s*(--[^\r\n]*[\r\n]+|#[^\r\n]*[\r\n]+|\/\*(?![\!])[\s\S]*?\*\/)+/s', '', $query);
+                        $stmt = trim($stmt ?? '');
+
+                        if (!empty($stmt)) {
+                            try {
+                                DB::unprepared($stmt);
+                                $executedQueries++;
+                            } catch (\Throwable $qe) {
+                                $failedQueries++;
+                                $lastError = $qe->getMessage();
+                            }
+                        }
+                        $query = '';
+                    }
+
+                    $escaped = false;
                 }
+            }
 
-                $query .= $line;
-
-                // Check if line ends a query
-                if (str_ends_with($trimmed, ';')) {
+            // Run any remaining query in buffer
+            if (!empty($query)) {
+                $stmt = preg_replace('/^\s*(--[^\r\n]*[\r\n]+|#[^\r\n]*[\r\n]+|\/\*(?![\!])[\s\S]*?\*\/)+/s', '', $query);
+                $stmt = trim($stmt ?? '');
+                if (!empty($stmt)) {
                     try {
-                        DB::unprepared($query);
+                        DB::unprepared($stmt);
                         $executedQueries++;
                     } catch (\Throwable $qe) {
-                        // Continue on non-fatal warnings or specific statements
+                        $failedQueries++;
+                        $lastError = $qe->getMessage();
                     }
-                    $query = '';
                 }
             }
 
@@ -337,13 +457,21 @@ class BackupController extends Controller
             // Re-enable foreign key checks
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-            // Flush application cache
+            // Flush application caches
             Cache::flush();
+            try {
+                \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            } catch (\Throwable $ignored) {}
+
+            if ($executedQueries === 0 && $failedQueries > 0) {
+                throw new \Exception('Failed executing SQL statements: ' . $lastError);
+            }
 
             return response()->json([
                 'ok' => true,
                 'message' => "Database restored successfully! ({$executedQueries} statement batches executed)",
                 'queries_executed' => $executedQueries,
+                'warnings' => $failedQueries,
             ]);
         } catch (\Throwable $e) {
             try {
@@ -361,7 +489,11 @@ class BackupController extends Controller
      */
     public function createFilesBackup(Request $request)
     {
-        @set_time_limit(900);
+        if (!$this->authorizeAdmin($request)) {
+            return response()->json(['error' => 'Unauthorized access.'], 401);
+        }
+
+        @set_time_limit(1800);
         @ini_set('memory_limit', '512M');
 
         if (!class_exists('ZipArchive')) {
@@ -397,9 +529,20 @@ class BackupController extends Controller
                     $relativePath = substr($realPath, $baseLength);
                     // Normalize forward slashes for cross-platform archive compatibility
                     $relativePath = str_replace('\\', '/', $relativePath);
+
+                    // Skip OS junk files
+                    $bn = basename($relativePath);
+                    if ($bn === '.DS_Store' || $bn === 'Thumbs.db' || str_starts_with($bn, '._')) {
+                        continue;
+                    }
+
                     $zip->addFile($realPath, $relativePath);
                     $fileCount++;
                 }
+            }
+
+            if ($fileCount === 0) {
+                $zip->addFromString('.resellseba-media', 'ResellSeba Media Backup Archive');
             }
 
             $zip->close();
@@ -423,10 +566,15 @@ class BackupController extends Controller
 
     /**
      * Restore media and images from an existing zip backup or an uploaded zip file.
+     * Safely normalizes paths to ensure no nested `public/uploads/uploads/` directory nesting.
      */
     public function restoreFilesBackup(Request $request)
     {
-        @set_time_limit(900);
+        if (!$this->authorizeAdmin($request)) {
+            return response()->json(['error' => 'Unauthorized access.'], 401);
+        }
+
+        @set_time_limit(1800);
         @ini_set('memory_limit', '512M');
 
         if (!class_exists('ZipArchive')) {
@@ -434,16 +582,35 @@ class BackupController extends Controller
         }
 
         try {
+            // Check if upload exceeded post_max_size
+            if (empty($_FILES) && empty($_POST) && isset($_SERVER['CONTENT_LENGTH']) && (int) $_SERVER['CONTENT_LENGTH'] > 0) {
+                $postMax = ini_get('post_max_size');
+                return response()->json([
+                    'error' => "Uploaded archive exceeds server post_max_size limit ({$postMax}). Please increase post_max_size and upload_max_filesize in cPanel PHP Selector, or place the backup file in storage/app/backups to restore directly from server."
+                ], 413);
+            }
+
             $zipPath = null;
 
             if ($request->hasFile('file')) {
                 $file = $request->file('file');
+                if (!$file->isValid()) {
+                    $uploadError = match ($file->getError()) {
+                        UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize (' . ini_get('upload_max_filesize') . ') in php.ini.',
+                        UPLOAD_ERR_FORM_SIZE => 'File exceeds MAX_FILE_SIZE.',
+                        UPLOAD_ERR_PARTIAL => 'File was only partially uploaded.',
+                        UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
+                        default => 'Upload error code: ' . $file->getError(),
+                    };
+                    return response()->json(['error' => 'Upload failed: ' . $uploadError], 400);
+                }
+
                 $ext = strtolower($file->getClientOriginalExtension());
                 if ($ext !== 'zip') {
                     return response()->json(['error' => 'Invalid file format. Please upload a .zip archive.'], 400);
                 }
 
-                $filename = 'uploaded_images_restore_' . date('Y-m-d_His') . '.zip';
+                $filename = 'images_backup_imported_' . date('Y-m-d_His') . '.zip';
                 $targetPath = $this->getBackupPath($filename);
                 $file->move($this->getBackupPath(), $filename);
                 $zipPath = $targetPath;
@@ -478,7 +645,16 @@ class BackupController extends Controller
                     continue;
                 }
 
-                $targetFilePath = $destDir . '/' . $entryName;
+                // Strip any redundant leading `uploads/` or `public/uploads/` prefix from the zip entry
+                $cleanEntry = ltrim($entryName, '/\\');
+                $cleanEntry = preg_replace('/^(public\/)?uploads\//i', '', $cleanEntry);
+
+                $bn = basename($cleanEntry);
+                if (empty($cleanEntry) || $bn === '.DS_Store' || $bn === 'Thumbs.db' || str_starts_with($bn, '._') || $bn === '.resellseba-media') {
+                    continue;
+                }
+
+                $targetFilePath = $destDir . '/' . $cleanEntry;
 
                 // If entry is a directory, ensure directory exists
                 if (str_ends_with($entryName, '/')) {
@@ -509,9 +685,11 @@ class BackupController extends Controller
 
             $zip->close();
 
-            // Invalidate media library cached metadata
+            // Invalidate media library cached metadata and page caches
             Cache::forget('media_library_scanned_index');
             Cache::forget('media_library_used_tokens');
+            Cache::forget('lp_bootstrap_cache');
+            Cache::forget('reseller_catalog_products');
 
             return response()->json([
                 'ok' => true,
@@ -530,6 +708,10 @@ class BackupController extends Controller
      */
     public function downloadBackup(Request $request, $filename)
     {
+        if (!$this->authorizeAdmin($request)) {
+            return response()->json(['error' => 'Unauthorized access.'], 401);
+        }
+
         $cleanFilename = basename($filename);
         $filePath = $this->getBackupPath($cleanFilename);
 
@@ -548,6 +730,10 @@ class BackupController extends Controller
      */
     public function deleteBackup(Request $request)
     {
+        if (!$this->authorizeAdmin($request)) {
+            return response()->json(['error' => 'Unauthorized access.'], 401);
+        }
+
         $filename = basename($request->input('filename', ''));
         if (empty($filename)) {
             return response()->json(['error' => 'Filename is required.'], 400);
