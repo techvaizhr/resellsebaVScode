@@ -60,11 +60,11 @@ export function NewOrderModal({
   const packagingSum = advanced.packagingChargeSum;
 
   const effectiveProducts = useMemo(() => {
-    return allProducts && allProducts.length > 0 ? allProducts : ((initialData as any).products || []);
+    return allProducts && allProducts.length > 0 ? allProducts : [];
   }, [allProducts]);
 
   const effectiveResellers = useMemo(() => {
-    return (resellers && resellers.length > 0 ? resellers : ((initialData as any).resellers || [])) as any[];
+    return (resellers && resellers.length > 0 ? resellers : []) as any[];
   }, [resellers]);
 
   const selectedReseller = useMemo(() => {

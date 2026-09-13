@@ -189,7 +189,7 @@ function OrdersPage() {
   const [orderItems, setOrderItems] = useState<OrderItemLite[]>([]);
   const [shipments, setShipments] = useState<any[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
-  const [allProducts, setAllProducts] = useState<any[]>(((initialData as any).products || []));
+  const [allProducts, setAllProducts] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);

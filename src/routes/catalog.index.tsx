@@ -12,7 +12,6 @@ import { getSiteSeo } from "@/lib/seo.functions";
 import { seoLinks, seoMeta } from "@/lib/seo-meta";
 
 import { supabase } from "@/integrations/laravel/client";
-import initialData from "@/lib/initial-data.json";
 
 type Search = { category?: string; brand?: string; q?: string; page?: number; sort?: string };
 

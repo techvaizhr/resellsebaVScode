@@ -161,8 +161,7 @@ function AdminOrdersPage() {
   const [tab, setTab] = useState<OrderTabKey>(tabParam ?? "all");
 
   const [selected, setSelected] = useState<OrderRow | null>(null);
-  const [open, setOpen] = useState(false);
-  const [allProducts, setAllProducts] = useState<any[]>(((initialData as any).products || []));
+  const [allProducts, setAllProducts] = useState<any[]>([]);
   const [resellers, setResellers] = useState<any[]>([]);
   const [filters, setFilters] = useState<OrderFilterState>({ ...DEFAULT_ORDER_FILTERS, reseller: resellerParam ?? "", q: qParam ?? "" });
 

@@ -117,13 +117,6 @@ export async function catalogProductSeo(slug: string): Promise<SeoPayload> {
     const site = gs?.site_name ?? "Catalog";
     let p = res?.data as Record<string, any> | null;
     if (!p) {
-      const prods = (initialData.products || []) as any[];
-      const match = prods.find((x: any) => (x.slug === slug || x.id === slug) && x.is_active !== false);
-      if (match) {
-        p = match;
-      }
-    }
-    if (!p) {
       return {
         title: `Product not found — ${site}`,
         description: "This product is no longer available.",

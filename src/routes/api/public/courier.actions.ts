@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import initialData from "@/lib/initial-data.json";
+import { supabase } from "@/integrations/laravel/client";
 
-function getCourierConfigFromData(provider: string) {
-  const configs = (initialData as any).courier_configs || [];
-  const found = configs.find((c: any) => c.provider === provider);
-  return (found?.config || {}) as Record<string, string>;
+async function getCourierConfig(provider: string) {
+  try {
+    const { data } = await supabase.from("courier_configs").select("*").eq("provider", provider).maybeSingle();
+    return (data?.config || {}) as Record<string, string>;
+  } catch {
+    return {} as Record<string, string>;
+  }
 }
 
 export const Route = createFileRoute("/api/public/courier/actions")({
@@ -16,10 +19,17 @@ export const Route = createFileRoute("/api/public/courier/actions")({
 
         try {
           if (action === "steadfast-balance") {
-            const conf = getCourierConfigFromData("steadfast");
-            const apiKey = conf.api_key || "gjxtwjhxniitwuqkcthfnyaojqomw54y";
-            const secretKey = conf.secret_key || "s1bppsevlct37lzbeovxhc8d";
+            const conf = await getCourierConfig("steadfast");
+            const apiKey = conf.api_key;
+            const secretKey = conf.secret_key;
             const base = (conf.base_url || "https://portal.packzy.com/api/v1").replace(/\/+$/, "");
+
+            if (!apiKey || !secretKey) {
+              return new Response(
+                JSON.stringify({ success: false, message: "Steadfast credentials not configured in database." }),
+                { status: 400, headers: { "Content-Type": "application/json" } }
+              );
+            }
 
             const res = await fetch(`${base}/get_balance`, {
               headers: {
@@ -44,15 +54,22 @@ export const Route = createFileRoute("/api/public/courier/actions")({
           }
 
           if (action === "pathao-stores") {
-            const conf = getCourierConfigFromData("pathao");
+            const conf = await getCourierConfig("pathao");
+            if (!conf.client_id || !conf.client_secret || !conf.username || !conf.password) {
+              return new Response(
+                JSON.stringify({ success: false, message: "Pathao credentials not configured in database." }),
+                { status: 400, headers: { "Content-Type": "application/json" } }
+              );
+            }
+
             const authRes = await fetch("https://api-hermes.pathao.com/aladdin/api/v1/issue-token", {
               method: "POST",
               headers: { "Content-Type": "application/json", Accept: "application/json" },
               body: JSON.stringify({
-                client_id: conf.client_id || "nXe0L65exr",
-                client_secret: conf.client_secret || "4UJJZbHVoZOBzKUCZdHChjtTqqeEKhcSEbfu3HdO",
-                username: conf.username || "zahidha367@gmail.com",
-                password: conf.password || "Zahid367//",
+                client_id: conf.client_id,
+                client_secret: conf.client_secret,
+                username: conf.username,
+                password: conf.password,
                 grant_type: "password",
               }),
             });
@@ -60,7 +77,7 @@ export const Route = createFileRoute("/api/public/courier/actions")({
             const token = authBody.access_token;
             if (!token) {
               return new Response(
-                JSON.stringify({ success: false, message: "Pathao authentication failed" }),
+                JSON.stringify({ success: false, message: authBody?.message || "Pathao authentication failed" }),
                 { status: 400, headers: { "Content-Type": "application/json" } }
               );
             }
@@ -89,12 +106,19 @@ export const Route = createFileRoute("/api/public/courier/actions")({
           }
 
           if (action === "carrybee-stores") {
-            const conf = getCourierConfigFromData("carrybee");
+            const conf = await getCourierConfig("carrybee");
+            if (!conf.client_id || !conf.client_secret) {
+              return new Response(
+                JSON.stringify({ success: false, message: "Carrybee credentials not configured in database." }),
+                { status: 400, headers: { "Content-Type": "application/json" } }
+              );
+            }
+
             const res = await fetch("https://developers.carrybee.com/api/v2/stores", {
               headers: {
-                "Client-ID": conf.client_id || "ce4a4884-b7a0-496c-b4de-4ea70d41f7fa",
-                "Client-Secret": conf.client_secret || "3a5321d9-d540-4c47-beab-e529d1fe0464",
-                "Client-Context": conf.client_context || "EG3MhxLZ9ck8reBm0UyPW6j1V2vblN",
+                "Client-ID": conf.client_id,
+                "Client-Secret": conf.client_secret,
+                "Client-Context": conf.client_context || "",
                 Accept: "application/json",
               },
             });
@@ -133,22 +157,43 @@ export const Route = createFileRoute("/api/public/courier/actions")({
           const { action, provider = "steadfast", orderId, storeId } = body || {};
 
           if (action === "book" || provider) {
-            const orders = (initialData as any).orders || [];
-            const foundOrder = orders.find((o: any) => o.id === orderId || o.order_number === orderId);
-            const order = body.order || foundOrder || {
-              id: orderId,
-              order_number: String(orderId).replace(/^order-/, "").split("-")[0] || "703280",
-              customer_name: body.customer_name || "MD Jahid Hasan",
-              customer_phone: body.customer_phone || "01733831300",
-              address_line: body.address_line || "Dhaka",
-              city: body.city || "Dhaka",
-              total: body.total || 810,
-              payment_method: body.payment_method || "cod",
-            };
+            let order = body.order;
+            let items: any[] = [];
 
-            const items = ((initialData as any).order_items || []).filter((i: any) => i.order_id === order.id || i.order_id === orderId);
-            
-            // Advance received (by admin or reseller) is deducted from total COD
+            if (!order && orderId) {
+              const { data: dbOrder } = await supabase
+                .from("orders")
+                .select("*, order_items(*)")
+                .eq("id", orderId)
+                .maybeSingle();
+
+              if (dbOrder) {
+                order = dbOrder;
+                items = dbOrder.order_items || [];
+              } else {
+                const { data: dbOrderByNumber } = await supabase
+                  .from("orders")
+                  .select("*, order_items(*)")
+                  .eq("order_number", orderId)
+                  .maybeSingle();
+
+                if (dbOrderByNumber) {
+                  order = dbOrderByNumber;
+                  items = dbOrderByNumber.order_items || [];
+                }
+              }
+            } else if (order) {
+              items = order.order_items || order.items || [];
+            }
+
+            if (!order) {
+              return new Response(
+                JSON.stringify({ success: false, message: `Order not found in database: ${orderId}` }),
+                { status: 404, headers: { "Content-Type": "application/json" } }
+              );
+            }
+
+            // Advance received is deducted from total COD
             const total = Number(order.total || 0);
             const advance = Number(order.advance_amount || order.received_amount || order.advance || 0);
             let codAmount = 0;
@@ -161,19 +206,26 @@ export const Route = createFileRoute("/api/public/courier/actions")({
             }
 
             const fullAddress = [order.address_line, order.area, order.city].filter(Boolean).join(", ");
-            const itemDesc = (items.length > 0 ? items.map((i: any) => `${i.product_name} x${i.quantity}`).join(", ") : "Parcel Items") || "Parcel Item";
+            const itemDesc = (items.length > 0 ? items.map((i: any) => `${i.product_name || i.name} x${i.quantity || i.qty || 1}`).join(", ") : "Parcel Items") || "Parcel Item";
 
             if (provider === "steadfast") {
-              const conf = getCourierConfigFromData("steadfast");
-              const apiKey = conf.api_key || "gjxtwjhxniitwuqkcthfnyaojqomw54y";
-              const secretKey = conf.secret_key || "s1bppsevlct37lzbeovxhc8d";
+              const conf = await getCourierConfig("steadfast");
+              const apiKey = conf.api_key;
+              const secretKey = conf.secret_key;
               const base = (conf.base_url || "https://portal.packzy.com/api/v1").replace(/\/+$/, "");
+
+              if (!apiKey || !secretKey) {
+                return new Response(
+                  JSON.stringify({ success: false, message: "Steadfast courier API keys not configured in database." }),
+                  { status: 400, headers: { "Content-Type": "application/json" } }
+                );
+              }
 
               const sfPayload = {
                 invoice: String(order.order_number),
                 recipient_name: String(order.customer_name || "Customer").slice(0, 100),
-                recipient_phone: String(order.customer_phone || "01700000000").replace(/[^0-9]/g, "").slice(-11),
-                recipient_address: fullAddress || "Dhaka, Bangladesh",
+                recipient_phone: String(order.customer_phone || "").replace(/[^0-9]/g, "").slice(-11),
+                recipient_address: fullAddress || "Bangladesh",
                 cod_amount: codAmount,
                 note: (order.reseller_note || order.notes || "")?.slice(0, 250) || undefined,
                 item_description: itemDesc.slice(0, 250),
@@ -221,21 +273,28 @@ export const Route = createFileRoute("/api/public/courier/actions")({
             }
 
             if (provider === "carrybee") {
-              const conf = getCourierConfigFromData("carrybee");
-              const effectiveStoreId = storeId || conf.store_id || "17199";
+              const conf = await getCourierConfig("carrybee");
+              const effectiveStoreId = storeId || conf.store_id;
+
+              if (!conf.client_id || !conf.client_secret || !effectiveStoreId) {
+                return new Response(
+                  JSON.stringify({ success: false, message: "Carrybee courier credentials or store_id not configured in database." }),
+                  { status: 400, headers: { "Content-Type": "application/json" } }
+                );
+              }
 
               const cbPayload = {
                 store_id: Number(effectiveStoreId),
                 merchant_order_id: String(order.order_number),
                 recipient_name: String(order.customer_name || "Customer").slice(0, 100),
-                recipient_phone: String(order.customer_phone || "01700000000").replace(/[^0-9]/g, "").slice(-11),
-                recipient_address: fullAddress || "Dhaka, Bangladesh",
+                recipient_phone: String(order.customer_phone || "").replace(/[^0-9]/g, "").slice(-11),
+                recipient_address: fullAddress || "Bangladesh",
                 recipient_city: 14,
                 recipient_zone: 57,
                 recipient_area: 2110,
                 delivery_type: 1,
                 product_type: 1,
-                item_weight: 200, // default 200g
+                item_weight: 200,
                 item_quantity: items.reduce((s: number, i: any) => s + Number(i.quantity || 0), 0) || 1,
                 collectable_amount: codAmount,
                 product_description: itemDesc.slice(0, 255),
@@ -244,9 +303,9 @@ export const Route = createFileRoute("/api/public/courier/actions")({
               const res = await fetch("https://developers.carrybee.com/api/v2/orders", {
                 method: "POST",
                 headers: {
-                  "Client-ID": conf.client_id || "ce4a4884-b7a0-496c-b4de-4ea70d41f7fa",
-                  "Client-Secret": conf.client_secret || "3a5321d9-d540-4c47-beab-e529d1fe0464",
-                  "Client-Context": conf.client_context || "EG3MhxLZ9ck8reBm0UyPW6j1V2vblN",
+                  "Client-ID": conf.client_id,
+                  "Client-Secret": conf.client_secret,
+                  "Client-Context": conf.client_context || "",
                   "Content-Type": "application/json",
                   Accept: "application/json",
                 },
@@ -280,18 +339,24 @@ export const Route = createFileRoute("/api/public/courier/actions")({
             }
 
             if (provider === "pathao") {
-              const conf = getCourierConfigFromData("pathao");
-              const effectiveStoreId = storeId || conf.store_id || "441826";
+              const conf = await getCourierConfig("pathao");
+              const effectiveStoreId = storeId || conf.store_id;
 
-              // Auth
+              if (!conf.client_id || !conf.client_secret || !conf.username || !conf.password || !effectiveStoreId) {
+                return new Response(
+                  JSON.stringify({ success: false, message: "Pathao credentials or store_id not configured in database." }),
+                  { status: 400, headers: { "Content-Type": "application/json" } }
+                );
+              }
+
               const authRes = await fetch("https://api-hermes.pathao.com/aladdin/api/v1/issue-token", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Accept: "application/json" },
                 body: JSON.stringify({
-                  client_id: conf.client_id || "nXe0L65exr",
-                  client_secret: conf.client_secret || "4UJJZbHVoZOBzKUCZdHChjtTqqeEKhcSEbfu3HdO",
-                  username: conf.username || "zahidha367@gmail.com",
-                  password: conf.password || "Zahid367//",
+                  client_id: conf.client_id,
+                  client_secret: conf.client_secret,
+                  username: conf.username,
+                  password: conf.password,
                   grant_type: "password",
                 }),
               });
@@ -299,7 +364,7 @@ export const Route = createFileRoute("/api/public/courier/actions")({
               const token = authBody.access_token;
               if (!token) {
                 return new Response(
-                  JSON.stringify({ success: false, message: "Pathao authentication failed" }),
+                  JSON.stringify({ success: false, message: authBody?.message || "Pathao authentication failed" }),
                   { status: 400, headers: { "Content-Type": "application/json" } }
                 );
               }
@@ -308,15 +373,15 @@ export const Route = createFileRoute("/api/public/courier/actions")({
                 store_id: Number(effectiveStoreId),
                 merchant_order_id: String(order.order_number),
                 recipient_name: String(order.customer_name || "Customer").slice(0, 100),
-                recipient_phone: String(order.customer_phone || "01700000000").replace(/[^0-9]/g, "").slice(-11),
-                recipient_address: fullAddress || "Dhaka, Bangladesh",
+                recipient_phone: String(order.customer_phone || "").replace(/[^0-9]/g, "").slice(-11),
+                recipient_address: fullAddress || "Bangladesh",
                 recipient_city: 1,
                 recipient_zone: 19,
                 delivery_type: 48,
                 item_type: 2,
                 special_instruction: (order.reseller_note || order.notes || "")?.slice(0, 250) || undefined,
                 item_quantity: items.reduce((s: number, i: any) => s + Number(i.quantity || 0), 0) || 1,
-                item_weight: 0.2, // default 200g (0.2 kg)
+                item_weight: 0.2,
                 amount_to_collect: codAmount,
                 item_description: itemDesc.slice(0, 250),
               };
@@ -368,4 +433,3 @@ export const Route = createFileRoute("/api/public/courier/actions")({
     },
   },
 });
-

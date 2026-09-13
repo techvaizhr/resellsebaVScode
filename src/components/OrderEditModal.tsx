@@ -63,7 +63,7 @@ export function OrderEditModal({ orderId, allProducts, onClose, onSaved, isAdmin
   const packagingSum = advanced.packagingChargeSum;
 
   const effectiveProducts = useMemo(() => {
-    return allProducts && allProducts.length > 0 ? allProducts : ((initialData as any).products || []);
+    return allProducts && allProducts.length > 0 ? allProducts : [];
   }, [allProducts]);
 
   /** Money actually collected by the courier. Empty = full order total received. */

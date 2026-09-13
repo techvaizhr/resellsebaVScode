@@ -1,1 +1,0 @@
-import{s as e}from"./vendor-editor-_X2_vRjM.js";import{yt as t}from"./index-BjSdP-Tc.js";var n=e(),r=()=>(0,n.jsx)(t,{});export{r as component};
