@@ -60,7 +60,14 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // 2. Delegate to TanStack Start SSR
+    // 2. Prevent API routes from ever falling through to SSR HTML
+    if (pathname.startsWith("/api/") || pathname === "/api") {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "API request reached SSR process. Ensure Apache routes /api directly.", path: pathname }));
+      return;
+    }
+
+    // 3. Delegate to TanStack Start SSR
     const fullUrl = `http://${req.headers.host || "localhost"}${req.url}`;
     const headers = new Headers();
     for (const [key, value] of Object.entries(req.headers)) {

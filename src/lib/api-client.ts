@@ -4122,18 +4122,29 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
       return {} as any;
     }
 
-    return await response.json();
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("text/html")) {
+      throw new ApiError(502, "Received HTML response instead of JSON from API");
+    }
+
+    try {
+      return await response.json();
+    } catch (parseError: any) {
+      throw new ApiError(502, "Failed to parse API response as JSON: " + (parseError?.message || String(parseError)));
+    }
   } catch (error: any) {
-    // If backend is offline, unreachable, network connection refused, or explicit mock mode:
+    // If backend is offline, unreachable, network connection refused, returned HTML, or explicit mock mode:
     // Seamlessly fallback to local data so that UI, admin, reseller, and supplier testing always works!
     const isNetworkDown =
       error instanceof TypeError ||
+      error instanceof SyntaxError ||
       error.name === "AbortError" ||
       (typeof error?.message === "string" &&
         (error.message.includes("fetch") ||
           error.message.includes("NetworkError") ||
           error.message.includes("network") ||
-          error.message.includes("Failed")));
+          error.message.includes("Failed") ||
+          error.message.includes("JSON")));
 
     if (
       isMockMode ||

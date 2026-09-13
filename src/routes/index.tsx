@@ -28,7 +28,21 @@ import { getSiteSeo } from "@/lib/seo.functions";
 import { seoLinks, seoMeta } from "@/lib/seo-meta";
 
 export const Route = createFileRoute("/")({
-  loader: () => getSiteSeo({ data: { path: "/" } }),
+  loader: async () => {
+    try {
+      return await getSiteSeo({ data: { path: "/" } });
+    } catch (err) {
+      console.warn("Index loader fallback:", err);
+      return {
+        title: "Reseller Platform — Your own online store, zero investment",
+        description: "Product listing, courier, payment and marketing — everything in one panel for resellers in Bangladesh.",
+        image: null,
+        url: null,
+        type: "website" as const,
+        siteName: "ResellSeba",
+      };
+    }
+  },
   head: ({ loaderData }) => ({
     meta: seoMeta(loaderData, {
       title: "Reseller Platform — Your own online store, zero investment",

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -10,7 +10,9 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-            Schema::create('global_settings', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('global_settings', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('key')->unique();
             $table->json('value')->nullable();
