@@ -125,6 +125,7 @@ function run_shell_cmd($cmd, $workingDir) {
   </p>
 
   <div style="margin: 16px 0;">
+    <a href="?action=import_sql" class="btn btn-amber">🗃️ 1-Click Import database.sql</a>
     <a href="?action=fix_all" class="btn btn-green">⚡ 1-Click Pull & Update (Git Pull + Migrate + Clear Cache)</a>
     <a href="?action=git_pull" class="btn btn-cyan">📥 Git Pull Latest Code</a>
     <a href="?action=migrate_seed" class="btn btn-purple">🗄️ Run DB Migrate & Seed</a>
@@ -140,6 +141,28 @@ function run_shell_cmd($cmd, $workingDir) {
     out(">>> Started at: " . date('Y-m-d H:i:s'));
     out(">>> Root Directory: " . $rootDir);
     out(">>> Backend Directory: " . $backendDir);
+
+    if ($action === 'import_sql') {
+        out("\n==================== IMPORT DATABASE.SQL ====================");
+        $sqlFile = $rootDir . '/database.sql';
+        if (!file_exists($sqlFile)) {
+            out("ERROR: database.sql not found at " . $sqlFile);
+        } else {
+            try {
+                require_once __DIR__ . '/standalone_backup.php';
+                $pdo = get_pdo();
+                $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, 0);
+                out(">>> Connected to database. Reading database.sql...");
+                $sqlContent = file_get_contents($sqlFile);
+                out(">>> Executing SQL statements (size: " . strlen($sqlContent) . " bytes)...");
+                $pdo->exec($sqlContent);
+                out(">>> SUCCESS: database.sql imported cleanly with 0 errors!");
+                out(">>> Super Admin Login: admin@resellseba.com | Password: password");
+            } catch (\Throwable $e) {
+                out(">>> ERROR: " . $e->getMessage());
+            }
+        }
+    }
 
     if ($action === 'git_pull' || $action === 'fix_all') {
         out("\n==================== [1/3] GIT PULL ====================");
