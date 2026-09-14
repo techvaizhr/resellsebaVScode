@@ -82,6 +82,19 @@ function gen_uuid() {
     );
 }
 
+function get_table_columns(PDO $pdo, string $table): array {
+    static $cache = [];
+    if (!isset($cache[$table])) {
+        try {
+            $stmt = $pdo->query("SHOW COLUMNS FROM `$table`");
+            $cache[$table] = $stmt ? $stmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        } catch (\Throwable $e) {
+            $cache[$table] = [];
+        }
+    }
+    return $cache[$table];
+}
+
 function handle_standalone_request() {
     try {
         $pdo = get_pdo();
@@ -89,15 +102,16 @@ function handle_standalone_request() {
         json_res(['error' => 'Database connection failed: ' . $e->getMessage()], 500);
     }
 
-    $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-    // Normalize path by stripping /api/ prefix
-    $path = preg_replace('#^(/api)?/#', '', $uri);
-    $path = trim($path, '/');
-    $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
-    $input = get_json_input();
-    if (empty($input) && !empty($_POST)) {
-        $input = $_POST;
-    }
+    try {
+        $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        // Normalize path by stripping /api/ prefix
+        $path = preg_replace('#^(/api)?/#', '', $uri);
+        $path = trim($path, '/');
+        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        $input = get_json_input();
+        if (empty($input) && !empty($_POST)) {
+            $input = $_POST;
+        }
     $user = get_bearer_user($pdo);
 
     // ==========================================
@@ -1373,12 +1387,18 @@ function handle_standalone_request() {
         if ($table === 'global_settings') {
             if ($operation === 'select') {
                 $rows = $pdo->query("SELECT `key`, `value` FROM global_settings")->fetchAll(PDO::FETCH_ASSOC);
-                $map = [];
+                $map = ['id' => 1];
                 foreach ($rows as $r) {
                     $val = $r['value'];
-                    if (is_string($val) && (str_starts_with($val, '{') || str_starts_with($val, '['))) {
+                    if ($val !== null) {
                         $dec = json_decode($val, true);
-                        if (json_last_error() === JSON_ERROR_NONE) $val = $dec;
+                        if (json_last_error() === JSON_ERROR_NONE) {
+                            $val = $dec;
+                            if (is_string($val) && (str_starts_with($val, '"') || str_starts_with($val, '{') || str_starts_with($val, '['))) {
+                                $dec2 = json_decode($val, true);
+                                if (json_last_error() === JSON_ERROR_NONE) $val = $dec2;
+                            }
+                        }
                     }
                     $map[$r['key']] = $val;
                 }
@@ -1389,13 +1409,94 @@ function handle_standalone_request() {
                 $row = isset($payload[0]) && is_array($payload[0]) ? $payload[0] : (array)$payload;
                 foreach ($row as $k => $v) {
                     if ($k === 'id' || $k === 'created_at' || $k === 'updated_at') continue;
-                    $val = is_array($v) || is_object($v) ? json_encode($v) : $v;
-                    $upStmt = $pdo->prepare("INSERT INTO global_settings (id, `key`, `value`, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), updated_at = NOW()");
-                    $upStmt->execute([gen_uuid(), $k, $val]);
+                    if (is_string($v) && strlen($v) >= 2 && str_starts_with($v, '"') && str_ends_with($v, '"')) {
+                        $trimmed = json_decode($v, true);
+                        if (json_last_error() === JSON_ERROR_NONE) $v = $trimmed;
+                    }
+                    $val = ($v === null) ? null : json_encode($v);
+                    $chk = $pdo->prepare("SELECT id FROM global_settings WHERE `key` = ? LIMIT 1");
+                    $chk->execute([$k]);
+                    if ($chk->fetch()) {
+                        $upStmt = $pdo->prepare("UPDATE global_settings SET `value` = ?, updated_at = NOW() WHERE `key` = ?");
+                        $upStmt->execute([$val, $k]);
+                    } else {
+                        $insStmt = $pdo->prepare("INSERT INTO global_settings (id, `key`, `value`, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())");
+                        $insStmt->execute([gen_uuid(), $k, $val]);
+                    }
                 }
                 json_res(['data' => $payload]);
             }
         }
+
+        // Helper to normalize and filter rows to valid table columns
+        $normalizeRow = function(array $r) use ($table, $pdo) {
+            $validCols = get_table_columns($pdo, $table);
+
+            if ($table === 'products') {
+                if (!isset($r['price']) && isset($r['suggested_price'])) {
+                    $r['price'] = $r['suggested_price'];
+                }
+                if (!isset($r['base_price']) && isset($r['reseller_price'])) {
+                    $r['base_price'] = $r['reseller_price'];
+                }
+                if (!isset($r['package_cost']) && isset($r['packaging_cost'])) {
+                    $r['package_cost'] = $r['packaging_cost'];
+                }
+                if (!isset($r['main_image']) && isset($r['og_image_url'])) {
+                    $r['main_image'] = $r['og_image_url'];
+                }
+                if (!isset($r['weight']) && isset($r['weight_grams'])) {
+                    $r['weight'] = is_numeric($r['weight_grams']) ? round($r['weight_grams'] / 1000, 2) : 0;
+                }
+                if (empty($r['product_code'])) {
+                    $r['product_code'] = !empty($r['sku']) ? $r['sku'] : strtoupper(substr(gen_uuid(), 0, 8));
+                }
+                if (!isset($r['price'])) {
+                    $r['price'] = $r['base_price'] ?? 0;
+                }
+                if (isset($r['delivery_mode']) || isset($r['delivery_inside'])) {
+                    $override = [
+                        'mode' => $r['delivery_mode'] ?? 'area',
+                        'flat' => $r['delivery_flat'] ?? 0,
+                        'inside' => $r['delivery_inside'] ?? 0,
+                        'outside' => $r['delivery_outside'] ?? 0,
+                        'sub' => $r['delivery_sub'] ?? 0,
+                    ];
+                    $r['delivery_charge_override'] = json_encode($override);
+                }
+            } else if ($table === 'orders') {
+                if (!isset($r['customer_address']) && isset($r['address_line'])) {
+                    $r['customer_address'] = $r['address_line'];
+                }
+                if (!isset($r['delivery_area']) && isset($r['area'])) {
+                    $r['delivery_area'] = $r['area'];
+                }
+                if (!isset($r['delivery_charge']) && isset($r['shipping_cost'])) {
+                    $r['delivery_charge'] = $r['shipping_cost'];
+                }
+                if (!isset($r['note']) && isset($r['reseller_note'])) {
+                    $r['note'] = $r['reseller_note'];
+                }
+                if (!isset($r['package_cost']) && isset($r['packaging_total'])) {
+                    $r['package_cost'] = $r['packaging_total'];
+                }
+                if (!isset($r['is_forwarded']) && isset($r['forwarded_to_admin'])) {
+                    $r['is_forwarded'] = $r['forwarded_to_admin'] ? 1 : 0;
+                }
+            } else if ($table === 'order_items') {
+                if (!isset($r['unit_price'])) {
+                    $r['unit_price'] = $r['sa_price'] ?? ($r['reseller_price'] ?? 0);
+                }
+                if (!isset($r['total'])) {
+                    $r['total'] = $r['line_total'] ?? ((float)($r['unit_price'] ?? 0) * (int)($r['quantity'] ?? 1));
+                }
+            }
+
+            if (!empty($validCols)) {
+                $r = array_intersect_key($r, array_flip($validCols));
+            }
+            return $r;
+        };
 
         // Build WHERE clause
         $whereSql = [];
@@ -1486,6 +1587,35 @@ function handle_standalone_request() {
                     if (!isset($r['packaging_cost']) && isset($r['package_cost'])) {
                         $r['packaging_cost'] = $r['package_cost'];
                     }
+                    if (!isset($r['og_image_url']) && isset($r['main_image'])) {
+                        $r['og_image_url'] = $r['main_image'];
+                    }
+                    if (!isset($r['weight_grams']) && isset($r['weight'])) {
+                        $r['weight_grams'] = (float)$r['weight'] * 1000;
+                    }
+                } else if ($table === 'orders') {
+                    if (!isset($r['address_line']) && isset($r['customer_address'])) {
+                        $r['address_line'] = $r['customer_address'];
+                    }
+                    if (!isset($r['area']) && isset($r['delivery_area'])) {
+                        $r['area'] = $r['delivery_area'];
+                    }
+                    if (!isset($r['shipping_cost']) && isset($r['delivery_charge'])) {
+                        $r['shipping_cost'] = $r['delivery_charge'];
+                    }
+                    if (!isset($r['reseller_note']) && isset($r['note'])) {
+                        $r['reseller_note'] = $r['note'];
+                    }
+                } else if ($table === 'order_items') {
+                    if (!isset($r['sa_price']) && isset($r['unit_price'])) {
+                        $r['sa_price'] = $r['unit_price'];
+                    }
+                    if (!isset($r['reseller_price']) && isset($r['unit_price'])) {
+                        $r['reseller_price'] = $r['unit_price'];
+                    }
+                    if (!isset($r['line_total']) && isset($r['total'])) {
+                        $r['line_total'] = $r['total'];
+                    }
                 }
             }
 
@@ -1499,20 +1629,27 @@ function handle_standalone_request() {
         if ($operation === 'insert') {
             $rowsToInsert = isset($payload[0]) && is_array($payload[0]) ? $payload : [$payload];
             $inserted = [];
-            foreach ($rowsToInsert as $r) {
-                if (empty($r)) continue;
+            $validCols = get_table_columns($pdo, $table);
+            foreach ($rowsToInsert as $raw) {
+                if (empty($raw)) continue;
+                $r = $normalizeRow((array)$raw);
                 if (empty($r['id'])) $r['id'] = gen_uuid();
-                if (!isset($r['created_at'])) $r['created_at'] = date('Y-m-d H:i:s');
-                if (!isset($r['updated_at'])) $r['updated_at'] = date('Y-m-d H:i:s');
+                if (!isset($r['created_at']) && in_array('created_at', $validCols)) {
+                    $r['created_at'] = date('Y-m-d H:i:s');
+                }
+                if (!isset($r['updated_at']) && in_array('updated_at', $validCols)) {
+                    $r['updated_at'] = date('Y-m-d H:i:s');
+                }
 
                 $keys = array_keys($r);
+                if (empty($keys)) continue;
                 $colsSql = implode(', ', array_map(fn($k) => "`$k`", $keys));
                 $placeholders = implode(', ', array_fill(0, count($keys), '?'));
                 $vals = array_map(fn($v) => (is_array($v) || is_object($v)) ? json_encode($v) : $v, array_values($r));
 
                 $ins = $pdo->prepare("INSERT INTO `$table` ($colsSql) VALUES ($placeholders)");
                 $ins->execute($vals);
-                $inserted[] = $r;
+                $inserted[] = array_merge((array)$raw, $r);
             }
             json_res(['data' => count($inserted) === 1 ? $inserted[0] : $inserted]);
         }
@@ -1520,14 +1657,20 @@ function handle_standalone_request() {
         // UPDATE OPERATION
         if ($operation === 'update') {
             if (empty($payload)) json_res(['data' => null]);
-            $payload['updated_at'] = date('Y-m-d H:i:s');
+            $normalizedPayload = $normalizeRow((array)$payload);
+            $validCols = get_table_columns($pdo, $table);
+            if (in_array('updated_at', $validCols)) {
+                $normalizedPayload['updated_at'] = date('Y-m-d H:i:s');
+            }
             $setSql = [];
             $setVals = [];
-            foreach ($payload as $k => $v) {
-                if (preg_match('/^[a-zA-Z0-9_]+$/', $k)) {
-                    $setSql[] = "`$k` = ?";
-                    $setVals[] = (is_array($v) || is_object($v)) ? json_encode($v) : $v;
-                }
+            foreach ($normalizedPayload as $k => $v) {
+                if ($k === 'id') continue;
+                $setSql[] = "`$k` = ?";
+                $setVals[] = (is_array($v) || is_object($v)) ? json_encode($v) : $v;
+            }
+            if (empty($setSql)) {
+                json_res(['data' => $payload]);
             }
             $sql = "UPDATE `$table` SET " . implode(', ', $setSql) . $whereClause;
             $stmt = $pdo->prepare($sql);
@@ -1548,13 +1691,21 @@ function handle_standalone_request() {
         // UPSERT OPERATION
         if ($operation === 'upsert') {
             $rowsToUpsert = isset($payload[0]) && is_array($payload[0]) ? $payload : [$payload];
-            foreach ($rowsToUpsert as $r) {
-                if (empty($r)) continue;
+            $upserted = [];
+            $validCols = get_table_columns($pdo, $table);
+            foreach ($rowsToUpsert as $raw) {
+                if (empty($raw)) continue;
+                $r = $normalizeRow((array)$raw);
                 if (empty($r['id'])) $r['id'] = gen_uuid();
-                if (!isset($r['created_at'])) $r['created_at'] = date('Y-m-d H:i:s');
-                if (!isset($r['updated_at'])) $r['updated_at'] = date('Y-m-d H:i:s');
+                if (!isset($r['created_at']) && in_array('created_at', $validCols)) {
+                    $r['created_at'] = date('Y-m-d H:i:s');
+                }
+                if (!isset($r['updated_at']) && in_array('updated_at', $validCols)) {
+                    $r['updated_at'] = date('Y-m-d H:i:s');
+                }
 
                 $keys = array_keys($r);
+                if (empty($keys)) continue;
                 $colsSql = implode(', ', array_map(fn($k) => "`$k`", $keys));
                 $placeholders = implode(', ', array_fill(0, count($keys), '?'));
                 $vals = array_map(fn($v) => (is_array($v) || is_object($v)) ? json_encode($v) : $v, array_values($r));
@@ -1568,38 +1719,130 @@ function handle_standalone_request() {
                 $upSql = !empty($updateParts) ? " ON DUPLICATE KEY UPDATE " . implode(', ', $updateParts) : "";
                 $ins = $pdo->prepare("INSERT INTO `$table` ($colsSql) VALUES ($placeholders)" . $upSql);
                 $ins->execute($vals);
+                $upserted[] = array_merge((array)$raw, $r);
             }
-            json_res(['data' => $payload]);
+            json_res(['data' => count($upserted) === 1 ? $upserted[0] : $upserted]);
         }
 
         json_res(['error' => 'Invalid operation'], 400);
     }
 
     // ==========================================
-    // 4. UPLOAD ROUTE (/api/upload/image)
+    // 4. UPLOAD ROUTES (/api/upload/image, /api/upload/list, /api/upload/delete)
     // ==========================================
     if ($path === 'upload/image' && $method === 'POST') {
-        if (!isset($_FILES['file'])) {
-            json_res(['error' => 'No file uploaded'], 400);
-        }
-        $folder = preg_replace('/[^a-zA-Z0-9_\-]/', '', $_POST['folder'] ?? 'uploads');
+        $folder = preg_replace('/[^a-zA-Z0-9_\-]/', '', $input['folder'] ?? ($_POST['folder'] ?? 'uploads'));
+        if (empty($folder)) $folder = 'uploads';
+
         $targetDir = __DIR__ . '/../public/uploads/' . $folder;
         if (!is_dir($targetDir)) {
             @mkdir($targetDir, 0755, true);
         }
 
-        $origName = $_FILES['file']['name'] ?? 'image.jpg';
-        $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION)) ?: 'jpg';
-        $fileName = gen_uuid() . '.' . $ext;
-        $destPath = $targetDir . '/' . $fileName;
+        $fileName = '';
+        $fileSize = 0;
 
-        if (move_uploaded_file($_FILES['file']['tmp_name'], $destPath)) {
-            $url = '/uploads/' . $folder . '/' . $fileName;
-            json_res(['url' => $url, 'path' => $url]);
+        if (!empty($input['base64'])) {
+            $b64 = $input['base64'];
+            $ext = 'jpg';
+            if (preg_match('/^data:image\/(\w+);base64,/', $b64, $m)) {
+                $ext = strtolower($m[1]);
+                if ($ext === 'jpeg') $ext = 'jpg';
+                $b64 = substr($b64, strpos($b64, ',') + 1);
+            }
+            $decoded = base64_decode($b64);
+            if ($decoded === false) {
+                json_res(['error' => 'Invalid base64 image data'], 400);
+            }
+            $fileName = gen_uuid() . '.' . $ext;
+            $destPath = $targetDir . '/' . $fileName;
+            if (file_put_contents($destPath, $decoded) === false) {
+                json_res(['error' => 'Failed to write uploaded file to disk'], 500);
+            }
+            $fileSize = strlen($decoded);
+        } else if (isset($_FILES['file']) && !empty($_FILES['file']['tmp_name'])) {
+            $origName = $_FILES['file']['name'] ?? 'image.jpg';
+            $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION)) ?: 'jpg';
+            $fileName = gen_uuid() . '.' . $ext;
+            $destPath = $targetDir . '/' . $fileName;
+            if (!move_uploaded_file($_FILES['file']['tmp_name'], $destPath)) {
+                json_res(['error' => 'Failed to move uploaded file'], 500);
+            }
+            $fileSize = filesize($destPath);
+        } else {
+            json_res(['error' => 'No image or base64 file provided'], 400);
         }
-        json_res(['error' => 'Failed to save file'], 500);
+
+        $url = '/uploads/' . $folder . '/' . $fileName;
+        json_res([
+            'url' => $url,
+            'path' => $url,
+            'filename' => $fileName,
+            'size' => $fileSize
+        ]);
+    }
+
+    if ($path === 'upload/list' && $method === 'GET') {
+        $reqFolder = $_GET['folder'] ?? '';
+        $search = strtolower(trim($_GET['search'] ?? ''));
+        $baseDir = __DIR__ . '/../public/uploads';
+        $items = [];
+        $folderCounts = [];
+
+        if (is_dir($baseDir)) {
+            $folders = ['products', 'branding', 'categories', 'avatars', 'uploads'];
+            foreach ($folders as $f) {
+                $fDir = $baseDir . '/' . $f;
+                if (!is_dir($fDir)) continue;
+                $files = scandir($fDir);
+                $cnt = 0;
+                foreach ($files as $file) {
+                    if ($file === '.' || $file === '..') continue;
+                    $filePath = $fDir . '/' . $file;
+                    if (!is_file($filePath)) continue;
+                    $cnt++;
+                    if ($reqFolder && $reqFolder !== $f) continue;
+                    if ($search && !str_contains(strtolower($file), $search)) continue;
+
+                    $items[] = [
+                        'filename' => $file,
+                        'path' => '/uploads/' . $f . '/' . $file,
+                        'url' => '/uploads/' . $f . '/' . $file,
+                        'folder' => $f,
+                        'size' => filesize($filePath),
+                        'last_modified' => date('c', filemtime($filePath)),
+                        'is_used' => false
+                    ];
+                }
+                $folderCounts[$f] = $cnt;
+            }
+        }
+
+        json_res([
+            'data' => $items,
+            'unused_count' => 0,
+            'total' => count($items),
+            'folder_counts' => $folderCounts
+        ]);
+    }
+
+    if ($path === 'upload/delete' && $method === 'POST') {
+        $delPath = $input['path'] ?? '';
+        if (!$delPath || !str_starts_with($delPath, '/uploads/')) {
+            json_res(['error' => 'Invalid file path'], 400);
+        }
+        $rel = ltrim(str_replace('/uploads/', '', $delPath), '/');
+        $rel = str_replace('..', '', $rel);
+        $fullPath = __DIR__ . '/../public/uploads/' . $rel;
+        if (file_exists($fullPath) && is_file($fullPath)) {
+            @unlink($fullPath);
+        }
+        json_res(['success' => true]);
     }
 
     // Default 404
     json_res(['error' => 'Endpoint not found', 'path' => $path], 404);
+} catch (\Throwable $e) {
+    json_res(['error' => $e->getMessage(), 'trace' => $e->getFile() . ':' . $e->getLine()], 500);
+}
 }

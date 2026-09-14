@@ -1,0 +1,1 @@
+import{c as e}from"./index-DroKf2ai.js";function t(){return e}export{t as gatewayDatabase};

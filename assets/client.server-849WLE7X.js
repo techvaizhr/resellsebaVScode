@@ -1,0 +1,1 @@
+import{c as e}from"./index-DroKf2ai.js";var t=e;export{t as supabaseAdmin};
