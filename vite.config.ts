@@ -1,12 +1,27 @@
 import { defineConfig } from "vite";
-import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export default defineConfig({
   resolve: {
-    tsconfigPaths: true,
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      "@tanstack/react-start/server": path.resolve(
+        __dirname,
+        "./src/lib/server-fn-shim.ts"
+      ),
+      "@tanstack/react-start": path.resolve(
+        __dirname,
+        "./src/lib/server-fn-shim.ts"
+      ),
+    },
   },
   server: {
     port: 3000,
@@ -23,8 +38,8 @@ export default defineConfig({
       },
     },
   },
-  ssr: {},
   build: {
+    outDir: "dist",
     target: "es2022",
     cssCodeSplit: true,
     chunkSizeWarningLimit: 1200,
@@ -34,7 +49,10 @@ export default defineConfig({
           if (id.includes("node_modules/xlsx")) {
             return "vendor-excel";
           }
-          if (id.includes("node_modules/@zxing") || id.includes("node_modules/jsbarcode")) {
+          if (
+            id.includes("node_modules/@zxing") ||
+            id.includes("node_modules/jsbarcode")
+          ) {
             return "vendor-barcode";
           }
           if (id.includes("node_modules/recharts")) {
@@ -46,7 +64,11 @@ export default defineConfig({
           if (id.includes("node_modules/lucide-react")) {
             return "vendor-icons";
           }
-          if (id.includes("node_modules/@radix-ui") || id.includes("node_modules/cmdk") || id.includes("node_modules/vaul")) {
+          if (
+            id.includes("node_modules/@radix-ui") ||
+            id.includes("node_modules/cmdk") ||
+            id.includes("node_modules/vaul")
+          ) {
             return "vendor-ui";
           }
         },
@@ -54,18 +76,22 @@ export default defineConfig({
     },
   },
   plugins: [
-    tanstackStart(),
+    tanstackRouter({
+      routesDirectory: "./src/routes",
+      generatedRouteTree: "./src/routeTree.gen.ts",
+      quoteStyle: "double",
+    }),
     viteReact(),
     tailwindcss(),
     VitePWA({
       injectRegister: null,
       registerType: "autoUpdate",
       filename: "sw.js",
-      outDir: "dist/client",
+      outDir: "dist",
       manifest: false,
       devOptions: { enabled: false },
       workbox: {
-        navigateFallback: null,
+        navigateFallback: "/index.html",
         runtimeCaching: [
           {
             urlPattern: ({ request, url }) =>
@@ -81,11 +107,16 @@ export default defineConfig({
           {
             urlPattern: ({ url }) =>
               url.origin === self.location.origin &&
-              /\/assets\/.+\.(js|css|woff2?|png|jpg|svg|webp)$/i.test(url.pathname),
+              /\/assets\/.+\.(js|css|woff2?|png|jpg|svg|webp)$/i.test(
+                url.pathname
+              ),
             handler: "CacheFirst",
             options: {
               cacheName: "pwa-assets",
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
             },
           },
         ],

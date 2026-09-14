@@ -1,1 +1,0 @@
-import{r as e}from"./rolldown-runtime-QTnfLwEv.js";import{m as t}from"./vendor-charts-CkRyfaGy.js";var n=e(t(),1),r=(0,n.createContext)(null),i=r.Provider;function a(){let e=(0,n.useContext)(r);if(!e)throw Error(`useSupplier must be used inside the supplier panel`);return e}export{a as n,i as t};

@@ -16,11 +16,27 @@ Options -Indexes
 
     # 3. Direct fast serving for frontend assets (JS/CSS/Fonts)
     RewriteCond %{REQUEST_URI} ^/assets/
-    RewriteRule ^assets/(.*)$ dist/client/assets/$1 [L]
+    RewriteRule ^assets/(.*)$ dist/assets/$1 [L]
 
     # 4. Direct fast serving for static uploads from single root storage
     RewriteCond %{REQUEST_URI} ^/uploads/
     RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]
+
+    # 5. Serve root files directly if they exist in dist/ (e.g. sw.js, manifest.webmanifest, favicon.ico)
+    RewriteCond %{DOCUMENT_ROOT}/dist/%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ dist/$1 [L]
+
+    # 6. Serve root files directly if they exist in public/
+    RewriteCond %{DOCUMENT_ROOT}/public/%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # 7. Existing file or directory in root
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # 8. All other routes go to dist/index.html (Single Page Application client routing)
+    RewriteRule ^ dist/index.html [L]
 </IfModule>
 
 # High-Performance Gzip Compression
@@ -76,12 +92,7 @@ Options -Indexes
     </If>
 </IfModule>
 
-# cPanel CloudLinux Passenger Node.js Configuration
+# Disable Phusion Passenger (Pure Apache + PHP mode - No Node.js)
 <IfModule mod_passenger.c>
-    PassengerEnabled on
-    PassengerAppRoot "/home/zhroni367/petzavo.com"
-    PassengerBaseURI "/"
-    PassengerAppType node
-    PassengerStartupFile app.js
+    PassengerEnabled off
 </IfModule>
-

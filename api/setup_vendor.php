@@ -125,12 +125,11 @@ function run_shell_cmd($cmd, $workingDir) {
   </p>
 
   <div style="margin: 16px 0;">
-    <a href="?action=fix_all" class="btn btn-green">⚡ 1-Click Fix All (Git Pull + Migrate + Restart)</a>
+    <a href="?action=fix_all" class="btn btn-green">⚡ 1-Click Pull & Update (Git Pull + Migrate + Clear Cache)</a>
     <a href="?action=git_pull" class="btn btn-cyan">📥 Git Pull Latest Code</a>
     <a href="?action=migrate_seed" class="btn btn-purple">🗄️ Run DB Migrate & Seed</a>
-    <a href="?action=restart_node" class="btn btn-amber">🔄 Restart Node.js Server</a>
     <a href="?action=composer" class="btn">📦 Run Composer Install</a>
-    <a href="test" class="btn btn-green">🧪 Test API Status</a>
+    <a href="test" class="btn btn-green">🧪 Test API & Database Status</a>
     <a href="/" class="btn btn-purple">🏠 Open Website</a>
   </div>
 
@@ -177,17 +176,7 @@ function run_shell_cmd($cmd, $workingDir) {
         run_shell_cmd("{$phpBin} artisan cache:clear", $backendDir);
     }
 
-    if ($action === 'restart_node' || $action === 'fix_all') {
-        out("\n==================== [3/3] RESTART NODE.JS (PASSENGER) ====================");
-        $tmpDir = $rootDir . '/tmp';
-        if (!is_dir($tmpDir)) {
-            @mkdir($tmpDir, 0755, true);
-        }
-        $restartFile = $tmpDir . '/restart.txt';
-        @touch($restartFile);
-        out(">>> Touched {$restartFile} to trigger Phusion Passenger reload.");
-        out(">>> Passenger will reload app.js on the next HTTP request.");
-    }
+
 
     out("\n🎉 COMPLETED SUCCESSFULLY! Please click 'Open Website' or 'Test API Status' above.");
 
