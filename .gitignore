@@ -17,7 +17,9 @@ dist-ssr
 .nitro
 *.local
 
-# Environment files (Tracked for private deployment)
+# Environment files (NEVER overwrite user credentials on cPanel)
+.env
+backend/.env
 .env.local
 .env.*.local
 backend/.env.local
