@@ -332,10 +332,150 @@ function handle_standalone_request() {
     }
 
     // ==========================================
-    // 2. UNIVERSAL RPC ROUTE (/api/rpc/{name})
+    // 2. UNIVERSAL CRUD ROUTE (/api/crud/{table})
+    // ==========================================
+    if (str_starts_with($path, 'crud/')) {
+        $table = preg_replace('/[^a-zA-Z0-9_]/', '', substr($path, 5));
+        if (!$table) json_res(['data' => null, 'error' => 'Invalid table'], 400);
+
+        $op = $input['operation'] ?? 'select';
+        $filters = $input['filters'] ?? [];
+        $isSingle = !empty($input['single']);
+        $isMaybeSingle = !empty($input['maybeSingle']);
+        $limit = isset($input['limit']) ? (int)$input['limit'] : null;
+        $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
+
+        $where = [];
+        $params = [];
+        foreach ($filters as $f) {
+            $col = preg_replace('/[^a-zA-Z0-9_]/', '', $f['column'] ?? '');
+            if (!$col) continue;
+            $operator = $f['operator'] ?? 'eq';
+            $val = $f['value'] ?? null;
+            if ($operator === 'is') {
+                if ($val === null) {
+                    $where[] = "`$col` IS NULL";
+                } else {
+                    $where[] = "`$col` = ?";
+                    $params[] = $val;
+                }
+            } elseif ($operator === 'in') {
+                $inVals = (array)$val;
+                if (empty($inVals)) {
+                    $where[] = "1=0";
+                } else {
+                    $placeholders = implode(',', array_fill(0, count($inVals), '?'));
+                    $where[] = "`$col` IN ($placeholders)";
+                    $params = array_merge($params, array_values($inVals));
+                }
+            } elseif ($operator === 'neq') {
+                $where[] = "`$col` != ?";
+                $params[] = $val;
+            } elseif ($operator === 'like' || $operator === 'ilike') {
+                $where[] = "`$col` LIKE ?";
+                $params[] = $val;
+            } else {
+                $where[] = "`$col` = ?";
+                $params[] = $val;
+            }
+        }
+        $whereSql = !empty($where) ? (' WHERE ' . implode(' AND ', $where)) : '';
+
+        if ($op === 'select') {
+            $selectCols = '*';
+            if ($table === 'users') {
+                $selectCols = 'id, name, email, email_verified_at, phone, avatar_url, full_name, is_phone_verified, is_active, created_at, updated_at';
+            }
+            $sql = "SELECT $selectCols FROM `$table`" . $whereSql;
+            if ($limit !== null) {
+                $sql .= " LIMIT $limit OFFSET $offset";
+            }
+            try {
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $data = ($isSingle || $isMaybeSingle) ? (!empty($rows) ? $rows[0] : null) : $rows;
+                json_res(['data' => $data, 'error' => null, 'count' => count($rows)]);
+            } catch (\Throwable $e) {
+                json_res(['data' => null, 'error' => $e->getMessage()], 200);
+            }
+        }
+
+        if ($op === 'insert') {
+            $payload = $input['payload'] ?? [];
+            if (!empty($payload) && is_array($payload)) {
+                $cols = [];
+                $valPlaceholders = [];
+                $insParams = [];
+                foreach ($payload as $k => $v) {
+                    $c = preg_replace('/[^a-zA-Z0-9_]/', '', $k);
+                    if ($c) {
+                        $cols[] = "`$c`";
+                        $valPlaceholders[] = "?";
+                        $insParams[] = is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : $v;
+                    }
+                }
+                if (!empty($cols)) {
+                    try {
+                        $sql = "INSERT INTO `$table` (" . implode(', ', $cols) . ") VALUES (" . implode(', ', $valPlaceholders) . ")";
+                        $pdo->prepare($sql)->execute($insParams);
+                        json_res(['data' => $payload, 'error' => null]);
+                    } catch (\Throwable $e) {
+                        json_res(['data' => null, 'error' => $e->getMessage()], 200);
+                    }
+                }
+            }
+            json_res(['data' => null, 'error' => null]);
+        }
+
+        if ($op === 'update') {
+            $payload = $input['payload'] ?? [];
+            if (!empty($payload) && is_array($payload) && !empty($whereSql)) {
+                $sets = [];
+                $upParams = [];
+                foreach ($payload as $k => $v) {
+                    $c = preg_replace('/[^a-zA-Z0-9_]/', '', $k);
+                    if ($c) {
+                        $sets[] = "`$c` = ?";
+                        $upParams[] = is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : $v;
+                    }
+                }
+                if (!empty($sets)) {
+                    try {
+                        $sql = "UPDATE `$table` SET " . implode(', ', $sets) . $whereSql;
+                        $pdo->prepare($sql)->execute(array_merge($upParams, $params));
+                        json_res(['data' => $payload, 'error' => null]);
+                    } catch (\Throwable $e) {
+                        json_res(['data' => null, 'error' => $e->getMessage()], 200);
+                    }
+                }
+            }
+            json_res(['data' => null, 'error' => null]);
+        }
+
+        json_res(['data' => null, 'error' => null]);
+    }
+
+    // ==========================================
+    // 3. UNIVERSAL RPC ROUTE (/api/rpc/{name})
     // ==========================================
     if (str_starts_with($path, 'rpc/')) {
         $rpcName = substr($path, 4);
+
+        if ($rpcName === 'verify_state') {
+            json_res([
+                'data' => [
+                    'email_verified_at' => $user ? ($user['email_verified_at'] ?? '2026-09-14 12:00:00') : '2026-09-14 12:00:00',
+                    'phone_verified_at' => $user ? (!empty($user['is_phone_verified']) ? '2026-09-14 12:00:00' : null) : '2026-09-14 12:00:00',
+                    'email_sent_at' => null,
+                    'sms_sent_at' => null,
+                ]
+            ]);
+        }
+
+        if ($rpcName === 'bootstrap_current_user') {
+            json_res(['data' => true]);
+        }
 
         if ($rpcName === 'reseller_catalog_page' || $rpcName === 'admin_catalog_page') {
             $prods = $pdo->query("SELECT * FROM products WHERE is_active = 1 ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);

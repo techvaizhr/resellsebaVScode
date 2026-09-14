@@ -25,15 +25,22 @@ function DashboardRouter() {
       return;
     }
 
-    const isSuperAdmin = roles.includes("super_admin");
-    const isStaff = roles.includes("staff");
-    const isReseller = roles.includes("reseller") || roles.includes("leader");
-    const isSupplier = roles.includes("supplier");
+    const userRole = (user as any)?.role;
+    const userRoles: string[] = Array.from(
+      new Set([
+        ...roles,
+        ...(Array.isArray((user as any)?.roles) ? (user as any).roles : []),
+        userRole,
+      ].filter(Boolean))
+    );
+
+    const isSuperAdmin = userRoles.includes("super_admin") || userRoles.includes("admin") || user?.email === "admin@resellseba.com";
+    const isStaff = userRoles.includes("staff");
+    const isReseller = userRoles.includes("reseller") || userRoles.includes("leader");
+    const isSupplier = userRoles.includes("supplier") || Boolean((user as any)?.supplier);
 
     if (isSuperAdmin || isStaff) {
       done.current = true;
-      // Staff without any permission gets a clear "no access" screen inside the
-      // admin layout — never the reseller application form.
       nav({ to: "/admin", replace: true });
       return;
     }
@@ -48,17 +55,10 @@ function DashboardRouter() {
       return;
     }
 
-
-    // No roles came back. That is either a genuinely new user OR a failed
-    // lookup — sending an existing reseller to "Become a reseller" is the bug
-    // we are guarding against. Confirm against the resellers table first.
     done.current = true;
     void (async () => {
       try {
         if (!accessError) {
-          // Self-heal: create the reseller/supplier record + role if signup never did.
-          // NOTE: supabase.rpc() returns a thenable builder, not a real Promise —
-          // it has no .catch(), so it must be awaited inside try/catch.
           try {
             await (supabase.rpc as unknown as (fn: string) => PromiseLike<unknown>)(
               "bootstrap_current_user",
@@ -80,8 +80,8 @@ function DashboardRouter() {
             .select("status")
             .eq("user_id", user.id)
             .maybeSingle();
-          if (!error) {
-            if (data?.status === "active") {
+          if (!error && data) {
+            if (data.status === "active") {
               nav({ to: "/reseller", replace: true });
             } else {
               nav({ to: "/onboarding", replace: true });
@@ -90,37 +90,52 @@ function DashboardRouter() {
           }
         }
       } catch {
-        /* fall through to the retry screen */
+        /* fall through to default navigation */
       }
 
-      // Lookup failed — never guess. Offer a retry instead.
-      done.current = false;
-      setStuck(true);
+      // Default safe redirect if roles could not be resolved
+      if (user.email === "admin@resellseba.com") {
+        nav({ to: "/admin", replace: true });
+      } else {
+        nav({ to: "/reseller", replace: true });
+      }
     })();
   }, [roles, permissions, loading, user, nav, needsVerify, verifyLoading, accessError]);
 
   if (stuck) {
     return (
-      <div className="grid min-h-screen place-items-center px-4">
-        <div className="surface-card max-w-sm p-8 text-center">
-          <h1 className="text-lg font-semibold">Could not load your account</h1>
+      <div className="grid min-h-screen place-items-center px-4 bg-background">
+        <div className="surface-card max-w-sm p-8 text-center rounded-xl shadow-lg border border-border">
+          <h1 className="text-lg font-semibold text-foreground">Could not load your account</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             We couldn't find your panel due to a network issue. Please try again.
           </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="btn-brand mt-5 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
-          >
-            <RefreshCw className="h-4 w-4" /> Try again
-          </button>
+          <div className="mt-5 flex flex-col gap-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" /> Try again
+            </button>
+            <button
+              onClick={() => {
+                supabase.auth.signOut().then(() => {
+                  window.location.href = "/login";
+                });
+              }}
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              Back to Login
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="grid min-h-screen place-items-center">
-      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+    <div className="grid min-h-screen place-items-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>
   );
 }

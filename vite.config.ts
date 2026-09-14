@@ -91,6 +91,7 @@ export default defineConfig({
       manifest: false,
       devOptions: { enabled: false },
       workbox: {
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         navigateFallback: "/index.html",
         runtimeCaching: [
           {
