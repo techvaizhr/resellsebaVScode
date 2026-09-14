@@ -185,7 +185,7 @@ function ProductsPage() {
   async function refreshOne(id: string) {
     const { data } = await supabase
       .from("products")
-      .select(PRODUCT_COLS)
+      .select("*")
       .eq("id", id)
       .maybeSingle();
     setItems((s) => {
@@ -199,9 +199,8 @@ function ProductsPage() {
 
   const didLoad = useRef(false);
   useEffect(() => {
-    if (didLoad.current) return;
-    didLoad.current = true;
-    if (!catalogCache) {
+    if (!catalogCache || !didLoad.current) {
+      didLoad.current = true;
       load();
     } else if (search.refresh === "all") {
       load();
@@ -211,7 +210,7 @@ function ProductsPage() {
     if (search.refresh) {
       void nav({ to: "/admin/products", search: { ...search, refresh: undefined }, replace: true });
     }
-  }, []);
+  }, [search.refresh]);
 
   // Keep the cache in sync with any inline/optimistic change.
   useEffect(() => {

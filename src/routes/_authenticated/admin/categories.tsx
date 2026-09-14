@@ -95,9 +95,7 @@ function CatsPage() {
     setLoading(false);
   }
   useEffect(() => {
-    if (items.length === 0) {
-      load();
-    }
+    load();
   }, []);
 
   async function create(e: React.FormEvent) {

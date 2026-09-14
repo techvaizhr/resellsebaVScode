@@ -73,15 +73,15 @@ export const listStaffUsers = createServerFn({ method: "GET" })
 
     const { data: profiles } = await db
       .from("profiles")
-      .select("id, full_name, created_at, phone")
-      .in("id", ids);
+      .select("id, user_id, full_name, created_at, phone")
+      .in("user_id", ids);
 
     // Emails and phones from auth users
     const { loadAuthUsers } = await import("@/lib/auth-admin.server");
     const authUsers = await loadAuthUsers(db);
     const authUserMap = Object.fromEntries(authUsers.map((u) => [u.user_id, u]));
 
-    const profileMap: Record<string, any> = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]));
+    const profileMap: Record<string, any> = Object.fromEntries((profiles ?? []).map((p: any) => [p.user_id || p.id, p]));
     return (roleRows ?? []).map((r: any) => ({
       id: r.user_id,
       email: authUserMap[r.user_id]?.email ?? null,

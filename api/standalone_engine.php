@@ -415,9 +415,13 @@ function handle_standalone_request() {
         }
 
         if ($rpcName === 'reseller_catalog_page' || $rpcName === 'admin_catalog_page') {
-            $prods = $pdo->query("SELECT * FROM products WHERE is_active = 1 ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
+            $isAdminCatalog = ($rpcName === 'admin_catalog_page');
+            $prodSql = $isAdminCatalog 
+                ? "SELECT * FROM products ORDER BY created_at DESC"
+                : "SELECT * FROM products WHERE is_active = 1 ORDER BY created_at DESC";
+            $prods = $pdo->query($prodSql)->fetchAll(PDO::FETCH_ASSOC);
             
-            // Attach images
+            // Attach images and map aliases
             $imgStmt = $pdo->query("SELECT * FROM product_images ORDER BY is_primary DESC, sort_order ASC")->fetchAll(PDO::FETCH_ASSOC);
             $imgsByProd = [];
             foreach ($imgStmt as $img) {
@@ -426,13 +430,38 @@ function handle_standalone_request() {
             foreach ($prods as &$p) {
                 $p['images'] = $imgsByProd[$p['id']] ?? [];
                 $p['product_images'] = $p['images'];
+                $p['suggested_price'] = (float)($p['price'] ?? 0);
+                $p['reseller_price'] = (float)($p['base_price'] ?? 0);
+                $p['packaging_cost'] = (float)($p['package_cost'] ?? 0);
+                $p['og_image_url'] = $p['main_image'] ?? null;
+                $p['weight_grams'] = isset($p['weight']) ? (float)$p['weight'] * 1000 : null;
+                $p['is_featured'] = 0;
+
+                $dOver = $p['delivery_charge_override'] ?? null;
+                if (is_string($dOver)) {
+                    $dec = json_decode($dOver, true);
+                    if (json_last_error() === JSON_ERROR_NONE) $dOver = $dec;
+                }
+                if (is_array($dOver)) {
+                    $p['delivery_mode'] = $dOver['mode'] ?? 'area';
+                    $p['delivery_flat'] = (float)($dOver['flat'] ?? 0);
+                    $p['delivery_inside'] = (float)($dOver['inside'] ?? 0);
+                    $p['delivery_outside'] = (float)($dOver['outside'] ?? 0);
+                    $p['delivery_sub'] = (float)($dOver['sub'] ?? 0);
+                } else {
+                    $p['delivery_mode'] = 'area';
+                    $p['delivery_flat'] = 0;
+                    $p['delivery_inside'] = 60;
+                    $p['delivery_outside'] = 120;
+                    $p['delivery_sub'] = 100;
+                }
             }
 
             $cats = $pdo->query("SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll(PDO::FETCH_ASSOC);
             $brands = $pdo->query("SELECT * FROM brands ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
             $suppliers = [];
             try {
-                $suppliers = $pdo->query("SELECT * FROM suppliers ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $suppliers = $pdo->query("SELECT id, name as display_name, code, name FROM suppliers ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
             } catch (\Throwable $e) {}
 
             $resellerId = null;
@@ -1223,12 +1252,13 @@ function handle_standalone_request() {
         if ($rpcName === 'admin_auth_users') {
             $users = [];
             try {
-                $rows = $pdo->query("SELECT id, email, created_at, email_verified_at FROM users")->fetchAll(PDO::FETCH_ASSOC);
+                $rows = $pdo->query("SELECT id, email, phone, created_at, email_verified_at FROM users")->fetchAll(PDO::FETCH_ASSOC);
                 foreach ($rows as $u) {
                     $users[] = [
                         'user_id' => $u['id'],
                         'id' => $u['id'],
                         'email' => $u['email'],
+                        'phone' => $u['phone'],
                         'email_confirmed' => !empty($u['email_verified_at']),
                         'created_at' => $u['created_at'],
                     ];
@@ -1253,68 +1283,130 @@ function handle_standalone_request() {
             json_res(['data' => true]);
         }
 
+        if ($rpcName === 'admin_create_staff_user') {
+            $email = trim($input['email'] ?? ($input['_email'] ?? ''));
+            $pwd = (string)($input['password'] ?? ($input['_password'] ?? ''));
+            $fullName = trim($input['fullName'] ?? ($input['_full_name'] ?? ($input['name'] ?? 'Staff')));
+            $phone = trim($input['phone'] ?? ($input['_phone'] ?? ''));
+            $role = trim($input['role'] ?? ($input['_role'] ?? 'staff'));
+
+            if (!$email || !$pwd) {
+                json_res(['error' => 'Email and password are required'], 422);
+            }
+
+            $chk = $pdo->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
+            $chk->execute([$email]);
+            if ($chk->fetch()) {
+                json_res(['error' => 'A user with this email already exists'], 422);
+            }
+
+            $userId = gen_uuid();
+            $hash = password_hash($pwd, PASSWORD_DEFAULT);
+
+            $uStmt = $pdo->prepare("INSERT INTO users (id, name, email, password, phone, full_name, is_phone_verified, email_verified_at, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), 1, NOW(), NOW())");
+            $uStmt->execute([$userId, $fullName, $email, $hash, $phone ?: null, $fullName]);
+
+            try {
+                $pStmt = $pdo->prepare("INSERT INTO profiles (id, user_id, full_name, phone, is_phone_verified, created_at, updated_at) VALUES (?, ?, ?, ?, 1, NOW(), NOW())");
+                $pStmt->execute([gen_uuid(), $userId, $fullName, $phone ?: null]);
+            } catch (\Throwable $e) {}
+
+            try {
+                $rStmt = $pdo->prepare("INSERT INTO user_roles (id, user_id, role, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())");
+                $rStmt->execute([gen_uuid(), $userId, $role]);
+            } catch (\Throwable $e) {}
+
+            json_res(['data' => $userId, 'userId' => $userId, 'ok' => true]);
+        }
+
         if ($rpcName === 'admin_set_user_password') {
-            $uid = $input['_user_id'] ?? $input['userId'] ?? null;
-            $pwd = $input['_password'] ?? $input['password'] ?? null;
+            $uid = $input['_user_id'] ?? ($input['userId'] ?? null);
+            $pwd = (string)($input['_password'] ?? ($input['password'] ?? ''));
             if ($uid && $pwd) {
                 $hash = password_hash($pwd, PASSWORD_DEFAULT);
-                $pdo->prepare("UPDATE users SET password = ? WHERE id = ?")->execute([$hash, $uid]);
+                $pdo->prepare("UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?")->execute([$hash, $uid]);
+            }
+            json_res(['data' => true, 'ok' => true]);
+        }
+
+        if ($rpcName === 'admin_assign_user_role') {
+            $uid = $input['_user_id'] ?? ($input['userId'] ?? null);
+            $role = trim($input['_role'] ?? ($input['role'] ?? 'staff'));
+            if ($uid && $role) {
+                $pdo->prepare("DELETE FROM user_roles WHERE user_id = ?")->execute([$uid]);
+                $pdo->prepare("INSERT INTO user_roles (id, user_id, role, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())")->execute([gen_uuid(), $uid, $role]);
+            }
+            json_res(['data' => true, 'ok' => true]);
+        }
+
+        if ($rpcName === 'admin_update_user_account') {
+            $uid = $input['_user_id'] ?? ($input['userId'] ?? null);
+            $email = trim($input['email'] ?? ($input['_email'] ?? ''));
+            $fullName = trim($input['fullName'] ?? ($input['_full_name'] ?? ($input['name'] ?? '')));
+            $phone = trim($input['phone'] ?? ($input['_phone'] ?? ''));
+            if ($uid) {
+                $pdo->prepare("UPDATE users SET email = COALESCE(NULLIF(?, ''), email), name = COALESCE(NULLIF(?, ''), name), full_name = COALESCE(NULLIF(?, ''), full_name), phone = COALESCE(NULLIF(?, ''), phone), updated_at = NOW() WHERE id = ?")->execute([$email, $fullName, $fullName, $phone, $uid]);
+                try {
+                    $pdo->prepare("UPDATE profiles SET full_name = COALESCE(NULLIF(?, ''), full_name), phone = COALESCE(NULLIF(?, ''), phone), updated_at = NOW() WHERE user_id = ?")->execute([$fullName, $phone, $uid]);
+                } catch (\Throwable $e) {}
+            }
+            json_res(['data' => true, 'ok' => true]);
+        }
+
+        if ($rpcName === 'admin_delete_auth_user') {
+            $uid = $input['_user_id'] ?? ($input['userId'] ?? null);
+            if ($uid) {
+                $pdo->prepare("DELETE FROM user_roles WHERE user_id = ?")->execute([$uid]);
+                $pdo->prepare("DELETE FROM profiles WHERE user_id = ?")->execute([$uid]);
+                $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$uid]);
+            }
+            json_res(['data' => true, 'ok' => true]);
+        }
+
+        if ($rpcName === 'courier_booking_options') {
+            $configs = [];
+            try {
+                $configs = $pdo->query("SELECT * FROM courier_configs WHERE is_active = 1")->fetchAll(PDO::FETCH_ASSOC);
+            } catch (\Throwable $e) {}
+            json_res(['data' => $configs]);
+        }
+
+        if ($rpcName === 'admin_review_product') {
+            $pid = $input['_id'] ?? ($input['id'] ?? null);
+            $status = (!empty($input['_approve']) || !empty($input['approve'])) ? 'approved' : 'rejected';
+            if ($pid) {
+                $pdo->prepare("UPDATE products SET approval_status = ?, approved_at = NOW(), updated_at = NOW() WHERE id = ?")->execute([$status, $pid]);
+            }
+            json_res(['data' => true]);
+        }
+
+        if ($rpcName === 'admin_set_product_supplier') {
+            $pid = $input['_product_id'] ?? ($input['product_id'] ?? null);
+            $sid = $input['_supplier_id'] ?? ($input['supplier_id'] ?? null);
+            if ($pid) {
+                $pdo->prepare("UPDATE products SET supplier_id = ?, updated_at = NOW() WHERE id = ?")->execute([$sid ?: null, $pid]);
+            }
+            json_res(['data' => true]);
+        }
+
+        if ($rpcName === 'admin_delete_supplier') {
+            $sid = $input['_id'] ?? ($input['id'] ?? null);
+            if ($sid) {
+                $pdo->prepare("DELETE FROM suppliers WHERE id = ?")->execute([$sid]);
+            }
+            json_res(['data' => true]);
+        }
+
+        if ($rpcName === 'admin_delete_agent') {
+            $aid = $input['_id'] ?? ($input['id'] ?? null);
+            if ($aid) {
+                $pdo->prepare("DELETE FROM agents WHERE id = ?")->execute([$aid]);
             }
             json_res(['data' => true]);
         }
 
         if ($rpcName === 'has_any_permission') {
             json_res(['data' => true]);
-        }
-
-        if ($rpcName === 'current_reseller_id') {
-            $resId = null;
-            if ($user) {
-                $st = $pdo->prepare("SELECT id FROM resellers WHERE user_id = ? LIMIT 1");
-                $st->execute([$user['id']]);
-                $resId = $st->fetchColumn() ?: null;
-            }
-            json_res(['data' => $resId]);
-        }
-
-        if ($rpcName === 'reseller_profit_summary') {
-            json_res([
-                'data' => [
-                    'delivered_profit' => 0,
-                    'pending_payout' => 0,
-                    'paid_out' => 0,
-                    'available' => 0,
-                    'deposit_balance' => 0,
-                    'frozen_amount' => 0,
-                ]
-            ]);
-        }
-
-        if ($rpcName === 'reseller_ledger') {
-            json_res(['data' => []]);
-        }
-
-        if ($rpcName === 'reseller_orders_page') {
-            $resellerId = null;
-            if ($user) {
-                $st = $pdo->prepare("SELECT id FROM resellers WHERE user_id = ? LIMIT 1");
-                $st->execute([$user['id']]);
-                $resellerId = $st->fetchColumn() ?: null;
-            }
-            $orders = [];
-            if ($resellerId) {
-                $st = $pdo->prepare("SELECT * FROM orders WHERE reseller_id = ? ORDER BY created_at DESC LIMIT 100");
-                $st->execute([$resellerId]);
-                $orders = $st->fetchAll(PDO::FETCH_ASSOC);
-            }
-            json_res([
-                'data' => [
-                    'orders' => $orders,
-                    'items' => [],
-                    'shipments' => [],
-                    'status_counts' => [],
-                ]
-            ]);
         }
 
         if ($rpcName === 'is_super_admin') {
@@ -1505,6 +1597,64 @@ function handle_standalone_request() {
             $col = $f['column'] ?? '';
             $op = $f['operator'] ?? 'eq';
             $val = $f['value'] ?? null;
+
+            // Handle .or(...) filter strings
+            if ($col === '__or__' || $op === 'or') {
+                $orStr = (string)$val;
+                $parts = array_filter(array_map('trim', explode(',', $orStr)));
+                $orClauses = [];
+                foreach ($parts as $part) {
+                    $seg = explode('.', $part, 3);
+                    if (count($seg) < 2) continue;
+                    $c = $seg[0];
+                    $subOp = $seg[1];
+                    $subVal = $seg[2] ?? null;
+
+                    if ($table === 'products') {
+                        if ($c === 'reseller_price') $c = 'base_price';
+                        else if ($c === 'suggested_price') $c = 'price';
+                        else if ($c === 'packaging_cost') $c = 'package_cost';
+                    } else if ($table === 'orders') {
+                        if ($c === 'address_line') $c = 'customer_address';
+                        else if ($c === 'area') $c = 'delivery_area';
+                        else if ($c === 'shipping_cost') $c = 'delivery_charge';
+                        else if ($c === 'forwarded_to_admin') $c = 'is_forwarded';
+                    }
+
+                    if (!preg_match('/^[a-zA-Z0-9_]+$/', $c)) continue;
+
+                    if ($subOp === 'is') {
+                        if ($subVal === 'null') { $orClauses[] = "`$c` IS NULL"; }
+                        else if ($subVal === 'not.null') { $orClauses[] = "`$c` IS NOT NULL"; }
+                    } else if ($subOp === 'eq') {
+                        $orClauses[] = "`$c` = ?";
+                        $params[] = $subVal;
+                    } else if ($subOp === 'neq') {
+                        $orClauses[] = "`$c` != ?";
+                        $params[] = $subVal;
+                    } else if ($subOp === 'like' || $subOp === 'ilike') {
+                        $orClauses[] = "`$c` LIKE ?";
+                        $params[] = $subVal;
+                    }
+                }
+                if (!empty($orClauses)) {
+                    $whereSql[] = "(" . implode(" OR ", $orClauses) . ")";
+                }
+                continue;
+            }
+
+            // Alias map for single filters
+            if ($table === 'products') {
+                if ($col === 'reseller_price') $col = 'base_price';
+                else if ($col === 'suggested_price') $col = 'price';
+                else if ($col === 'packaging_cost') $col = 'package_cost';
+            } else if ($table === 'orders') {
+                if ($col === 'address_line') $col = 'customer_address';
+                else if ($col === 'area') $col = 'delivery_area';
+                else if ($col === 'shipping_cost') $col = 'delivery_charge';
+                else if ($col === 'forwarded_to_admin') { $col = 'is_forwarded'; $val = $val ? 1 : 0; }
+            }
+
             if (!$col || !preg_match('/^[a-zA-Z0-9_]+$/', $col)) continue;
 
             switch ($op) {
@@ -1536,10 +1686,45 @@ function handle_standalone_request() {
 
         // SELECT OPERATION
         if ($operation === 'select') {
+            $validCols = get_table_columns($pdo, $table);
             $safeSelect = "*";
             if ($selectCols && $selectCols !== '*') {
-                $cols = array_filter(array_map('trim', explode(',', $selectCols)), fn($c) => preg_match('/^[a-zA-Z0-9_]+$/', $c));
-                if (!empty($cols)) $safeSelect = implode(', ', array_map(fn($c) => "`$c`", $cols));
+                $rawCols = array_map('trim', explode(',', $selectCols));
+                $validSelected = [];
+                foreach ($rawCols as $c) {
+                    if (str_contains($c, '(')) continue; // ignore relations in raw SQL
+                    if (in_array($c, $validCols)) {
+                        $validSelected[] = "`$c`";
+                    }
+                }
+                if (!empty($validSelected)) {
+                    if (in_array('id', $validCols) && !in_array('`id`', $validSelected)) {
+                        $validSelected[] = '`id`';
+                    }
+                    // Auto-include base columns required for alias enrichment
+                    if ($table === 'products') {
+                        foreach (['price', 'base_price', 'package_cost', 'main_image', 'weight', 'delivery_charge_override'] as $bCol) {
+                            if (in_array($bCol, $validCols) && !in_array("`$bCol`", $validSelected)) {
+                                $validSelected[] = "`$bCol`";
+                            }
+                        }
+                    } else if ($table === 'orders') {
+                        foreach (['customer_address', 'delivery_area', 'delivery_charge', 'note', 'package_cost', 'is_forwarded', 'reseller_id', 'total', 'subtotal'] as $bCol) {
+                            if (in_array($bCol, $validCols) && !in_array("`$bCol`", $validSelected)) {
+                                $validSelected[] = "`$bCol`";
+                            }
+                        }
+                    } else if ($table === 'order_items') {
+                        foreach (['unit_price', 'total', 'quantity', 'product_id'] as $bCol) {
+                            if (in_array($bCol, $validCols) && !in_array("`$bCol`", $validSelected)) {
+                                $validSelected[] = "`$bCol`";
+                            }
+                        }
+                    }
+                    $safeSelect = implode(', ', array_unique($validSelected));
+                } else {
+                    $safeSelect = "*";
+                }
             }
             if ($table === 'users' && $safeSelect === '*') {
                 $safeSelect = "`id`, `name`, `email`, `phone`, `avatar_url`, `full_name`, `is_phone_verified`, `created_at`, `updated_at`";
@@ -1550,7 +1735,11 @@ function handle_standalone_request() {
                 $orderParts = [];
                 foreach ($order as $o) {
                     $oc = $o['column'] ?? '';
-                    if (preg_match('/^[a-zA-Z0-9_]+$/', $oc)) {
+                    if ($table === 'products') {
+                        if ($oc === 'reseller_price') $oc = 'base_price';
+                        else if ($oc === 'suggested_price') $oc = 'price';
+                    }
+                    if (preg_match('/^[a-zA-Z0-9_]+$/', $oc) && in_array($oc, $validCols)) {
                         $dir = (!empty($o['ascending']) && $o['ascending'] !== false) ? 'ASC' : 'DESC';
                         $orderParts[] = "`$oc` $dir";
                     }
@@ -1569,6 +1758,15 @@ function handle_standalone_request() {
             $stmt->execute($params);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+            // Fetch resellers map if needed for orders relation
+            $resellerMap = [];
+            if ($table === 'orders') {
+                try {
+                    $rRows = $pdo->query("SELECT id, business_name, code, contact_phone FROM resellers")->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($rRows as $rr) { $resellerMap[$rr['id']] = $rr; }
+                } catch (\Throwable $e) {}
+            }
+
             // JSON decode complex fields and map compatibility aliases
             foreach ($rows as &$r) {
                 foreach ($r as $k => $v) {
@@ -1578,44 +1776,47 @@ function handle_standalone_request() {
                     }
                 }
                 if ($table === 'products') {
-                    if (!isset($r['suggested_price']) && isset($r['price'])) {
-                        $r['suggested_price'] = $r['price'];
+                    $r['suggested_price'] = (float)($r['price'] ?? 0);
+                    $r['reseller_price'] = (float)($r['base_price'] ?? 0);
+                    $r['packaging_cost'] = (float)($r['package_cost'] ?? 0);
+                    $r['og_image_url'] = $r['main_image'] ?? null;
+                    $r['weight_grams'] = isset($r['weight']) ? (float)$r['weight'] * 1000 : null;
+                    $r['is_featured'] = 0;
+
+                    $dOver = $r['delivery_charge_override'] ?? null;
+                    if (is_string($dOver)) {
+                        $dec = json_decode($dOver, true);
+                        if (json_last_error() === JSON_ERROR_NONE) $dOver = $dec;
                     }
-                    if (!isset($r['reseller_price']) && isset($r['base_price'])) {
-                        $r['reseller_price'] = $r['base_price'];
-                    }
-                    if (!isset($r['packaging_cost']) && isset($r['package_cost'])) {
-                        $r['packaging_cost'] = $r['package_cost'];
-                    }
-                    if (!isset($r['og_image_url']) && isset($r['main_image'])) {
-                        $r['og_image_url'] = $r['main_image'];
-                    }
-                    if (!isset($r['weight_grams']) && isset($r['weight'])) {
-                        $r['weight_grams'] = (float)$r['weight'] * 1000;
+                    if (is_array($dOver)) {
+                        $r['delivery_mode'] = $dOver['mode'] ?? 'area';
+                        $r['delivery_flat'] = (float)($dOver['flat'] ?? 0);
+                        $r['delivery_inside'] = (float)($dOver['inside'] ?? 0);
+                        $r['delivery_outside'] = (float)($dOver['outside'] ?? 0);
+                        $r['delivery_sub'] = (float)($dOver['sub'] ?? 0);
+                    } else {
+                        $r['delivery_mode'] = 'area';
+                        $r['delivery_flat'] = 0;
+                        $r['delivery_inside'] = 60;
+                        $r['delivery_outside'] = 120;
+                        $r['delivery_sub'] = 100;
                     }
                 } else if ($table === 'orders') {
-                    if (!isset($r['address_line']) && isset($r['customer_address'])) {
-                        $r['address_line'] = $r['customer_address'];
-                    }
-                    if (!isset($r['area']) && isset($r['delivery_area'])) {
-                        $r['area'] = $r['delivery_area'];
-                    }
-                    if (!isset($r['shipping_cost']) && isset($r['delivery_charge'])) {
-                        $r['shipping_cost'] = $r['delivery_charge'];
-                    }
-                    if (!isset($r['reseller_note']) && isset($r['note'])) {
-                        $r['reseller_note'] = $r['note'];
+                    $r['address_line'] = $r['customer_address'] ?? '';
+                    $r['area'] = $r['delivery_area'] ?? 'outside_dhaka';
+                    $r['shipping_cost'] = (float)($r['delivery_charge'] ?? 0);
+                    $r['reseller_note'] = $r['note'] ?? null;
+                    $r['packaging_total'] = (float)($r['package_cost'] ?? 0);
+                    $r['forwarded_to_admin'] = !empty($r['is_forwarded']);
+                    $r['delivery_cost'] = 0;
+                    $r['sa_cost_total'] = 0;
+                    if (!isset($r['resellers'])) {
+                        $r['resellers'] = $resellerMap[$r['reseller_id'] ?? ''] ?? null;
                     }
                 } else if ($table === 'order_items') {
-                    if (!isset($r['sa_price']) && isset($r['unit_price'])) {
-                        $r['sa_price'] = $r['unit_price'];
-                    }
-                    if (!isset($r['reseller_price']) && isset($r['unit_price'])) {
-                        $r['reseller_price'] = $r['unit_price'];
-                    }
-                    if (!isset($r['line_total']) && isset($r['total'])) {
-                        $r['line_total'] = $r['total'];
-                    }
+                    $r['sa_price'] = (float)($r['unit_price'] ?? 0);
+                    $r['reseller_price'] = (float)($r['unit_price'] ?? 0);
+                    $r['line_total'] = (float)($r['total'] ?? 0);
                 }
             }
 
