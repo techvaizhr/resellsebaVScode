@@ -1381,8 +1381,9 @@ function handle_standalone_request() {
                 $del = $pdo->prepare("DELETE FROM users WHERE id = ?");
                 $del->execute([$actualId]);
                 $deletedRows = $del->rowCount();
+                $err = $del->errorInfo();
             }
-            json_res(['data' => true, 'ok' => true, 'deleted_rows' => $deletedRows, 'received_uid' => $uid, 'actual_id' => $actualId]);
+            json_res(['data' => true, 'ok' => true, 'deleted_rows' => $deletedRows, 'received_uid' => $uid, 'actual_id' => $actualId, 'error' => $err ?? null]);
         }
 
         if ($rpcName === 'courier_booking_options') {
