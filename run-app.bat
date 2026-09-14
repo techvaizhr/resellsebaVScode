@@ -1,28 +1,20 @@
 @echo off
 title ResellSeba Local Runner
-set "PATH=C:\Program Files\nodejs;%PATH%"
+set "PATH=C:\Program Files\nodejs;C:\Program Files\Git\cmd;%PATH%"
 
 echo ===================================================
-echo             ResellSeba Local Runner
+echo             ResellSeba Local Server Runner
 echo ===================================================
 echo.
 
 if not exist node_modules (
-    echo [Info] Installing frontend dependencies for first time run...
-    call npm install --legacy-peer-deps
+    echo [Info] Installing frontend dependencies...
+    call npm install
 )
 
-echo [1/2] Starting Laravel Backend Server (Port: 8000)...
-start "ResellSeba Backend" cmd /k "cd backend && php artisan serve --port=8000"
+echo [Info] Starting ResellSeba Local Server at http://localhost:3000 ...
+echo [Info] Opening browser...
+start http://localhost:3000
 
-echo [2/2] Starting React Frontend Server (Port: 5173)...
-start "ResellSeba Frontend" cmd /k "set PATH=C:\Program Files\nodejs;%%PATH%% && npm run dev"
-
-echo.
-echo ===================================================
-echo   Backend API : http://127.0.0.1:8000
-echo   Frontend App: http://localhost:5173
-echo ===================================================
-echo.
+call npm run dev
 pause
-
