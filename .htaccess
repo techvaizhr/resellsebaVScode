@@ -7,6 +7,9 @@ Options -Indexes
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    # Block access to hidden Git, environment, and system files
+    RewriteRule (^|/)\.(git|env) - [F,L]
+
     # 2. Route all API requests through api/index.php gateway
     RewriteRule ^api$ api/index.php [L,QSA]
     RewriteRule ^api/(.*)$ api/index.php [L,QSA]
