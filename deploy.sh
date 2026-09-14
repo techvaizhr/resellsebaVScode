@@ -12,23 +12,23 @@ git pull origin main
 [ ! -f backend/.env ] && cp backend/.env.example backend/.env && echo "Created backend/.env from template"
 
 # 2. Update Backend
-echo "🐘 Updating Laravel Backend..."
-cd backend
-composer install --no-dev --optimize-autoloader
-php artisan migrate --force
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-chmod -R 775 storage bootstrap/cache public/uploads
-cd ..
+if command -v php >/dev/null 2>&1; then
+    echo "🐘 Updating Backend..."
+    if [ -f backend/composer.json ] && command -v composer >/dev/null 2>&1; then
+        cd backend
+        composer install --no-dev --optimize-autoloader || true
+        php artisan config:clear || true
+        cd ..
+    fi
+fi
 
-# 3. Update Frontend
-echo "⚛️ Building Frontend SSR..."
-npm install --production=false
-npm run build
+chmod -R 775 public/uploads backend/storage 2>/dev/null || true
 
-# 4. Restart Frontend via PM2
-echo "🔄 Reloading PM2 Service..."
-pm2 restart resellseba-frontend || pm2 start dist/server/server.js --name "resellseba-frontend"
+# 3. Update Frontend (if npm is available)
+if command -v npm >/dev/null 2>&1; then
+    echo "⚛️ Building Frontend SPA..."
+    npm install --production=false
+    npm run build
+fi
 
 echo "✅ Deployment completed successfully!"
