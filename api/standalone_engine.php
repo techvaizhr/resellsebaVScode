@@ -1367,16 +1367,22 @@ function handle_standalone_request() {
         }
 
         if ($rpcName === 'admin_delete_user' || $rpcName === 'admin_delete_auth_user') {
-            $uid = $input['_user_id'] ?? ($input['userId'] ?? ($input['user_id'] ?? ($input['target_user_id'] ?? null)));
+            $uid = trim((string)($input['_user_id'] ?? ($input['userId'] ?? ($input['user_id'] ?? ($input['target_user_id'] ?? '')))));
             $deletedRows = 0;
+            $actualId = null;
             if ($uid) {
-                $pdo->prepare("DELETE FROM user_roles WHERE user_id = ?")->execute([$uid]);
-                $pdo->prepare("DELETE FROM profiles WHERE user_id = ?")->execute([$uid]);
+                $uStmt = $pdo->prepare("SELECT id FROM users WHERE id = ? OR email = ? LIMIT 1");
+                $uStmt->execute([$uid, $uid]);
+                $found = $uStmt->fetch(PDO::FETCH_ASSOC);
+                $actualId = $found['id'] ?? $uid;
+
+                $pdo->prepare("DELETE FROM user_roles WHERE user_id = ?")->execute([$actualId]);
+                $pdo->prepare("DELETE FROM profiles WHERE user_id = ?")->execute([$actualId]);
                 $del = $pdo->prepare("DELETE FROM users WHERE id = ?");
-                $del->execute([$uid]);
+                $del->execute([$actualId]);
                 $deletedRows = $del->rowCount();
             }
-            json_res(['data' => true, 'ok' => true, 'deleted_rows' => $deletedRows, 'received_uid' => $uid]);
+            json_res(['data' => true, 'ok' => true, 'deleted_rows' => $deletedRows, 'received_uid' => $uid, 'actual_id' => $actualId]);
         }
 
         if ($rpcName === 'courier_booking_options') {
