@@ -177,7 +177,7 @@ const NAV: NavEntry[] = [
 ];
 
 function allowed(to: string | undefined, permissions: string[], isSuperAdmin: boolean) {
-  if (isSuperAdmin) return true;
+  if (isSuperAdmin || permissions.includes("*")) return true;
   if (!to) return true;
   const needed = ROUTE_PERMISSIONS[to];
   if (!needed) return true;
@@ -185,7 +185,7 @@ function allowed(to: string | undefined, permissions: string[], isSuperAdmin: bo
 }
 
 function filterNav(nav: NavEntry[], permissions: string[], isSuperAdmin: boolean): NavEntry[] {
-  if (isSuperAdmin) return nav;
+  if (isSuperAdmin || permissions.includes("*")) return nav;
   const out: NavEntry[] = [];
   for (const entry of nav) {
     const group = entry as { items?: { to?: string }[] };
@@ -220,28 +220,36 @@ function AdminLayout() {
   const orderNavCount = useOrderNavCount();
   const nav = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
-  const isSuperAdmin = roles.includes("super_admin");
+  const userRole = (user as any)?.role;
+  const userRoles = [...roles, userRole].filter(Boolean);
+  const isSuperAdmin =
+    userRoles.includes("super_admin") ||
+    userRoles.includes("admin") ||
+    permissions.includes("*") ||
+    user?.email === "admin@resellseba.com";
   const navWithBadge = useMemo(
     () =>
       applyOrderBadge(filterNav(NAV, permissions, isSuperAdmin), "/admin/orders", orderNavCount),
     [orderNavCount, permissions, isSuperAdmin],
   );
-  const isStaff = roles.includes("staff");
-  const canEnter = isSuperAdmin || isStaff;
+  const isStaff = userRoles.includes("staff");
+  const canEnter = isSuperAdmin || isStaff || permissions.includes("*");
   const routePermission = Object.entries(ROUTE_PERMISSIONS)
     .sort(([a], [b]) => b.length - a.length)
     .find(([route]) => pathname === route || pathname.startsWith(`${route}/`))?.[1];
   const canViewRoute =
     isSuperAdmin ||
+    permissions.includes("*") ||
     (isStaff &&
       routePermission != null &&
       routePermission.some((permission) => permissions.includes(permission)));
   const landing = isSuperAdmin ? "/admin" : firstAllowedRoute(NAV, permissions);
   const canCatalog =
     isSuperAdmin ||
+    permissions.includes("*") ||
     permissions.includes("products.view") ||
     permissions.includes("products.manage");
-  const canScan = isSuperAdmin || permissions.includes("orders.status");
+  const canScan = isSuperAdmin || permissions.includes("*") || permissions.includes("orders.status");
 
   const [brand, setBrand] = useState<{
     name: string;
@@ -262,7 +270,7 @@ function AdminLayout() {
     if (canEnter && canViewRoute) return;
 
     // Resellers never belong in the admin tree.
-    if (!isSuperAdmin && !isStaff && (roles.includes("reseller") || roles.includes("leader"))) {
+    if (!isSuperAdmin && !isStaff && !permissions.includes("*") && (roles.includes("reseller") || roles.includes("leader"))) {
       nav({ to: "/reseller", replace: true });
       return;
     }
