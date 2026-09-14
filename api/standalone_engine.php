@@ -1268,19 +1268,30 @@ function handle_standalone_request() {
         }
 
         if ($rpcName === 'admin_confirm_user_email') {
-            $uid = $input['_user_id'] ?? $input['userId'] ?? null;
+            $uid = $input['_user_id'] ?? ($input['userId'] ?? ($input['user_id'] ?? null));
+            $userEmail = null;
+            $already = false;
             if ($uid) {
-                $pdo->prepare("UPDATE users SET email_verified_at = NOW() WHERE id = ?")->execute([$uid]);
+                $uStmt = $pdo->prepare("SELECT email, email_verified_at FROM users WHERE id = ? LIMIT 1");
+                $uStmt->execute([$uid]);
+                $userRow = $uStmt->fetch(PDO::FETCH_ASSOC);
+                if ($userRow) {
+                    $userEmail = $userRow['email'];
+                    $already = !empty($userRow['email_verified_at']);
+                    if (!$already) {
+                        $pdo->prepare("UPDATE users SET email_verified_at = NOW() WHERE id = ?")->execute([$uid]);
+                    }
+                }
             }
-            json_res(['data' => true]);
+            json_res(['data' => [['email' => $userEmail, 'already_confirmed' => $already]], 'ok' => true]);
         }
 
         if ($rpcName === 'admin_set_phone_verified') {
-            $uid = $input['_user_id'] ?? $input['userId'] ?? null;
+            $uid = $input['_user_id'] ?? ($input['userId'] ?? ($input['user_id'] ?? null));
             if ($uid) {
                 $pdo->prepare("UPDATE users SET is_phone_verified = 1 WHERE id = ?")->execute([$uid]);
             }
-            json_res(['data' => true]);
+            json_res(['data' => true, 'ok' => true]);
         }
 
         if ($rpcName === 'admin_create_staff_user') {
@@ -1289,6 +1300,7 @@ function handle_standalone_request() {
             $fullName = trim($input['fullName'] ?? ($input['_full_name'] ?? ($input['name'] ?? 'Staff')));
             $phone = trim($input['phone'] ?? ($input['_phone'] ?? ''));
             $role = trim($input['role'] ?? ($input['_role'] ?? 'staff'));
+            $customRoleId = $input['_custom_role_id'] ?? ($input['customRoleId'] ?? ($input['custom_role_id'] ?? null));
 
             if (!$email || !$pwd) {
                 json_res(['error' => 'Email and password are required'], 422);
@@ -1312,15 +1324,15 @@ function handle_standalone_request() {
             } catch (\Throwable $e) {}
 
             try {
-                $rStmt = $pdo->prepare("INSERT INTO user_roles (id, user_id, role, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())");
-                $rStmt->execute([gen_uuid(), $userId, $role]);
+                $rStmt = $pdo->prepare("INSERT INTO user_roles (id, user_id, role, custom_role_id, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())");
+                $rStmt->execute([gen_uuid(), $userId, $role, $customRoleId ?: null]);
             } catch (\Throwable $e) {}
 
             json_res(['data' => $userId, 'userId' => $userId, 'ok' => true]);
         }
 
         if ($rpcName === 'admin_set_user_password') {
-            $uid = $input['_user_id'] ?? ($input['userId'] ?? null);
+            $uid = $input['_user_id'] ?? ($input['userId'] ?? ($input['user_id'] ?? null));
             $pwd = (string)($input['_password'] ?? ($input['password'] ?? ''));
             if ($uid && $pwd) {
                 $hash = password_hash($pwd, PASSWORD_DEFAULT);
@@ -1329,18 +1341,19 @@ function handle_standalone_request() {
             json_res(['data' => true, 'ok' => true]);
         }
 
-        if ($rpcName === 'admin_assign_user_role') {
-            $uid = $input['_user_id'] ?? ($input['userId'] ?? null);
+        if ($rpcName === 'admin_assign_role' || $rpcName === 'admin_assign_user_role') {
+            $uid = $input['_user_id'] ?? ($input['userId'] ?? ($input['user_id'] ?? null));
             $role = trim($input['_role'] ?? ($input['role'] ?? 'staff'));
+            $customRoleId = $input['_custom_role_id'] ?? ($input['customRoleId'] ?? ($input['custom_role_id'] ?? null));
             if ($uid && $role) {
                 $pdo->prepare("DELETE FROM user_roles WHERE user_id = ?")->execute([$uid]);
-                $pdo->prepare("INSERT INTO user_roles (id, user_id, role, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())")->execute([gen_uuid(), $uid, $role]);
+                $pdo->prepare("INSERT INTO user_roles (id, user_id, role, custom_role_id, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())")->execute([gen_uuid(), $uid, $role, $customRoleId ?: null]);
             }
             json_res(['data' => true, 'ok' => true]);
         }
 
-        if ($rpcName === 'admin_update_user_account') {
-            $uid = $input['_user_id'] ?? ($input['userId'] ?? null);
+        if ($rpcName === 'admin_update_staff_account' || $rpcName === 'admin_update_user_account') {
+            $uid = $input['_user_id'] ?? ($input['userId'] ?? ($input['user_id'] ?? null));
             $email = trim($input['email'] ?? ($input['_email'] ?? ''));
             $fullName = trim($input['fullName'] ?? ($input['_full_name'] ?? ($input['name'] ?? '')));
             $phone = trim($input['phone'] ?? ($input['_phone'] ?? ''));
@@ -1353,8 +1366,8 @@ function handle_standalone_request() {
             json_res(['data' => true, 'ok' => true]);
         }
 
-        if ($rpcName === 'admin_delete_auth_user') {
-            $uid = $input['_user_id'] ?? ($input['userId'] ?? null);
+        if ($rpcName === 'admin_delete_user' || $rpcName === 'admin_delete_auth_user') {
+            $uid = $input['_user_id'] ?? ($input['userId'] ?? ($input['user_id'] ?? ($input['target_user_id'] ?? null)));
             if ($uid) {
                 $pdo->prepare("DELETE FROM user_roles WHERE user_id = ?")->execute([$uid]);
                 $pdo->prepare("DELETE FROM profiles WHERE user_id = ?")->execute([$uid]);
