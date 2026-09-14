@@ -1,42 +1,32 @@
+DirectoryIndex index.html index.php
 Options -Indexes
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteBase /
 
     # 1. Forward Authorization Header for Laravel API Bearer Tokens
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # Block access to hidden Git, environment, and system files
+    # 2. Block access to hidden Git, environment, and system files
     RewriteRule (^|/)\.(git|env) - [F,L]
 
-    # 2. Route all API requests through api/index.php gateway
+    # 3. Route all API requests through api/index.php gateway
     RewriteRule ^api$ api/index.php [L,QSA]
     RewriteRule ^api/(.*)$ api/index.php [L,QSA]
 
-    # 3. Direct fast serving for frontend assets (JS/CSS/Fonts)
-    RewriteCond %{REQUEST_URI} ^/assets/
-    RewriteRule ^assets/(.*)$ dist/assets/$1 [L]
-
-    # 4. Direct fast serving for static uploads from single root storage
+    # 4. Direct fast serving for static uploads
     RewriteCond %{REQUEST_URI} ^/uploads/
     RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]
 
-    # 5. Serve root files directly if they exist in dist/ (e.g. sw.js, manifest.webmanifest, favicon.ico)
-    RewriteCond %{DOCUMENT_ROOT}/dist/%{REQUEST_URI} -f
-    RewriteRule ^(.*)$ dist/$1 [L]
-
-    # 6. Serve root files directly if they exist in public/
-    RewriteCond %{DOCUMENT_ROOT}/public/%{REQUEST_URI} -f
-    RewriteRule ^(.*)$ public/$1 [L]
-
-    # 7. Existing file or directory in root
+    # 5. Serve existing files or directories directly
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # 8. All other routes go to dist/index.html (Single Page Application client routing)
-    RewriteRule ^ dist/index.html [L]
+    # 6. Single Page Application (SPA) client-side routing fallback
+    RewriteRule ^ index.html [L]
 </IfModule>
 
 # High-Performance Gzip Compression
@@ -58,12 +48,11 @@ Options -Indexes
     AddOutputFilterByType DEFLATE font/woff2
 </IfModule>
 
-# Browser Caching (1 Year Immutable for Fingerprinted Static Assets)
+# Browser Caching
 <IfModule mod_expires.c>
     ExpiresActive On
     ExpiresDefault "access plus 1 month"
 
-    # Dynamic API and HTML must never be cached by browser
     ExpiresByType application/json "access plus 0 seconds"
     ExpiresByType text/html "access plus 0 seconds"
 
