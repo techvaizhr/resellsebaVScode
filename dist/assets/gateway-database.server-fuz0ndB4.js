@@ -1,0 +1,1 @@
+import{o as e}from"./index-DFGuLjNv.js";function t(){return e}export{t as gatewayDatabase};

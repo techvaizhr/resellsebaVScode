@@ -47,7 +47,7 @@ export function useVerification() {
   const { user, roles, loading: authLoading } = useAuth();
   const [state, setState] = useState<VerifyState>(EMPTY);
   const [loading, setLoading] = useState(true);
-  const isStaff = roles.includes("super_admin") || roles.includes("staff");
+  const isStaff = roles.includes("super_admin") || roles.includes("admin") || roles.includes("staff");
 
   const refresh = useCallback(
     async (force = true) => {
@@ -69,7 +69,7 @@ export function useVerification() {
   }, [authLoading, user, isStaff, refresh]);
 
 
-  const staff = roles.includes("super_admin") || roles.includes("staff");
+  const staff = roles.includes("super_admin") || roles.includes("admin") || roles.includes("staff");
   const pending = staff ? [] : pendingChannels(settings, state);
 
   return {

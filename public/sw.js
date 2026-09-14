@@ -1,18 +1,31 @@
-// ResellSeba Service Worker - Strictly Live & No Stale Cache
-self.addEventListener("install", () => {
+// Self-destroying service worker: cleans up all Workbox/PWA caches and unregisters itself immediately.
+self.addEventListener('install', function (e) {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then((names) => Promise.all(names.map((name) => caches.delete(name))))
-      .then(() => self.clients.claim())
+self.addEventListener('activate', function (e) {
+  e.waitUntil(
+    caches.keys().then(function (keys) {
+      return Promise.all(
+        keys.map(function (k) {
+          return caches.delete(k);
+        })
+      );
+    }).then(function () {
+      return self.registration.unregister();
+    }).then(function () {
+      return self.clients.matchAll({ type: 'window' });
+    }).then(function (clients) {
+      clients.forEach(function (client) {
+        if (client && client.navigate) {
+          client.navigate(client.url);
+        }
+      });
+    })
   );
 });
 
-// Always fetch from network directly; NEVER serve cached offline fallbacks.
-self.addEventListener("fetch", (event) => {
+self.addEventListener('fetch', function (e) {
+  // Let network handle everything directly
   return;
 });

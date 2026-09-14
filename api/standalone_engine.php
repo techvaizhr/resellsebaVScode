@@ -445,17 +445,79 @@ function handle_standalone_request() {
         }
 
         if ($rpcName === 'admin_dashboard') {
-            $orders = $pdo->query("SELECT * FROM orders ORDER BY created_at DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
-            $prodCount = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
-            $resCount = $pdo->query("SELECT COUNT(*) FROM resellers")->fetchColumn();
+            $from = $input['_from'] ?? null;
+            $to = $input['_to'] ?? null;
+
+            $rMap = [];
+            try {
+                $resRows = $pdo->query("SELECT id, business_name, code FROM resellers")->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($resRows as $r) { $rMap[$r['id']] = $r; }
+            } catch (\Throwable $e) {}
+
+            $allOrders = $pdo->query("SELECT * FROM orders ORDER BY created_at DESC LIMIT 300")->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($allOrders as &$o) {
+                $o['resellers'] = $rMap[$o['reseller_id'] ?? ''] ?? ['business_name' => 'Direct Store'];
+            }
+
+            $rangeOrders = $allOrders;
+            if ($from || $to) {
+                $where = [];
+                $params = [];
+                if ($from) { $where[] = "created_at >= ?"; $params[] = date('Y-m-d H:i:s', strtotime($from)); }
+                if ($to) { $where[] = "created_at <= ?"; $params[] = date('Y-m-d H:i:s', strtotime($to)); }
+                $roStmt = $pdo->prepare("SELECT * FROM orders WHERE " . implode(" AND ", $where) . " ORDER BY created_at DESC LIMIT 300");
+                $roStmt->execute($params);
+                $rangeOrders = $roStmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($rangeOrders as &$ro) {
+                    $ro['resellers'] = $rMap[$ro['reseller_id'] ?? ''] ?? ['business_name' => 'Direct Store'];
+                }
+            }
+
+            $prodCount = (int)$pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
+            $activeProdCount = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE is_active = 1")->fetchColumn();
+            $catCount = (int)$pdo->query("SELECT COUNT(*) FROM categories")->fetchColumn();
+            $brandCount = (int)$pdo->query("SELECT COUNT(*) FROM brands")->fetchColumn();
+
+            $resCount = (int)$pdo->query("SELECT COUNT(*) FROM resellers")->fetchColumn();
+            $activeResCount = (int)$pdo->query("SELECT COUNT(*) FROM resellers WHERE status = 'active'")->fetchColumn();
+            $pendingResCount = (int)$pdo->query("SELECT COUNT(*) FROM resellers WHERE status = 'pending'")->fetchColumn();
+
+            $payoutPaid = 0;
+            $payoutDue = 0;
+            try {
+                $payoutPaid = (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM payouts WHERE status IN ('completed', 'approved')")->fetchColumn();
+                $payoutDue = (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM payouts WHERE status = 'pending'")->fetchColumn();
+            } catch (\Throwable $e) {}
 
             json_res([
-                'range_orders' => $orders,
-                'all_orders' => $orders,
-                'payouts' => ['paid' => 0, 'due' => 0],
-                'catalog' => ['total' => (int)$prodCount, 'active' => (int)$prodCount],
-                'resellers' => ['total' => (int)$resCount, 'active' => (int)$resCount],
-                'metrics' => ['withStore' => (int)$resCount, 'depositBalance' => 0, 'frozen' => 0, 'withdrawable' => 0],
+                'range_orders' => $rangeOrders,
+                'all_orders' => $allOrders,
+                'payouts' => ['paid' => $payoutPaid, 'due' => $payoutDue],
+                'catalog' => [
+                    'products' => $prodCount,
+                    'active' => $activeProdCount,
+                    'inactive' => max(0, $prodCount - $activeProdCount),
+                    'featured' => 0,
+                    'low' => 0,
+                    'out' => 0,
+                    'categories' => $catCount,
+                    'activeCategories' => $catCount,
+                    'activeBrands' => $brandCount,
+                    'brands' => $brandCount,
+                ],
+                'resellers' => [
+                    'total' => $resCount,
+                    'active' => $activeResCount,
+                    'pending' => $pendingResCount,
+                    'suspended' => 0,
+                    'rejected' => 0,
+                ],
+                'metrics' => [
+                    'withStore' => $activeResCount,
+                    'depositBalance' => 0,
+                    'frozen' => 0,
+                    'withdrawable' => 0,
+                ],
             ]);
         }
 
@@ -466,25 +528,577 @@ function handle_standalone_request() {
                 $resStmt->execute([$user['id']]);
                 $reseller = $resStmt->fetch(PDO::FETCH_ASSOC) ?: null;
             }
-            $orders = [];
-            if ($reseller) {
-                $oStmt = $pdo->prepare("SELECT * FROM orders WHERE reseller_id = ? ORDER BY created_at DESC LIMIT 50");
-                $oStmt->execute([$reseller['id']]);
-                $orders = $oStmt->fetchAll(PDO::FETCH_ASSOC);
+            if (!$reseller) {
+                json_res([
+                    'reseller' => null,
+                    'orders' => [],
+                    'items' => [],
+                    'payouts' => [],
+                    'commissions' => [],
+                    'summary' => ['delivered_profit' => 0, 'pending_payout' => 0, 'paid_out' => 0, 'available' => 0],
+                    'listings' => [],
+                    'listings_total' => 0,
+                    'listings_active' => 0,
+                    'products' => [],
+                    'top_resellers' => [],
+                ]);
             }
+            $rid = $reseller['id'];
+            $from = $input['_from'] ?? null;
+            $to = $input['_to'] ?? null;
+
+            $where = ["reseller_id = ?"];
+            $params = [$rid];
+            if ($from) { $where[] = "created_at >= ?"; $params[] = date('Y-m-d H:i:s', strtotime($from)); }
+            if ($to) { $where[] = "created_at <= ?"; $params[] = date('Y-m-d H:i:s', strtotime($to)); }
+
+            $oStmt = $pdo->prepare("SELECT * FROM orders WHERE " . implode(" AND ", $where) . " ORDER BY created_at DESC LIMIT 100");
+            $oStmt->execute($params);
+            $orders = $oStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $orderIds = array_filter(array_column($orders, 'id'));
+            $items = [];
+            if (!empty($orderIds)) {
+                $inIds = implode(',', array_fill(0, count($orderIds), '?'));
+                try {
+                    $iStmt = $pdo->prepare("SELECT * FROM order_items WHERE order_id IN ($inIds)");
+                    $iStmt->execute($orderIds);
+                    $items = $iStmt->fetchAll(PDO::FETCH_ASSOC);
+                } catch (\Throwable $e) {}
+            }
+
+            $payouts = [];
+            try {
+                $pStmt = $pdo->prepare("SELECT amount, status, created_at FROM payouts WHERE reseller_id = ? ORDER BY created_at DESC LIMIT 20");
+                $pStmt->execute([$rid]);
+                $payouts = $pStmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (\Throwable $e) {}
+
+            $commissions = [];
+            try {
+                $cStmt = $pdo->prepare("SELECT amount, status, created_at FROM leader_commissions WHERE leader_id = ? ORDER BY created_at DESC LIMIT 20");
+                $cStmt->execute([$rid]);
+                $commissions = $cStmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (\Throwable $e) {}
+
+            $deliveredProfit = (float)$pdo->prepare("SELECT COALESCE(SUM(reseller_profit), 0) FROM orders WHERE reseller_id = ? AND status IN ('delivered', 'partial')")->execute([$rid]) ? 0 : 0;
+            $dStmt = $pdo->prepare("SELECT COALESCE(SUM(reseller_profit), 0) FROM orders WHERE reseller_id = ? AND status IN ('delivered', 'partial')");
+            $dStmt->execute([$rid]);
+            $deliveredProfit = (float)$dStmt->fetchColumn();
+
+            $paidStmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM payouts WHERE reseller_id = ? AND status IN ('completed', 'approved')");
+            $paidStmt->execute([$rid]);
+            $paidOut = (float)$paidStmt->fetchColumn();
+
+            $pendingStmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM payouts WHERE reseller_id = ? AND status = 'pending'");
+            $pendingStmt->execute([$rid]);
+            $pendingPayout = (float)$pendingStmt->fetchColumn();
+
+            $summary = [
+                'delivered_profit' => $deliveredProfit,
+                'paid_out' => $paidOut,
+                'pending_payout' => $pendingPayout,
+                'available' => max(0, $deliveredProfit - $paidOut - $pendingPayout),
+            ];
+
+            $listings = [];
+            $listingsTotal = 0;
+            $listingsActive = 0;
+            try {
+                $lStmt = $pdo->prepare("SELECT rl.*, p.name as product_name, p.product_code, p.base_price as reseller_price, p.price as suggested_price, p.package_cost as packaging_cost, p.delivery_inside, p.delivery_outside, p.main_image as og_image_url FROM reseller_listings rl JOIN products p ON rl.product_id = p.id WHERE rl.reseller_id = ?");
+                $lStmt->execute([$rid]);
+                $rawListings = $lStmt->fetchAll(PDO::FETCH_ASSOC);
+                $listingsTotal = count($rawListings);
+                foreach ($rawListings as $rl) {
+                    if (!empty($rl['is_active'])) $listingsActive++;
+                    $listings[] = [
+                        'id' => $rl['id'],
+                        'selling_price' => (float)($rl['selling_price'] ?? $rl['suggested_price']),
+                        'products' => [
+                            'id' => $rl['product_id'],
+                            'name' => $rl['product_name'],
+                            'product_code' => $rl['product_code'],
+                            'reseller_price' => (float)$rl['reseller_price'],
+                            'packaging_cost' => (float)$rl['packaging_cost'],
+                            'delivery_inside' => (float)$rl['delivery_inside'],
+                            'delivery_outside' => (float)$rl['delivery_outside'],
+                            'delivery_mode' => null,
+                            'delivery_flat' => null,
+                            'og_image_url' => $rl['og_image_url'],
+                        ],
+                    ];
+                }
+            } catch (\Throwable $e) {}
+
+            $prods = $pdo->query("SELECT id, name, product_code, price as suggested_price, base_price as reseller_price, package_cost as packaging_cost FROM products WHERE is_active = 1 LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
+
             json_res([
                 'reseller' => $reseller,
                 'orders' => $orders,
-                'items' => [],
-                'payouts' => [],
-                'commissions' => [],
-                'summary' => ['delivered_profit' => 0, 'pending_payout' => 0, 'paid_out' => 0, 'available' => 0],
-                'listings' => [],
-                'listings_total' => 0,
-                'listings_active' => 0,
-                'products' => [],
-                'top_resellers' => [],
+                'items' => $items,
+                'payouts' => $payouts,
+                'commissions' => $commissions,
+                'summary' => $summary,
+                'listings' => $listings,
+                'listings_total' => $listingsTotal,
+                'listings_active' => $listingsActive,
+                'products' => $prods,
+                'top_resellers' => [
+                    ['name' => $reseller['business_name'], 'sales' => count($orders)]
+                ],
             ]);
+        }
+
+        if ($rpcName === 'reseller_orders_page') {
+            $reseller = null;
+            if ($user) {
+                $resStmt = $pdo->prepare("SELECT * FROM resellers WHERE user_id = ? LIMIT 1");
+                $resStmt->execute([$user['id']]);
+                $reseller = $resStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            }
+            if (!$reseller) {
+                json_res(['data' => ['reseller_id' => null, 'orders' => [], 'items' => [], 'shipments' => [], 'events' => [], 'listings' => [], 'products' => []]]);
+            }
+            $rid = $reseller['id'];
+            $oStmt = $pdo->prepare("SELECT * FROM orders WHERE reseller_id = ? ORDER BY created_at DESC LIMIT 500");
+            $oStmt->execute([$rid]);
+            $orders = $oStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $orderIds = array_filter(array_column($orders, 'id'));
+            $items = [];
+            $shipments = [];
+            $events = [];
+            if (!empty($orderIds)) {
+                $inIds = implode(',', array_fill(0, count($orderIds), '?'));
+                try {
+                    $iStmt = $pdo->prepare("SELECT * FROM order_items WHERE order_id IN ($inIds)");
+                    $iStmt->execute($orderIds);
+                    $items = $iStmt->fetchAll(PDO::FETCH_ASSOC);
+                } catch (\Throwable $e) {}
+                try {
+                    $sStmt = $pdo->prepare("SELECT * FROM shipments WHERE order_id IN ($inIds)");
+                    $sStmt->execute($orderIds);
+                    $shipments = $sStmt->fetchAll(PDO::FETCH_ASSOC);
+                } catch (\Throwable $e) {}
+                try {
+                    $eStmt = $pdo->prepare("SELECT * FROM courier_events WHERE order_id IN ($inIds) ORDER BY event_time DESC LIMIT 100");
+                    $eStmt->execute($orderIds);
+                    $events = $eStmt->fetchAll(PDO::FETCH_ASSOC);
+                } catch (\Throwable $e) {}
+            }
+
+            $listings = [];
+            try {
+                $lStmt = $pdo->prepare("SELECT rl.*, p.name as product_name, p.product_code, p.base_price as reseller_price, p.price as suggested_price, p.package_cost as packaging_cost, p.delivery_inside, p.delivery_outside FROM reseller_listings rl JOIN products p ON rl.product_id = p.id WHERE rl.reseller_id = ?");
+                $lStmt->execute([$rid]);
+                $listings = $lStmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (\Throwable $e) {}
+
+            $products = $pdo->query("SELECT id, name, product_code, price as suggested_price, base_price as reseller_price, package_cost as packaging_cost, delivery_inside, delivery_outside FROM products WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+            json_res(['data' => [
+                'reseller_id' => $rid,
+                'orders' => $orders,
+                'items' => $items,
+                'shipments' => $shipments,
+                'events' => $events,
+                'listings' => $listings,
+                'products' => $products,
+            ]]);
+        }
+
+        if ($rpcName === 'reseller_profit_summary') {
+            $rid = $input['_reseller_id'] ?? null;
+            if (!$rid && $user) {
+                $rStmt = $pdo->prepare("SELECT id FROM resellers WHERE user_id = ? LIMIT 1");
+                $rStmt->execute([$user['id']]);
+                $rid = $rStmt->fetchColumn() ?: null;
+            }
+            if (!$rid) {
+                json_res(['data' => ['delivered_profit' => 0, 'pending_payout' => 0, 'paid_out' => 0, 'available' => 0, 'deposit_balance' => 0, 'frozen_amount' => 0]]);
+            }
+
+            $dStmt = $pdo->prepare("SELECT COALESCE(SUM(reseller_profit), 0) FROM orders WHERE reseller_id = ? AND status IN ('delivered', 'partial')");
+            $dStmt->execute([$rid]);
+            $deliveredProfit = (float)$dStmt->fetchColumn();
+
+            $pdStmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM payouts WHERE reseller_id = ? AND status IN ('completed', 'approved')");
+            $pdStmt->execute([$rid]);
+            $paidOut = (float)$pdStmt->fetchColumn();
+
+            $pnStmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM payouts WHERE reseller_id = ? AND status = 'pending'");
+            $pnStmt->execute([$rid]);
+            $pendingPayout = (float)$pnStmt->fetchColumn();
+
+            $depBalance = 0;
+            try {
+                $depStmt = $pdo->prepare("SELECT COALESCE(deposit_balance, 0) FROM resellers WHERE id = ?");
+                $depStmt->execute([$rid]);
+                $depBalance = (float)$depStmt->fetchColumn();
+            } catch (\Throwable $e) {}
+
+            $available = max(0, $deliveredProfit - $paidOut - $pendingPayout);
+
+            json_res(['data' => [
+                'delivered_profit' => $deliveredProfit,
+                'pending_payout' => $pendingPayout,
+                'paid_out' => $paidOut,
+                'available' => $available,
+                'deposit_balance' => $depBalance,
+                'frozen_amount' => 0,
+            ]]);
+        }
+
+        if ($rpcName === 'reseller_ledger') {
+            $rid = $input['_reseller_id'] ?? null;
+            if (!$rid && $user) {
+                $rStmt = $pdo->prepare("SELECT id FROM resellers WHERE user_id = ? LIMIT 1");
+                $rStmt->execute([$user['id']]);
+                $rid = $rStmt->fetchColumn() ?: null;
+            }
+            $limit = (int)($input['_limit'] ?? 200);
+            $ledger = [];
+            if ($rid) {
+                try {
+                    $oStmt = $pdo->prepare("SELECT id, order_number, reseller_profit, updated_at, created_at FROM orders WHERE reseller_id = ? AND status IN ('delivered', 'partial') ORDER BY updated_at DESC LIMIT $limit");
+                    $oStmt->execute([$rid]);
+                    $orders = $oStmt->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($orders as $o) {
+                        $ledger[] = [
+                            'at' => $o['updated_at'] ?: $o['created_at'],
+                            'type' => 'profit',
+                            'label' => 'Order Profit ' . ($o['order_number'] ?? ('#' . substr($o['id'], 0, 8))),
+                            'note' => 'Delivered',
+                            'order_id' => $o['id'],
+                            'amount' => (float)$o['reseller_profit'],
+                            'running' => 0,
+                        ];
+                    }
+                } catch (\Throwable $e) {}
+
+                try {
+                    $pStmt = $pdo->prepare("SELECT id, amount, status, notes, created_at FROM payouts WHERE reseller_id = ? ORDER BY created_at DESC LIMIT $limit");
+                    $pStmt->execute([$rid]);
+                    $payouts = $pStmt->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($payouts as $p) {
+                        $ledger[] = [
+                            'at' => $p['created_at'],
+                            'type' => 'payout',
+                            'label' => 'Payout Withdrawal (' . ucfirst($p['status']) . ')',
+                            'note' => $p['notes'] ?? '',
+                            'order_id' => null,
+                            'amount' => -(float)$p['amount'],
+                            'running' => 0,
+                        ];
+                    }
+                } catch (\Throwable $e) {}
+
+                usort($ledger, fn($a, $b) => strcmp($a['at'], $b['at']));
+                $running = 0;
+                foreach ($ledger as &$row) {
+                    $running += $row['amount'];
+                    $row['running'] = $running;
+                }
+                usort($ledger, fn($a, $b) => strcmp($b['at'], $a['at']));
+            }
+            json_res(['data' => $ledger]);
+        }
+
+        if ($rpcName === 'transaction_report') {
+            $rId = $input['_reseller_id'] ?? null;
+            $from = $input['_from'] ?? null;
+            $to = $input['_to'] ?? null;
+            $limit = (int)($input['_limit'] ?? 500);
+
+            $rMap = [];
+            try {
+                $rs = $pdo->query("SELECT id, business_name, code FROM resellers")->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($rs as $r) { $rMap[$r['id']] = $r; }
+            } catch (\Throwable $e) {}
+
+            $whereOrders = [];
+            $paramsOrders = [];
+            if ($rId) {
+                $whereOrders[] = "reseller_id = ?";
+                $paramsOrders[] = $rId;
+            }
+            if ($from) {
+                $whereOrders[] = "created_at >= ?";
+                $paramsOrders[] = date('Y-m-d H:i:s', strtotime($from));
+            }
+            if ($to) {
+                $whereOrders[] = "created_at <= ?";
+                $paramsOrders[] = date('Y-m-d H:i:s', strtotime($to));
+            }
+            $wSql = !empty($whereOrders) ? " WHERE " . implode(" AND ", $whereOrders) : "";
+
+            $rows = [];
+            try {
+                $oStmt = $pdo->prepare("SELECT * FROM orders $wSql ORDER BY created_at DESC LIMIT $limit");
+                $oStmt->execute($paramsOrders);
+                $orders = $oStmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($orders as $o) {
+                    $reseller = $rMap[$o['reseller_id'] ?? ''] ?? ['business_name' => 'Reseller', 'code' => ''];
+                    $isProfit = (float)($o['reseller_profit'] ?? 0) >= 0;
+                    $rows[] = [
+                        'at' => $o['created_at'],
+                        'kind' => $isProfit ? 'profit' : 'loss',
+                        'direction' => $isProfit ? 'in' : 'out',
+                        'reseller_id' => $o['reseller_id'] ?? '',
+                        'reseller_name' => $reseller['business_name'],
+                        'reseller_code' => $reseller['code'],
+                        'order_id' => $o['id'],
+                        'order_number' => $o['order_number'] ?? ('ORD-' . substr($o['id'], 0, 8)),
+                        'status' => $o['status'] ?? 'pending',
+                        'label' => 'Order ' . ($o['order_number'] ?? ('#' . substr($o['id'], 0, 8))),
+                        'note' => $o['delivery_notes'] ?? null,
+                        'sell_subtotal' => (float)($o['subtotal'] ?? 0),
+                        'sell_delivery' => (float)($o['delivery_charge'] ?? 0),
+                        'sell_total' => (float)($o['total'] ?? 0),
+                        'buy_product' => (float)($o['sa_cost_total'] ?? 0),
+                        'buy_delivery' => (float)($o['shipping_cost'] ?? 0),
+                        'packaging' => (float)($o['packaging_cost'] ?? 0),
+                        'buy_total' => (float)($o['sa_cost_total'] ?? 0) + (float)($o['shipping_cost'] ?? 0),
+                        'collected' => (float)($o['total'] ?? 0),
+                        'received' => (float)($o['received_amount'] ?? $o['total'] ?? 0),
+                        'advance' => (float)($o['advance_paid'] ?? 0),
+                        'advance_by' => 'customer',
+                        'amount' => abs((float)($o['reseller_profit'] ?? 0)),
+                        'running' => 0,
+                    ];
+                }
+            } catch (\Throwable $e) {}
+
+            try {
+                $wherePayouts = [];
+                $paramsPayouts = [];
+                if ($rId) { $wherePayouts[] = "reseller_id = ?"; $paramsPayouts[] = $rId; }
+                $pSql = !empty($wherePayouts) ? " WHERE " . implode(" AND ", $wherePayouts) : "";
+                $pStmt = $pdo->prepare("SELECT * FROM payouts $pSql ORDER BY created_at DESC LIMIT 100");
+                $pStmt->execute($paramsPayouts);
+                $payouts = $pStmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($payouts as $p) {
+                    $reseller = $rMap[$p['reseller_id'] ?? ''] ?? ['business_name' => 'Reseller', 'code' => ''];
+                    $rows[] = [
+                        'at' => $p['created_at'],
+                        'kind' => 'withdraw',
+                        'direction' => 'out',
+                        'reseller_id' => $p['reseller_id'] ?? '',
+                        'reseller_name' => $reseller['business_name'],
+                        'reseller_code' => $reseller['code'],
+                        'order_id' => null,
+                        'order_number' => null,
+                        'status' => $p['status'] ?? 'pending',
+                        'label' => 'Payout withdrawal',
+                        'note' => $p['notes'] ?? ($p['payout_method'] ?? 'Payout'),
+                        'sell_subtotal' => 0,
+                        'sell_delivery' => 0,
+                        'sell_total' => 0,
+                        'buy_product' => 0,
+                        'buy_delivery' => 0,
+                        'packaging' => 0,
+                        'buy_total' => 0,
+                        'collected' => 0,
+                        'received' => 0,
+                        'advance' => 0,
+                        'advance_by' => null,
+                        'amount' => (float)($p['amount'] ?? 0),
+                        'running' => 0,
+                    ];
+                }
+            } catch (\Throwable $e) {}
+
+            usort($rows, fn($a, $b) => strcmp($b['at'], $a['at']));
+            json_res(['data' => $rows]);
+        }
+
+        if ($rpcName === 'lp_bootstrap') {
+            $host = trim($input['_host'] ?? '');
+
+            $settings = [];
+            try {
+                $sRows = $pdo->query("SELECT `key`, `value` FROM global_settings")->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($sRows as $sr) {
+                    $val = $sr['value'];
+                    if (is_string($val) && (str_starts_with($val, '{') || str_starts_with($val, '['))) {
+                        $dec = json_decode($val, true);
+                        if (json_last_error() === JSON_ERROR_NONE) $val = $dec;
+                    }
+                    $settings[$sr['key']] = $val;
+                }
+            } catch (\Throwable $e) {}
+
+            $store = null;
+            if ($host) {
+                try {
+                    $dStmt = $pdo->prepare("SELECT r.code, r.status FROM reseller_domains rd JOIN resellers r ON rd.reseller_id = r.id WHERE rd.domain = ? LIMIT 1");
+                    $dStmt->execute([$host]);
+                    $store = $dStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+                } catch (\Throwable $e) {}
+            }
+
+            $prods = [];
+            try {
+                $pStmt = $pdo->query("SELECT id, name, slug, main_image, price, base_price, description FROM products WHERE is_active = 1 ORDER BY created_at DESC LIMIT 12");
+                $prods = $pStmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (\Throwable $e) {}
+
+            $cats = [];
+            try {
+                $cStmt = $pdo->query("SELECT c.id, c.name, c.slug, c.image_url, COUNT(p.id) as product_count FROM categories c LEFT JOIN products p ON p.category_id = c.id WHERE c.is_active = 1 GROUP BY c.id ORDER BY c.sort_order ASC");
+                $cats = $cStmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (\Throwable $e) {}
+
+            $totalProducts = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE is_active = 1")->fetchColumn();
+            $totalCategories = (int)$pdo->query("SELECT COUNT(*) FROM categories WHERE is_active = 1")->fetchColumn();
+            $totalSales = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered'")->fetchColumn();
+
+            json_res(['data' => [
+                'settings' => $settings,
+                'store' => $store,
+                'stats' => [
+                    'totalProducts' => $totalProducts,
+                    'totalCategories' => $totalCategories,
+                    'totalSales' => $totalSales,
+                ],
+                'categories' => $cats,
+                'products' => $prods,
+            ]]);
+        }
+
+        if ($rpcName === 'store_bootstrap') {
+            $code = trim($input['_code'] ?? '');
+            $reseller = null;
+            try {
+                $rStmt = $pdo->prepare("SELECT * FROM resellers WHERE code = ? LIMIT 1");
+                $rStmt->execute([$code]);
+                $reseller = $rStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            } catch (\Throwable $e) {}
+
+            $listings = [];
+            $menu = [];
+            $pixels = [];
+            if ($reseller) {
+                try {
+                    $lStmt = $pdo->prepare("SELECT rl.*, p.name, p.slug, p.description, p.main_image, p.price as suggested_price, p.base_price, p.category_id, p.brand_id, p.package_cost, p.delivery_inside, p.delivery_outside FROM reseller_listings rl JOIN products p ON rl.product_id = p.id WHERE rl.reseller_id = ? AND rl.is_active = 1 AND p.is_active = 1");
+                    $lStmt->execute([$reseller['id']]);
+                    $listings = $lStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    $imgStmt = $pdo->query("SELECT * FROM product_images ORDER BY is_primary DESC, sort_order ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $imgsByProd = [];
+                    foreach ($imgStmt as $img) {
+                        $imgsByProd[$img['product_id']][] = $img;
+                    }
+                    foreach ($listings as &$l) {
+                        $l['product'] = [
+                            'id' => $l['product_id'],
+                            'name' => $l['name'],
+                            'slug' => $l['slug'],
+                            'description' => $l['description'],
+                            'main_image' => $l['main_image'],
+                            'images' => $imgsByProd[$l['product_id']] ?? [],
+                            'product_images' => $imgsByProd[$l['product_id']] ?? [],
+                            'price' => $l['selling_price'] ?? $l['suggested_price'],
+                            'reseller_price' => $l['base_price'],
+                            'packaging_cost' => $l['package_cost'],
+                            'delivery_inside' => $l['delivery_inside'],
+                            'delivery_outside' => $l['delivery_outside'],
+                        ];
+                    }
+                } catch (\Throwable $e) {}
+
+                try {
+                    $mStmt = $pdo->prepare("SELECT * FROM reseller_menu_items WHERE reseller_id = ? ORDER BY sort_order ASC");
+                    $mStmt->execute([$reseller['id']]);
+                    $menu = $mStmt->fetchAll(PDO::FETCH_ASSOC);
+                } catch (\Throwable $e) {}
+
+                try {
+                    $pxStmt = $pdo->prepare("SELECT platform, pixel_id FROM marketing_configs WHERE reseller_id = ? OR reseller_id IS NULL");
+                    $pxStmt->execute([$reseller['id']]);
+                    $pixels = $pxStmt->fetchAll(PDO::FETCH_ASSOC);
+                } catch (\Throwable $e) {}
+            }
+
+            $cats = $pdo->query("SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+            $settings = [];
+            try {
+                $sRows = $pdo->query("SELECT `key`, `value` FROM global_settings")->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($sRows as $sr) {
+                    $val = $sr['value'];
+                    if (is_string($val) && (str_starts_with($val, '{') || str_starts_with($val, '['))) {
+                        $dec = json_decode($val, true);
+                        if (json_last_error() === JSON_ERROR_NONE) $val = $dec;
+                    }
+                    $settings[$sr['key']] = $val;
+                }
+            } catch (\Throwable $e) {}
+
+            $paymentMethods = [
+                ['method' => 'cod', 'label' => 'Cash on Delivery (ক্যাশ অন ডেলিভারি)', 'instructions' => null, 'reseller_id' => null]
+            ];
+
+            json_res(['data' => [
+                'store' => $reseller,
+                'listings' => $listings,
+                'categories' => $cats,
+                'menu' => $menu,
+                'delivery' => $settings['delivery'] ?? null,
+                'settings' => $settings,
+                'payment_methods' => $paymentMethods,
+                'pixels' => $pixels,
+            ]]);
+        }
+
+        if ($rpcName === 'current_reseller_id') {
+            $rid = null;
+            if ($user) {
+                $rStmt = $pdo->prepare("SELECT id FROM resellers WHERE user_id = ? LIMIT 1");
+                $rStmt->execute([$user['id']]);
+                $rid = $rStmt->fetchColumn() ?: null;
+            }
+            json_res(['data' => $rid]);
+        }
+
+        if ($rpcName === 'reseller_auto_approve') {
+            json_res(['data' => false]);
+        }
+
+        if ($rpcName === 'cleanup_counts') {
+            json_res(['data' => [
+                'audit_logs' => 0,
+                'store_visits' => 0,
+                'notification_logs' => 0,
+            ]]);
+        }
+
+        if ($rpcName === 'cleanup_purge') {
+            json_res(['data' => true]);
+        }
+
+        if ($rpcName === 'cf_config_get' || $rpcName === 'cf_config_settings' || $rpcName === 'cf_dns_guide') {
+            $cf = [];
+            try {
+                $cf = $pdo->query("SELECT * FROM cloudflare_config LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
+            } catch (\Throwable $e) {}
+            json_res(['data' => $cf]);
+        }
+
+        if ($rpcName === 'cf_config_save') {
+            json_res(['data' => true]);
+        }
+
+        if ($rpcName === 'log_store_visit') {
+            json_res(['data' => true]);
+        }
+
+        if ($rpcName === 'store_seo') {
+            json_res(['data' => [
+                'title' => 'ResellSeba Store',
+                'description' => 'Best products from ResellSeba',
+                'image' => null,
+            ]]);
         }
 
         if ($rpcName === 'order_nav_count') {
