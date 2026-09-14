@@ -8,9 +8,22 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
-  ssr: {
-    noExternal: true,
+  server: {
+    port: 3000,
+    proxy: {
+      "/api": {
+        target: "https://petzavo.com",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/uploads": {
+        target: "https://petzavo.com",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
+  ssr: {},
   build: {
     target: "es2022",
     cssCodeSplit: true,
