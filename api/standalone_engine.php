@@ -1368,12 +1368,15 @@ function handle_standalone_request() {
 
         if ($rpcName === 'admin_delete_user' || $rpcName === 'admin_delete_auth_user') {
             $uid = $input['_user_id'] ?? ($input['userId'] ?? ($input['user_id'] ?? ($input['target_user_id'] ?? null)));
+            $deletedRows = 0;
             if ($uid) {
                 $pdo->prepare("DELETE FROM user_roles WHERE user_id = ?")->execute([$uid]);
                 $pdo->prepare("DELETE FROM profiles WHERE user_id = ?")->execute([$uid]);
-                $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$uid]);
+                $del = $pdo->prepare("DELETE FROM users WHERE id = ?");
+                $del->execute([$uid]);
+                $deletedRows = $del->rowCount();
             }
-            json_res(['data' => true, 'ok' => true]);
+            json_res(['data' => true, 'ok' => true, 'deleted_rows' => $deletedRows, 'received_uid' => $uid]);
         }
 
         if ($rpcName === 'courier_booking_options') {
