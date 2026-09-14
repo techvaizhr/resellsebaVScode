@@ -27,12 +27,12 @@ export default defineConfig({
     port: 3000,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:8000",
+        target: process.env.VITE_BACKEND_URL || "https://petzavo.com",
         changeOrigin: true,
         secure: false,
       },
       "/uploads": {
-        target: "http://127.0.0.1:8000",
+        target: process.env.VITE_BACKEND_URL || "https://petzavo.com",
         changeOrigin: true,
         secure: false,
       },

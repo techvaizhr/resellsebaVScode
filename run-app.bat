@@ -16,8 +16,11 @@ if not exist "%PHP_EXE%" (
     exit /b 1
 )
 
+rem Clean up any previous dangling processes on port 3000 and 8000
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 3000,8000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }" >nul 2>&1
+
 echo [1/3] Starting Local Backend Server on port 8000...
-start "ResellSeba Backend (Port 8000)" /B "%PHP_EXE%" -c "%PHP_INI%" -S 127.0.0.1:8000 -t "%~dp0backend\public"
+start "ResellSeba Backend (Port 8000)" /B "%PHP_EXE%" -c "%PHP_INI%" -S 127.0.0.1:8000 "%~dp0local_router.php"
 
 echo [2/3] Checking Node.js frontend dependencies...
 if not exist node_modules (

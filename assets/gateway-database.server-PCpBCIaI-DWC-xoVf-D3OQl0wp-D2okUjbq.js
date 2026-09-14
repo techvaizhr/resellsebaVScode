@@ -1,0 +1,1 @@
+import{d as e}from"./index-HJcsagGn.js";function t(){return e}export{t as gatewayDatabase};

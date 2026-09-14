@@ -58,22 +58,7 @@ try {
     // DB credentials not ready yet
 }
 
-// 4. If Composer vendor exists, boot full Laravel
-$vendorAutoload = __DIR__ . '/../backend/vendor/autoload.php';
-if (file_exists($vendorAutoload)) {
-    define('LARAVEL_START', microtime(true));
-    if (file_exists($maintenance = __DIR__.'/../backend/storage/framework/maintenance.php')) {
-        require $maintenance;
-    }
-    require $vendorAutoload;
-    try {
-        $app = require_once __DIR__.'/../backend/bootstrap/app.php';
-        $app->handleRequest(\Illuminate\Http\Request::capture());
-        exit;
-    } catch (\Throwable $e) {
-        // Fallback to standalone if Laravel throws bootstrap error
-    }
-}
+// 4. Standalone Pure-PHP Engine (Fast, zero-dependency, matches production)
 
 // 4. Standalone Pure-PHP Engine (Zero Composer Dependencies Needed!)
 require_once __DIR__ . '/standalone_engine.php';

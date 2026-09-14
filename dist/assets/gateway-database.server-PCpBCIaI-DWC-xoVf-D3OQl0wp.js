@@ -1,1 +1,0 @@
-import{s as e}from"./index-avz-Zw5d.js";function t(){return e}export{t as gatewayDatabase};
