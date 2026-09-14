@@ -28,5 +28,39 @@ export const getRouter = () => {
   // @ts-ignore
   router.onFocus = () => {};
 
+  // Guarantee getMatchedRoutes always returns an object with an iterable matchedRoutes array
+  const origGetMatchedRoutes = router.getMatchedRoutes?.bind(router);
+  if (origGetMatchedRoutes) {
+    router.getMatchedRoutes = (pathname: string) => {
+      try {
+        const res = origGetMatchedRoutes(pathname);
+        if (Array.isArray(res)) {
+          return {
+            matchedRoutes: res,
+            foundRoute: res[res.length - 1],
+            routeParams: {},
+          };
+        }
+        if (res) {
+          if (!Array.isArray(res.matchedRoutes)) {
+            res.matchedRoutes = res.matchedRoutes ? [res.matchedRoutes] : [];
+          }
+          if (!res.routeParams) {
+            res.routeParams = {};
+          }
+          return res;
+        }
+      } catch (err) {
+        console.error("Error in getMatchedRoutes wrapper:", err);
+      }
+      return {
+        matchedRoutes: [],
+        foundRoute: undefined,
+        routeParams: {},
+      };
+    };
+  }
+
   return router;
 };
+

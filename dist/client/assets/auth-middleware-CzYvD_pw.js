@@ -1,0 +1,1 @@
+import{vt as e}from"./index-DVzZt72C.js";var t=e({type:`function`});export{t};
