@@ -1,0 +1,1 @@
+import{vt as e}from"./index-C2JymIMW.js";var t=e({type:`function`});export{t};

@@ -11,7 +11,7 @@ class Profile extends Model
     use HasUuids, HasFactory;
 
     protected $fillable = [
-        'user_id', 'first_name', 'last_name', 'address', 'city', 'state', 'country', 'zip_code', 'is_phone_verified', 'avatar'
+        'user_id', 'full_name', 'phone', 'avatar_url', 'first_name', 'last_name', 'address', 'city', 'state', 'country', 'zip_code', 'is_phone_verified', 'avatar'
     ];
 
     protected function casts(): array

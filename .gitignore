@@ -55,5 +55,8 @@ backend/storage/*.key
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+.tools/
+*.sqlite
+*.sqlite3
+dist.zip
 

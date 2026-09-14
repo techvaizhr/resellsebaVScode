@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
                 'id' => $adminId,
                 'name' => 'Super Admin',
                 'full_name' => 'Super Admin',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('password'),
                 'is_phone_verified' => true,
             ]
         );
@@ -63,6 +63,12 @@ class DatabaseSeeder extends Seeder
                     'delivery' => [
                         'inside_dhaka' => 60,
                         'outside_dhaka' => 120,
+                        'sub_dhaka' => 100,
+                    ],
+                ],
+            ]
+        );
+
         // Seed Reseller Policies
         $policies = [
             [
@@ -206,6 +212,93 @@ class DatabaseSeeder extends Seeder
             \Illuminate\Support\Facades\DB::table('reseller_policies')->updateOrInsert(
                 ['id' => $policy['id']],
                 $policy
+            );
+        }
+
+        // Seed Sample Category & Brand
+        $catId = '11111111-1111-1111-1111-111111111101';
+        \Illuminate\Support\Facades\DB::table('categories')->updateOrInsert(
+            ['slug' => 'gadgets-electronics'],
+            [
+                'id' => $catId,
+                'name' => 'গ্যাজেট ও ইলেকট্রনিক্স',
+                'is_active' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        $brandId = '22222222-2222-2222-2222-222222222201';
+        \Illuminate\Support\Facades\DB::table('brands')->updateOrInsert(
+            ['slug' => 'smart-tech'],
+            [
+                'id' => $brandId,
+                'name' => 'Smart Tech',
+                'is_active' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        // Seed Sample Products
+        $products = [
+            [
+                'id' => '33333333-3333-3333-3333-333333333301',
+                'slug' => 't900-ultra-smartwatch',
+                'name' => 'T900 Ultra Smartwatch Series 8',
+                'sku' => 'T900-ULTRA-01',
+                'product_code' => 'P-1001',
+                'brand_id' => $brandId,
+                'category_id' => $catId,
+                'description' => 'প্রিমিয়াম কোয়ালিটি T900 Ultra স্মার্টওয়াচ। ব্লুটুথ কলিং, হার্ট রেট ট্র্যাকিং এবং অলওয়েজ অন ডিসপ্লে সুবিধাসম্পন্ন।',
+                'price' => 1250.00,
+                'buying_price' => 850.00,
+                'base_price' => 850.00,
+                'stock' => 100,
+                'is_active' => 1,
+                'approval_status' => 'approved',
+                'main_image' => 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600',
+            ],
+            [
+                'id' => '33333333-3333-3333-3333-333333333302',
+                'slug' => 'm10-tws-wireless-earbuds',
+                'name' => 'M10 TWS Wireless Earbuds with Powerbank',
+                'sku' => 'M10-TWS-02',
+                'product_code' => 'P-1002',
+                'brand_id' => $brandId,
+                'category_id' => $catId,
+                'description' => 'M10 TWS ট্রু ওয়্যারলেস এয়ারবাডস। হাইফাই সাউন্ড এবং 2000mAh চার্জিং কেস।',
+                'price' => 650.00,
+                'buying_price' => 420.00,
+                'base_price' => 420.00,
+                'stock' => 150,
+                'is_active' => 1,
+                'approval_status' => 'approved',
+                'main_image' => 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600',
+            ],
+            [
+                'id' => '33333333-3333-3333-3333-333333333303',
+                'slug' => 'portable-mini-fan-rechargeable',
+                'name' => 'Portable Mini Rechargeable Neck Fan',
+                'sku' => 'FAN-MINI-03',
+                'product_code' => 'P-1003',
+                'brand_id' => $brandId,
+                'category_id' => $catId,
+                'description' => 'গরমে আরামদায়ক ব্যবহারের জন্য পোর্টেবল রিচার্জেবল নেক ফ্যান। ৩ স্পিড মোড এবং দীর্ঘস্থায়ী ব্যাটারি।',
+                'price' => 850.00,
+                'buying_price' => 550.00,
+                'base_price' => 550.00,
+                'stock' => 75,
+                'is_active' => 1,
+                'approval_status' => 'approved',
+                'main_image' => 'https://images.unsplash.com/photo-1618944847828-82e943c3?w=600',
+            ],
+        ];
+
+        foreach ($products as $p) {
+            \Illuminate\Support\Facades\DB::table('products')->updateOrInsert(
+                ['slug' => $p['slug']],
+                array_merge($p, ['created_at' => now(), 'updated_at' => now()])
             );
         }
     }
