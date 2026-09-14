@@ -44,6 +44,10 @@ Options -Indexes
     ExpiresActive On
     ExpiresDefault "access plus 1 month"
 
+    # Dynamic API and HTML must never be cached by browser
+    ExpiresByType application/json "access plus 0 seconds"
+    ExpiresByType text/html "access plus 0 seconds"
+
     ExpiresByType text/css "access plus 1 year"
     ExpiresByType application/javascript "access plus 1 year"
     ExpiresByType text/javascript "access plus 1 year"
@@ -59,6 +63,14 @@ Options -Indexes
     ExpiresByType font/woff2 "access plus 1 year"
     ExpiresByType font/woff "access plus 1 year"
     ExpiresByType font/ttf "access plus 1 year"
+</IfModule>
+
+<IfModule mod_headers.c>
+    <If "%{REQUEST_URI} =~ m#^/api#">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </If>
 </IfModule>
 
 # cPanel CloudLinux Passenger Node.js Configuration

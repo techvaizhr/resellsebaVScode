@@ -817,7 +817,16 @@ class RpcController extends Controller
     private function adminCatalogPage($args)
     {
         $products = Product::with(['brand', 'category', 'images'])->orderBy('created_at', 'desc')->get();
-        return response()->json($products);
+        $categories = Category::orderBy('sort_order')->get();
+        $brands = Brand::orderBy('name')->get();
+        $suppliers = Supplier::orderBy('name')->get();
+
+        return response()->json([
+            'products' => $products,
+            'categories' => $categories,
+            'brands' => $brands,
+            'suppliers' => $suppliers,
+        ]);
     }
 
     private function resellerCatalogPage($user, $args)
@@ -828,7 +837,30 @@ class RpcController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
         });
-        return response()->json($products);
+
+        $categories = Category::where('is_active', true)->orderBy('sort_order')->get();
+        $brands = Brand::orderBy('name')->get();
+
+        $resellerId = null;
+        $listedProductIds = [];
+        if ($user) {
+            $reseller = Reseller::where('user_id', $user->id)->first();
+            if ($reseller) {
+                $resellerId = $reseller->id;
+                $listedProductIds = ResellerListing::where('reseller_id', $reseller->id)
+                    ->where('is_active', true)
+                    ->pluck('product_id')
+                    ->toArray();
+            }
+        }
+
+        return response()->json([
+            'products' => $products,
+            'categories' => $categories,
+            'brands' => $brands,
+            'reseller_id' => $resellerId,
+            'listed_product_ids' => $listedProductIds,
+        ]);
     }
 
     private function createPublicOrder($args)

@@ -12,7 +12,21 @@ export class ApiError extends Error {
   }
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? "/api" : "http://127.0.0.1:8000/api");
+function getBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (typeof window !== "undefined") {
+    return envUrl || "/api";
+  }
+  // Server-side (Node.js SSR) requires absolute URL
+  if (envUrl && envUrl.startsWith("http")) {
+    return envUrl;
+  }
+  const host = (typeof process !== "undefined" && process.env?.APP_URL)
+    ? process.env.APP_URL
+    : "http://127.0.0.1:3000";
+  const prefix = (envUrl || "/api").startsWith("/") ? (envUrl || "/api") : `/${envUrl || "api"}`;
+  return `${host.replace(/\/$/, "")}${prefix}`;
+}
 
 async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
   const cleanEndpoint = endpoint.replace(/^\//, "");
@@ -33,7 +47,7 @@ async function fetchWithConfig(endpoint: string, options: RequestInit = {}) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const url = `${BASE_URL.replace(/\/$/, "")}/${cleanEndpoint}`;
+  const url = `${getBaseUrl().replace(/\/$/, "")}/${cleanEndpoint}`;
 
   const isBackupEndpoint = cleanEndpoint.startsWith("admin/backup");
   const defaultTimeout = isBackupEndpoint ? 300000 : 15000;
