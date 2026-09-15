@@ -35,6 +35,225 @@ foreach ($phpCandidates as $candidate) {
         $phpBin = $candidate;
         break;
     }
+if (session_status() === PHP_SESSION_NONE) {
+    @session_start();
+}
+
+require_once __DIR__ . '/standalone_backup.php';
+$envConfig = get_env_map();
+
+// Handle Logout
+if (isset($_GET['action']) && $_GET['action'] === 'logout') {
+    unset($_SESSION['setup_vendor_auth']);
+    header("Location: setup_vendor.php");
+    exit;
+}
+
+// Verification functions
+function verify_master_secret_key($env, $secret) {
+    if (empty($secret)) return false;
+    $secret = trim($secret);
+    $setupKey = $env['SETUP_KEY'] ?? null;
+    if (!empty($setupKey) && hash_equals($setupKey, $secret)) return true;
+    $appKey = $env['APP_KEY'] ?? null;
+    if (!empty($appKey) && hash_equals($appKey, $secret)) return true;
+    $dbPass = $env['DB_PASSWORD'] ?? null;
+    if (!empty($dbPass) && $dbPass !== 'YOUR_DB_PASSWORD_HERE' && hash_equals($dbPass, $secret)) return true;
+    return false;
+}
+
+function verify_super_admin_login($email, $password) {
+    if (empty($email) || empty($password)) return false;
+    try {
+        $pdo = get_pdo();
+        $stmt = $pdo->prepare("SELECT u.id, u.password FROM users u JOIN user_roles ur ON u.id = ur.user_id WHERE u.email = :email AND ur.role IN ('super_admin', 'admin') LIMIT 1");
+        $stmt->execute([':email' => trim($email)]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$user) return false;
+        return password_verify($password, $user['password']);
+    } catch (\Throwable $e) {
+        return false;
+    }
+}
+
+function verify_sanctum_token_access($rawToken) {
+    if (empty($rawToken)) return false;
+    $rawToken = trim($rawToken);
+    $plain = $rawToken;
+    $tokenId = null;
+    if (str_contains($rawToken, '|')) {
+        list($tokenId, $plain) = explode('|', $rawToken, 2);
+    }
+    $hashed = hash('sha256', $plain);
+    try {
+        $pdo = get_pdo();
+        if ($tokenId !== null) {
+            $stmt = $pdo->prepare("SELECT tokenable_id FROM personal_access_tokens WHERE id = :id AND token = :token LIMIT 1");
+            $stmt->execute([':id' => $tokenId, ':token' => $hashed]);
+        } else {
+            $stmt = $pdo->prepare("SELECT tokenable_id FROM personal_access_tokens WHERE token = :token LIMIT 1");
+            $stmt->execute([':token' => $hashed]);
+        }
+        $userId = $stmt->fetchColumn();
+        if (!$userId) return false;
+
+        $roleStmt = $pdo->prepare("SELECT role FROM user_roles WHERE user_id = :uid AND role IN ('super_admin', 'admin') LIMIT 1");
+        $roleStmt->execute([':uid' => $userId]);
+        return (bool)$roleStmt->fetchColumn();
+    } catch (\Throwable $e) {
+        return false;
+    }
+}
+
+$isAuthorized = !empty($_SESSION['setup_vendor_auth']);
+$loginError = null;
+
+// Brute-force throttling
+$maxAttempts = 5;
+$lockoutTime = 900; // 15 minutes
+$attempts = $_SESSION['setup_login_attempts'] ?? 0;
+$lastAttemptTime = $_SESSION['setup_last_attempt_time'] ?? 0;
+
+if ($attempts >= $maxAttempts && (time() - $lastAttemptTime) < $lockoutTime) {
+    $remaining = ceil(($lockoutTime - (time() - $lastAttemptTime)) / 60);
+    $loginError = "❌ খুব বেশি ভুল চেষ্টার কারণে এক্সেস সাময়িকভাবে স্থগিত রয়েছে। অনুগ্রহ করে {$remaining} মিনিট পর আবার চেষ্টা করুন।";
+}
+
+// 1. Check via URL key (?key=...)
+if (!$isAuthorized && !empty($_GET['key'])) {
+    if (verify_master_secret_key($envConfig, $_GET['key'])) {
+        $isAuthorized = true;
+        $_SESSION['setup_vendor_auth'] = true;
+        unset($_SESSION['setup_login_attempts']);
+    }
+}
+
+// 2. Check via URL token (?token=...)
+if (!$isAuthorized && !empty($_GET['token'])) {
+    if (verify_sanctum_token_access($_GET['token'])) {
+        $isAuthorized = true;
+        $_SESSION['setup_vendor_auth'] = true;
+        unset($_SESSION['setup_login_attempts']);
+    }
+}
+
+// 3. Handle POST Login / Unlock Submission
+if (!$isAuthorized && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['unlock_action'])) {
+    if ($attempts >= $maxAttempts && (time() - $lastAttemptTime) < $lockoutTime) {
+        // already locked
+    } else {
+        $authType = $_POST['auth_type'] ?? 'key';
+        $success = false;
+
+        if ($authType === 'admin') {
+            $email = $_POST['admin_email'] ?? '';
+            $pass = $_POST['admin_password'] ?? '';
+            if (verify_super_admin_login($email, $pass)) {
+                $success = true;
+            }
+        } elseif ($authType === 'key') {
+            $key = $_POST['master_key'] ?? '';
+            if (verify_master_secret_key($envConfig, $key)) {
+                $success = true;
+            }
+        }
+
+        if ($success) {
+            $isAuthorized = true;
+            $_SESSION['setup_vendor_auth'] = true;
+            unset($_SESSION['setup_login_attempts']);
+            unset($_SESSION['setup_last_attempt_time']);
+        } else {
+            $_SESSION['setup_login_attempts'] = $attempts + 1;
+            $_SESSION['setup_last_attempt_time'] = time();
+            $loginError = "❌ ভুল তথ্য! সঠিক সুপার অ্যাডমিন পাসওয়ার্ড অথবা মাস্টার সেটআপ কি প্রদান করুন।";
+        }
+    }
+}
+
+// If NOT authorized, render Lock Screen and EXIT immediately
+if (!$isAuthorized) {
+?>
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <title>🔒 Security Verification — ResellSeba Server Panel</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #06090e; color: #f1f5f9; padding: 24px; min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; }
+    .lock-card { background: #111827; border: 1px solid #1f2937; border-radius: 16px; padding: 32px; max-width: 480px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); }
+    h2 { color: #38bdf8; margin: 0 0 8px; font-size: 20px; display: flex; align-items: center; gap: 8px; }
+    p { font-size: 13px; color: #94a3b8; line-height: 1.6; margin: 0 0 20px; }
+    .tab-nav { display: flex; border-bottom: 1px solid #1f2937; margin-bottom: 20px; }
+    .tab-btn { flex: 1; padding: 10px; background: transparent; border: none; color: #94a3b8; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .tab-btn.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margin-bottom: 6px; }
+    input[type="text"], input[type="email"], input[type="password"] { width: 100%; padding: 10px 14px; background: #0b1120; border: 1px solid #374151; border-radius: 8px; color: #fff; font-size: 13px; outline: none; transition: border-color 0.2s; }
+    input:focus { border-color: #38bdf8; }
+    .btn-submit { width: 100%; padding: 11px; background: #0284c7; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    .btn-submit:hover { background: #0369a1; }
+    .error-box { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px; font-size: 12px; color: #fca5a5; margin-bottom: 16px; line-height: 1.5; }
+    .hint-box { background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.15); border-radius: 8px; padding: 12px; font-size: 12px; color: #7dd3fc; margin-top: 20px; line-height: 1.5; }
+  </style>
+  <script>
+    function setTab(tab) {
+      document.getElementById('form-admin').style.display = tab === 'admin' ? 'block' : 'none';
+      document.getElementById('form-key').style.display = tab === 'key' ? 'block' : 'none';
+      document.getElementById('tab-btn-admin').classList.toggle('active', tab === 'admin');
+      document.getElementById('tab-btn-key').classList.toggle('active', tab === 'key');
+    }
+  </script>
+</head>
+<body>
+  <div class="lock-card">
+    <h2>🛡️ সার্ভার কন্ট্রোল প্যানেল — সিকিউরিটি লক</h2>
+    <p>এই পেজটি শুধুমাত্র সাইট ওনার এবং সুপার অ্যাডমিনের জন্য সুরক্ষিত। অননুমোদিত এক্সেস প্রতিহত করতে নিচে ভেরিফাই করুন:</p>
+
+    <?php if ($loginError): ?>
+      <div class="error-box"><?= htmlspecialchars($loginError) ?></div>
+    <?php endif; ?>
+
+    <div class="tab-nav">
+      <button type="button" id="tab-btn-key" class="tab-btn active" onclick="setTab('key')">🔑 মাস্টার সেটআপ কি (Setup Key)</button>
+      <button type="button" id="tab-btn-admin" class="tab-btn" onclick="setTab('admin')">👤 সুপার অ্যাডমিন লগইন</button>
+    </div>
+
+    <!-- Form: Master Setup Key -->
+    <form id="form-key" method="POST" action="setup_vendor.php">
+      <input type="hidden" name="unlock_action" value="1">
+      <input type="hidden" name="auth_type" value="key">
+      <div class="form-group">
+        <label>মাস্টার সেটআপ কি (Setup Secret Key বা DB Password):</label>
+        <input type="password" name="master_key" required placeholder="আপনার backend/.env ফাইলের SETUP_KEY দিন" autofocus>
+      </div>
+      <button type="submit" class="btn-submit">আনলক করুন (Unlock Panel)</button>
+    </form>
+
+    <!-- Form: Super Admin Login -->
+    <form id="form-admin" method="POST" action="setup_vendor.php" style="display:none;">
+      <input type="hidden" name="unlock_action" value="1">
+      <input type="hidden" name="auth_type" value="admin">
+      <div class="form-group">
+        <label>সুপার অ্যাডমিন ইমেইল:</label>
+        <input type="email" name="admin_email" placeholder="admin@resellseba.com">
+      </div>
+      <div class="form-group">
+        <label>সুপার অ্যাডমিন পাসওয়ার্ড:</label>
+        <input type="password" name="admin_password" placeholder="আপনার পাসওয়ার্ড দিন">
+      </div>
+      <button type="submit" class="btn-submit">লগইন ও আনলক করুন</button>
+    </form>
+
+    <div class="hint-box">
+      <strong>💡 সার্ভার ওনার টিপস:</strong> সাইট প্রথমবার সি-প্যানেলে সেটআপ করার সময় আপনার <code>backend/.env</code> ফাইলে থাকা <code>SETUP_KEY</code> অথবা <code>DB_PASSWORD</code> দিয়ে এই প্যানেলটি সাথে সাথে আনলক করতে পারবেন।
+    </div>
+  </div>
+</body>
+</html>
+<?php
+    exit;
 }
 
 $action = $_GET['action'] ?? (isset($_GET['run']) ? 'composer' : null);
@@ -165,6 +384,16 @@ function run_shell_cmd($cmd, $workingDir) {
   </div>
 
 <div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:12px; margin-bottom:16px;">
+    <div style="font-size:12px; color:#10b981; font-weight:bold; display:flex; align-items:center; gap:6px;">
+      <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981;"></span>
+      সুরক্ষিত মোড: সুপার অ্যাডমিন / সার্ভার ওনার ভেরিফাইড
+    </div>
+    <a href="?action=logout" style="font-size:12px; color:#f87171; text-decoration:none; font-weight:bold; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:5px 14px; border-radius:6px; transition:0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'">
+      🔒 লক করুন (Logout)
+    </a>
+  </div>
+
   <h1>⚙️ ResellSeba Server Deployment & Control Panel</h1>
   <p>Status: 
     <?php if (file_exists($vendorAutoload)): ?>

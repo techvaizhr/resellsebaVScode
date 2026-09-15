@@ -1,1 +1,0 @@
-import{c as e}from"./index-CRupt6LP.js";function t(){return e}export{t as gatewayDatabase};

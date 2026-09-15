@@ -102,7 +102,58 @@ function json_out($data, $code = 200) {
     exit;
 }
 
+function is_authorized_backup_admin() {
+    if (session_status() === PHP_SESSION_NONE) @session_start();
+    if (!empty($_SESSION['setup_vendor_auth'])) return true;
+
+    // Check token from Authorization header or ?token=
+    $token = $_GET['token'] ?? null;
+    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
+    if (!$token && $authHeader && preg_match('/Bearer\s+(.+)/i', $authHeader, $m)) {
+        $token = trim($m[1]);
+    }
+
+    // Check key from ?key=
+    $key = $_GET['key'] ?? $_POST['key'] ?? null;
+    $env = get_env_map();
+    $setupKey = $env['SETUP_KEY'] ?? null;
+    if ($key && !empty($setupKey) && hash_equals($setupKey, $key)) return true;
+    $appKey = $env['APP_KEY'] ?? null;
+    if ($key && !empty($appKey) && hash_equals($appKey, $key)) return true;
+
+    if (!empty($token)) {
+        try {
+            $pdo = get_pdo();
+            $plain = trim($token);
+            $tokenId = null;
+            if (str_contains($plain, '|')) {
+                list($tokenId, $plain) = explode('|', $plain, 2);
+            }
+            $hashed = hash('sha256', $plain);
+            if ($tokenId !== null) {
+                $stmt = $pdo->prepare("SELECT tokenable_id FROM personal_access_tokens WHERE id = :id AND token = :token LIMIT 1");
+                $stmt->execute([':id' => $tokenId, ':token' => $hashed]);
+            } else {
+                $stmt = $pdo->prepare("SELECT tokenable_id FROM personal_access_tokens WHERE token = :token LIMIT 1");
+                $stmt->execute([':token' => $hashed]);
+            }
+            $uid = $stmt->fetchColumn();
+            if ($uid) {
+                $rStmt = $pdo->prepare("SELECT role FROM user_roles WHERE user_id = :uid AND role IN ('super_admin', 'admin') LIMIT 1");
+                $rStmt->execute([':uid' => $uid]);
+                if ($rStmt->fetchColumn()) return true;
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    return false;
+}
+
 function handle_backup_request() {
+    if (!is_authorized_backup_admin()) {
+        json_out(['ok' => false, 'error' => 'অননুমোদিত এক্সেস: ব্যাকআপ ও রিস্টোর করার জন্য সুপার অ্যাডমিন অনুমোদন প্রয়োজন।'], 401);
+    }
+
     // Request path parsing
     $requestUri = $_SERVER['REQUEST_URI'] ?? '';
     $rawPath = parse_url($requestUri, PHP_URL_PATH) ?? '';

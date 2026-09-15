@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
 import { PageHeader } from "@/components/ui-kit";
+import { getToken } from "@/integrations/auth/token";
 import {
   Server,
   RefreshCw,
@@ -15,6 +16,7 @@ import {
   AlertTriangle,
   X,
   Trash2,
+  Lock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/server")({
@@ -45,6 +47,13 @@ function ServerDeploymentPage() {
     }
   }, []);
 
+  const getAuthUrl = (path: string) => {
+    const token = getToken();
+    if (!token) return path;
+    const sep = path.includes("?") ? "&" : "?";
+    return `${path}${sep}token=${encodeURIComponent(token)}`;
+  };
+
   const handleAction = (actionUrl: string) => {
     setCurrentUrl(actionUrl);
     setIframeKey((prev) => prev + 1);
@@ -64,7 +73,8 @@ function ServerDeploymentPage() {
   };
 
   const openNewTab = (path: string = "/api/setup_vendor.php") => {
-    const fullUrl = dynamicOrigin ? `${dynamicOrigin}${path}` : path;
+    const authPath = getAuthUrl(path);
+    const fullUrl = dynamicOrigin ? `${dynamicOrigin}${authPath}` : authPath;
     window.open(fullUrl, "_blank", "noopener,noreferrer");
   };
 
@@ -110,12 +120,12 @@ function ServerDeploymentPage() {
         </div>
 
         <div className="flex items-center gap-3 rounded-xl border border-border bg-card/60 p-3.5 shadow-xs">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
-            <Terminal className="h-5 w-5" />
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <Lock className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[11px] font-medium text-muted-foreground">কন্ট্রোল প্যানেল এন্ডপয়েন্ট</p>
-            <p className="text-xs font-bold text-foreground">/api/setup_vendor.php</p>
+            <p className="text-[11px] font-medium text-muted-foreground">কন্ট্রোল প্যানেল সিকিউরিটি</p>
+            <p className="text-xs font-bold text-foreground">১০০% সুরক্ষিত (Auth Gate)</p>
           </div>
         </div>
 
@@ -299,7 +309,7 @@ function ServerDeploymentPage() {
         <iframe
           ref={iframeRef}
           key={iframeKey}
-          src={currentUrl}
+          src={getAuthUrl(currentUrl)}
           title="Server Deployment Panel"
           onLoad={() => setLoading(false)}
           className="w-full h-[700px] border-0 bg-[#090d16]"

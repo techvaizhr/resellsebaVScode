@@ -43,20 +43,6 @@ if (str_contains($uri, 'admin/backup')) {
     exit;
 }
 
-// 3. Auto-initialize schema from database.sql if database is fresh
-try {
-    require_once __DIR__ . '/standalone_backup.php';
-    $pdo = get_pdo();
-    $stmt = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
-    if ($stmt && count($stmt->fetchAll(PDO::FETCH_COLUMN)) < 5) {
-        $sqlFile = __DIR__ . '/../database.sql';
-        if (file_exists($sqlFile)) {
-            $pdo->exec(file_get_contents($sqlFile));
-        }
-    }
-} catch (\Throwable $e) {
-    // DB credentials not ready yet
-}
 
 // 4. Standalone Pure-PHP Engine (Fast, zero-dependency, matches production)
 
