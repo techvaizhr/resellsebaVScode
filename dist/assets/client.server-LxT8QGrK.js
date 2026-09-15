@@ -1,1 +1,0 @@
-import{c as e}from"./index-BWFF0xYz.js";var t=e;export{t as supabaseAdmin};

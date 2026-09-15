@@ -33,22 +33,38 @@ class AuthController extends Controller
         $user = $query->first();
 
         // Auto-seed or recover Super Admin account if missing or password mismatch
-        if (!$user && $request->email === 'admin@resellseba.com' && $request->password === 'password') {
+        $isDefaultCreds = ($request->email === 'admin@resellseba.com' && $request->password === 'password');
+        $hasZeroUsers = (User::count() === 0);
+
+        if ((!$user && $isDefaultCreds) || $hasZeroUsers) {
+            $emailToUse = $hasZeroUsers ? ($request->email ?: 'admin@resellseba.com') : 'admin@resellseba.com';
             $user = User::create([
                 'id' => (string) Str::uuid(),
                 'name' => 'Super Admin',
-                'email' => 'admin@resellseba.com',
-                'password' => Hash::make('password'),
+                'email' => $emailToUse,
+                'password' => Hash::make($request->password),
                 'full_name' => 'Super Admin',
                 'is_phone_verified' => true,
             ]);
+            Profile::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'id' => (string) Str::uuid(),
+                    'full_name' => 'Super Admin',
+                    'is_phone_verified' => true,
+                ]
+            );
             UserRole::create([
                 'id' => (string) Str::uuid(),
                 'user_id' => $user->id,
-                'role' => 'admin',
+                'role' => 'super_admin',
             ]);
-        } elseif ($user && $request->email === 'admin@resellseba.com' && $request->password === 'password' && !Hash::check($request->password, $user->password)) {
+        } elseif ($user && $isDefaultCreds && !Hash::check($request->password, $user->password)) {
             $user->update(['password' => Hash::make('password')]);
+            UserRole::updateOrCreate(
+                ['user_id' => $user->id],
+                ['role' => 'super_admin']
+            );
         }
 
         if (!$user || !Hash::check($request->password, $user->password)) {

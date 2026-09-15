@@ -77,7 +77,14 @@ function AuthPage() {
         const roles = u?.roles || [];
         if (role === "supplier" || roles.includes("supplier") || u?.supplier) {
           defaultTarget = "/supplier";
-        } else if (role === "super_admin" || roles.includes("super_admin") || role === "staff" || roles.includes("staff")) {
+        } else if (
+          role === "super_admin" ||
+          roles.includes("super_admin") ||
+          role === "admin" ||
+          roles.includes("admin") ||
+          role === "staff" ||
+          roles.includes("staff")
+        ) {
           defaultTarget = "/admin";
         }
         const target =
@@ -177,7 +184,14 @@ function AuthPage() {
         const roles = signInData?.user?.roles || [];
         if (role === "supplier" || roles.includes("supplier") || signInData?.user?.supplier) {
           defaultTarget = "/supplier";
-        } else if (role === "super_admin" || roles.includes("super_admin") || role === "staff" || roles.includes("staff")) {
+        } else if (
+          role === "super_admin" ||
+          roles.includes("super_admin") ||
+          role === "admin" ||
+          roles.includes("admin") ||
+          role === "staff" ||
+          roles.includes("staff")
+        ) {
           defaultTarget = "/admin";
         }
 

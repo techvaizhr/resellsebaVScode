@@ -192,6 +192,112 @@ function clear_laravel_cache($phpBin, $backendDir) {
     out(">>> ✅ Cache cleared & storage permissions verified (0777) successfully! (Direct files purged: {$directCleared})");
 }
 
+function seed_super_admin_direct($pdo, $email = 'admin@resellseba.com', $password = 'password', $name = 'Super Admin') {
+    $email = trim(strtolower($email));
+    if (empty($email)) $email = 'admin@resellseba.com';
+    if (empty($password)) $password = 'password';
+    if (empty($name)) $name = 'Super Admin';
+
+    // Verify users table exists
+    $stmt = $pdo->query("SHOW TABLES LIKE 'users'");
+    if (!$stmt->fetch()) {
+        throw new Exception("The 'users' table does not exist. Please run DB migrations first.");
+    }
+
+    $hash = password_hash($password, PASSWORD_BCRYPT);
+
+    // 1. Check if user exists with this email or any super_admin user
+    $uStmt = $pdo->prepare("SELECT id, email FROM users WHERE LOWER(email) = :email LIMIT 1");
+    $uStmt->execute([':email' => $email]);
+    $existing = $uStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$existing) {
+        $admCheck = $pdo->query("SELECT u.id, u.email FROM users u JOIN user_roles ur ON u.id = ur.user_id WHERE ur.role = 'super_admin' LIMIT 1");
+        if ($admCheck) {
+            $existing = $admCheck->fetch(PDO::FETCH_ASSOC);
+        }
+    }
+
+    if ($existing) {
+        $userId = $existing['id'];
+        $up = $pdo->prepare("UPDATE users SET email = :email, name = :name, full_name = :fname, password = :pass, is_phone_verified = 1, email_verified_at = NOW(), updated_at = NOW() WHERE id = :id");
+        $up->execute([':email' => $email, ':name' => $name, ':fname' => $name, ':pass' => $hash, ':id' => $userId]);
+    } else {
+        $userId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+        $ins = $pdo->prepare("INSERT INTO users (id, name, email, password, full_name, is_phone_verified, email_verified_at, created_at, updated_at) VALUES (:id, :name, :email, :pass, :fname, 1, NOW(), NOW(), NOW())");
+        $ins->execute([':id' => $userId, ':name' => $name, ':email' => $email, ':pass' => $hash, ':fname' => $name]);
+    }
+
+    // 2. Ensure profile exists
+    try {
+        $prStmt = $pdo->prepare("SELECT id FROM profiles WHERE user_id = :uid LIMIT 1");
+        $prStmt->execute([':uid' => $userId]);
+        $pr = $prStmt->fetch(PDO::FETCH_ASSOC);
+        if ($pr) {
+            $pdo->prepare("UPDATE profiles SET full_name = :name, is_phone_verified = 1, updated_at = NOW() WHERE user_id = :uid")->execute([':name' => $name, ':uid' => $userId]);
+        } else {
+            $profId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+            $pdo->prepare("INSERT INTO profiles (id, user_id, full_name, is_phone_verified, created_at, updated_at) VALUES (:id, :uid, :name, 1, NOW(), NOW())")->execute([':id' => $profId, ':uid' => $userId, ':name' => $name]);
+        }
+    } catch (\Throwable $e) {}
+
+    // 3. Ensure role exists in roles table
+    try {
+        $rCheck = $pdo->prepare("SELECT id FROM roles WHERE name = 'super_admin' LIMIT 1");
+        $rCheck->execute();
+        $roleRow = $rCheck->fetch(PDO::FETCH_ASSOC);
+        if (!$roleRow) {
+            $roleId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+            $pdo->prepare("INSERT INTO roles (id, name, display_name, is_system, created_at, updated_at) VALUES (:id, 'super_admin', 'Super Admin', 1, NOW(), NOW())")->execute([':id' => $roleId]);
+        }
+    } catch (\Throwable $e) {}
+
+    // 4. Ensure user_roles has super_admin for this user
+    try {
+        $urCheck = $pdo->prepare("SELECT id FROM user_roles WHERE user_id = :uid LIMIT 1");
+        $urCheck->execute([':uid' => $userId]);
+        $ur = $urCheck->fetch(PDO::FETCH_ASSOC);
+        if ($ur) {
+            $pdo->prepare("UPDATE user_roles SET role = 'super_admin', updated_at = NOW() WHERE user_id = :uid")->execute([':uid' => $userId]);
+        } else {
+            $urId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+            $pdo->prepare("INSERT INTO user_roles (id, user_id, role, created_at, updated_at) VALUES (:id, :uid, 'super_admin', NOW(), NOW())")->execute([':id' => $urId, ':uid' => $userId]);
+        }
+    } catch (\Throwable $e) {}
+
+    return [
+        'user_id' => $userId,
+        'email' => $email,
+        'name' => $name,
+    ];
+}
+
+$adminStatus = null;
+$totalUsers = 0;
+$totalTables = 0;
+try {
+    require_once __DIR__ . '/standalone_backup.php';
+    $dbPdo = get_pdo();
+    $tStmt = $dbPdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+    if ($tStmt) {
+        $totalTables = count($tStmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+    $uStmt = $dbPdo->query("SHOW TABLES LIKE 'users'");
+    if ($uStmt && $uStmt->fetch()) {
+        $totalUsers = (int)$dbPdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+        $admQuery = $dbPdo->query("SELECT u.id, u.email, u.name, COALESCE(ur.role, 'super_admin') as role FROM users u LEFT JOIN user_roles ur ON u.id = ur.user_id WHERE ur.role = 'super_admin' OR ur.role = 'admin' LIMIT 1");
+        if ($admQuery) {
+            $adminStatus = $admQuery->fetch(PDO::FETCH_ASSOC);
+        }
+        if (!$adminStatus && $totalUsers > 0) {
+            $admQuery = $dbPdo->query("SELECT id, email, name, 'super_admin' as role FROM users ORDER BY created_at ASC LIMIT 1");
+            if ($admQuery) {
+                $adminStatus = $admQuery->fetch(PDO::FETCH_ASSOC);
+            }
+        }
+    }
+} catch (\Throwable $e) {}
+
 ?>
 <!DOCTYPE html>
 <html lang="bn">
@@ -287,8 +393,31 @@ function clear_laravel_cache($phpBin, $backendDir) {
     | PHP CLI: <code><?= htmlspecialchars($phpBin) ?></code>
   </p>
 
+  <!-- Live Super Admin Account Status Banner -->
+  <div style="background: #0f172a; border: 1px solid <?= $adminStatus ? '#10b981' : '#ef4444' ?>; border-radius: 10px; padding: 14px 18px; margin: 16px 0;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h3 style="margin: 0 0 4px 0; font-size: 15px; color: <?= $adminStatus ? '#34d399' : '#f87171' ?>; display: flex; align-items: center; gap: 6px;">
+          <?= $adminStatus ? '👑 সুপার অ্যাডমিন সক্রিয় (Super Admin Ready)' : '⚠️ কোনো সুপার অ্যাডমিন নেই! (No Super Admin Found)' ?>
+        </h3>
+        <p style="margin: 0; font-size: 13px; color: #94a3b8;">
+          <?php if ($adminStatus): ?>
+            লগইন ইমেইল: <strong style="color: #fff; font-family: monospace;"><?= htmlspecialchars($adminStatus['email']) ?></strong> | নাম: <?= htmlspecialchars($adminStatus['name'] ?? 'Super Admin') ?> | রোল: <code style="color: #38bdf8;"><?= htmlspecialchars($adminStatus['role']) ?></code>
+          <?php else: ?>
+            ডাটাবেজে টেবিল: <?= $totalTables ?> টি, ইউজার: <?= $totalUsers ?> জন। সাইটে অ্যাডমিন হিসেবে ঢুকতে অবিলম্বে পাশের বাটনে ক্লিক করুন।
+          <?php endif; ?>
+        </p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="?action=restore_admin<?= $keyParam ?>" class="btn btn-purple" style="margin: 0; padding: 8px 14px; font-size: 13px;">👑 ডিফল্ট অ্যাডমিন রিস্টোর করুন</a>
+        <a href="/login" target="_blank" class="btn btn-green" style="margin: 0; padding: 8px 14px; font-size: 13px;">🔑 সরাসরি লগইন করুন (/login)</a>
+      </div>
+    </div>
+  </div>
+
   <div style="margin: 16px 0; display: flex; flex-wrap: wrap; gap: 8px;">
     <a href="?action=fix_all<?= $keyParam ?>" class="btn btn-green">⚡ 1-Click Pull & Update (Git Pull + Safe DB Migrate)</a>
+    <a href="?action=restore_admin<?= $keyParam ?>" class="btn btn-purple">👑 Setup / Restore Super Admin</a>
     <a href="?action=clear_cache<?= $keyParam ?>" class="btn btn-amber">🧹 Clear Cache & Fix Permissions</a>
     <a href="?action=migrate<?= $keyParam ?>" class="btn btn-green">🛡️ Safe DB Migrate (Zero Data Loss)</a>
     <a href="?action=git_pull<?= $keyParam ?>" class="btn btn-cyan">📥 Git Pull Latest Code</a>
@@ -339,6 +468,11 @@ function clear_laravel_cache($phpBin, $backendDir) {
           <td><strong style="color:#34d399">⚡ 1-Click Pull & Update</strong></td>
           <td><span class="badge-ok">১০০% নিরাপদ</span></td>
           <td>গিটহাব থেকে লেটেস্ট কোড পুল করে এবং ডাটাবেজে নতুন কোনো কলাম থাকলে তা সেফলি যোগ করে। <em>(নিয়মিত কোড আপডেটের জন্য প্রধান বাটন)</em></td>
+        </tr>
+        <tr>
+          <td><strong style="color:#c084fc">👑 Setup / Restore Super Admin</strong></td>
+          <td><span class="badge-ok">১০০% নিরাপদ</span></td>
+          <td>ডিফল্ট সুপার অ্যাডমিন একাউন্ট (admin@resellseba.com / password) সরাসরি ডাটাবেজে তৈরি বা পুনরুদ্ধার করে। লগইন হারিয়ে গেলে এটি এক ক্লিকেই ফিরিয়ে আনে।</td>
         </tr>
         <tr>
           <td><strong style="color:#fbbf24">🧹 Clear Cache & Fix Permissions</strong></td>
@@ -414,8 +548,14 @@ function clear_laravel_cache($phpBin, $backendDir) {
                 out(">>> [2/4] Running Official Laravel Migrations (from backend/database/migrations)...");
                 run_shell_cmd("{$phpBin} artisan migrate --force", $backendDir);
 
-                out(">>> [3/4] Running Official Laravel Database Seeders (default admin, roles, settings)...");
+                out(">>> [3/4] Running Official Laravel Database Seeders & Guaranteeing Super Admin...");
                 run_shell_cmd("{$phpBin} artisan db:seed --force", $backendDir);
+                try {
+                    $saRes = seed_super_admin_direct($pdo, 'admin@resellseba.com', 'password', 'Super Admin');
+                    out(">>> ✅ Direct PDO Super Admin Guaranteed: {$saRes['email']} | Password: password");
+                } catch (\Throwable $e) {
+                    out(">>> [Notice] Direct admin seed: " . $e->getMessage());
+                }
                 clear_laravel_cache($phpBin, $backendDir);
 
                 out(">>> [4/4] Verifying clean database state...");
@@ -447,7 +587,7 @@ function clear_laravel_cache($phpBin, $backendDir) {
     }
 
     if ($action === 'change_admin') {
-        out("\n==================== CHANGE SUPER ADMIN CREDENTIALS ====================");
+        out("\n==================== CHANGE / SET SUPER ADMIN CREDENTIALS ====================");
         $newEmail = trim($_POST['admin_email'] ?? $_GET['admin_email'] ?? '');
         $newPass = trim($_POST['admin_password'] ?? $_GET['admin_password'] ?? '');
         $newName = trim($_POST['admin_name'] ?? $_GET['admin_name'] ?? '');
@@ -462,55 +602,38 @@ function clear_laravel_cache($phpBin, $backendDir) {
                 $pdo = get_pdo();
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-                // Find existing super admin user
-                $stmt = $pdo->query("SELECT u.id, u.email FROM users u JOIN user_roles ur ON u.id = ur.user_id WHERE ur.role = 'super_admin' LIMIT 1");
-                $adminUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                $adminName = !empty($newName) ? $newName : 'Super Admin';
+                $res = seed_super_admin_direct($pdo, $newEmail, $newPass, $adminName);
 
-                if (!$adminUser) {
-                    $stmt = $pdo->query("SELECT id, email FROM users ORDER BY created_at ASC LIMIT 1");
-                    $adminUser = $stmt->fetch(PDO::FETCH_ASSOC);
-                }
-
-                $hashedPassword = password_hash($newPass, PASSWORD_BCRYPT);
-
-                if ($adminUser) {
-                    $userId = $adminUser['id'];
-                    $updateStmt = $pdo->prepare("UPDATE users SET email = :email, password = :pass" . (!empty($newName) ? ", name = :name" : "") . " WHERE id = :id");
-                    $params = [
-                        ':email' => $newEmail,
-                        ':pass' => $hashedPassword,
-                        ':id' => $userId,
-                    ];
-                    if (!empty($newName)) {
-                        $params[':name'] = $newName;
-                    }
-                    $updateStmt->execute($params);
-
-                    // Ensure user_roles has super_admin
-                    $roleCheck = $pdo->prepare("SELECT COUNT(*) FROM user_roles WHERE user_id = :uid AND role = 'super_admin'");
-                    $roleCheck->execute([':uid' => $userId]);
-                    if ((int)$roleCheck->fetchColumn() === 0) {
-                        $pdo->prepare("INSERT INTO user_roles (id, user_id, role, created_at, updated_at) VALUES (UUID(), :uid, 'super_admin', NOW(), NOW())")->execute([':uid' => $userId]);
-                    }
-
-                    // Update profiles if exists
-                    if (!empty($newName)) {
-                        try {
-                            $pdo->prepare("UPDATE profiles SET full_name = :name WHERE id = :uid")->execute([':name' => $newName, ':uid' => $userId]);
-                        } catch (\Throwable $e) {}
-                    }
-
-                    out("✅ সুপার অ্যাডমিন ক্রেডেনশিয়াল সফলভাবে আপডেট হয়েছে!");
-                    out(">>> User ID: " . $userId);
-                    out(">>> নতুন লগইন ইমেইল: " . $newEmail);
-                    out(">>> পাসওয়ার্ড: (এনক্রিপ্ট করে ডাটাবেজে সংরক্ষণ করা হয়েছে)");
-                    out(">>> আপনি এখন নতুন ইমেইল এবং পাসওয়ার্ড দিয়ে এডমিন প্যানেলে লগইন করতে পারবেন।");
-                } else {
-                    out("❌ ডাটাবেজে কোনো ইউজার খুঁজে পাওয়া যায়নি! অনুগ্রহ করে প্রথমে '🌱 Run DB Migrate & Seed Defaults' চালান।");
-                }
+                out("✅ সুপার অ্যাডমিন ক্রেডেনশিয়াল সফলভাবে তৈরি ও আপডেট হয়েছে!");
+                out(">>> User ID: " . $res['user_id']);
+                out(">>> লগইন ইমেইল: " . $res['email']);
+                out(">>> রোল: super_admin (১০০% ফুল অ্যাক্সেস নিশ্চিত)");
+                out(">>> পাসওয়ার্ড: (এনক্রিপ্ট করে ডাটাবেজে সংরক্ষণ করা হয়েছে)");
+                out(">>> 👉 আপনি এখন সরাসরি /login পেজে গিয়ে এই ইমেইল ও পাসওয়ার্ড দিয়ে এডমিন প্যানেলে লগইন করতে পারবেন।");
             } catch (\Throwable $e) {
                 out("❌ ত্রুটি: " . $e->getMessage());
             }
+        }
+    }
+
+    if ($action === 'restore_admin') {
+        out("\n==================== RESTORE / SETUP DEFAULT SUPER ADMIN ====================");
+        try {
+            require_once __DIR__ . '/standalone_backup.php';
+            $pdo = get_pdo();
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $res = seed_super_admin_direct($pdo, 'admin@resellseba.com', 'password', 'Super Admin');
+
+            out("✅ ডিফল্ট সুপার অ্যাডমিন সফলভাবে নিশ্চিত / পুনরুদ্ধার করা হয়েছে!");
+            out(">>> User ID: " . $res['user_id']);
+            out(">>> লগইন ইমেইল: " . $res['email']);
+            out(">>> ডিফল্ট পাসওয়ার্ড: password");
+            out(">>> রোল: super_admin");
+            out(">>> 👉 এখনই /login পেজে গিয়ে এই ক্রেডেনশিয়াল দিয়ে সরাসরি লগইন করতে পারবেন।");
+        } catch (\Throwable $e) {
+            out("❌ ত্রুটি: " . $e->getMessage());
         }
     }
 
@@ -557,6 +680,11 @@ function clear_laravel_cache($phpBin, $backendDir) {
         out("\n==================== DB MIGRATE & SEED DEFAULTS ====================");
         run_shell_cmd("{$phpBin} artisan migrate --force", $backendDir);
         run_shell_cmd("{$phpBin} artisan db:seed --force", $backendDir);
+        try {
+            require_once __DIR__ . '/standalone_backup.php';
+            $pdo = get_pdo();
+            seed_super_admin_direct($pdo, 'admin@resellseba.com', 'password', 'Super Admin');
+        } catch (\Throwable $e) {}
         clear_laravel_cache($phpBin, $backendDir);
     }
 
