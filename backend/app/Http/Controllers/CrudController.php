@@ -177,6 +177,10 @@ class CrudController extends Controller
                                 'business_name' => $resellers[$row->reseller_id]->business_name,
                               ]
                             : null;
+                    }
+                }
+            }
+
             if ($table === 'brands') {
                 foreach ($rows as $row) {
                     if (isset($row->image_url) && !isset($row->logo_url)) {
