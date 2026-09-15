@@ -128,10 +128,20 @@ class UploadController extends Controller
         $unusedOnly = filter_var($request->input('unused_only', false), FILTER_VALIDATE_BOOLEAN);
         $search = strtolower($request->input('search', ''));
 
-        $cachedData = Cache::remember('media_library_scanned_index', 60, function () {
-            $baseDir = $this->getUploadBasePath();
-            if (!File::isDirectory($baseDir)) {
-                File::makeDirectory($baseDir, 0755, true, true);
+        $cachedData = Cache::remember('media_library_scanned_index', 30, function () {
+            // Collect all candidate upload base paths
+            $candidateBases = array_filter([
+                base_path('../public/uploads'),
+                base_path('../uploads'),
+                public_path('uploads'),
+            ], fn($d) => File::isDirectory($d));
+
+            if (empty($candidateBases)) {
+                $defaultDir = $this->getUploadBasePath();
+                if (!File::isDirectory($defaultDir)) {
+                    @File::makeDirectory($defaultDir, 0755, true, true);
+                }
+                $candidateBases = [$defaultDir];
             }
 
             // Collect all active image references from DB to detect unused images
@@ -149,31 +159,43 @@ class UploadController extends Controller
                     $usedUrls = $usedUrls->concat(DB::table('categories')->whereNotNull('image_url')->pluck('image_url'));
                 }
                 if (DB::getSchemaBuilder()->hasTable('brands')) {
-                    $usedUrls = $usedUrls->concat(DB::table('brands')->whereNotNull('logo_url')->pluck('logo_url'));
+                    $brandCols = DB::getSchemaBuilder()->getColumnListing('brands');
+                    if (in_array('image_url', $brandCols)) {
+                        $usedUrls = $usedUrls->concat(DB::table('brands')->whereNotNull('image_url')->pluck('image_url'));
+                    }
+                    if (in_array('logo_url', $brandCols)) {
+                        $usedUrls = $usedUrls->concat(DB::table('brands')->whereNotNull('logo_url')->pluck('logo_url'));
+                    }
                 }
                 if (DB::getSchemaBuilder()->hasTable('resellers')) {
-                    $usedUrls = $usedUrls->concat(DB::table('resellers')->whereNotNull('avatar_url')->pluck('avatar_url'));
-                    $usedUrls = $usedUrls->concat(DB::table('resellers')->whereNotNull('logo_url')->pluck('logo_url'));
+                    $rCols = DB::getSchemaBuilder()->getColumnListing('resellers');
+                    if (in_array('avatar_url', $rCols)) $usedUrls = $usedUrls->concat(DB::table('resellers')->whereNotNull('avatar_url')->pluck('avatar_url'));
+                    if (in_array('logo_url', $rCols)) $usedUrls = $usedUrls->concat(DB::table('resellers')->whereNotNull('logo_url')->pluck('logo_url'));
+                    if (in_array('cover_url', $rCols)) $usedUrls = $usedUrls->concat(DB::table('resellers')->whereNotNull('cover_url')->pluck('cover_url'));
                 }
                 if (DB::getSchemaBuilder()->hasTable('reseller_settings')) {
                     $usedUrls = $usedUrls->concat(DB::table('reseller_settings')->pluck('value'));
                 }
                 if (DB::getSchemaBuilder()->hasTable('profiles')) {
-                    $usedUrls = $usedUrls->concat(DB::table('profiles')->whereNotNull('avatar_url')->pluck('avatar_url'));
+                    $pCols = DB::getSchemaBuilder()->getColumnListing('profiles');
+                    if (in_array('avatar_url', $pCols)) $usedUrls = $usedUrls->concat(DB::table('profiles')->whereNotNull('avatar_url')->pluck('avatar_url'));
                 }
                 if (DB::getSchemaBuilder()->hasTable('users')) {
-                    $usedUrls = $usedUrls->concat(DB::table('users')->whereNotNull('avatar_url')->pluck('avatar_url'));
+                    $uCols = DB::getSchemaBuilder()->getColumnListing('users');
+                    if (in_array('avatar_url', $uCols)) $usedUrls = $usedUrls->concat(DB::table('users')->whereNotNull('avatar_url')->pluck('avatar_url'));
                 }
                 if (DB::getSchemaBuilder()->hasTable('admin_notices')) {
-                    $usedUrls = $usedUrls->concat(DB::table('admin_notices')->whereNotNull('image_url')->pluck('image_url'));
+                    $nCols = DB::getSchemaBuilder()->getColumnListing('admin_notices');
+                    if (in_array('image_url', $nCols)) $usedUrls = $usedUrls->concat(DB::table('admin_notices')->whereNotNull('image_url')->pluck('image_url'));
                 }
                 if (DB::getSchemaBuilder()->hasTable('tutorials')) {
-                    $usedUrls = $usedUrls->concat(DB::table('tutorials')->whereNotNull('thumbnail_url')->pluck('thumbnail_url'));
+                    $tCols = DB::getSchemaBuilder()->getColumnListing('tutorials');
+                    if (in_array('thumbnail_url', $tCols)) $usedUrls = $usedUrls->concat(DB::table('tutorials')->whereNotNull('thumbnail_url')->pluck('thumbnail_url'));
                 }
                 if (DB::getSchemaBuilder()->hasTable('global_settings')) {
                     $usedUrls = $usedUrls->concat(DB::table('global_settings')->pluck('value'));
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // ignore db read errors
             }
 
@@ -183,17 +205,18 @@ class UploadController extends Controller
                 $s = trim($val);
                 $usedTokens[strtolower(basename(parse_url($s, PHP_URL_PATH) ?? $s))] = true;
                 $usedTokens[strtolower($s)] = true;
+                $usedTokens[strtolower(ltrim($s, '/'))] = true;
 
-                if (preg_match_all('/\/uploads\/[a-zA-Z0-9_\-\.\/]+/i', $s, $matches)) {
+                if (preg_match_all('/[a-zA-Z0-9_\-\.\/]+\.(webp|png|jpg|jpeg|svg|gif|ico)/i', $s, $matches)) {
                     foreach ($matches[0] as $m) {
                         $usedTokens[strtolower(basename($m))] = true;
+                        $usedTokens[strtolower(ltrim($m, '/'))] = true;
                         $usedTokens[strtolower($m)] = true;
                     }
                 }
             }
 
-            $allFiles = [];
-            $categories = ['products', 'branding', 'brands', 'categories', 'stores', 'avatars', 'notices', 'tutorials'];
+            $knownFolders = ['products', 'branding', 'brands', 'categories', 'stores', 'avatars', 'notices', 'tutorials'];
             $folderCounts = [
                 'all' => 0,
                 'products' => 0,
@@ -205,27 +228,37 @@ class UploadController extends Controller
                 'notices' => 0,
                 'tutorials' => 0,
             ];
+
+            $seenPaths = [];
+            $allFiles = [];
             $totalUnusedCount = 0;
 
-            foreach ($categories as $cat) {
-                $catDir = $baseDir . '/' . $cat;
-                if (!File::isDirectory($catDir)) continue;
+            foreach ($candidateBases as $baseDir) {
+                if (!File::isDirectory($baseDir)) continue;
 
-                $files = File::allFiles($catDir);
+                $files = File::allFiles($baseDir);
                 foreach ($files as $file) {
                     $filename = $file->getFilename();
-                    if ($filename === '.gitkeep') continue;
+                    if ($filename === '.gitkeep' || str_starts_with($filename, '.')) continue;
+
+                    $subRelative = str_replace('\\', '/', $file->getRelativePathname());
+                    $parts = explode('/', trim($subRelative, '/'));
+                    $cat = !empty($parts[0]) && in_array(strtolower($parts[0]), $knownFolders) ? strtolower($parts[0]) : 'products';
+
+                    $relUpload = 'uploads/' . ltrim($subRelative, '/');
+                    $slashUpload = '/' . $relUpload;
+
+                    if (isset($seenPaths[$relUpload])) continue;
+                    $seenPaths[$relUpload] = true;
 
                     $folderCounts[$cat] = ($folderCounts[$cat] ?? 0) + 1;
                     $folderCounts['all']++;
 
                     $lowerName = strtolower($filename);
-                    $subRelative = str_replace('\\', '/', $file->getRelativePathname());
-                    $relUpload = 'uploads/' . $cat . '/' . $subRelative;
-                    $slashUpload = '/' . $relUpload;
+                    $isUsed = isset($usedTokens[$lowerName]) ||
+                              isset($usedTokens[strtolower($relUpload)]) ||
+                              isset($usedTokens[strtolower($slashUpload)]);
 
-                    $isSystemAsset = in_array($cat, ['branding', 'brands', 'categories', 'stores', 'avatars', 'notices', 'tutorials']);
-                    $isUsed = $isSystemAsset || isset($usedTokens[$lowerName]) || isset($usedTokens[strtolower($relUpload)]) || isset($usedTokens[strtolower($slashUpload)]);
                     if (!$isUsed) {
                         $totalUnusedCount++;
                     }
@@ -274,26 +307,37 @@ class UploadController extends Controller
     }
 
     /**
-     * Deletes one or multiple images from uploads.
+     * Deletes one or multiple images from uploads across all possible locations.
      */
     public function deleteImage(Request $request)
     {
         Cache::forget('media_library_scanned_index');
         Cache::forget('media_library_used_tokens');
 
-        $paths = (array) $request->input('paths', $request->input('path', []));
+        $rawPaths = $request->input('paths', $request->input('path', []));
+        $paths = is_array($rawPaths) ? $rawPaths : [$rawPaths];
+
+        $candidateBases = [
+            base_path('../public'),
+            base_path('..'),
+            public_path(),
+        ];
 
         $deleted = [];
         foreach ($paths as $path) {
+            if (empty($path) || !is_string($path)) continue;
             $cleanPath = str_replace([url('/'), asset('')], '', $path);
             $cleanPath = ltrim($cleanPath, '/');
 
-            $targetPath = base_path('../public/' . $cleanPath);
-            if (!File::exists($targetPath)) {
-                $targetPath = public_path($cleanPath);
+            $deletedForThis = false;
+            foreach ($candidateBases as $base) {
+                $targetFile = $base . '/' . $cleanPath;
+                if (File::exists($targetFile)) {
+                    @File::delete($targetFile);
+                    $deletedForThis = true;
+                }
             }
-            if (File::exists($targetPath)) {
-                File::delete($targetPath);
+            if ($deletedForThis) {
                 $deleted[] = $path;
             }
         }

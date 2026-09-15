@@ -1,0 +1,1 @@
+import{c as e}from"./index-CWkMcCpe.js";function t(){return e}export{t as gatewayDatabase};

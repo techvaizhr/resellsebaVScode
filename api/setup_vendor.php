@@ -529,7 +529,6 @@ try {
     <a href="?action=composer<?= $keyParam ?>" class="btn">📦 Run Composer Install</a>
     <a href="test<?= $keyParam ? '?key=' . urlencode($providedKey) : '' ?>" class="btn btn-cyan">🧪 Test API & Database Status</a>
     <a href="/" class="btn btn-purple">🏠 Open Website</a>
-    <a href="?action=wipe_demo<?= $keyParam ?>" class="btn btn-red" onclick="return confirm('🚨 আপনি কি নিশ্চিত যে সমস্ত ক্যাটাগরি, ব্র্যান্ড এবং প্রোডাক্ট মুছে একদম ০ (জিরো) করতে চান? আপনার অ্যাডমিন লগইন সম্পূর্ণ অক্ষত থাকবে।')">🧹 Wipe Demo Categories & Brands</a>
     <button type="button" onclick="triggerHardReset()" class="btn btn-red">⚠️ Fresh DB Reset (Migrations + Seed)</button>
   </div>
 
@@ -610,14 +609,9 @@ try {
           <td>ডাটাবেজ কানেকশন ও এপিআই ঠিকঠাক রেসপন্স করছে কিনা টেস্ট করে।</td>
         </tr>
         <tr>
-          <td><strong style="color:#f43f5e">🧹 Wipe Demo Categories & Brands</strong></td>
-          <td><span class="badge-ok">১০০% অ্যাডমিন সেফ</span></td>
-          <td>সমস্ত ডেমো ক্যাটাগরি, ব্র্যান্ড এবং প্রোডাক্ট ডাটাবেজ থেকে মুছে ০ করে দেয়। <strong>সুপার অ্যাডমিন অ্যাকাউন্ট ও লগইন সম্পূর্ণ অক্ষত থাকবে।</strong></td>
-        </tr>
-        <tr>
           <td><strong style="color:#f87171">⚠️ Fresh DB Reset</strong></td>
           <td><span class="badge-missing">🚨 ডেঞ্জার জোন</span></td>
-          <td><strong>সাবধান!</strong> এটি চালালে সব টেবিল ড্রপ করে backend/database/migrations থেকে একদম ফ্রেশ ডাটাবেজ তৈরি হবে ও ডিফল্ট অ্যাডমিন সিড হবে।</td>
+          <td><strong>সাবধান!</strong> এটি চালালে সব টেবিল ড্রপ করে backend/database/migrations থেকে একদম ফ্রেশ ডাটাবেজ তৈরি হবে ও ডিফল্ট অ্যাডমিন সিড হবে (জিরো ডেমো ডাটা)।</td>
         </tr>
       </tbody>
     </table>
@@ -764,50 +758,6 @@ try {
             out(">>> ডিফল্ট পাসওয়ার্ড: password");
             out(">>> রোল: super_admin");
             out(">>> 👉 এখনই /login পেজে গিয়ে এই ক্রেডেনশিয়াল দিয়ে সরাসরি লগইন করতে পারবেন।");
-        } catch (\Throwable $e) {
-            out("❌ ত্রুটি: " . $e->getMessage());
-        }
-    }
-
-    if ($action === 'wipe_demo') {
-        out("\n==================== 🧹 WIPE DEMO DATA (CATEGORIES, BRANDS & PRODUCTS) ====================");
-        try {
-            require_once __DIR__ . '/standalone_backup.php';
-            $pdo = get_pdo();
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            out(">>> Truncating demo catalog tables (categories, brands, products, images, reseller listings)...");
-            $pdo->exec("SET FOREIGN_KEY_CHECKS=0;");
-            $tablesToWipe = ['order_items', 'orders', 'reseller_listings', 'product_images', 'products', 'categories', 'brands'];
-            $wiped = [];
-            foreach ($tablesToWipe as $tbl) {
-                try {
-                    $check = $pdo->query("SHOW TABLES LIKE '{$tbl}'")->fetch();
-                    if ($check) {
-                        $pdo->exec("TRUNCATE TABLE `{$tbl}`;");
-                        $wiped[] = $tbl;
-                    }
-                } catch (\Throwable $e) {
-                    out(">>> [Notice] {$tbl}: " . $e->getMessage());
-                }
-            }
-            $pdo->exec("SET FOREIGN_KEY_CHECKS=1;");
-
-            clear_laravel_cache($phpBin, $backendDir);
-
-            // Verification counts
-            $catCount = (int)$pdo->query("SELECT COUNT(*) FROM `categories`")->fetchColumn();
-            $brandCount = (int)$pdo->query("SELECT COUNT(*) FROM `brands`")->fetchColumn();
-            $prodCount = (int)$pdo->query("SELECT COUNT(*) FROM `products`")->fetchColumn();
-            $userCount = (int)$pdo->query("SELECT COUNT(*) FROM `users`")->fetchColumn();
-
-            out(">>> Cleaned Tables: " . implode(', ', $wiped));
-            out(">>> ✅ Categories Remaining: {$catCount} (0 Demo)");
-            out(">>> ✅ Brands Remaining: {$brandCount} (0 Demo)");
-            out(">>> ✅ Products Remaining: {$prodCount} (0 Demo)");
-            out(">>> 👑 Super Admin & Users: {$userCount} (সম্পূর্ণ সুরক্ষিত ও সক্রিয়)");
-            out(">>> 🌟 SUCCESS: ডাটাবেজের সমস্ত ডেমো ক্যাটাগরি ও ব্র্যান্ড সফলভাবে ক্লিন করা হয়েছে!");
-            out(">>> এডমিন ড্যাশবোর্ডে এখন ক্যাটাগরি ও ব্র্যান্ড ০ দেখাবে। আপনি এখন নিজের মতো নতুন ক্যাটাগরি ও ব্র্যান্ড তৈরি করতে পারেন।");
         } catch (\Throwable $e) {
             out("❌ ত্রুটি: " . $e->getMessage());
         }

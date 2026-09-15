@@ -11,7 +11,7 @@ class Category extends Model
     use HasUuids, HasFactory;
 
     protected $fillable = [
-        'name', 'slug', 'description', 'image', 'parent_id', 'is_active'
+        'name', 'slug', 'description', 'image_url', 'image', 'parent_id', 'is_active', 'sort_order'
     ];
 
     protected function casts(): array

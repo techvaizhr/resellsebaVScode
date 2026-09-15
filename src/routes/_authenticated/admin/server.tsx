@@ -225,15 +225,6 @@ function ServerDeploymentPage() {
 
           <button
             type="button"
-            onClick={() => handleAction("/api/setup_vendor.php?action=wipe_demo")}
-            className="inline-flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300 transition-colors hover:bg-rose-500/20 active:scale-95"
-          >
-            <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-            <span>🧹 Wipe Demo Data (0 Category & Brand)</span>
-          </button>
-
-          <button
-            type="button"
             onClick={() => setResetModalOpen(true)}
             className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3.5 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-500/20 active:scale-95 transition-all"
           >

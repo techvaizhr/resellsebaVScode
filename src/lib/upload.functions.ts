@@ -59,11 +59,12 @@ export async function listUploadedFilesServer(args?: any): Promise<{
 }
 
 /**
- * Deletes an uploaded file from the server.
+ * Deletes an uploaded file or multiple files from the server.
  */
-export async function deleteUploadedFileServer(args: any): Promise<{ success: boolean }> {
+export async function deleteUploadedFileServer(args: any): Promise<{ success: boolean; ok?: boolean; deleted?: string[] }> {
   const data = args?.data || args;
-  return await api.post<{ success: boolean }>("/upload/delete", {
+  return await api.post<{ success: boolean; ok?: boolean; deleted?: string[] }>("/upload/delete", {
     path: data.path,
+    paths: data.paths,
   });
 }

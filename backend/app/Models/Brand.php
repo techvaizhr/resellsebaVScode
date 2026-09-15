@@ -11,7 +11,7 @@ class Brand extends Model
     use HasUuids, HasFactory;
 
     protected $fillable = [
-        'name', 'slug', 'description', 'logo', 'is_active', 'sort_order'
+        'name', 'slug', 'description', 'image_url', 'logo_url', 'logo', 'is_active', 'sort_order'
     ];
 
     protected function casts(): array

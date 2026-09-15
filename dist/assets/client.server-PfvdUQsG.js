@@ -1,1 +1,0 @@
-import{c as e}from"./index-CVvRS5t3.js";var t=e;export{t as supabaseAdmin};

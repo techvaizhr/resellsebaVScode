@@ -1,1 +1,0 @@
-import{c as e}from"./index-CVvRS5t3.js";function t(){return e}export{t as gatewayDatabase};

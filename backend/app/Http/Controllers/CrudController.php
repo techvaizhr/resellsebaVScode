@@ -107,10 +107,12 @@ class CrudController extends Controller
                 }
                 if ($col === '*' || in_array($col, $tableCols)) {
                     $validCols[] = $col;
+                } elseif ($table === 'brands' && $col === 'logo_url' && in_array('image_url', $tableCols)) {
+                    $validCols[] = 'image_url';
                 }
             }
             if (!empty($validCols) && !in_array('*', $validCols)) {
-                $query->select($validCols);
+                $query->select(array_unique($validCols));
             }
         }
 
@@ -175,6 +177,10 @@ class CrudController extends Controller
                                 'business_name' => $resellers[$row->reseller_id]->business_name,
                               ]
                             : null;
+            if ($table === 'brands') {
+                foreach ($rows as $row) {
+                    if (isset($row->image_url) && !isset($row->logo_url)) {
+                        $row->logo_url = $row->image_url;
                     }
                 }
             }
@@ -223,6 +229,7 @@ class CrudController extends Controller
             return response()->json(['data' => null]);
         }
 
+        $tableCols = DB::getSchemaBuilder()->getColumnListing($table);
         $rows = isset($payload[0]) && is_array($payload[0]) ? $payload : [$payload];
         $inserted = [];
 
@@ -233,6 +240,13 @@ class CrudController extends Controller
             if (!isset($row['created_at'])) $row['created_at'] = now();
             if (!isset($row['updated_at'])) $row['updated_at'] = now();
 
+            // Alias handling for brands: logo_url -> image_url
+            if ($table === 'brands') {
+                if (!empty($row['logo_url']) && empty($row['image_url'])) {
+                    $row['image_url'] = $row['logo_url'];
+                }
+            }
+
             // Encode JSON fields if needed
             foreach ($row as $k => $v) {
                 if (is_array($v) || is_object($v)) {
@@ -240,7 +254,10 @@ class CrudController extends Controller
                 }
             }
 
-            DB::table($table)->insert($row);
+            // Keep only existing columns in table
+            $filteredRow = array_intersect_key($row, array_flip($tableCols));
+
+            DB::table($table)->insert($filteredRow);
             $inserted[] = $row;
         }
 
@@ -257,6 +274,23 @@ class CrudController extends Controller
 
         if (!isset($payload['updated_at'])) {
             $payload['updated_at'] = now();
+        }
+
+        // Check if query is targeting brands
+        $table = null;
+        if (isset($query->from)) {
+            $table = $query->from;
+        }
+
+        if ($table === 'brands') {
+            if (!empty($payload['logo_url']) && empty($payload['image_url'])) {
+                $payload['image_url'] = $payload['logo_url'];
+            }
+        }
+
+        if ($table && DB::getSchemaBuilder()->hasTable($table)) {
+            $tableCols = DB::getSchemaBuilder()->getColumnListing($table);
+            $payload = array_intersect_key($payload, array_flip($tableCols));
         }
 
         foreach ($payload as $k => $v) {
