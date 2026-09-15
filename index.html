@@ -10,31 +10,20 @@
     />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <script>
-      // Clear any legacy Service Workers & CacheStorage immediately
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(regs) {
-          for (var i = 0; i < regs.length; i++) {
-            regs[i].unregister();
-          }
-        });
-      }
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          for (var i = 0; i < names.length; i++) {
-            caches.delete(names[i]);
-          }
-        });
-      }
-    </script>
-    <script type="module" crossorigin src="/assets/index-Ct0nSHq4.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="ResellSeba" />
+    <script type="module" crossorigin src="/assets/index-C4U3OzTl.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-QTnfLwEv.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-charts-CkRyfaGy.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-editor-_X2_vRjM.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-icons-ClLzBSp0.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-ui-B6rhTvP-.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-barcode-BG9m85sK.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-CNWDwX81.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-D4pSnFtk.css">
   </head>
   <body>
     <div id="root"></div>

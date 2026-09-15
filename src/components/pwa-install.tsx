@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Download, CheckCircle2, Smartphone, Monitor, Share2, PlusSquare, MoreVertical, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -111,26 +112,50 @@ export function PwaInstructionModal({
   onPromptInstall: () => void;
   canInstall: boolean;
 }) {
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !mounted || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-2xl my-auto animate-in zoom-in-95 duration-150">
         <button
+          type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+          aria-label="Close"
+          className="absolute right-3.5 top-3.5 grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
 
-        <div className="flex items-center gap-3.5">
+        <div className="flex items-center gap-3.5 pr-8">
           <img
             src="/favicon.ico"
             alt="ResellSeba Icon"
-            className="h-12 w-12 rounded-xl border border-border bg-background p-1 shadow-sm"
+            className="h-11 w-11 shrink-0 rounded-xl border border-border bg-background p-1 shadow-xs"
           />
           <div>
-            <h3 className="text-base font-bold text-foreground">ResellSeba App</h3>
+            <h3 className="text-base font-bold text-foreground leading-snug">ResellSeba App</h3>
             <p className="text-xs text-muted-foreground">সরাসরি আপনার মোবাইল বা কম্পিউটারে ইন্সটল করুন</p>
           </div>
         </div>
@@ -147,7 +172,7 @@ export function PwaInstructionModal({
                   onPromptInstall();
                   onClose();
                 }}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-[0.99]"
               >
                 <Download className="h-4 w-4" /> ১-ক্লিকে অ্যাপ ইন্সটল করুন
               </button>
@@ -194,11 +219,11 @@ export function PwaInstructionModal({
 
           <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
               <span>০ মেগাবাইট স্টোরেজ খরচ</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
               <span>সরাসরি ফুল স্ক্রিন মোড</span>
             </div>
           </div>
@@ -214,7 +239,8 @@ export function PwaInstructionModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

@@ -1,1 +1,0 @@
-import{s as e}from"./index-avz-Zw5d.js";var t=e;export{t as supabaseAdmin};

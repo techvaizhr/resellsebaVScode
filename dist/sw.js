@@ -1,31 +1,21 @@
-// Self-destroying service worker: cleans up all Workbox/PWA caches and unregisters itself immediately.
-self.addEventListener('install', function (e) {
+// ResellSeba PWA Service Worker
+// Enables PWA installation on Mobile & Desktop without caching any API or dynamic data.
+// 100% network-first / live database communication.
+
+self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', function (e) {
-  e.waitUntil(
-    caches.keys().then(function (keys) {
-      return Promise.all(
-        keys.map(function (k) {
-          return caches.delete(k);
-        })
-      );
-    }).then(function () {
-      return self.registration.unregister();
-    }).then(function () {
-      return self.clients.matchAll({ type: 'window' });
-    }).then(function (clients) {
-      clients.forEach(function (client) {
-        if (client && client.navigate) {
-          client.navigate(client.url);
-        }
-      });
-    })
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((k) => caches.delete(k)));
+    }).then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', function (e) {
-  // Let network handle everything directly
+// Pass-through fetch handler — satisfies PWA installability requirements
+// while allowing every request to go directly to network and MySQL database.
+self.addEventListener('fetch', (event) => {
   return;
 });
