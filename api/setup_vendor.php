@@ -35,6 +35,8 @@ foreach ($phpCandidates as $candidate) {
         $phpBin = $candidate;
         break;
     }
+}
+
 require_once __DIR__ . '/standalone_backup.php';
 $env = get_env_map();
 $setupKey = $env['SETUP_KEY'] ?? 'resellseba_setup_sec_2026';
