@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/laravel/client";
 import { clearAppDataCache } from "@/lib/app-data";
 import { PageHeader } from "@/components/ui-kit";
-import { Loader2, Palette, Sparkles, Check, Globe, Shield, Store, Layers, FileText } from "lucide-react";
+import { Loader2, Palette, Sparkles, Check, Globe, Shield, Store, Layers, FileText, KeyRound, User } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { updateSuperAdminCredentials } from "@/lib/user-management.functions";
 import { ImageUploader, type UploadedImage } from "@/components/ImageUploader";
 import { cn } from "@/lib/utils";
 import { useBrandingTheme, applyBrandingThemeDirectly } from "@/lib/branding";
@@ -49,6 +51,14 @@ function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
+  // Super Admin Credentials state
+  const [adminName, setAdminName] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminPasswordConfirm, setAdminPasswordConfirm] = useState("");
+  const [updatingAdmin, setUpdatingAdmin] = useState(false);
+  const saveSuperAdminMutation = useServerFn(updateSuperAdminCredentials);
+
   // Live real-time preview of branding colors and radius
   useBrandingTheme(primary, accent, { radius });
 
@@ -73,9 +83,52 @@ function SettingsPage() {
       }
       const { data: rs } = await supabase.from("resellers").select("code,business_name").eq("status", "active").order("business_name");
       setResellers(rs ?? []);
+
+      // Load Super Admin info
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        setAdminEmail(userData.user.email ?? "");
+        setAdminName(userData.user.user_metadata?.full_name ?? userData.user.user_metadata?.name ?? "Super Admin");
+      }
+
       setLoading(false);
     })();
   }, []);
+
+  async function handleSaveAdminCredentials(e: React.FormEvent) {
+    e.preventDefault();
+    if (!adminEmail.trim()) {
+      toast.error("ইমেইল দিন");
+      return;
+    }
+    if (adminPassword) {
+      if (adminPassword.length < 6) {
+        toast.error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
+        return;
+      }
+      if (adminPassword !== adminPasswordConfirm) {
+        toast.error("পাসওয়ার্ড এবং কনফার্ম পাসওয়ার্ড মেলেনি");
+        return;
+      }
+    }
+    setUpdatingAdmin(true);
+    try {
+      await saveSuperAdminMutation({
+        data: {
+          email: adminEmail.trim(),
+          fullName: adminName.trim() || "Super Admin",
+          password: adminPassword ? adminPassword : undefined,
+        },
+      });
+      toast.success("সুপার অ্যাডমিন লগইন ইমেইল ও পাসওয়ার্ড সফলভাবে আপডেট হয়েছে!");
+      setAdminPassword("");
+      setAdminPasswordConfirm("");
+    } catch (err: any) {
+      toast.error(err?.message || "আপডেট ব্যর্থ হয়েছে");
+    } finally {
+      setUpdatingAdmin(false);
+    }
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -185,6 +238,78 @@ function SettingsPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Super Admin Security & Credentials */}
+      <div className="surface-card space-y-4 p-6 border border-primary/30 shadow-sm bg-card">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
+          <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+            <KeyRound className="h-4 w-4 text-primary" /> Super Admin Credentials (লগইন ইমেইল ও পাসওয়ার্ড পরিবর্তন)
+          </div>
+          <span className="text-[11px] font-bold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+            Super Admin Security
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          সাইট সেটআপ করার পর এখান থেকে সুপার অ্যাডমিনের ডিফল্ট ইমেইল (<code className="text-primary font-mono font-semibold">admin@resellseba.com</code>) এবং পাসওয়ার্ড পরিবর্তন করে আপনার নিজস্ব ব্যক্তিগত ইমেইল ও পাসওয়ার্ড সেট করে নিন।
+        </p>
+
+        <form onSubmit={handleSaveAdminCredentials} className="space-y-4 pt-1">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Super Admin Name">
+              <input
+                type="text"
+                value={adminName}
+                onChange={(e) => setAdminName(e.target.value)}
+                className={inp}
+                placeholder="Super Admin"
+                required
+              />
+            </Field>
+            <Field label="Super Admin Login Email">
+              <input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                className={inp}
+                placeholder="admin@yourdomain.com"
+                required
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="New Password (নতুন পাসওয়ার্ড না বদলালে খালি রাখুন)">
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                className={inp}
+                placeholder="কমপক্ষে ৬ ডিজিটের নতুন পাসওয়ার্ড"
+              />
+            </Field>
+            <Field label="Confirm New Password">
+              <input
+                type="password"
+                value={adminPasswordConfirm}
+                onChange={(e) => setAdminPasswordConfirm(e.target.value)}
+                className={inp}
+                placeholder="পুনরায় নতুন পাসওয়ার্ড লিখুন"
+              />
+            </Field>
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <button
+              type="submit"
+              disabled={updatingAdmin}
+              className="btn-brand inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold shadow-sm hover:shadow active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+            >
+              {updatingAdmin ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Shield className="h-3.5 w-3.5" />}
+              <span>সুপার অ্যাডমিন তথ্য আপডেট করুন</span>
+            </button>
+          </div>
+        </form>
       </div>
 
       <form onSubmit={save} className="grid gap-6 lg:grid-cols-2">

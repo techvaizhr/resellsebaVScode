@@ -187,6 +187,30 @@ function run_shell_cmd($cmd, $workingDir) {
     <button type="button" onclick="triggerHardReset()" class="btn btn-red">⚠️ Fresh DB Reset (Migrations + Seed)</button>
   </div>
 
+  <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 20px 0;">
+    <h3 style="margin-top:0; color:#38bdf8; font-size:16px; display:flex; align-items:center; gap:8px;">
+      🔑 সুপার অ্যাডমিন ক্রেডেনশিয়াল পরিবর্তন (লগইন ইমেইল ও পাসওয়ার্ড)
+    </h3>
+    <p style="font-size:13px; color:#94a3b8; margin-bottom:12px;">
+      সাইট সেটআপ সম্পন্ন করার পর ডিফল্ট ইমেইল-পাসওয়ার্ড পরিবর্তন করতে নিচের ফর্মটি ব্যবহার করুন:
+    </p>
+    <form method="POST" action="?action=change_admin" style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
+      <div style="flex:1; min-width:200px;">
+        <label style="display:block; font-size:12px; color:#cbd5e1; margin-bottom:4px;">নতুন লগইন ইমেইল:</label>
+        <input type="email" name="admin_email" required placeholder="admin@resellseba.com" style="width:100%; padding:8px 12px; background:#0f172a; border:1px solid #475569; border-radius:6px; color:#fff; font-size:13px; box-sizing:border-box;">
+      </div>
+      <div style="flex:1; min-width:200px;">
+        <label style="display:block; font-size:12px; color:#cbd5e1; margin-bottom:4px;">নতুন পাসওয়ার্ড:</label>
+        <input type="text" name="admin_password" required minlength="6" placeholder="কমপক্ষে ৬ অক্ষর দিন" style="width:100%; padding:8px 12px; background:#0f172a; border:1px solid #475569; border-radius:6px; color:#fff; font-size:13px; box-sizing:border-box;">
+      </div>
+      <div style="flex:1; min-width:180px;">
+        <label style="display:block; font-size:12px; color:#cbd5e1; margin-bottom:4px;">অ্যাডমিনের নাম (ঐচ্ছিক):</label>
+        <input type="text" name="admin_name" placeholder="Super Admin" style="width:100%; padding:8px 12px; background:#0f172a; border:1px solid #475569; border-radius:6px; color:#fff; font-size:13px; box-sizing:border-box;">
+      </div>
+      <button type="submit" class="btn btn-green" style="padding:9px 18px; margin:0; cursor:pointer;">💾 অ্যাডমিন ক্রেডেনশিয়াল আপডেট করুন</button>
+    </form>
+  </div>
+
   <div class="guide-card">
     <h3>📖 কোন বাটনের কী কাজ? (Action Guide & Safety Reference)</h3>
     <table>
@@ -303,6 +327,75 @@ function run_shell_cmd($cmd, $workingDir) {
                 out(">>> CRITICAL ERROR: " . $e->getMessage());
             }
         }
+    }
+
+    if ($action === 'change_admin') {
+        out("\n==================== CHANGE SUPER ADMIN CREDENTIALS ====================");
+        $newEmail = trim($_POST['admin_email'] ?? $_GET['admin_email'] ?? '');
+        $newPass = trim($_POST['admin_password'] ?? $_GET['admin_password'] ?? '');
+        $newName = trim($_POST['admin_name'] ?? $_GET['admin_name'] ?? '');
+
+        if (empty($newEmail) || empty($newPass)) {
+            out("❌ অনুগ্রহ করে সঠিক ইমেইল এবং পাসওয়ার্ড প্রদান করুন।");
+        } elseif (strlen($newPass) < 6) {
+            out("❌ পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।");
+        } else {
+            try {
+                require_once __DIR__ . '/standalone_backup.php';
+                $pdo = get_pdo();
+                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+                // Find existing super admin user
+                $stmt = $pdo->query("SELECT u.id, u.email FROM users u JOIN user_roles ur ON u.id = ur.user_id WHERE ur.role = 'super_admin' LIMIT 1");
+                $adminUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$adminUser) {
+                    $stmt = $pdo->query("SELECT id, email FROM users ORDER BY created_at ASC LIMIT 1");
+                    $adminUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                }
+
+                $hashedPassword = password_hash($newPass, PASSWORD_BCRYPT);
+
+                if ($adminUser) {
+                    $userId = $adminUser['id'];
+                    $updateStmt = $pdo->prepare("UPDATE users SET email = :email, password = :pass" . (!empty($newName) ? ", name = :name" : "") . " WHERE id = :id");
+                    $params = [
+                        ':email' => $newEmail,
+                        ':pass' => $hashedPassword,
+                        ':id' => $userId,
+                    ];
+                    if (!empty($newName)) {
+                        $params[':name'] = $newName;
+                    }
+                    $updateStmt->execute($params);
+
+                    // Ensure user_roles has super_admin
+                    $roleCheck = $pdo->prepare("SELECT COUNT(*) FROM user_roles WHERE user_id = :uid AND role = 'super_admin'");
+                    $roleCheck->execute([':uid' => $userId]);
+                    if ((int)$roleCheck->fetchColumn() === 0) {
+                        $pdo->prepare("INSERT INTO user_roles (id, user_id, role, created_at, updated_at) VALUES (UUID(), :uid, 'super_admin', NOW(), NOW())")->execute([':uid' => $userId]);
+                    }
+
+                    // Update profiles if exists
+                    if (!empty($newName)) {
+                        try {
+                            $pdo->prepare("UPDATE profiles SET full_name = :name WHERE id = :uid")->execute([':name' => $newName, ':uid' => $userId]);
+                        } catch (\Throwable $e) {}
+                    }
+
+                    out("✅ সুপার অ্যাডমিন ক্রেডেনশিয়াল সফলভাবে আপডেট হয়েছে!");
+                    out(">>> User ID: " . $userId);
+                    out(">>> নতুন লগইন ইমেইল: " . $newEmail);
+                    out(">>> পাসওয়ার্ড: (এনক্রিপ্ট করে ডাটাবেজে সংরক্ষণ করা হয়েছে)");
+                    out(">>> আপনি এখন নতুন ইমেইল এবং পাসওয়ার্ড দিয়ে এডমিন প্যানেলে লগইন করতে পারবেন।");
+                } else {
+                    out("❌ ডাটাবেজে কোনো ইউজার খুঁজে পাওয়া যায়নি! অনুগ্রহ করে প্রথমে '🌱 Run DB Migrate & Seed Defaults' চালান।");
+                }
+            } catch (\Throwable $e) {
+                out("❌ ত্রুটি: " . $e->getMessage());
+            }
+        }
+    }
 
     if ($action === 'git_pull' || $action === 'fix_all') {
         out("\n==================== [1/2] GIT PULL ====================");

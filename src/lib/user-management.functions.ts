@@ -92,3 +92,35 @@ export const updateAdminUserAccount = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+const updateSuperAdminInput = z.object({
+  email: z.string().email(),
+  fullName: z.string().min(2),
+  password: z.string().min(6).optional(),
+});
+
+/** Direct Super Admin self-credential update (Email, Full Name, Password). */
+export const updateSuperAdminCredentials = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => updateSuperAdminInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const db = context.supabase;
+    const { data: roleRow } = await db
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+
+    if (roleRow?.role !== "super_admin") {
+      throw new Response("Forbidden: Only super admin can change super admin credentials", { status: 403 });
+    }
+
+    const { updateAccount, setPassword } = await import("@/lib/auth-admin.server");
+    await updateAccount(db, context.userId, data.email, data.fullName);
+
+    if (data.password && data.password.trim() !== "") {
+      await setPassword(db, context.userId, data.password.trim());
+    }
+
+    return { ok: true };
+  });
