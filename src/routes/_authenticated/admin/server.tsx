@@ -60,7 +60,7 @@ function ServerDeploymentPage() {
     if (resetInput.trim() !== "RESET") return;
     setResetModalOpen(false);
     setResetInput("");
-    handleAction("/api/setup_vendor.php?action=import_sql&confirm_wipe=RESET_CONFIRMED");
+    handleAction("/api/setup_vendor.php?action=fresh_db&confirm_wipe=RESET_CONFIRMED");
   };
 
   const openNewTab = (path: string = "/api/setup_vendor.php") => {
@@ -203,7 +203,7 @@ function ServerDeploymentPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3.5 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-500/20 active:scale-95 transition-all"
           >
             <AlertTriangle className="h-3.5 w-3.5" />
-            <span>⚠️ Fresh DB Reset (database.sql)</span>
+            <span>⚠️ Fresh DB Reset (Migrations + Seed)</span>
           </button>
         </div>
       </div>
@@ -233,8 +233,8 @@ function ServerDeploymentPage() {
 
             <p className="text-xs text-muted-foreground leading-relaxed">
               এই অ্যাকশনটি চালালে ডাটাবেজের সমস্ত টেবিল ড্রপ (Delete) হয়ে যাবে এবং{" "}
-              <strong className="text-foreground">database.sql</strong> ফাইল থেকে একদম ফ্রেশ ১০০% ক্লিন মাস্টার স্কিমা রিস্টোর হবে।
-              সমস্ত ডামি প্রোডাক্ট, টেস্ট অর্ডার এবং ডাটা সম্পূর্ণরূপে মুছে যাবে।
+              <strong className="text-foreground">backend/database/migrations</strong> ফোল্ডারের ফাইলগুলো থেকে একদম ফ্রেশ ১০০% ক্লিন ডাটাবেজ তৈরি হবে ও ডিফল্ট অ্যাডমিন সিড হবে।
+              সমস্ত টেস্ট প্রোডাক্ট, অর্ডার এবং ডাটা সম্পূর্ণরূপে মুছে ফ্রেশ সিস্টেমে ফিরে যাবে।
             </p>
 
             <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive font-medium">

@@ -122,9 +122,9 @@ function run_shell_cmd($cmd, $workingDir) {
         var inp = document.getElementById('resetInput');
         if (inp) { inp.value = ''; inp.focus(); }
       } else {
-        var input = prompt("🚨 মারাত্মক সতর্কতা (DANGER ZONE)!\n\nসব টেবিল মুছে database.sql থেকে ফ্রেশ সেটআপ করতে টাইপ করুন:\nRESET");
+        var input = prompt("🚨 মারাত্মক সতর্কতা (DANGER ZONE)!\n\nসব টেবিল মুছে migrations থেকে ফ্রেশ সেটআপ করতে টাইপ করুন:\nRESET");
         if (input === "RESET") {
-          window.location.href = "?action=import_sql&confirm_wipe=RESET_CONFIRMED";
+          window.location.href = "?action=fresh_db&confirm_wipe=RESET_CONFIRMED";
         }
       }
     }
@@ -135,7 +135,7 @@ function run_shell_cmd($cmd, $workingDir) {
     function confirmResetAction() {
       var inp = document.getElementById('resetInput');
       if (inp && inp.value.trim() === 'RESET') {
-        window.location.href = "?action=import_sql&confirm_wipe=RESET_CONFIRMED";
+        window.location.href = "?action=fresh_db&confirm_wipe=RESET_CONFIRMED";
       } else {
         alert("❌ কোড মেলেনি! বড় হাতের অক্ষরে RESET টাইপ করুন।");
       }
@@ -151,7 +151,7 @@ function run_shell_cmd($cmd, $workingDir) {
         🚨 মারাত্মক সতর্কতা (DANGER ZONE)
       </h3>
       <p style="font-size:13px; color:#94a3b8; line-height:1.6;">
-        এটি চালালে ডাটাবেজের সমস্ত টেবিল ড্রপ (Delete) হয়ে যাবে এবং <strong>database.sql</strong> ফাইল থেকে একদম ফ্রেশ ১০০% ক্লিন মাস্টার স্কিমা রিস্টোর হবে। সমস্ত ডামি প্রোডাক্ট, টেস্ট অর্ডার এবং ডাটা সম্পূর্ণরূপে মুছে যাবে।
+        এটি চালালে ডাটাবেজের সমস্ত টেবিল ড্রপ (Delete) হয়ে যাবে এবং <strong>backend/database/migrations</strong> ফোল্ডারের ফাইলগুলো থেকে একদম ফ্রেশ ১০০% ক্লিন ডাটাবেজ তৈরি হবে ও ডিফল্ট অ্যাডমিন সিড হবে।
       </p>
       <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); padding:10px; border-radius:8px; font-size:12px; color:#fca5a5; margin-bottom:12px;">
         নিশ্চিত করতে নিচের বক্সে টাইপ করুন: <strong style="color:#fff; font-family:monospace;">RESET</strong>
@@ -184,7 +184,7 @@ function run_shell_cmd($cmd, $workingDir) {
     <a href="?action=composer" class="btn">📦 Run Composer Install</a>
     <a href="test" class="btn btn-cyan">🧪 Test API & Database Status</a>
     <a href="/" class="btn btn-purple">🏠 Open Website</a>
-    <button type="button" onclick="triggerHardReset()" class="btn btn-red">⚠️ Import database.sql (Fresh Setup / Reset)</button>
+    <button type="button" onclick="triggerHardReset()" class="btn btn-red">⚠️ Fresh DB Reset (Migrations + Seed)</button>
   </div>
 
   <div class="guide-card">
@@ -229,9 +229,9 @@ function run_shell_cmd($cmd, $workingDir) {
           <td>ডাটাবেজ কানেকশন ও এপিআই ঠিকঠাক রেসপন্স করছে কিনা টেস্ট করে।</td>
         </tr>
         <tr>
-          <td><strong style="color:#f87171">⚠️ Import database.sql</strong></td>
+          <td><strong style="color:#f87171">⚠️ Fresh DB Reset</strong></td>
           <td><span class="badge-missing">🚨 ডেঞ্জার জোন</span></td>
-          <td><strong>সাবধান!</strong> এটি চালালে সব টেবিল ড্রপ করে database.sql থেকে রিসেট হবে। এটি সুরক্ষিত এবং টাইপ করে নিশ্চিত না করলে রান হবে না।</td>
+          <td><strong>সাবধান!</strong> এটি চালালে সব টেবিল ড্রপ করে backend/database/migrations থেকে একদম ফ্রেশ ডাটাবেজ তৈরি হবে ও ডিফল্ট অ্যাডমিন সিড হবে।</td>
         </tr>
       </tbody>
     </table>
@@ -245,132 +245,64 @@ function run_shell_cmd($cmd, $workingDir) {
     out(">>> Root Directory: " . $rootDir);
     out(">>> Backend Directory: " . $backendDir);
 
-    if ($action === 'import_sql') {
-        out("\n==================== IMPORT DATABASE.SQL (DESTRUCTIVE FRESH RESET) ====================");
+    if ($action === 'fresh_db' || $action === 'import_sql') {
+        out("\n==================== 100% CLEAN DB RESET (LARAVEL MIGRATIONS + SEED) ====================");
         $confirm = $_GET['confirm_wipe'] ?? '';
         if ($confirm !== 'RESET_CONFIRMED') {
             out("❌ নিরাপত্তা সতর্কতা: নিশ্চিতকরণ কোড অনুপস্থিত বা ভুল! ডাটাবেজ রিসেট বাতিল করা হয়েছে।");
             out("কোনো ডাটা পরিবর্তন করা হয়নি। (Action aborted without confirm_wipe=RESET_CONFIRMED)");
         } else {
-            $sqlFile = $rootDir . '/database.sql';
-            if (!file_exists($sqlFile)) {
-                out("ERROR: database.sql not found at " . $sqlFile);
-            } else {
-                try {
-                    require_once __DIR__ . '/standalone_backup.php';
-                    $pdo = get_pdo();
-                    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            try {
+                require_once __DIR__ . '/standalone_backup.php';
+                $pdo = get_pdo();
+                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-                    out(">>> [1/4] Disabling foreign keys and dropping all existing database tables...");
-                    $pdo->exec("SET FOREIGN_KEY_CHECKS=0;");
-                    $stmt = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
-                    $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                    $dropped = 0;
-                    foreach ($tables as $tbl) {
-                        $pdo->exec("DROP TABLE IF EXISTS `{$tbl}`;");
-                        $dropped++;
-                    }
-                    out(">>> Successfully dropped {$dropped} existing tables.");
-
-                    out(">>> [2/4] Reading database.sql and executing statements cleanly...");
-                    $sqlContent = file_get_contents($sqlFile);
-                    $queries = [];
-                    $len = strlen($sqlContent);
-                    $query = '';
-                    $inSingle = false;
-                    $inDouble = false;
-                    $inBacktick = false;
-
-                    for ($i = 0; $i < $len; $i++) {
-                        $char = $sqlContent[$i];
-                        $prev = ($i > 0) ? $sqlContent[$i - 1] : '';
-
-                        if (!$inSingle && !$inDouble && !$inBacktick) {
-                            if ($char === '-' && isset($sqlContent[$i + 1]) && $sqlContent[$i + 1] === '-') {
-                                $end = strpos($sqlContent, "\n", $i);
-                                if ($end === false) break;
-                                $i = $end;
-                                continue;
-                            }
-                            if ($char === '/' && isset($sqlContent[$i + 1]) && $sqlContent[$i + 1] === '*') {
-                                $end = strpos($sqlContent, "*/", $i + 2);
-                                if ($end === false) break;
-                                $i = $end + 1;
-                                continue;
-                            }
-                        }
-
-                        if ($char === "'" && $prev !== '\\' && !$inDouble && !$inBacktick) {
-                            $inSingle = !$inSingle;
-                        } elseif ($char === '"' && $prev !== '\\' && !$inSingle && !$inBacktick) {
-                            $inDouble = !$inDouble;
-                        } elseif ($char === '`' && $prev !== '\\' && !$inSingle && !$inDouble) {
-                            $inBacktick = !$inBacktick;
-                        }
-
-                        if ($char === ';' && !$inSingle && !$inDouble && !$inBacktick) {
-                            $trimmed = trim($query);
-                            if ($trimmed !== '') {
-                                $queries[] = $trimmed;
-                            }
-                            $query = '';
-                            continue;
-                        }
-
-                        $query .= $char;
-                    }
-                    $trimmed = trim($query);
-                    if ($trimmed !== '') {
-                        $queries[] = $trimmed;
-                    }
-
-                    out(">>> Found " . count($queries) . " SQL statements to execute.");
-                    $executed = 0;
-                    $warnings = 0;
-                    foreach ($queries as $q) {
-                        try {
-                            $pdo->exec($q);
-                            $executed++;
-                        } catch (\Throwable $qe) {
-                            $warnings++;
-                            out(">>> [SQL NOTICE]: " . substr(trim($q), 0, 75) . "... -> " . $qe->getMessage());
-                        }
-                    }
-                    $pdo->exec("SET FOREIGN_KEY_CHECKS=1;");
-                    out(">>> Executed {$executed} statements (notices/warnings: {$warnings}).");
-
-                    out(">>> [3/4] Clearing cache and configuration...");
-                    run_shell_cmd("{$phpBin} artisan config:clear", $backendDir);
-                    run_shell_cmd("{$phpBin} artisan cache:clear", $backendDir);
-
-                    out(">>> [4/4] Verifying fresh setup state...");
-                    $vStmt = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
-                    $vTables = $vStmt->fetchAll(PDO::FETCH_COLUMN);
-                    $prodCount = 0;
-                    if (in_array('products', $vTables)) {
-                        $prodCount = (int)$pdo->query("SELECT COUNT(*) FROM `products`")->fetchColumn();
-                    }
-                    $orderCount = 0;
-                    if (in_array('orders', $vTables)) {
-                        $orderCount = (int)$pdo->query("SELECT COUNT(*) FROM `orders`")->fetchColumn();
-                    }
-                    $userCount = 0;
-                    if (in_array('users', $vTables)) {
-                        $userCount = (int)$pdo->query("SELECT COUNT(*) FROM `users`")->fetchColumn();
-                    }
-
-                    out(">>> Tables in Database: " . count($vTables));
-                    out(">>> Verified Products in DB: {$prodCount} (100% Clean!)");
-                    out(">>> Verified Orders in DB: {$orderCount} (100% Clean!)");
-                    out(">>> Verified Users in DB: {$userCount} (Default Super Admin Ready)");
-                    out(">>> 🌟 SUCCESS: Database completely wiped & reset to 100% fresh master setup!");
-                    out(">>> Super Admin Login: admin@resellseba.com | Password: password");
-                } catch (\Throwable $e) {
-                    out(">>> CRITICAL ERROR: " . $e->getMessage());
+                out(">>> [1/4] Dropping all existing tables in database for a clean slate...");
+                $pdo->exec("SET FOREIGN_KEY_CHECKS=0;");
+                $stmt = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+                $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                $dropped = 0;
+                foreach ($tables as $tbl) {
+                    $pdo->exec("DROP TABLE IF EXISTS `{$tbl}`;");
+                    $dropped++;
                 }
+                $pdo->exec("SET FOREIGN_KEY_CHECKS=1;");
+                out(">>> Successfully dropped {$dropped} existing tables.");
+
+                out(">>> [2/4] Running Official Laravel Migrations (from backend/database/migrations)...");
+                run_shell_cmd("{$phpBin} artisan migrate --force", $backendDir);
+
+                out(">>> [3/4] Running Official Laravel Database Seeders (default admin, roles, settings)...");
+                run_shell_cmd("{$phpBin} artisan db:seed --force", $backendDir);
+                run_shell_cmd("{$phpBin} artisan config:clear", $backendDir);
+                run_shell_cmd("{$phpBin} artisan cache:clear", $backendDir);
+
+                out(">>> [4/4] Verifying clean database state...");
+                $vStmt = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+                $vTables = $vStmt->fetchAll(PDO::FETCH_COLUMN);
+                $prodCount = 0;
+                if (in_array('products', $vTables)) {
+                    $prodCount = (int)$pdo->query("SELECT COUNT(*) FROM `products`")->fetchColumn();
+                }
+                $orderCount = 0;
+                if (in_array('orders', $vTables)) {
+                    $orderCount = (int)$pdo->query("SELECT COUNT(*) FROM `orders`")->fetchColumn();
+                }
+                $userCount = 0;
+                if (in_array('users', $vTables)) {
+                    $userCount = (int)$pdo->query("SELECT COUNT(*) FROM `users`")->fetchColumn();
+                }
+
+                out(">>> Total Tables Created from Migrations: " . count($vTables));
+                out(">>> Verified Products: {$prodCount} (100% Clean!)");
+                out(">>> Verified Orders: {$orderCount} (100% Clean!)");
+                out(">>> Verified Users: {$userCount} (Default Super Admin Ready)");
+                out(">>> 🌟 SUCCESS: Database completely built fresh from backend/database/migrations!");
+                out(">>> Super Admin Login: admin@resellseba.com | Password: password");
+            } catch (\Throwable $e) {
+                out(">>> CRITICAL ERROR: " . $e->getMessage());
             }
         }
-    }
 
     if ($action === 'git_pull' || $action === 'fix_all') {
         out("\n==================== [1/2] GIT PULL ====================");

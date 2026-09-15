@@ -1,0 +1,1 @@
+import{c as e}from"./index-zxXuy502.js";function t(){return e}export{t as gatewayDatabase};
