@@ -38,6 +38,7 @@ import {
   ScrollText,
   Home,
   Database,
+  Terminal,
 } from "lucide-react";
 import { AppShell, type NavEntry } from "@/components/AppShell";
 import { BulkScanButton } from "@/components/BulkScanModal";
@@ -163,6 +164,7 @@ const NAV: NavEntry[] = [
       { label: "Custom domains", to: "/admin/domains", icon: <Globe className="h-4 w-4" /> },
       { label: "Cache & cleanup", to: "/admin/maintenance", icon: <Eraser className="h-4 w-4" /> },
       { label: "Backup & Restore", to: "/admin/backup", icon: <Database className="h-4 w-4" /> },
+      { label: "Server & Deploy", to: "/admin/server", icon: <Terminal className="h-4 w-4" /> },
       { label: "Advanced settings", to: "/admin/advanced", icon: <Sliders className="h-4 w-4" /> },
 
       {

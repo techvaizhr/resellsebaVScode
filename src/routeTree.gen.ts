@@ -53,6 +53,7 @@ import { Route as AuthenticatedAdminPayoutsRouteImport } from "./routes/_authent
 import { Route as AuthenticatedAdminPoliciesRouteImport } from "./routes/_authenticated/admin/policies"
 import { Route as AuthenticatedAdminPrivacyRouteImport } from "./routes/_authenticated/admin/privacy"
 import { Route as AuthenticatedAdminResellersRouteImport } from "./routes/_authenticated/admin/resellers"
+import { Route as AuthenticatedAdminServerRouteImport } from "./routes/_authenticated/admin/server"
 import { Route as AuthenticatedAdminSettingsRouteImport } from "./routes/_authenticated/admin/settings"
 import { Route as AuthenticatedAdminStaffRouteImport } from "./routes/_authenticated/admin/staff"
 import { Route as AuthenticatedAdminSubscriptionsRouteImport } from "./routes/_authenticated/admin/subscriptions"
@@ -359,6 +360,12 @@ const AuthenticatedAdminResellersRoute =
   AuthenticatedAdminResellersRouteImport.update({
     id: "/resellers",
     path: "/resellers",
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminServerRoute =
+  AuthenticatedAdminServerRouteImport.update({
+    id: "/server",
+    path: "/server",
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminSettingsRoute =
@@ -751,6 +758,7 @@ export interface FileRoutesByFullPath {
   "/admin/policies": typeof AuthenticatedAdminPoliciesRoute
   "/admin/privacy": typeof AuthenticatedAdminPrivacyRoute
   "/admin/resellers": typeof AuthenticatedAdminResellersRoute
+  "/admin/server": typeof AuthenticatedAdminServerRoute
   "/admin/settings": typeof AuthenticatedAdminSettingsRoute
   "/admin/staff": typeof AuthenticatedAdminStaffRoute
   "/admin/subscriptions": typeof AuthenticatedAdminSubscriptionsRoute
@@ -851,6 +859,7 @@ export interface FileRoutesByTo {
   "/admin/policies": typeof AuthenticatedAdminPoliciesRoute
   "/admin/privacy": typeof AuthenticatedAdminPrivacyRoute
   "/admin/resellers": typeof AuthenticatedAdminResellersRoute
+  "/admin/server": typeof AuthenticatedAdminServerRoute
   "/admin/settings": typeof AuthenticatedAdminSettingsRoute
   "/admin/staff": typeof AuthenticatedAdminStaffRoute
   "/admin/subscriptions": typeof AuthenticatedAdminSubscriptionsRoute
@@ -958,6 +967,7 @@ export interface FileRoutesById {
   "/_authenticated/admin/policies": typeof AuthenticatedAdminPoliciesRoute
   "/_authenticated/admin/privacy": typeof AuthenticatedAdminPrivacyRoute
   "/_authenticated/admin/resellers": typeof AuthenticatedAdminResellersRoute
+  "/_authenticated/admin/server": typeof AuthenticatedAdminServerRoute
   "/_authenticated/admin/settings": typeof AuthenticatedAdminSettingsRoute
   "/_authenticated/admin/staff": typeof AuthenticatedAdminStaffRoute
   "/_authenticated/admin/subscriptions": typeof AuthenticatedAdminSubscriptionsRoute
@@ -1065,6 +1075,7 @@ export interface FileRouteTypes {
     | "/admin/policies"
     | "/admin/privacy"
     | "/admin/resellers"
+    | "/admin/server"
     | "/admin/settings"
     | "/admin/staff"
     | "/admin/subscriptions"
@@ -1165,6 +1176,7 @@ export interface FileRouteTypes {
     | "/admin/policies"
     | "/admin/privacy"
     | "/admin/resellers"
+    | "/admin/server"
     | "/admin/settings"
     | "/admin/staff"
     | "/admin/subscriptions"
@@ -1271,6 +1283,7 @@ export interface FileRouteTypes {
     | "/_authenticated/admin/policies"
     | "/_authenticated/admin/privacy"
     | "/_authenticated/admin/resellers"
+    | "/_authenticated/admin/server"
     | "/_authenticated/admin/settings"
     | "/_authenticated/admin/staff"
     | "/_authenticated/admin/subscriptions"
@@ -1666,6 +1679,13 @@ declare module "@tanstack/react-router" {
       path: "/resellers"
       fullPath: "/admin/resellers"
       preLoaderRoute: typeof AuthenticatedAdminResellersRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    "/_authenticated/admin/server": {
+      id: "/_authenticated/admin/server"
+      path: "/server"
+      fullPath: "/admin/server"
+      preLoaderRoute: typeof AuthenticatedAdminServerRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     "/_authenticated/admin/settings": {
@@ -2119,6 +2139,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminPoliciesRoute: typeof AuthenticatedAdminPoliciesRoute
   AuthenticatedAdminPrivacyRoute: typeof AuthenticatedAdminPrivacyRoute
   AuthenticatedAdminResellersRoute: typeof AuthenticatedAdminResellersRoute
+  AuthenticatedAdminServerRoute: typeof AuthenticatedAdminServerRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminStaffRoute: typeof AuthenticatedAdminStaffRoute
   AuthenticatedAdminSubscriptionsRoute: typeof AuthenticatedAdminSubscriptionsRoute
@@ -2166,6 +2187,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminPoliciesRoute: AuthenticatedAdminPoliciesRoute,
     AuthenticatedAdminPrivacyRoute: AuthenticatedAdminPrivacyRoute,
     AuthenticatedAdminResellersRoute: AuthenticatedAdminResellersRoute,
+    AuthenticatedAdminServerRoute: AuthenticatedAdminServerRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminStaffRoute: AuthenticatedAdminStaffRoute,
     AuthenticatedAdminSubscriptionsRoute: AuthenticatedAdminSubscriptionsRoute,

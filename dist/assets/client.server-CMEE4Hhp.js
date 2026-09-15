@@ -1,0 +1,1 @@
+import{c as e}from"./index-ClVMS3M9.js";var t=e;export{t as supabaseAdmin};

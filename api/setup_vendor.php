@@ -101,14 +101,33 @@ function run_shell_cmd($cmd, $workingDir) {
     .btn-purple:hover { background: #7c3aed; }
     .btn-amber { background: #f59e0b; color: #000; }
     .btn-amber:hover { background: #d97706; }
-    .btn-red { background: #ef4444; }
+    .btn-red { background: #ef4444; font-weight: bold; }
     .btn-red:hover { background: #dc2626; }
     .btn-cyan { background: #06b6d4; }
     .btn-cyan:hover { background: #0891b2; }
     .log-box { background: #06090e; border: 1px solid #334155; border-radius: 8px; padding: 16px; font-family: monospace; font-size: 13px; color: #a5f3fc; line-height: 1.6; white-space: pre-wrap; word-break: break-all; max-height: 500px; overflow-y: auto; margin-top: 15px; }
     .badge-ok { background: #064e3b; color: #6ee7b7; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; }
     .badge-missing { background: #7f1d1d; color: #fca5a5; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; }
+    .guide-card { background: #0d1527; border: 1px solid #1e293b; border-radius: 10px; padding: 18px; margin-top: 20px; font-size: 13px; line-height: 1.7; }
+    .guide-card h3 { margin-top: 0; color: #38bdf8; font-size: 15px; display: flex; items-center; gap: 6px; }
+    .guide-card table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .guide-card th, .guide-card td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #1e293b; }
+    .guide-card th { color: #94a3b8; font-size: 12px; text-transform: uppercase; }
   </style>
+  <script>
+    function triggerHardReset() {
+      var input = prompt(
+        "🚨 মারাত্মক সতর্কতা (DANGER ZONE)!\n\n" +
+        "এটি চালালে আপনার লাইভ ডাটাবেজের সমস্ত অর্ডার, কাস্টমার, পণ্য এবং ইউজার ডাটা সম্পূর্ণরূপে মুছে যাবে এবং database.sql-এর ডিফল্ট অবস্থায় ফিরে যাবে!\n\n" +
+        "আপনি যদি নিশ্চিত থাকেন, তবে নিচের বক্সে বড় হাতের অক্ষরে টাইপ করুন:\nRESET"
+      );
+      if (input === "RESET") {
+        window.location.href = "?action=import_sql&confirm_wipe=RESET_CONFIRMED";
+      } else if (input !== null) {
+        alert("❌ কোড মেলেনি! ডাটাবেজ রিসেট বাতিল করা হয়েছে। কোনো ডাটা পরিবর্তন হয়নি।");
+      }
+    }
+  </script>
 </head>
 <body>
 
@@ -132,7 +151,57 @@ function run_shell_cmd($cmd, $workingDir) {
     <a href="?action=composer" class="btn">📦 Run Composer Install</a>
     <a href="test" class="btn btn-cyan">🧪 Test API & Database Status</a>
     <a href="/" class="btn btn-purple">🏠 Open Website</a>
-    <a href="?action=import_sql" onclick="return confirm('⚠️ সতর্কতা: এটি database.sql ফাইল থেকে ডাটা রিস্টোর করবে এবং বিদ্যমান ডাটা ড্রপ করবে। আপনি কি নিশ্চিত?')" class="btn btn-red">⚠️ Import database.sql (Fresh Setup / Reset)</a>
+    <button type="button" onclick="triggerHardReset()" class="btn btn-red">⚠️ Import database.sql (Fresh Setup / Reset)</button>
+  </div>
+
+  <div class="guide-card">
+    <h3>📖 কোন বাটনের কী কাজ? (Action Guide & Safety Reference)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>বাটন / অ্যাকশন</th>
+          <th>নিরাপত্তা স্তর</th>
+          <th>বিবরণ ও কখন ব্যবহার করবেন</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:#34d399">⚡ 1-Click Pull & Update</strong></td>
+          <td><span class="badge-ok">১০০% নিরাপদ</span></td>
+          <td>গিটহাব থেকে লেটেস্ট কোড পুল করে এবং ডাটাবেজে নতুন কোনো কলাম থাকলে তা সেফলি যোগ করে। <em>(নিয়মিত কোড আপডেটের জন্য প্রধান বাটন)</em></td>
+        </tr>
+        <tr>
+          <td><strong style="color:#34d399">🛡️ Safe DB Migrate</strong></td>
+          <td><span class="badge-ok">১০০% নিরাপদ</span></td>
+          <td>কোড পুল ছাড়া শুধুমাত্র ডাটাবেজ স্কিমা মাইগ্রেশন চালায়। কোনো পুরানো ডাটা বা টেবিল মুছবে না।</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#38bdf8">📥 Git Pull Latest Code</strong></td>
+          <td><span class="badge-ok">১০০% নিরাপদ</span></td>
+          <td>ডাটাবেজে হাত না দিয়ে শুধুমাত্র গিট থেকে কোড ফাইল আপডেট করে।</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#a78bfa">🌱 Run DB Migrate & Seed</strong></td>
+          <td><span class="badge-ok">নিরাপদ (Guarded)</span></td>
+          <td>মাইগ্রেশন চালায় এবং প্রাথমিক ডিফল্ট রোল/পলিসি সিড করে। বিদ্যমান পণ্য বা ডাটা থাকলে ওভাররাইট করে না।</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#93c5fd">📦 Run Composer Install</strong></td>
+          <td><span class="badge-ok">নিরাপদ</span></td>
+          <td>লারাভেল ব্যাকএন্ডের কম্পোজার প্যাকেজ ইনস্টল ও অপটিমাইজ করে।</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#38bdf8">🧪 Test API Status</strong></td>
+          <td><span class="badge-ok">নিরাপদ</span></td>
+          <td>ডাটাবেজ কানেকশন ও এপিআই ঠিকঠাক রেসপন্স করছে কিনা টেস্ট করে।</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#f87171">⚠️ Import database.sql</strong></td>
+          <td><span class="badge-missing">🚨 ডেঞ্জার জোন</span></td>
+          <td><strong>সাবধান!</strong> এটি চালালে সব টেবিল ড্রপ করে database.sql থেকে রিসেট হবে। এটি সুরক্ষিত এবং টাইপ করে নিশ্চিত না করলে রান হবে না।</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <?php if ($action): ?>
@@ -145,22 +214,28 @@ function run_shell_cmd($cmd, $workingDir) {
 
     if ($action === 'import_sql') {
         out("\n==================== IMPORT DATABASE.SQL (DESTRUCTIVE RECOVERY) ====================");
-        $sqlFile = $rootDir . '/database.sql';
-        if (!file_exists($sqlFile)) {
-            out("ERROR: database.sql not found at " . $sqlFile);
+        $confirm = $_GET['confirm_wipe'] ?? '';
+        if ($confirm !== 'RESET_CONFIRMED') {
+            out("❌ নিরাপত্তা সতর্কতা: নিশ্চিতকরণ কোড অনুপস্থিত বা ভুল! ডাটাবেজ রিসেট বাতিল করা হয়েছে।");
+            out("কোনো ডাটা পরিবর্তন করা হয়নি। (Action aborted without confirm_wipe=RESET_CONFIRMED)");
         } else {
-            try {
-                require_once __DIR__ . '/standalone_backup.php';
-                $pdo = get_pdo();
-                $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, 0);
-                out(">>> Connected to database. Reading database.sql...");
-                $sqlContent = file_get_contents($sqlFile);
-                out(">>> Executing SQL statements (size: " . strlen($sqlContent) . " bytes)...");
-                $pdo->exec($sqlContent);
-                out(">>> SUCCESS: database.sql imported cleanly with 0 errors!");
-                out(">>> Super Admin Login: admin@resellseba.com | Password: password");
-            } catch (\Throwable $e) {
-                out(">>> ERROR: " . $e->getMessage());
+            $sqlFile = $rootDir . '/database.sql';
+            if (!file_exists($sqlFile)) {
+                out("ERROR: database.sql not found at " . $sqlFile);
+            } else {
+                try {
+                    require_once __DIR__ . '/standalone_backup.php';
+                    $pdo = get_pdo();
+                    $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, 0);
+                    out(">>> Connected to database. Reading database.sql...");
+                    $sqlContent = file_get_contents($sqlFile);
+                    out(">>> Executing SQL statements (size: " . strlen($sqlContent) . " bytes)...");
+                    $pdo->exec($sqlContent);
+                    out(">>> SUCCESS: database.sql imported cleanly with 0 errors!");
+                    out(">>> Super Admin Login: admin@resellseba.com | Password: password");
+                } catch (\Throwable $e) {
+                    out(">>> ERROR: " . $e->getMessage());
+                }
             }
         }
     }

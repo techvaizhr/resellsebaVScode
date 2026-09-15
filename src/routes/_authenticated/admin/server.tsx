@@ -1,0 +1,222 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, useRef, useEffect } from "react";
+import { PageHeader } from "@/components/ui-kit";
+import {
+  Server,
+  RefreshCw,
+  ExternalLink,
+  Zap,
+  ShieldCheck,
+  GitPullRequest,
+  CheckCircle2,
+  Terminal,
+  Activity,
+  Layers,
+} from "lucide-react";
+
+export const Route = createFileRoute("/_authenticated/admin/server")({
+  component: ServerDeploymentPage,
+  head: () => ({
+    meta: [
+      { title: "Server & Deployment · Admin" },
+      {
+        name: "description",
+        content: "Live server deployment, automated git updates, database migration, and system health control panel.",
+      },
+    ],
+  }),
+});
+
+function ServerDeploymentPage() {
+  const [currentUrl, setCurrentUrl] = useState("/api/setup_vendor.php");
+  const [iframeKey, setIframeKey] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [dynamicOrigin, setDynamicOrigin] = useState("");
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setDynamicOrigin(window.location.origin);
+    }
+  }, []);
+
+  const handleAction = (actionUrl: string) => {
+    setCurrentUrl(actionUrl);
+    setIframeKey((prev) => prev + 1);
+    setLoading(true);
+  };
+
+  const handleRefresh = () => {
+    setIframeKey((prev) => prev + 1);
+    setLoading(true);
+  };
+
+  const openNewTab = (path: string = "/api/setup_vendor.php") => {
+    const fullUrl = dynamicOrigin ? `${dynamicOrigin}${path}` : path;
+    window.open(fullUrl, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Server & Deployment"
+        subtitle="লাইভ সার্ভার আপডেট, গিট পুল, ডাটাবেজ মাইগ্রেশন এবং সিস্টেম কন্ট্রোল প্যানেল"
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs transition-colors hover:bg-muted"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-primary" : ""}`} />
+              <span>রিফ্রেশ ফ্রেম</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => openNewTab(currentUrl)}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs transition-all hover:bg-primary/90 active:scale-95"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span>নতুন ট্যাবে ওপেন করুন</span>
+            </button>
+          </div>
+        }
+      />
+
+      {/* Dynamic Environment & Quick Action Badges */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card/60 p-3.5 shadow-xs">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground">কানেক্টেড হোস্ট (Dynamic Host)</p>
+            <p className="text-xs font-bold text-foreground truncate max-w-[180px]">
+              {dynamicOrigin ? dynamicOrigin.replace(/^https?:\/\//, "") : "Auto Detected"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card/60 p-3.5 shadow-xs">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
+            <Terminal className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground">কন্ট্রোল প্যানেল এন্ডপয়েন্ট</p>
+            <p className="text-xs font-bold text-foreground">/api/setup_vendor.php</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card/60 p-3.5 shadow-xs">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
+            <GitPullRequest className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground">গিটহাব ব্রাঞ্চ (GitHub Branch)</p>
+            <p className="text-xs font-bold text-foreground">origin / main</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card/60 p-3.5 shadow-xs">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
+            <Layers className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground">আর্কিটেকচার মোড</p>
+            <p className="text-xs font-bold text-foreground">Apache SPA + PHP API</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Action Buttons */}
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            ⚡ কুইক অ্যাকশন শর্টকাট (Quick Actions)
+          </h3>
+          <span className="text-[11px] text-muted-foreground">
+            নিচের যেকোনো বাটনে চাপলে সরাসরি সার্ভারে রান হবে
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => handleAction("/api/setup_vendor.php?action=fix_all")}
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-emerald-700 active:scale-95"
+          >
+            <Zap className="h-3.5 w-3.5" />
+            <span>⚡ 1-Click Pull & Update</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleAction("/api/setup_vendor.php?action=migrate")}
+            className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 transition-colors hover:bg-emerald-500/20"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            <span>🛡️ Safe DB Migrate (Zero Data Loss)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleAction("/api/setup_vendor.php?action=git_pull")}
+            className="inline-flex items-center gap-2 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3.5 py-2 text-xs font-semibold text-sky-700 dark:text-sky-300 transition-colors hover:bg-sky-500/20"
+          >
+            <GitPullRequest className="h-3.5 w-3.5" />
+            <span>📥 Git Pull Code</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleAction("/api/test")}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            <Activity className="h-3.5 w-3.5 text-primary" />
+            <span>🧪 Test API & DB Status</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleAction("/api/setup_vendor.php?action=composer")}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            <Server className="h-3.5 w-3.5 text-amber-500" />
+            <span>📦 Composer Install</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Embedded Live Server Control Panel */}
+      <div className="overflow-hidden rounded-2xl border border-border bg-[#090d16] shadow-xl">
+        <div className="flex items-center justify-between border-b border-border/40 bg-[#0d1527] px-4 py-2.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-mono text-[11px] text-emerald-400">LIVE SERVER TERMINAL</span>
+            <span className="text-border">|</span>
+            <span className="font-mono text-[11px] text-muted-foreground truncate max-w-[320px]">
+              {currentUrl}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => openNewTab(currentUrl)}
+            className="inline-flex items-center gap-1.5 text-[11px] text-primary hover:underline"
+          >
+            <span>নতুন ট্যাবে খুলুন</span>
+            <ExternalLink className="h-3 w-3" />
+          </button>
+        </div>
+
+        <iframe
+          ref={iframeRef}
+          key={iframeKey}
+          src={currentUrl}
+          title="Server Deployment Panel"
+          onLoad={() => setLoading(false)}
+          className="w-full h-[700px] border-0 bg-[#090d16]"
+        />
+      </div>
+    </div>
+  );
+}
