@@ -136,8 +136,8 @@ export function AdminTotalCell({ order, buyingCost }: { order: ProfitOrder; buyi
       delivery={delivery}
       packaging={packaging}
       profit={profit}
-      advance={adminHeld ? advance : undefined}
-      advanceTone={adminHeld ? "profit" : undefined}
+      advance={advance > 0 ? advance : undefined}
+      advanceTone={adminHeld ? "profit" : "advance"}
     />
   );
 }
