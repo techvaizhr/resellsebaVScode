@@ -18,6 +18,13 @@ $backendDir = realpath(__DIR__ . '/../backend');
 $rootDir = realpath(__DIR__ . '/..');
 $vendorAutoload = $backendDir . '/vendor/autoload.php';
 
+// Sync .env so Laravel CLI always has the active DB connection
+if (file_exists($rootDir . '/.env') && !file_exists($backendDir . '/.env')) {
+    @copy($rootDir . '/.env', $backendDir . '/.env');
+} elseif (file_exists($backendDir . '/.env') && !file_exists($rootDir . '/.env')) {
+    @copy($backendDir . '/.env', $rootDir . '/.env');
+}
+
 // Detect PHP CLI executable
 $phpCandidates = [
     '/usr/local/bin/ea-php83',
@@ -192,39 +199,113 @@ function clear_laravel_cache($phpBin, $backendDir) {
     out(">>> ✅ Cache cleared & storage permissions verified (0777) successfully! (Direct files purged: {$directCleared})");
 }
 
+function ensure_tables_exist_or_migrate($pdo, $backendDir, $rootDir, $phpBin) {
+    try {
+        $stmt = $pdo->query("SHOW TABLES LIKE 'users'");
+        if ($stmt && $stmt->fetch()) {
+            return true;
+        }
+    } catch (\Throwable $e) {}
+
+    out(">>> [Database Auto-Provision] 'users' table missing! Initializing database schema...");
+
+    // Try 1: Run artisan migrate
+    out(">>> [1/2] Attempting 'artisan migrate --force'...");
+    run_shell_cmd("{$phpBin} artisan migrate --force", $backendDir);
+
+    // Check if users table was created
+    try {
+        $stmt = $pdo->query("SHOW TABLES LIKE 'users'");
+        if ($stmt && $stmt->fetch()) {
+            out(">>> ✅ Laravel migrations ran successfully! Tables created.");
+            return true;
+        }
+    } catch (\Throwable $e) {}
+
+    // Try 2: Direct SQL schema import from database.sql via PDO!
+    out(">>> [2/2] 'artisan migrate' could not create tables. Executing direct PDO schema builder from database.sql...");
+    $sqlCandidates = [
+        $rootDir . '/database.sql',
+        $backendDir . '/../database.sql',
+        __DIR__ . '/../database.sql',
+    ];
+
+    $sqlFile = null;
+    foreach ($sqlCandidates as $candidate) {
+        if ($candidate && file_exists($candidate)) {
+            $sqlFile = $candidate;
+            break;
+        }
+    }
+
+    if ($sqlFile) {
+        out(">>> Loading schema from: " . $sqlFile);
+        $sqlContent = file_get_contents($sqlFile);
+        $pdo->exec("SET FOREIGN_KEY_CHECKS=0;");
+        $pdo->exec("SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO';");
+
+        $queries = preg_split('/;\s*[\r\n]+/', $sqlContent);
+        $executed = 0;
+        foreach ($queries as $q) {
+            $q = trim($q);
+            if (!empty($q) && !str_starts_with($q, '--') && !str_starts_with($q, '/*')) {
+                try {
+                    $pdo->exec($q);
+                    $executed++;
+                } catch (\Throwable $ex) {
+                    // non-fatal
+                }
+            }
+        }
+        $pdo->exec("SET FOREIGN_KEY_CHECKS=1;");
+        out(">>> ✅ Direct PDO Schema loaded ({$executed} statements executed).");
+    } else {
+        out(">>> [Warning] database.sql schema file not found.");
+    }
+
+    return true;
+}
+
 function seed_super_admin_direct($pdo, $email = 'admin@resellseba.com', $password = 'password', $name = 'Super Admin') {
+    global $backendDir, $rootDir, $phpBin;
+
+    // First ensure tables exist!
+    ensure_tables_exist_or_migrate($pdo, $backendDir, $rootDir, $phpBin);
+
     $email = trim(strtolower($email));
     if (empty($email)) $email = 'admin@resellseba.com';
     if (empty($password)) $password = 'password';
     if (empty($name)) $name = 'Super Admin';
 
-    // Verify users table exists
-    $stmt = $pdo->query("SHOW TABLES LIKE 'users'");
-    if (!$stmt->fetch()) {
-        throw new Exception("The 'users' table does not exist. Please run DB migrations first.");
-    }
-
     $hash = password_hash($password, PASSWORD_BCRYPT);
 
-    // 1. Check if user exists with this email or any super_admin user
+    // 1. Ensure users table exists
+    $stmt = $pdo->query("SHOW TABLES LIKE 'users'");
+    if (!$stmt || !$stmt->fetch()) {
+        throw new Exception("Unable to create or verify 'users' table in database. Please check MySQL permissions.");
+    }
+
+    // Check if user exists with this email or any super_admin user
     $uStmt = $pdo->prepare("SELECT id, email FROM users WHERE LOWER(email) = :email LIMIT 1");
     $uStmt->execute([':email' => $email]);
     $existing = $uStmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$existing) {
-        $admCheck = $pdo->query("SELECT u.id, u.email FROM users u JOIN user_roles ur ON u.id = ur.user_id WHERE ur.role = 'super_admin' LIMIT 1");
-        if ($admCheck) {
-            $existing = $admCheck->fetch(PDO::FETCH_ASSOC);
-        }
+        try {
+            $admCheck = $pdo->query("SELECT u.id, u.email FROM users u JOIN user_roles ur ON u.id = ur.user_id WHERE ur.role = 'super_admin' LIMIT 1");
+            if ($admCheck) {
+                $existing = $admCheck->fetch(PDO::FETCH_ASSOC);
+            }
+        } catch (\Throwable $e) {}
     }
 
     if ($existing) {
         $userId = $existing['id'];
-        $up = $pdo->prepare("UPDATE users SET email = :email, name = :name, full_name = :fname, password = :pass, is_phone_verified = 1, email_verified_at = NOW(), updated_at = NOW() WHERE id = :id");
+        $up = $pdo->prepare("UPDATE users SET email = :email, name = :name, full_name = :fname, password = :pass, is_phone_verified = 1, is_active = 1, email_verified_at = NOW(), updated_at = NOW() WHERE id = :id");
         $up->execute([':email' => $email, ':name' => $name, ':fname' => $name, ':pass' => $hash, ':id' => $userId]);
     } else {
         $userId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
-        $ins = $pdo->prepare("INSERT INTO users (id, name, email, password, full_name, is_phone_verified, email_verified_at, created_at, updated_at) VALUES (:id, :name, :email, :pass, :fname, 1, NOW(), NOW(), NOW())");
+        $ins = $pdo->prepare("INSERT INTO users (id, name, email, password, full_name, is_phone_verified, is_active, email_verified_at, created_at, updated_at) VALUES (:id, :name, :email, :pass, :fname, 1, 1, NOW(), NOW(), NOW())");
         $ins->execute([':id' => $userId, ':name' => $name, ':email' => $email, ':pass' => $hash, ':fname' => $name]);
     }
 
@@ -262,6 +343,29 @@ function seed_super_admin_direct($pdo, $email = 'admin@resellseba.com', $passwor
         } else {
             $urId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
             $pdo->prepare("INSERT INTO user_roles (id, user_id, role, created_at, updated_at) VALUES (:id, :uid, 'super_admin', NOW(), NOW())")->execute([':id' => $urId, ':uid' => $userId]);
+        }
+    } catch (\Throwable $e) {}
+
+    // 5. Ensure personal_access_tokens table exists for Sanctum login
+    try {
+        $patStmt = $pdo->query("SHOW TABLES LIKE 'personal_access_tokens'");
+        if (!$patStmt || !$patStmt->fetch()) {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS `personal_access_tokens` (
+              `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+              `tokenable_type` varchar(255) NOT NULL,
+              `tokenable_id` char(36) NOT NULL,
+              `name` text NOT NULL,
+              `token` varchar(64) NOT NULL,
+              `abilities` text DEFAULT NULL,
+              `last_used_at` timestamp NULL DEFAULT NULL,
+              `expires_at` timestamp NULL DEFAULT NULL,
+              `created_at` timestamp NULL DEFAULT NULL,
+              `updated_at` timestamp NULL DEFAULT NULL,
+              PRIMARY KEY (`id`),
+              UNIQUE KEY `personal_access_tokens_token_unique` (`token`),
+              KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`),
+              KEY `personal_access_tokens_expires_at_index` (`expires_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
         }
     } catch (\Throwable $e) {}
 
