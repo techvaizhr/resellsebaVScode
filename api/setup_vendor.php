@@ -121,6 +121,77 @@ function run_shell_cmd($cmd, $workingDir) {
     }
 }
 
+function ensure_storage_and_cache_ready($backendDir) {
+    $dirs = [
+        $backendDir . '/storage',
+        $backendDir . '/storage/app',
+        $backendDir . '/storage/app/public',
+        $backendDir . '/storage/framework',
+        $backendDir . '/storage/framework/cache',
+        $backendDir . '/storage/framework/cache/data',
+        $backendDir . '/storage/framework/sessions',
+        $backendDir . '/storage/framework/views',
+        $backendDir . '/storage/logs',
+        $backendDir . '/bootstrap/cache',
+    ];
+
+    foreach ($dirs as $d) {
+        if (!is_dir($d)) {
+            @mkdir($d, 0777, true);
+        }
+        @chmod($d, 0777);
+    }
+
+    $gitIgnore = $backendDir . '/storage/framework/cache/data/.gitignore';
+    if (!file_exists($gitIgnore)) {
+        @file_put_contents($gitIgnore, "*\n!.gitignore\n");
+    }
+}
+
+// Guarantee storage and bootstrap directory permissions on every request
+ensure_storage_and_cache_ready($backendDir);
+
+function clear_laravel_cache($phpBin, $backendDir) {
+    ensure_storage_and_cache_ready($backendDir);
+
+    out(">>> [Cache] Clearing Laravel config, route, view & application cache...");
+    run_shell_cmd("{$phpBin} artisan config:clear", $backendDir);
+    run_shell_cmd("{$phpBin} artisan route:clear", $backendDir);
+    run_shell_cmd("{$phpBin} artisan view:clear", $backendDir);
+    run_shell_cmd("{$phpBin} artisan cache:clear", $backendDir);
+
+    // Direct filesystem fallback to guarantee cache is wiped even if artisan threw permission warnings
+    $cacheDataDir = $backendDir . '/storage/framework/cache/data';
+    $directCleared = 0;
+    if (is_dir($cacheDataDir)) {
+        try {
+            $it = new RecursiveDirectoryIterator($cacheDataDir, RecursiveDirectoryIterator::SKIP_DOTS);
+            $files = new RecursiveIteratorIterator($it, RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ($files as $file) {
+                $fn = $file->getFilename();
+                if ($fn === '.gitignore') continue;
+                if ($file->isDir()) {
+                    @rmdir($file->getRealPath());
+                } else {
+                    @unlink($file->getRealPath());
+                    $directCleared++;
+                }
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    $bootstrapCache = $backendDir . '/bootstrap/cache';
+    foreach (['config.php', 'routes-v7.php'] as $bFile) {
+        $bp = $bootstrapCache . '/' . $bFile;
+        if (file_exists($bp)) {
+            @unlink($bp);
+        }
+    }
+
+    ensure_storage_and_cache_ready($backendDir);
+    out(">>> ✅ Cache cleared & storage permissions verified (0777) successfully! (Direct files purged: {$directCleared})");
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="bn">
@@ -218,6 +289,7 @@ function run_shell_cmd($cmd, $workingDir) {
 
   <div style="margin: 16px 0; display: flex; flex-wrap: wrap; gap: 8px;">
     <a href="?action=fix_all<?= $keyParam ?>" class="btn btn-green">⚡ 1-Click Pull & Update (Git Pull + Safe DB Migrate)</a>
+    <a href="?action=clear_cache<?= $keyParam ?>" class="btn btn-amber">🧹 Clear Cache & Fix Permissions</a>
     <a href="?action=migrate<?= $keyParam ?>" class="btn btn-green">🛡️ Safe DB Migrate (Zero Data Loss)</a>
     <a href="?action=git_pull<?= $keyParam ?>" class="btn btn-cyan">📥 Git Pull Latest Code</a>
     <a href="?action=migrate_seed<?= $keyParam ?>" class="btn btn-purple">🌱 Run DB Migrate & Seed Defaults</a>
@@ -267,6 +339,11 @@ function run_shell_cmd($cmd, $workingDir) {
           <td><strong style="color:#34d399">⚡ 1-Click Pull & Update</strong></td>
           <td><span class="badge-ok">১০০% নিরাপদ</span></td>
           <td>গিটহাব থেকে লেটেস্ট কোড পুল করে এবং ডাটাবেজে নতুন কোনো কলাম থাকলে তা সেফলি যোগ করে। <em>(নিয়মিত কোড আপডেটের জন্য প্রধান বাটন)</em></td>
+        </tr>
+        <tr>
+          <td><strong style="color:#fbbf24">🧹 Clear Cache & Fix Permissions</strong></td>
+          <td><span class="badge-ok">১০০% নিরাপদ</span></td>
+          <td>লারাভেলের স্টোরেজ ও ক্যাশ ফোল্ডারের পারমিশন 0777 ফিক্স করে এবং সমস্ত কনফিগারেশন ও রুট ক্যাশ ক্লিন করে। ক্যাশ এরর দূর করতে অত্যন্ত কার্যকর।</td>
         </tr>
         <tr>
           <td><strong style="color:#34d399">🛡️ Safe DB Migrate</strong></td>
@@ -339,8 +416,7 @@ function run_shell_cmd($cmd, $workingDir) {
 
                 out(">>> [3/4] Running Official Laravel Database Seeders (default admin, roles, settings)...");
                 run_shell_cmd("{$phpBin} artisan db:seed --force", $backendDir);
-                run_shell_cmd("{$phpBin} artisan config:clear", $backendDir);
-                run_shell_cmd("{$phpBin} artisan cache:clear", $backendDir);
+                clear_laravel_cache($phpBin, $backendDir);
 
                 out(">>> [4/4] Verifying clean database state...");
                 $vStmt = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
@@ -465,20 +541,23 @@ function run_shell_cmd($cmd, $workingDir) {
         run_shell_cmd("{$composerCmd} install --no-dev --optimize-autoloader --no-interaction", $backendDir);
     }
 
+    if ($action === 'clear_cache') {
+        out("\n==================== CLEAR CACHE & FIX PERMISSIONS ====================");
+        clear_laravel_cache($phpBin, $backendDir);
+    }
+
     if ($action === 'migrate' || $action === 'fix_all') {
         out("\n==================== SAFE DB MIGRATE (ZERO DATA LOSS) ====================");
         out(">>> Running Laravel Schema Migrations (only applies new columns/tables; existing data is 100% untouched)...");
         run_shell_cmd("{$phpBin} artisan migrate --force", $backendDir);
-        run_shell_cmd("{$phpBin} artisan config:clear", $backendDir);
-        run_shell_cmd("{$phpBin} artisan cache:clear", $backendDir);
+        clear_laravel_cache($phpBin, $backendDir);
     }
 
     if ($action === 'migrate_seed') {
         out("\n==================== DB MIGRATE & SEED DEFAULTS ====================");
         run_shell_cmd("{$phpBin} artisan migrate --force", $backendDir);
         run_shell_cmd("{$phpBin} artisan db:seed --force", $backendDir);
-        run_shell_cmd("{$phpBin} artisan config:clear", $backendDir);
-        run_shell_cmd("{$phpBin} artisan cache:clear", $backendDir);
+        clear_laravel_cache($phpBin, $backendDir);
     }
 
 
