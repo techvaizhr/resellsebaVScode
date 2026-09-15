@@ -108,12 +108,6 @@ CREATE TABLE `brands` (
   UNIQUE KEY `brands_slug_unique` (`slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `brands` (`id`, `name`, `slug`, `image_url`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
-('22222222-3333-4444-5555-666666666601', 'Smart Tech', 'smart-tech', NULL, '1', '1', '2026-09-14 18:00:00', '2026-09-14 18:00:00'),
-('22222222-3333-4444-5555-666666666602', 'Apple', 'apple', NULL, '2', '1', '2026-09-14 18:00:00', '2026-09-14 18:00:00'),
-('22222222-3333-4444-5555-666666666603', 'Samsung', 'samsung', NULL, '3', '1', '2026-09-14 18:00:00', '2026-09-14 18:00:00'),
-('22222222-3333-4444-5555-666666666604', 'Xiaomi', 'xiaomi', NULL, '4', '1', '2026-09-14 18:00:00', '2026-09-14 18:00:00'),
-('22222222-3333-4444-5555-666666666605', 'ResellSeba', 'resellseba', NULL, '5', '1', '2026-09-14 18:00:00', '2026-09-14 18:00:00');
 
 -- Table: `categories`
 DROP TABLE IF EXISTS `categories`;
@@ -132,11 +126,6 @@ CREATE TABLE `categories` (
   KEY `categories_parent_id_foreign` (`parent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `categories` (`id`, `name`, `slug`, `image_url`, `parent_id`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
-('11111111-2222-3333-4444-555555555501', 'গ্যাজেট ও ইলেকট্রনিক্স', 'gadgets-electronics', 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600', NULL, '1', '1', '2026-09-14 18:00:00', '2026-09-14 18:00:00'),
-('11111111-2222-3333-4444-555555555502', 'ফ্যাশন ও লাইফস্টাইল', 'fashion-lifestyle', 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=600', NULL, '2', '1', '2026-09-14 18:00:00', '2026-09-14 18:00:00'),
-('11111111-2222-3333-4444-555555555503', 'হেলথ ও বিউটি', 'health-beauty', 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600', NULL, '3', '1', '2026-09-14 18:00:00', '2026-09-14 18:00:00'),
-('11111111-2222-3333-4444-555555555504', 'হোম ও কিচেন', 'home-kitchen', 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600', NULL, '4', '1', '2026-09-14 18:00:00', '2026-09-14 18:00:00');
 
 -- Table: `cloudflare_config`
 DROP TABLE IF EXISTS `cloudflare_config`;

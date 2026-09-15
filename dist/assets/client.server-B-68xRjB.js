@@ -1,1 +1,0 @@
-import{c as e}from"./index-ofDavMQB.js";var t=e;export{t as supabaseAdmin};

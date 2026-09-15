@@ -1,1 +1,0 @@
-import{c as e}from"./index-ofDavMQB.js";function t(){return e}export{t as gatewayDatabase};
