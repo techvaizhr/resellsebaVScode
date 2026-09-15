@@ -1,0 +1,1 @@
+import{c as e}from"./index-CGQtrqsq.js";var t=e;export{t as supabaseAdmin};

@@ -59,6 +59,14 @@ export function NewOrderModal({
   const { settings: advanced } = useAdvancedSettings();
   const packagingSum = advanced.packagingChargeSum;
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   const effectiveProducts = useMemo(() => {
     return allProducts && allProducts.length > 0 ? allProducts : [];
   }, [allProducts]);
@@ -346,9 +354,9 @@ export function NewOrderModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4 backdrop-blur-[2px] animate-in fade-in duration-150"
       onClick={(e) => {
-        if (e.target === e.currentTarget) e.stopPropagation();
+        if (e.target === e.currentTarget) onClose();
       }}
     >
       <form
@@ -364,7 +372,15 @@ export function NewOrderModal({
               {isAdmin ? "Super Admin Portal" : "Reseller Order Placement"}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-full p-2 hover:bg-accent transition-colors">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="rounded-full p-2 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
+            aria-label="Close modal"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>

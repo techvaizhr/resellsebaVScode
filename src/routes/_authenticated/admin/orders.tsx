@@ -181,6 +181,7 @@ function AdminOrdersPage() {
   const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [pickOpen, setPickOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [marked, setMarked] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   // Any filter/tab/search change starts from page 1 so results never look empty.

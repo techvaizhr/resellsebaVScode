@@ -1,1 +1,0 @@
-import{c as e}from"./index-ClVMS3M9.js";function t(){return e}export{t as gatewayDatabase};
