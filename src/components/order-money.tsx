@@ -230,6 +230,11 @@ export function OrderMoneyPanel({
             <Row label="Reseller invoice (product + packaging)" value={bdt(n(order.sa_cost_total))} />
             <Row label="Delivery cost set by admin" value={bdt(delivery)} />
             <Row
+              label="Admin revenue (invoice + delivery)"
+              value={bdt(adminOrderRevenue(order))}
+              hint="Advance is customer money — it never adds to admin revenue, whoever holds it"
+            />
+            <Row
               label="Cash that reached admin"
               value={bdt(Math.max(received - heldByReseller, 0))}
               hint={
