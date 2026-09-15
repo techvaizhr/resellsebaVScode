@@ -1,0 +1,1 @@
+import{c as e}from"./index-4YgXqsiY.js";function t(){return e}export{t as gatewayDatabase};

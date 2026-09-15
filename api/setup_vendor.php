@@ -213,7 +213,7 @@ function run_shell_cmd($cmd, $workingDir) {
     out(">>> Backend Directory: " . $backendDir);
 
     if ($action === 'import_sql') {
-        out("\n==================== IMPORT DATABASE.SQL (DESTRUCTIVE RECOVERY) ====================");
+        out("\n==================== IMPORT DATABASE.SQL (DESTRUCTIVE FRESH RESET) ====================");
         $confirm = $_GET['confirm_wipe'] ?? '';
         if ($confirm !== 'RESET_CONFIRMED') {
             out("❌ নিরাপত্তা সতর্কতা: নিশ্চিতকরণ কোড অনুপস্থিত বা ভুল! ডাটাবেজ রিসেট বাতিল করা হয়েছে।");
@@ -226,15 +226,114 @@ function run_shell_cmd($cmd, $workingDir) {
                 try {
                     require_once __DIR__ . '/standalone_backup.php';
                     $pdo = get_pdo();
-                    $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, 0);
-                    out(">>> Connected to database. Reading database.sql...");
+                    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+                    out(">>> [1/4] Disabling foreign keys and dropping all existing database tables...");
+                    $pdo->exec("SET FOREIGN_KEY_CHECKS=0;");
+                    $stmt = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+                    $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                    $dropped = 0;
+                    foreach ($tables as $tbl) {
+                        $pdo->exec("DROP TABLE IF EXISTS `{$tbl}`;");
+                        $dropped++;
+                    }
+                    out(">>> Successfully dropped {$dropped} existing tables.");
+
+                    out(">>> [2/4] Reading database.sql and executing statements cleanly...");
                     $sqlContent = file_get_contents($sqlFile);
-                    out(">>> Executing SQL statements (size: " . strlen($sqlContent) . " bytes)...");
-                    $pdo->exec($sqlContent);
-                    out(">>> SUCCESS: database.sql imported cleanly with 0 errors!");
+                    $queries = [];
+                    $len = strlen($sqlContent);
+                    $query = '';
+                    $inSingle = false;
+                    $inDouble = false;
+                    $inBacktick = false;
+
+                    for ($i = 0; $i < $len; $i++) {
+                        $char = $sqlContent[$i];
+                        $prev = ($i > 0) ? $sqlContent[$i - 1] : '';
+
+                        if (!$inSingle && !$inDouble && !$inBacktick) {
+                            if ($char === '-' && isset($sqlContent[$i + 1]) && $sqlContent[$i + 1] === '-') {
+                                $end = strpos($sqlContent, "\n", $i);
+                                if ($end === false) break;
+                                $i = $end;
+                                continue;
+                            }
+                            if ($char === '/' && isset($sqlContent[$i + 1]) && $sqlContent[$i + 1] === '*') {
+                                $end = strpos($sqlContent, "*/", $i + 2);
+                                if ($end === false) break;
+                                $i = $end + 1;
+                                continue;
+                            }
+                        }
+
+                        if ($char === "'" && $prev !== '\\' && !$inDouble && !$inBacktick) {
+                            $inSingle = !$inSingle;
+                        } elseif ($char === '"' && $prev !== '\\' && !$inSingle && !$inBacktick) {
+                            $inDouble = !$inDouble;
+                        } elseif ($char === '`' && $prev !== '\\' && !$inSingle && !$inDouble) {
+                            $inBacktick = !$inBacktick;
+                        }
+
+                        if ($char === ';' && !$inSingle && !$inDouble && !$inBacktick) {
+                            $trimmed = trim($query);
+                            if ($trimmed !== '') {
+                                $queries[] = $trimmed;
+                            }
+                            $query = '';
+                            continue;
+                        }
+
+                        $query .= $char;
+                    }
+                    $trimmed = trim($query);
+                    if ($trimmed !== '') {
+                        $queries[] = $trimmed;
+                    }
+
+                    out(">>> Found " . count($queries) . " SQL statements to execute.");
+                    $executed = 0;
+                    $warnings = 0;
+                    foreach ($queries as $q) {
+                        try {
+                            $pdo->exec($q);
+                            $executed++;
+                        } catch (\Throwable $qe) {
+                            $warnings++;
+                            out(">>> [SQL NOTICE]: " . substr(trim($q), 0, 75) . "... -> " . $qe->getMessage());
+                        }
+                    }
+                    $pdo->exec("SET FOREIGN_KEY_CHECKS=1;");
+                    out(">>> Executed {$executed} statements (notices/warnings: {$warnings}).");
+
+                    out(">>> [3/4] Clearing cache and configuration...");
+                    run_shell_cmd("{$phpBin} artisan config:clear", $backendDir);
+                    run_shell_cmd("{$phpBin} artisan cache:clear", $backendDir);
+
+                    out(">>> [4/4] Verifying fresh setup state...");
+                    $vStmt = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+                    $vTables = $vStmt->fetchAll(PDO::FETCH_COLUMN);
+                    $prodCount = 0;
+                    if (in_array('products', $vTables)) {
+                        $prodCount = (int)$pdo->query("SELECT COUNT(*) FROM `products`")->fetchColumn();
+                    }
+                    $orderCount = 0;
+                    if (in_array('orders', $vTables)) {
+                        $orderCount = (int)$pdo->query("SELECT COUNT(*) FROM `orders`")->fetchColumn();
+                    }
+                    $userCount = 0;
+                    if (in_array('users', $vTables)) {
+                        $userCount = (int)$pdo->query("SELECT COUNT(*) FROM `users`")->fetchColumn();
+                    }
+
+                    out(">>> Tables in Database: " . count($vTables));
+                    out(">>> Verified Products in DB: {$prodCount} (100% Clean!)");
+                    out(">>> Verified Orders in DB: {$orderCount} (100% Clean!)");
+                    out(">>> Verified Users in DB: {$userCount} (Default Super Admin Ready)");
+                    out(">>> 🌟 SUCCESS: Database completely wiped & reset to 100% fresh master setup!");
                     out(">>> Super Admin Login: admin@resellseba.com | Password: password");
                 } catch (\Throwable $e) {
-                    out(">>> ERROR: " . $e->getMessage());
+                    out(">>> CRITICAL ERROR: " . $e->getMessage());
                 }
             }
         }

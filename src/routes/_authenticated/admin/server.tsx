@@ -12,6 +12,9 @@ import {
   Terminal,
   Activity,
   Layers,
+  AlertTriangle,
+  X,
+  Trash2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/server")({
@@ -32,6 +35,8 @@ function ServerDeploymentPage() {
   const [iframeKey, setIframeKey] = useState(1);
   const [loading, setLoading] = useState(false);
   const [dynamicOrigin, setDynamicOrigin] = useState("");
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetInput, setResetInput] = useState("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -51,6 +56,13 @@ function ServerDeploymentPage() {
     setLoading(true);
   };
 
+  const handleHardReset = () => {
+    if (resetInput.trim() !== "RESET") return;
+    setResetModalOpen(false);
+    setResetInput("");
+    handleAction("/api/setup_vendor.php?action=import_sql&confirm_wipe=RESET_CONFIRMED");
+  };
+
   const openNewTab = (path: string = "/api/setup_vendor.php") => {
     const fullUrl = dynamicOrigin ? `${dynamicOrigin}${path}` : path;
     window.open(fullUrl, "_blank", "noopener,noreferrer");
@@ -60,7 +72,7 @@ function ServerDeploymentPage() {
     <div className="space-y-6">
       <PageHeader
         title="Server & Deployment"
-        subtitle="লাইভ সার্ভার আপডেট, গিট পুল, ডাটাবেজ মাইগ্রেশন এবং সিস্টেম কন্ট্রোল প্যানেল"
+        description="লাইভ সার্ভার আপডেট, গিট পুল, ডাটাবেজ মাইগ্রেশন এবং সিস্টেম কন্ট্রোল প্যানেল"
         actions={
           <div className="flex flex-wrap items-center gap-2.5">
             <button
@@ -184,8 +196,84 @@ function ServerDeploymentPage() {
             <Server className="h-3.5 w-3.5 text-amber-500" />
             <span>📦 Composer Install</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setResetModalOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3.5 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-500/20 active:scale-95 transition-all"
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            <span>⚠️ Fresh DB Reset (database.sql)</span>
+          </button>
         </div>
       </div>
+
+      {/* Confirmation Modal for Hard Reset */}
+      {resetModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setResetModalOpen(false);
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-red-500/30 bg-card p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-500">
+                <AlertTriangle className="h-5 w-5" />
+                <h3 className="text-base font-bold">মারাত্মক সতর্কতা (Danger Zone)</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setResetModalOpen(false)}
+                className="rounded-full p-1.5 text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              এই অ্যাকশনটি চালালে ডাটাবেজের সমস্ত টেবিল ড্রপ (Delete) হয়ে যাবে এবং{" "}
+              <strong className="text-foreground">database.sql</strong> ফাইল থেকে একদম ফ্রেশ ১০০% ক্লিন মাস্টার স্কিমা রিস্টোর হবে।
+              সমস্ত ডামি প্রোডাক্ট, টেস্ট অর্ডার এবং ডাটা সম্পূর্ণরূপে মুছে যাবে।
+            </p>
+
+            <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive font-medium">
+              নিশ্চিত করতে নিচের বক্সে হুবহু টাইপ করুন: <span className="font-mono font-bold select-all">RESET</span>
+            </div>
+
+            <input
+              type="text"
+              value={resetInput}
+              onChange={(e) => setResetInput(e.target.value)}
+              placeholder="RESET"
+              className="w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm font-mono uppercase outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+              autoFocus
+            />
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setResetModalOpen(false);
+                  setResetInput("");
+                }}
+                className="rounded-xl px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+              >
+                বাতিল করুন
+              </button>
+              <button
+                type="button"
+                disabled={resetInput.trim() !== "RESET"}
+                onClick={handleHardReset}
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-red-700 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>মুছে ফ্রেশ সেটআপ করুন</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Embedded Live Server Control Panel */}
       <div className="overflow-hidden rounded-2xl border border-border bg-[#090d16] shadow-xl">

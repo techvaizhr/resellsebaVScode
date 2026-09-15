@@ -567,9 +567,6 @@ CREATE TABLE `product_images` (
   KEY `product_images_product_id_foreign` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `product_images` (`id`, `product_id`, `url`, `path`, `sort_order`, `is_primary`, `created_at`, `updated_at`) VALUES
-('4a1bd265-71fa-4ae3-979b-3d25b447e3cd', '42709252-db5a-42cc-b36b-d38b7c5095e0', '/uploads/products/1dce2a8a-6ebe-4a38-bdb6-6623d640fe5d.webp', NULL, '0', '1', '2026-09-14 12:05:53', '2026-09-14 12:05:53');
-
 -- Table: `products`
 DROP TABLE IF EXISTS `products`;
 CREATE TABLE `products` (
@@ -608,9 +605,6 @@ CREATE TABLE `products` (
   KEY `products_category_id_foreign` (`category_id`),
   KEY `products_supplier_id_foreign` (`supplier_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-INSERT INTO `products` (`id`, `name`, `slug`, `sku`, `product_code`, `brand_id`, `category_id`, `description`, `price`, `buying_price`, `base_price`, `package_cost`, `stock`, `is_active`, `main_image`, `meta_title`, `meta_description`, `supplier_id`, `supplier_price`, `approval_status`, `pending_changes`, `submitted_by`, `approval_note`, `approved_at`, `delivery_charge_override`, `weight`, `created_at`, `updated_at`) VALUES
-('42709252-db5a-42cc-b36b-d38b7c5095e0', 'dddddd', 'dddddd', NULL, '2E1E78B0', NULL, '11111111-2222-3333-4444-555555555501', '<p>dddddddddddd</p>', '6666.00', '66.00', '666.00', '0.00', '0', '1', '/uploads/products/1dce2a8a-6ebe-4a38-bdb6-6623d640fe5d.webp', NULL, NULL, NULL, '66.00', 'approved', NULL, NULL, NULL, NULL, '{\"mode\":\"global\",\"flat\":0,\"inside\":0,\"outside\":0,\"sub\":0}', NULL, '2026-09-14 12:05:10', '2026-09-14 12:05:52');
 
 -- Table: `profiles`
 DROP TABLE IF EXISTS `profiles`;
