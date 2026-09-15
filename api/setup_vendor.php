@@ -116,20 +116,53 @@ function run_shell_cmd($cmd, $workingDir) {
   </style>
   <script>
     function triggerHardReset() {
-      var input = prompt(
-        "🚨 মারাত্মক সতর্কতা (DANGER ZONE)!\n\n" +
-        "এটি চালালে আপনার লাইভ ডাটাবেজের সমস্ত অর্ডার, কাস্টমার, পণ্য এবং ইউজার ডাটা সম্পূর্ণরূপে মুছে যাবে এবং database.sql-এর ডিফল্ট অবস্থায় ফিরে যাবে!\n\n" +
-        "আপনি যদি নিশ্চিত থাকেন, তবে নিচের বক্সে বড় হাতের অক্ষরে টাইপ করুন:\nRESET"
-      );
-      if (input === "RESET") {
+      var modal = document.getElementById('resetModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        var inp = document.getElementById('resetInput');
+        if (inp) { inp.value = ''; inp.focus(); }
+      } else {
+        var input = prompt("🚨 মারাত্মক সতর্কতা (DANGER ZONE)!\n\nসব টেবিল মুছে database.sql থেকে ফ্রেশ সেটআপ করতে টাইপ করুন:\nRESET");
+        if (input === "RESET") {
+          window.location.href = "?action=import_sql&confirm_wipe=RESET_CONFIRMED";
+        }
+      }
+    }
+    function closeResetModal() {
+      var modal = document.getElementById('resetModal');
+      if (modal) modal.style.display = 'none';
+    }
+    function confirmResetAction() {
+      var inp = document.getElementById('resetInput');
+      if (inp && inp.value.trim() === 'RESET') {
         window.location.href = "?action=import_sql&confirm_wipe=RESET_CONFIRMED";
-      } else if (input !== null) {
-        alert("❌ কোড মেলেনি! ডাটাবেজ রিসেট বাতিল করা হয়েছে। কোনো ডাটা পরিবর্তন হয়নি।");
+      } else {
+        alert("❌ কোড মেলেনি! বড় হাতের অক্ষরে RESET টাইপ করুন।");
       }
     }
   </script>
 </head>
 <body>
+
+  <!-- In-Page Hard Reset Confirmation Dialog -->
+  <div id="resetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#131b2e; border:1px solid #ef4444; border-radius:12px; max-width:480px; width:100%; padding:24px; box-shadow:0 20px 50px rgba(0,0,0,0.9);">
+      <h3 style="color:#ef4444; margin-top:0; font-size:18px; display:flex; align-items:center; gap:8px;">
+        🚨 মারাত্মক সতর্কতা (DANGER ZONE)
+      </h3>
+      <p style="font-size:13px; color:#94a3b8; line-height:1.6;">
+        এটি চালালে ডাটাবেজের সমস্ত টেবিল ড্রপ (Delete) হয়ে যাবে এবং <strong>database.sql</strong> ফাইল থেকে একদম ফ্রেশ ১০০% ক্লিন মাস্টার স্কিমা রিস্টোর হবে। সমস্ত ডামি প্রোডাক্ট, টেস্ট অর্ডার এবং ডাটা সম্পূর্ণরূপে মুছে যাবে।
+      </p>
+      <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); padding:10px; border-radius:8px; font-size:12px; color:#fca5a5; margin-bottom:12px;">
+        নিশ্চিত করতে নিচের বক্সে টাইপ করুন: <strong style="color:#fff; font-family:monospace;">RESET</strong>
+      </div>
+      <input type="text" id="resetInput" placeholder="RESET" onkeydown="if(event.key==='Enter') confirmResetAction()" style="width:100%; padding:10px 14px; background:#06090e; border:1px solid #334155; border-radius:8px; color:#fff; font-size:14px; font-family:monospace; margin-bottom:16px; outline:none; text-transform:uppercase;" />
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" onclick="closeResetModal()" style="padding:8px 16px; background:#1e293b; color:#cbd5e1; border:none; border-radius:6px; cursor:pointer; font-size:13px;">বাতিল করুন</button>
+        <button type="button" onclick="confirmResetAction()" style="padding:8px 16px; background:#dc2626; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:13px;">মুছে ফ্রেশ সেটআপ করুন</button>
+      </div>
+    </div>
+  </div>
 
 <div class="card">
   <h1>⚙️ ResellSeba Server Deployment & Control Panel</h1>
