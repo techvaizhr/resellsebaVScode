@@ -40,30 +40,59 @@ class UploadController extends Controller
             default => 'products',
         };
 
-        // Single Source of Truth: root public/uploads directory
-        $uploadDir = $this->getUploadBasePath($folder);
+        // Partition high-volume media (products, uploads, stores) by Year and Month (e.g. products/2026/09)
+        $dateSub = '';
+        if (in_array($folder, ['products', 'uploads', 'stores'])) {
+            $dateSub = '/' . date('Y') . '/' . date('m');
+        }
+
+        $subPath = $folder . $dateSub;
+        $uploadDir = $this->getUploadBasePath($subPath);
         if (!File::isDirectory($uploadDir)) {
             File::makeDirectory($uploadDir, 0755, true, true);
         }
+
+        $filename = '';
+        $rawBytes = null;
+        $extension = 'webp';
 
         // Check if uploaded as base64 string
         if ($request->has('base64')) {
             $base64Data = $request->input('base64');
             $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $base64Data);
-            $decoded = base64_decode($base64Data);
-            $filename = 'img-' . time() . '-' . Str::random(6) . '.webp';
-            File::put($uploadDir . '/' . $filename, $decoded);
+            $rawBytes = base64_decode($base64Data);
         } else {
             $request->validate([
                 'file' => 'required|file|max:10240', // Max 10MB
             ]);
             $file = $request->file('file');
-            $extension = $file->getClientOriginalExtension() ?: 'webp';
-            $filename = Str::uuid() . '.' . $extension;
-            $file->move($uploadDir, $filename);
+            $extension = strtolower($file->getClientOriginalExtension()) ?: 'webp';
+            $rawBytes = file_get_contents($file->getRealPath());
         }
 
-        $relativePath = 'uploads/' . $folder . '/' . $filename;
+        // Automatic WebP compression if GD library is available
+        $saved = false;
+        if (function_exists('imagecreatefromstring') && function_exists('imagewebp') && $rawBytes) {
+            $gdImg = @imagecreatefromstring($rawBytes);
+            if ($gdImg !== false) {
+                imagepalettetotruecolor($gdImg);
+                imagealphablending($gdImg, true);
+                imagesavealpha($gdImg, true);
+                $filename = Str::uuid() . '.webp';
+                $destPath = $uploadDir . '/' . $filename;
+                if (@imagewebp($gdImg, $destPath, 85)) {
+                    $saved = true;
+                }
+                imagedestroy($gdImg);
+            }
+        }
+
+        if (!$saved && $rawBytes) {
+            $filename = Str::uuid() . '.' . $extension;
+            File::put($uploadDir . '/' . $filename, $rawBytes);
+        }
+
+        $relativePath = 'uploads/' . $subPath . '/' . $filename;
         $url = '/' . $relativePath;
 
         return response()->json([
@@ -182,7 +211,7 @@ class UploadController extends Controller
                 $catDir = $baseDir . '/' . $cat;
                 if (!File::isDirectory($catDir)) continue;
 
-                $files = File::files($catDir);
+                $files = File::allFiles($catDir);
                 foreach ($files as $file) {
                     $filename = $file->getFilename();
                     if ($filename === '.gitkeep') continue;
@@ -191,21 +220,21 @@ class UploadController extends Controller
                     $folderCounts['all']++;
 
                     $lowerName = strtolower($filename);
-                    $relUpload = 'uploads/' . $cat . '/' . $lowerName;
-                    $slashUpload = '/uploads/' . $cat . '/' . $lowerName;
+                    $subRelative = str_replace('\\', '/', $file->getRelativePathname());
+                    $relUpload = 'uploads/' . $cat . '/' . $subRelative;
+                    $slashUpload = '/' . $relUpload;
 
                     $isSystemAsset = in_array($cat, ['branding', 'brands', 'categories', 'stores', 'avatars', 'notices', 'tutorials']);
-                    $isUsed = $isSystemAsset || isset($usedTokens[$lowerName]) || isset($usedTokens[$relUpload]) || isset($usedTokens[$slashUpload]);
+                    $isUsed = $isSystemAsset || isset($usedTokens[$lowerName]) || isset($usedTokens[strtolower($relUpload)]) || isset($usedTokens[strtolower($slashUpload)]);
                     if (!$isUsed) {
                         $totalUnusedCount++;
                     }
 
-                    $relativePath = 'uploads/' . $cat . '/' . $filename;
-                    $url = asset($relativePath);
+                    $url = asset($relUpload);
 
                     $allFiles[] = [
                         'filename' => $filename,
-                        'path' => $relativePath,
+                        'path' => $slashUpload,
                         'url' => $url,
                         'folder' => $cat,
                         'size' => $file->getSize(),

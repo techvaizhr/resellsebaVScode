@@ -1956,46 +1956,74 @@ function handle_standalone_request() {
         $folder = preg_replace('/[^a-zA-Z0-9_\-]/', '', $input['folder'] ?? ($_POST['folder'] ?? 'uploads'));
         if (empty($folder)) $folder = 'uploads';
 
-        $targetDir = __DIR__ . '/../public/uploads/' . $folder;
+        // Partition high-volume media (products, uploads, stores) by Year and Month (e.g. products/2026/09)
+        $dateSub = '';
+        if (in_array($folder, ['products', 'uploads', 'stores'])) {
+            $dateSub = '/' . date('Y') . '/' . date('m');
+        }
+
+        $subPath = $folder . $dateSub;
+        $targetDir = __DIR__ . '/../public/uploads/' . $subPath;
         if (!is_dir($targetDir)) {
             @mkdir($targetDir, 0755, true);
         }
 
         $fileName = '';
         $fileSize = 0;
+        $rawBytes = null;
+        $ext = 'webp';
 
         if (!empty($input['base64'])) {
             $b64 = $input['base64'];
-            $ext = 'jpg';
             if (preg_match('/^data:image\/(\w+);base64,/', $b64, $m)) {
                 $ext = strtolower($m[1]);
                 if ($ext === 'jpeg') $ext = 'jpg';
                 $b64 = substr($b64, strpos($b64, ',') + 1);
             }
-            $decoded = base64_decode($b64);
-            if ($decoded === false) {
+            $rawBytes = base64_decode($b64);
+            if ($rawBytes === false) {
                 json_res(['error' => 'Invalid base64 image data'], 400);
             }
-            $fileName = gen_uuid() . '.' . $ext;
-            $destPath = $targetDir . '/' . $fileName;
-            if (file_put_contents($destPath, $decoded) === false) {
-                json_res(['error' => 'Failed to write uploaded file to disk'], 500);
-            }
-            $fileSize = strlen($decoded);
         } else if (isset($_FILES['file']) && !empty($_FILES['file']['tmp_name'])) {
             $origName = $_FILES['file']['name'] ?? 'image.jpg';
-            $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION)) ?: 'jpg';
-            $fileName = gen_uuid() . '.' . $ext;
-            $destPath = $targetDir . '/' . $fileName;
-            if (!move_uploaded_file($_FILES['file']['tmp_name'], $destPath)) {
-                json_res(['error' => 'Failed to move uploaded file'], 500);
+            $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION)) ?: 'webp';
+            $rawBytes = @file_get_contents($_FILES['file']['tmp_name']);
+            if ($rawBytes === false) {
+                json_res(['error' => 'Failed to read uploaded file'], 500);
             }
-            $fileSize = filesize($destPath);
         } else {
             json_res(['error' => 'No image or base64 file provided'], 400);
         }
 
-        $url = '/uploads/' . $folder . '/' . $fileName;
+        // Automatic WebP compression if GD library is available
+        $saved = false;
+        if (function_exists('imagecreatefromstring') && function_exists('imagewebp')) {
+            $gdImg = @imagecreatefromstring($rawBytes);
+            if ($gdImg !== false) {
+                imagepalettetotruecolor($gdImg);
+                imagealphablending($gdImg, true);
+                imagesavealpha($gdImg, true);
+                $fileName = gen_uuid() . '.webp';
+                $destPath = $targetDir . '/' . $fileName;
+                if (@imagewebp($gdImg, $destPath, 85)) {
+                    $saved = true;
+                }
+                imagedestroy($gdImg);
+            }
+        }
+
+        // Standard save fallback
+        if (!$saved) {
+            $fileName = gen_uuid() . '.' . $ext;
+            $destPath = $targetDir . '/' . $fileName;
+            if (file_put_contents($destPath, $rawBytes) === false) {
+                json_res(['error' => 'Failed to write uploaded file to disk'], 500);
+            }
+        }
+
+        $fileSize = file_exists($destPath) ? filesize($destPath) : strlen($rawBytes);
+        $url = '/uploads/' . $subPath . '/' . $fileName;
+
         json_res([
             'url' => $url,
             'path' => $url,
@@ -2007,38 +2035,52 @@ function handle_standalone_request() {
     if ($path === 'upload/list' && $method === 'GET') {
         $reqFolder = $_GET['folder'] ?? '';
         $search = strtolower(trim($_GET['search'] ?? ''));
-        $baseDir = __DIR__ . '/../public/uploads';
+        $baseDir = realpath(__DIR__ . '/../public/uploads');
         $items = [];
         $folderCounts = [];
 
-        if (is_dir($baseDir)) {
-            $folders = ['products', 'branding', 'categories', 'avatars', 'uploads'];
+        if ($baseDir && is_dir($baseDir)) {
+            $folders = ['products', 'branding', 'categories', 'avatars', 'stores', 'notices', 'tutorials', 'uploads'];
             foreach ($folders as $f) {
-                $fDir = $baseDir . '/' . $f;
+                $fDir = $baseDir . DIRECTORY_SEPARATOR . $f;
                 if (!is_dir($fDir)) continue;
-                $files = scandir($fDir);
                 $cnt = 0;
-                foreach ($files as $file) {
-                    if ($file === '.' || $file === '..') continue;
-                    $filePath = $fDir . '/' . $file;
-                    if (!is_file($filePath)) continue;
+
+                $it = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($fDir, FilesystemIterator::SKIP_DOTS)
+                );
+
+                foreach ($it as $fileInfo) {
+                    if (!$fileInfo->isFile()) continue;
+                    $fileName = $fileInfo->getFilename();
+                    if ($fileName === '.gitkeep') continue;
+
                     $cnt++;
                     if ($reqFolder && $reqFolder !== $f) continue;
-                    if ($search && !str_contains(strtolower($file), $search)) continue;
+                    if ($search && !str_contains(strtolower($fileName), $search)) continue;
+
+                    $filePath = $fileInfo->getPathname();
+                    $rel = ltrim(str_replace('\\', '/', substr($filePath, strlen($baseDir))), '/');
+                    $url = '/uploads/' . $rel;
 
                     $items[] = [
-                        'filename' => $file,
-                        'path' => '/uploads/' . $f . '/' . $file,
-                        'url' => '/uploads/' . $f . '/' . $file,
+                        'filename' => $fileName,
+                        'path' => $url,
+                        'url' => $url,
                         'folder' => $f,
-                        'size' => filesize($filePath),
-                        'last_modified' => date('c', filemtime($filePath)),
+                        'size' => $fileInfo->getSize(),
+                        'last_modified' => date('c', $fileInfo->getMTime()),
                         'is_used' => false
                     ];
                 }
                 $folderCounts[$f] = $cnt;
             }
         }
+
+        // Sort newest first
+        usort($items, function($a, $b) {
+            return strcmp($b['last_modified'], $a['last_modified']);
+        });
 
         json_res([
             'data' => $items,
