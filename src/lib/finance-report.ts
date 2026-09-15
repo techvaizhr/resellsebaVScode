@@ -162,6 +162,25 @@ export function orderProfit(o: ProfitOrder) {
   return orderReceived(o) - orderCost(o) - resellerHeldAdvance(o);
 }
 
+/**
+ * Reseller profit the order really earned, before any advance adjustment.
+ * The advance is part of the customer's own money — it is nobody's profit, so
+ * it must never inflate (or deflate) the earned profit of the order.
+ */
+export function orderGrossProfit(o: ProfitOrder) {
+  return orderProfit(o) + resellerHeldAdvance(o);
+}
+
+/**
+ * Money that belongs to admin for this order (reseller invoice + delivery).
+ * = everything received − what the reseller actually earned. Because an advance
+ * is customer money, it cancels out here: whoever holds it, admin revenue is the
+ * same. Who holds it only decides the cash settlement, not the profit.
+ */
+export function adminOrderRevenue(o: ProfitOrder) {
+  return orderReceived(o) - orderGrossProfit(o);
+}
+
 /** Reusable hint shown on every profit report/card so the math is transparent. */
 export const PROFIT_FORMULA_HINT =
   "Profit = received amount − product cost − delivery charge − packaging cost. Any advance already collected counts as received; an advance held by the reseller is deducted from their final amount, while an advance held by admin stays with admin. Partial (full item) uses the amount the courier actually collected against the full cost. Partial (item) charges only the items the customer kept — returned items go back to stock. Partial (delivery charge) means every product came back but the customer still paid the delivery charge, so that collected amount is counted as received and the cost is only delivery charge + packaging — no product cost. A fully returned parcel collects nothing, so it costs delivery charge + packaging, because the product comes back.";

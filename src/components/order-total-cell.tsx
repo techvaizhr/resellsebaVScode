@@ -14,6 +14,7 @@
  *    reseller-held advance doesn't reach admin (neutral).
  */
 import {
+  adminOrderRevenue,
   bdt,
   orderAdvance,
   orderDeliveryCost,
@@ -118,11 +119,13 @@ export function ResellerTotalCell({ order }: { order: ProfitOrder; showProfit?: 
 /** Admin side: revenue = money received − what the reseller finally earns. */
 export function AdminTotalCell({ order, buyingCost }: { order: ProfitOrder; buyingCost: number }) {
   const advance = orderAdvance(order);
-  const revenue = orderReceived(order) - orderProfit(order);
+  // Advance is the customer's own money, never admin profit — revenue is always
+  // received minus the reseller's earned profit, whoever is holding the advance.
+  const revenue = adminOrderRevenue(order);
   const delivery = orderDeliveryCost(order);
   const packaging = orderPackaging(order);
   const profit = revenue - buyingCost - delivery - packaging;
-  // Show the advance chip only when the admin held it (stays with admin).
+  // Advance chip: admin-held = admin cash, reseller-held = cash admin won't receive.
   const adminHeld = advance > 0 && order.advance_by === "admin";
   return (
     <Summary
@@ -133,8 +136,8 @@ export function AdminTotalCell({ order, buyingCost }: { order: ProfitOrder; buyi
       delivery={delivery}
       packaging={packaging}
       profit={profit}
-      advance={adminHeld ? advance : undefined}
-      advanceTone={adminHeld ? "profit" : undefined}
+      advance={advance > 0 ? advance : undefined}
+      advanceTone={adminHeld ? "profit" : "advance"}
     />
   );
 }
