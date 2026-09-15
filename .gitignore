@@ -25,9 +25,9 @@ backend/.env
 backend/.env.local
 backend/.env.*.local
 
-# User Uploads (Prevent repository bloat)
-public/uploads/products/*
-!public/uploads/products/.gitkeep
+# User Uploads (Strictly protect all user uploaded images/files from git pull conflicts & deletion)
+public/uploads/*/*
+!public/uploads/**/.gitkeep
 
 
 # Laravel Backend

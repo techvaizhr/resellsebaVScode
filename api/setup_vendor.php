@@ -124,14 +124,15 @@ function run_shell_cmd($cmd, $workingDir) {
     | PHP CLI: <code><?= htmlspecialchars($phpBin) ?></code>
   </p>
 
-  <div style="margin: 16px 0;">
-    <a href="?action=import_sql" class="btn btn-amber">🗃️ 1-Click Import database.sql</a>
-    <a href="?action=fix_all" class="btn btn-green">⚡ 1-Click Pull & Update (Git Pull + Migrate + Clear Cache)</a>
+  <div style="margin: 16px 0; display: flex; flex-wrap: wrap; gap: 8px;">
+    <a href="?action=fix_all" class="btn btn-green">⚡ 1-Click Pull & Update (Git Pull + Safe DB Migrate)</a>
+    <a href="?action=migrate" class="btn btn-green">🛡️ Safe DB Migrate (Zero Data Loss)</a>
     <a href="?action=git_pull" class="btn btn-cyan">📥 Git Pull Latest Code</a>
-    <a href="?action=migrate_seed" class="btn btn-purple">🗄️ Run DB Migrate & Seed</a>
+    <a href="?action=migrate_seed" class="btn btn-purple">🌱 Run DB Migrate & Seed Defaults</a>
     <a href="?action=composer" class="btn">📦 Run Composer Install</a>
-    <a href="test" class="btn btn-green">🧪 Test API & Database Status</a>
+    <a href="test" class="btn btn-cyan">🧪 Test API & Database Status</a>
     <a href="/" class="btn btn-purple">🏠 Open Website</a>
+    <a href="?action=import_sql" onclick="return confirm('⚠️ সতর্কতা: এটি database.sql ফাইল থেকে ডাটা রিস্টোর করবে এবং বিদ্যমান ডাটা ড্রপ করবে। আপনি কি নিশ্চিত?')" class="btn btn-red">⚠️ Import database.sql (Fresh Setup / Reset)</a>
   </div>
 
   <?php if ($action): ?>
@@ -143,7 +144,7 @@ function run_shell_cmd($cmd, $workingDir) {
     out(">>> Backend Directory: " . $backendDir);
 
     if ($action === 'import_sql') {
-        out("\n==================== IMPORT DATABASE.SQL ====================");
+        out("\n==================== IMPORT DATABASE.SQL (DESTRUCTIVE RECOVERY) ====================");
         $sqlFile = $rootDir . '/database.sql';
         if (!file_exists($sqlFile)) {
             out("ERROR: database.sql not found at " . $sqlFile);
@@ -165,7 +166,7 @@ function run_shell_cmd($cmd, $workingDir) {
     }
 
     if ($action === 'git_pull' || $action === 'fix_all') {
-        out("\n==================== [1/3] GIT PULL ====================");
+        out("\n==================== [1/2] GIT PULL ====================");
         run_shell_cmd("git fetch origin main && git reset --hard origin/main", $rootDir);
     }
 
@@ -191,8 +192,16 @@ function run_shell_cmd($cmd, $workingDir) {
         run_shell_cmd("{$composerCmd} install --no-dev --optimize-autoloader --no-interaction", $backendDir);
     }
 
-    if ($action === 'migrate_seed' || $action === 'fix_all') {
-        out("\n==================== [2/3] DB MIGRATE & SEED ====================");
+    if ($action === 'migrate' || $action === 'fix_all') {
+        out("\n==================== SAFE DB MIGRATE (ZERO DATA LOSS) ====================");
+        out(">>> Running Laravel Schema Migrations (only applies new columns/tables; existing data is 100% untouched)...");
+        run_shell_cmd("{$phpBin} artisan migrate --force", $backendDir);
+        run_shell_cmd("{$phpBin} artisan config:clear", $backendDir);
+        run_shell_cmd("{$phpBin} artisan cache:clear", $backendDir);
+    }
+
+    if ($action === 'migrate_seed') {
+        out("\n==================== DB MIGRATE & SEED DEFAULTS ====================");
         run_shell_cmd("{$phpBin} artisan migrate --force", $backendDir);
         run_shell_cmd("{$phpBin} artisan db:seed --force", $backendDir);
         run_shell_cmd("{$phpBin} artisan config:clear", $backendDir);
