@@ -20,6 +20,9 @@ Options -Indexes
     RewriteCond %{REQUEST_URI} ^/uploads/
     RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]
 
+    # 4.1 Dynamic PWA manifest serving admin branding favicon
+    RewriteRule ^manifest\.webmanifest$ api/index.php?manifest=1 [L]
+
     # 5. Serve existing files or directories directly
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d

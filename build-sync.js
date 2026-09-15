@@ -27,8 +27,26 @@ if (fs.existsSync('dist/assets')) {
     fs.copyFileSync(path.join('dist/assets', f), path.join('assets', f));
   }
 }
-if (fs.existsSync('dist/sw.js')) {
-  fs.copyFileSync('dist/sw.js', 'sw.js');
+const pwaFiles = [
+  'sw.js',
+  'manifest.webmanifest',
+  'favicon.ico',
+  'icon-192.png',
+  'icon-512.png',
+  'pwa-192.png',
+  'pwa-512.png',
+  'apple-touch-icon.png',
+  'robots.txt',
+  'sitemap.xml',
+];
+for (const pf of pwaFiles) {
+  const distPath = path.join('dist', pf);
+  const publicPath = path.join('public', pf);
+  if (fs.existsSync(distPath)) {
+    fs.copyFileSync(distPath, pf);
+  } else if (fs.existsSync(publicPath)) {
+    fs.copyFileSync(publicPath, pf);
+  }
 }
 
 console.log('Build and deployment sync complete!');

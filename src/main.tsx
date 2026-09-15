@@ -15,3 +15,10 @@ if (rootElement && !rootElement.innerHTML) {
     </React.StrictMode>
   );
 }
+
+// Register PWA Service Worker
+if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}

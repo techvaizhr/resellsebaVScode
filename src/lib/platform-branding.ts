@@ -45,6 +45,12 @@ export function applyPlatformBranding(
     appleLink.rel = "apple-touch-icon";
     appleLink.href = settings.favicon_url;
     document.head.appendChild(appleLink);
+
+    // Refresh dynamic manifest link with the latest favicon
+    const manifestLink = document.querySelector("link[rel='manifest']") as HTMLLinkElement;
+    if (manifestLink) {
+      manifestLink.href = `/manifest.webmanifest?v=${Date.now()}`;
+    }
   }
 
   const next: PlatformBrand = {

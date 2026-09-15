@@ -1,1 +1,0 @@
-import{c as e}from"./index-WYXCwwgl.js";var t=e;export{t as supabaseAdmin};
