@@ -233,41 +233,50 @@ class CrudController extends Controller
             return response()->json(['data' => null]);
         }
 
-        $tableCols = DB::getSchemaBuilder()->getColumnListing($table);
-        $rows = isset($payload[0]) && is_array($payload[0]) ? $payload : [$payload];
-        $inserted = [];
+        try {
+            $tableCols = DB::getSchemaBuilder()->getColumnListing($table);
+            $rows = isset($payload[0]) && is_array($payload[0]) ? $payload : [$payload];
+            $inserted = [];
 
-        foreach ($rows as $row) {
-            if (empty($row['id'])) {
-                $row['id'] = (string) Str::uuid();
-            }
-            if (!isset($row['created_at'])) $row['created_at'] = now();
-            if (!isset($row['updated_at'])) $row['updated_at'] = now();
-
-            // Alias handling for brands: logo_url -> image_url
-            if ($table === 'brands') {
-                if (!empty($row['logo_url']) && empty($row['image_url'])) {
-                    $row['image_url'] = $row['logo_url'];
+            foreach ($rows as $row) {
+                if (empty($row['id'])) {
+                    $row['id'] = (string) Str::uuid();
                 }
-            }
+                if (!isset($row['created_at'])) $row['created_at'] = now()->format('Y-m-d H:i:s');
+                if (!isset($row['updated_at'])) $row['updated_at'] = now()->format('Y-m-d H:i:s');
 
-            // Encode JSON fields if needed
-            foreach ($row as $k => $v) {
-                if (is_array($v) || is_object($v)) {
-                    $row[$k] = json_encode($v);
+                // Alias handling for brands: logo_url -> image_url
+                if ($table === 'brands') {
+                    if (!empty($row['logo_url']) && empty($row['image_url'])) {
+                        $row['image_url'] = $row['logo_url'];
+                    }
                 }
+
+                // Encode JSON / boolean / date fields if needed
+                foreach ($row as $k => $v) {
+                    if (is_bool($v)) {
+                        $row[$k] = $v ? 1 : 0;
+                    } elseif ($v instanceof \DateTimeInterface) {
+                        $row[$k] = $v->format('Y-m-d H:i:s');
+                    } elseif (is_array($v) || (is_object($v) && !($v instanceof \DateTimeInterface))) {
+                        $row[$k] = json_encode($v);
+                    }
+                }
+
+                // Keep only existing columns in table
+                $filteredRow = array_intersect_key($row, array_flip($tableCols));
+
+                DB::table($table)->insert($filteredRow);
+                $inserted[] = $row;
             }
 
-            // Keep only existing columns in table
-            $filteredRow = array_intersect_key($row, array_flip($tableCols));
-
-            DB::table($table)->insert($filteredRow);
-            $inserted[] = $row;
+            return response()->json([
+                'data' => count($inserted) === 1 ? $inserted[0] : $inserted
+            ], 201);
+        } catch (\Throwable $e) {
+            \Log::error("CrudController insert error on table $table: " . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 400);
         }
-
-        return response()->json([
-            'data' => count($inserted) === 1 ? $inserted[0] : $inserted
-        ], 201);
     }
 
     private function handleUpdate($query, $payload)
@@ -277,7 +286,7 @@ class CrudController extends Controller
         }
 
         if (!isset($payload['updated_at'])) {
-            $payload['updated_at'] = now();
+            $payload['updated_at'] = now()->format('Y-m-d H:i:s');
         }
 
         // Check if query is targeting brands
