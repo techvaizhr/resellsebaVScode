@@ -174,7 +174,8 @@ function AuthPage() {
           }
         }
       } else {
-        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
+        const cleanEmail = email.trim().toLowerCase();
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
         if (error) throw error;
         await ensureAccount();
         toast.success("Welcome!");
@@ -381,6 +382,22 @@ function AuthPage() {
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
               {mode === "forgot" ? "Reset password" : isSignup ? "Register" : "Log in"}
             </button>
+
+            {mode === "signin" && (
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("admin@resellseba.com");
+                    setPassword("password");
+                  }}
+                  className="w-full py-2 px-3 text-xs bg-muted hover:bg-muted/80 text-foreground/80 hover:text-foreground font-medium rounded-md border border-border/60 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <span>👑</span>
+                  <span>Click to Autofill Super Admin (`admin@resellseba.com`)</span>
+                </button>
+              </div>
+            )}
           </form>
 
           <p className="mt-5 text-center text-sm text-muted-foreground">
