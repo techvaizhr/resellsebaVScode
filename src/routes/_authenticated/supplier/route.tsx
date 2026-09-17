@@ -10,6 +10,7 @@ import {
   Loader2,
   ShieldAlert,
   UserCircle,
+  Bike,
 } from "lucide-react";
 import { AppShell, type NavEntry } from "@/components/AppShell";
 import { useAuth } from "@/lib/use-auth";
@@ -30,6 +31,7 @@ const NAV: NavEntry[] = [
   { label: "Dashboard", to: "/supplier", icon: <LayoutDashboard className="h-4 w-4" />, end: true },
   { label: "My products", to: "/supplier/products", icon: <Package className="h-4 w-4" /> },
   { label: "My orders", to: "/supplier/orders", icon: <ShoppingCart className="h-4 w-4" /> },
+  { label: "Rider Followup", to: "/supplier/rider-followup", icon: <Bike className="h-4 w-4" /> },
   { label: "Sales report", to: "/supplier/report", icon: <PackageSearch className="h-4 w-4" /> },
   { label: "Returns", to: "/supplier/returns", icon: <Undo2 className="h-4 w-4" /> },
   { label: "Payouts", to: "/supplier/payouts", icon: <Wallet className="h-4 w-4" /> },
