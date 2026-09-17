@@ -1,5 +1,5 @@
 import {
-  COURIER_LOCKED_ORDER_STATUSES,
+
   canCourierSetOrderStatus,
   isRiderFollowupStatus,
   mapCourierStatus,
@@ -329,12 +329,17 @@ export async function applyCourierUpdate(
   }
 
   const { data: order } = await db.from("orders").select("status").eq("id", orderId).maybeSingle();
-  // Settled states (delivered / every partial / returned / damaged / cancelled) are
-  // decided by the admin — courier events must never drag them back to "To Courier".
+  // Only the documented automatic flow is allowed:
+  //   pre-courier states → To Courier, and To Courier → Delivered / Pending Partial / Pending Return.
+  // Everything else (all partials, Returned, Damaged, Cancelled) stays manual and is
+  // never dragged back by a late or out-of-order courier event.
   const allowStatusChange =
     !!order && (args.bypassFinalLock || canCourierSetOrderStatus(order.status, mapped.order));
   const isLocked =
-    !!order && !args.bypassFinalLock && (COURIER_LOCKED_ORDER_STATUSES as string[]).includes(order.status);
+    !!order &&
+    !args.bypassFinalLock &&
+    !allowStatusChange &&
+    order.status !== mapped.order;
 
   // Courier-collected money (partial delivery = less than the order total).
   // Stored on the order so every profit/loss calculation uses what was really received.
