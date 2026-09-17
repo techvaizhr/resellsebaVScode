@@ -1,4 +1,4 @@
-import { mapCourierStatus, normalizeCourierStatus } from "@/lib/courier-status";
+import { isRiderFollowupStatus, mapCourierStatus, normalizeCourierStatus } from "@/lib/courier-status";
 
 export type Cfg = Record<string, string>;
 
