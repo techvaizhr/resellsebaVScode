@@ -29,6 +29,8 @@ export type StoreProduct = {
   delivery_inside: number | null;
   delivery_outside: number | null;
   delivery_sub: number | null;
+  video_url?: string | null;
+  video_file_url?: string | null;
   product_images: StoreImage[];
 };
 
