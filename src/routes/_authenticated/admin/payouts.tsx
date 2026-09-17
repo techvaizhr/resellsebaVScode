@@ -106,6 +106,7 @@ function AdminPayouts() {
   const canManage = can("payouts.manage");
   const [toDelete, setToDelete] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [tab, setTab] = useState<"requests" | "report">("requests");
 
   useEffect(() => { load(); }, []);
 
