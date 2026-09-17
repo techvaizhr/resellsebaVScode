@@ -64,6 +64,8 @@ function EditProduct() {
   const [weight, setWeight] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [images, setImages] = useState<UploadedImage[]>([]);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [videoFileUrl, setVideoFileUrl] = useState<string | null>(null);
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDesc, setMetaDesc] = useState("");
   const [keywords, setKeywords] = useState("");
