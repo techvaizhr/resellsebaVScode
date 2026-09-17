@@ -43,10 +43,10 @@ export function ProductMediaGallery({
   const mediaCount = imageUrls.length + (hasVideo ? 1 : 0);
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("min-w-0 max-w-full space-y-3 overflow-x-hidden", className)}>
       <div
         className={cn(
-          "relative grid aspect-square w-full place-items-center overflow-hidden rounded-xl border bg-muted",
+          "relative grid aspect-square w-full min-w-0 max-w-full place-items-center overflow-hidden rounded-xl border bg-muted",
           frameClassName,
         )}
       >
@@ -55,7 +55,7 @@ export function ProductMediaGallery({
             youtubeUrl={youtubeUrl}
             fileUrl={fileUrl}
             name={name}
-            className="flex h-full w-full items-center justify-center p-2 sm:p-4"
+            className="flex h-full min-w-0 max-w-full items-center justify-center overflow-hidden p-2 sm:p-4"
           />
         ) : activeUrl ? (
           <img src={activeUrl} alt={name} className="h-full w-full object-cover" />
