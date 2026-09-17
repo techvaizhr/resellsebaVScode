@@ -202,6 +202,7 @@ function OrdersPage() {
   const [pickOpen, setPickOpen] = useState(false);
   const [pickScope, setPickScope] = useState<"filtered" | "marked">("filtered");
   const [marked, setMarked] = useState<string[]>([]);
+  const bulkRecheck = useServerFn(bulkRecheckCourierStatus);
   const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [page, setPage] = useState(1);
