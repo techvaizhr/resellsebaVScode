@@ -348,6 +348,21 @@ function NewProduct() {
         </div>
 
         <div className="surface-card p-6">
+          <h3 className="mb-3 text-sm font-semibold">Video</h3>
+          <div className="space-y-4">
+            <Field label="YouTube link (optional)">
+              <input
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                className={inputCls}
+                placeholder="https://youtu.be/…"
+              />
+            </Field>
+            <VideoUploader value={videoFileUrl} onChange={setVideoFileUrl} />
+          </div>
+        </div>
+
+        <div className="surface-card p-6">
           <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold">
             Pricing & delivery
             <Hint side="right">
