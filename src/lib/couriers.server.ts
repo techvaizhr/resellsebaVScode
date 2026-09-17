@@ -1,4 +1,10 @@
-import { isRiderFollowupStatus, mapCourierStatus, normalizeCourierStatus } from "@/lib/courier-status";
+import {
+  COURIER_LOCKED_ORDER_STATUSES,
+  canCourierSetOrderStatus,
+  isRiderFollowupStatus,
+  mapCourierStatus,
+  normalizeCourierStatus,
+} from "@/lib/courier-status";
 
 export type Cfg = Record<string, string>;
 
@@ -323,18 +329,20 @@ export async function applyCourierUpdate(
   }
 
   const { data: order } = await db.from("orders").select("status").eq("id", orderId).maybeSingle();
-  // "returned" and "cancelled" are final, manually-confirmed states — courier
-  // events must never overwrite them.
-  const finalStates = ["returned", "cancelled"];
-  const isLocked = order && finalStates.includes(order.status) && !args.bypassFinalLock;
-  
+  // Settled states (delivered / every partial / returned / damaged / cancelled) are
+  // decided by the admin — courier events must never drag them back to "To Courier".
+  const allowStatusChange =
+    !!order && (args.bypassFinalLock || canCourierSetOrderStatus(order.status, mapped.order));
+  const isLocked =
+    !!order && !args.bypassFinalLock && (COURIER_LOCKED_ORDER_STATUSES as string[]).includes(order.status);
+
   // Courier-collected money (partial delivery = less than the order total).
   // Stored on the order so every profit/loss calculation uses what was really received.
   if (order && !isLocked && args.codAmount != null && (mapped.order === "delivered" || mapped.order === "partial")) {
     await db.from("orders").update({ received_amount: args.codAmount }).eq("id", orderId);
   }
 
-  if (order && order.status !== mapped.order && !isLocked) {
+  if (order && allowStatusChange) {
     await db.from("orders").update({ status: mapped.order }).eq("id", orderId);
     await db.from("order_status_history").insert({
       order_id: orderId,
@@ -342,6 +350,7 @@ export async function applyCourierUpdate(
       note: `${provider} update (${args.source}): ${statusKey}${args.bypassFinalLock ? " (Admin Override)" : ""}`,
     });
   }
+
 
 
   return { matched: true as const, orderId, shipmentId: shipment?.id ?? null, mapped };
