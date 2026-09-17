@@ -64,6 +64,7 @@ export interface PanelNavCounts {
   orders: number;
   rider: number;
   payouts: number;
+  supplierPayouts: number;
 }
 
 /**
@@ -71,17 +72,18 @@ export interface PanelNavCounts {
  * actionable orders, orders waiting on a rider, and pending payout requests.
  */
 export function usePanelNavCounts(enabled = true): PanelNavCounts {
-  const [counts, setCounts] = useState<PanelNavCounts>({ orders: 0, rider: 0, payouts: 0 });
+  const [counts, setCounts] = useState<PanelNavCounts>({ orders: 0, rider: 0, payouts: 0, supplierPayouts: 0 });
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("panel_nav_counts" as never);
     if (error || !data || typeof data !== "object") return;
-    const row = data as Partial<PanelNavCounts>;
+    const row = data as Record<string, unknown>;
     setCounts({
       orders: Number(row.orders ?? 0),
       rider: Number(row.rider ?? 0),
       payouts: Number(row.payouts ?? 0),
+      supplierPayouts: Number(row.supplier_payouts ?? 0),
     });
   }, []);
 

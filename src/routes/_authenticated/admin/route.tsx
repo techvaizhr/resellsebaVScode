@@ -226,6 +226,7 @@ function AdminLayout() {
         "/admin/orders": navCounts.orders,
         "/admin/rider-followup": navCounts.rider,
         "/admin/payouts": navCounts.payouts,
+        "/admin/supplier-payouts": navCounts.supplierPayouts,
       }),
     [navCounts, permissions, isSuperAdmin],
   );
