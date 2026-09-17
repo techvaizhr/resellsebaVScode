@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, EmptyState } from "@/components/ui-kit";
-import { ProductVideo } from "@/components/product-video";
+import { ProductMediaGallery } from "@/components/product-media-gallery";
 import {
   Plus,
   Loader2,
@@ -1029,7 +1029,6 @@ function ProductDetailModal({
   const [p, setP] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [images, setImages] = useState<{ url: string }[]>([]);
-  const [activeUrl, setActiveUrl] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -1042,7 +1041,6 @@ function ProductDetailModal({
       if (data) {
         setP(data);
         setImages(data.product_images || []);
-        setActiveUrl(data.og_image_url ?? data.product_images?.[0]?.url ?? null);
       }
       setLoading(false);
     }
@@ -1081,40 +1079,22 @@ function ProductDetailModal({
 
         <div className="p-6">
           <div className="grid gap-8 md:grid-cols-2">
-            <div className="space-y-4">
-              <div className="relative aspect-square overflow-hidden rounded-xl border bg-muted">
-                {activeUrl ? (
-                  <img src={activeUrl} className="h-full w-full object-cover" alt="" />
-                ) : (
-                  <div className="grid h-full w-full place-items-center text-muted-foreground">
-                    No image
-                  </div>
-                )}
-                <div className="absolute right-3 top-3 flex flex-col gap-2">
+            <ProductMediaGallery
+              images={imageUrls}
+              youtubeUrl={p.video_url}
+              fileUrl={p.video_file_url}
+              name={p.name}
+              renderImageActions={(activeUrl, allImages) => (
+                <div className="absolute right-3 top-3 z-10 flex flex-col gap-2">
                   <ImageDownloadTools
                     compact
-                    images={imageUrls}
+                    images={allImages}
                     activeUrl={activeUrl}
                     baseName={p.name}
                   />
                 </div>
-              </div>
-              {imageUrls.length > 1 && (
-                <div className="flex flex-wrap gap-2">
-                  {imageUrls.map((url, i) => (
-                    <button
-                      key={url + i}
-                      type="button"
-                      onClick={() => setActiveUrl(url)}
-                      className={`h-16 w-16 overflow-hidden rounded-lg border-2 bg-muted transition ${url === activeUrl ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"}`}
-                    >
-                      <img src={url} className="h-full w-full object-cover" alt="" />
-                    </button>
-                  ))}
-                </div>
               )}
-              <ProductVideo youtubeUrl={p.video_url} fileUrl={p.video_file_url} name={p.name} />
-            </div>
+            />
 
             <div className="space-y-6">
               <div>

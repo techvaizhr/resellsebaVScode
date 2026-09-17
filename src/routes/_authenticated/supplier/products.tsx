@@ -11,7 +11,7 @@ import { DataToolbar, Pagination, ActionMenu, usePaginated, type FilterDef } fro
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { type UploadedImage } from "@/components/ImageUploader";
 import { ProductFormModal } from "@/components/product-form-modal";
-import { ProductVideo } from "@/components/product-video";
+import { ProductMediaGallery } from "@/components/product-media-gallery";
 
 import { useSupplier } from "@/components/supplier-context";
 import {
@@ -456,14 +456,8 @@ function SupplierProductDetail({
       }
     >
       <div className="space-y-4">
-        {images.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {images.map((im, i) => (
-              <img key={i} src={im.url} alt="" className="h-20 w-20 rounded-md border object-cover" />
-            ))}
-          </div>
-        )}
-        <ProductVideo
+        <ProductMediaGallery
+          images={images.map((image) => image.url)}
           youtubeUrl={(draft.video_url as string | undefined) ?? product.video_url}
           fileUrl={product.video_file_url}
           name={product.name}
