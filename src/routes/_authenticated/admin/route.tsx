@@ -222,8 +222,12 @@ function AdminLayout() {
   const isSuperAdmin = roles.includes("super_admin");
   const navWithBadge = useMemo(
     () =>
-      applyOrderBadge(filterNav(NAV, permissions, isSuperAdmin), "/admin/orders", orderNavCount),
-    [orderNavCount, permissions, isSuperAdmin],
+      applyNavBadges(filterNav(NAV, permissions, isSuperAdmin), {
+        "/admin/orders": navCounts.orders,
+        "/admin/rider-followup": navCounts.rider,
+        "/admin/payouts": navCounts.payouts,
+      }),
+    [navCounts, permissions, isSuperAdmin],
   );
   const isStaff = roles.includes("staff");
   const canEnter = isSuperAdmin || isStaff;
