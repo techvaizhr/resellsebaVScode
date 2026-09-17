@@ -8,6 +8,7 @@ import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { useAuth, useCan } from "@/lib/use-auth";
 import { DataToolbar, Pagination, usePaginated } from "@/components/data-list";
 import { toast } from "sonner";
+import { PayoutResellerReport } from "@/components/payout-reseller-report";
 
 export const Route = createFileRoute("/_authenticated/admin/payouts")({
   validateSearch: (s: Record<string, unknown>): { reseller?: string; status?: string } => ({
@@ -106,6 +107,7 @@ function AdminPayouts() {
   const canManage = can("payouts.manage");
   const [toDelete, setToDelete] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [tab, setTab] = useState<"requests" | "report">("requests");
 
   useEffect(() => { load(); }, []);
 
@@ -189,6 +191,28 @@ function AdminPayouts() {
     <div>
       <PageHeader title="Payout Management" description="Review withdrawal requests, check payout accounts and process payments." />
 
+      <div className="mb-4 inline-flex rounded-lg border bg-muted/40 p-1">
+        {(["requests", "report"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={
+              "rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors " +
+              (tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")
+            }
+          >
+            {t === "requests" ? "Payout requests" : "Reseller balance report"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "report" ? (
+        <>
+          <DataToolbar search={query} onSearch={setQuery} searchPlaceholder="Search reseller, code, account…" perPage={perPage} onPerPage={setPerPage} />
+          <PayoutResellerReport search={query} />
+        </>
+      ) : (
+      <>
       <DataToolbar
         search={query}
         onSearch={setQuery}
@@ -279,6 +303,8 @@ function AdminPayouts() {
           </div>
           <Pagination page={page} perPage={perPage} total={filteredRows.length} onPage={setPage} />
         </>
+      )}
+      </>
       )}
 
       <ConfirmModal
