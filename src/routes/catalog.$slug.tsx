@@ -6,6 +6,7 @@ import { getCatalogProductSeo } from "@/lib/seo.functions";
 import { seoLinks, seoMeta } from "@/lib/seo-meta";
 import { CopyBtn, useCatalogPrices } from "@/components/catalog/shell";
 import { ImagePickerButton } from "@/components/catalog/image-picker";
+import { ProductVideo } from "@/components/product-video";
 import { bdt } from "@/lib/finance-report";
 import { areaLabel } from "@/lib/delivery";
 import { ArrowLeft, Loader2, Truck } from "lucide-react";
@@ -93,6 +94,12 @@ function CatalogDetails() {
               <div className="grid h-full w-full place-items-center text-sm text-muted-foreground">No image</div>
             )}
           </div>
+          <ProductVideo
+            youtubeUrl={p.videoUrl}
+            fileUrl={p.videoFileUrl}
+            name={p.name}
+            className="mt-4 space-y-2"
+          />
           {p.images.length > 1 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {p.images.map((u, i) => (
