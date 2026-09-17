@@ -3121,6 +3121,28 @@ export type Database = {
       }
       admin_lookups: { Args: never; Returns: Json }
       admin_orders_page: { Args: { _statuses?: string[] }; Returns: Json }
+      admin_payout_report: {
+        Args: never
+        Returns: {
+          approved_payout: number
+          business_name: string
+          code: string
+          deposit_balance: number
+          due_balance: number
+          earned_profit: number
+          frozen_amount: number
+          last_paid_at: string
+          last_request_at: string
+          paid_out: number
+          payout_account_number: string
+          payout_method: string
+          pending_payout: number
+          rejected_payout: number
+          request_count: number
+          reseller_id: string
+          status: string
+        }[]
+      }
       admin_reseller_metrics: {
         Args: never
         Returns: {
