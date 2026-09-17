@@ -118,9 +118,9 @@ export function ProductVideo({
     : "aspect-video w-full";
 
   return (
-    <div className={className ?? "space-y-2"}>
+    <div className={className ?? "min-w-0 max-w-full space-y-2 overflow-hidden"}>
       <div
-        className={`relative w-full overflow-hidden rounded-xl border bg-black ${
+        className={`relative min-w-0 max-w-full overflow-hidden rounded-xl border bg-black ${
           vertical ? "mx-auto max-w-[240px] sm:max-w-[280px]" : ""
         }`}
       >
@@ -131,10 +131,10 @@ export function ProductVideo({
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             loading="lazy"
-            className={`block ${ratio}`}
+            className={`block min-w-0 max-w-full ${ratio}`}
           />
         ) : (
-          <video src={fileUrl!} controls preload="metadata" className={`block bg-black ${ratio}`} />
+          <video src={fileUrl ?? undefined} controls preload="metadata" className={`block min-w-0 max-w-full bg-black ${ratio}`} />
         )}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2">
           <span className="inline-flex items-center gap-1.5 rounded-md bg-black/55 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur">
