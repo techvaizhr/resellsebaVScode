@@ -2340,6 +2340,7 @@ export type Database = {
           provider: Database["public"]["Enums"]["courier_provider"]
           request_payload: Json | null
           response_payload: Json | null
+          rider_assigned_at: string | null
           status: Database["public"]["Enums"]["shipment_status"]
           tracking_id: string | null
           tracking_url: string | null
@@ -2362,6 +2363,7 @@ export type Database = {
           provider?: Database["public"]["Enums"]["courier_provider"]
           request_payload?: Json | null
           response_payload?: Json | null
+          rider_assigned_at?: string | null
           status?: Database["public"]["Enums"]["shipment_status"]
           tracking_id?: string | null
           tracking_url?: string | null
@@ -2384,6 +2386,7 @@ export type Database = {
           provider?: Database["public"]["Enums"]["courier_provider"]
           request_payload?: Json | null
           response_payload?: Json | null
+          rider_assigned_at?: string | null
           status?: Database["public"]["Enums"]["shipment_status"]
           tracking_id?: string | null
           tracking_url?: string | null
@@ -3469,6 +3472,7 @@ export type Database = {
         }
         Returns: number
       }
+      rider_followup_orders: { Args: never; Returns: Json }
       seed_reseller_store: { Args: { _reseller_id: string }; Returns: number }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
