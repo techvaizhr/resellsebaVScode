@@ -1,4 +1,4 @@
-import { mapCourierStatus, normalizeCourierStatus } from "@/lib/courier-status";
+import { isRiderFollowupStatus, mapCourierStatus, normalizeCourierStatus } from "@/lib/courier-status";
 
 export type Cfg = Record<string, string>;
 
@@ -294,10 +294,22 @@ export async function applyCourierUpdate(
         .maybeSingle();
       if (!cur?.tracking_url) keepLink = echoedLink;
     }
+    // Rider stage: remember when the parcel first went out with a rider, so the
+    // Rider Followup page can show how long it has been waiting.
+    let riderAt: string | undefined = undefined;
+    if (isRiderFollowupStatus(provider, statusKey)) {
+      const { data: cur } = await db
+        .from("shipments")
+        .select("rider_assigned_at")
+        .eq("id", shipment.id)
+        .maybeSingle();
+      if (!cur?.rider_assigned_at) riderAt = nowIso;
+    }
     await db
       .from("shipments")
       .update({
         tracking_url: keepLink,
+        rider_assigned_at: riderAt,
         status: mapped.ship,
         courier_status: statusKey,
         cod_amount: args.codAmount ?? undefined,

@@ -46,7 +46,7 @@ import { bdt, orderProfit, orderReceived, orderShortfall } from "@/lib/finance-r
 import { OrderMoneyPanel, AdvanceChip } from "@/components/order-money";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getOrderDetails, recheckCourierStatus } from "@/lib/order-details.functions";
+import { getOrderDetails, recheckCourierStatus, bulkRecheckCourierStatus } from "@/lib/order-details.functions";
 import { syncSteadfastStatus, syncPathaoStatus } from "@/lib/couriers.functions";
 
 import { CourierTimeline, type CourierEvent } from "@/components/CourierTimeline";
@@ -202,6 +202,7 @@ function OrdersPage() {
   const [pickOpen, setPickOpen] = useState(false);
   const [pickScope, setPickScope] = useState<"filtered" | "marked">("filtered");
   const [marked, setMarked] = useState<string[]>([]);
+  const bulkRecheck = useServerFn(bulkRecheckCourierStatus);
   const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -442,6 +443,19 @@ function OrdersPage() {
     });
   };
 
+
+  /** Live courier status for every selected order (webhooks can be missed). */
+  const bulkCheckCourierStatus = async () => {
+    if (marked.length === 0) return;
+    try {
+      const res = await bulkRecheck({ data: { orderIds: [...marked] } });
+      toast.success(`${res.checked} parcel checked, ${res.changed} status updated`);
+      if (res.errors?.length) toast.error(res.errors[0]!);
+      await syncOrders([...marked]);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Courier status check failed");
+    }
+  };
 
   const bulkDeleteOrders = async () => {
     if (marked.length === 0) return;
@@ -689,6 +703,14 @@ function OrdersPage() {
             onClick={() => setStatusModal({ open: true, orderId: marked[0], currentStatus: orders.find(o => o.id === marked[0])?.status || "pending", isBulk: true })}
           >
             <Settings2 className="h-3.5 w-3.5" /> Change Status
+          </button>
+
+          <button
+            type="button"
+            className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent"
+            onClick={bulkCheckCourierStatus}
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Check Courier Status
           </button>
 
           <button

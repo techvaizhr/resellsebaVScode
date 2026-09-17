@@ -183,6 +183,13 @@
       "when": 1789238690124,
       "tag": "0025_transaction_report_admin_direct_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1789629378990,
+      "tag": "0026_rider_followup",
+      "breakpoints": true
     }
   ]
 }

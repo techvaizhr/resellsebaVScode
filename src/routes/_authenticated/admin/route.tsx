@@ -37,6 +37,7 @@ import {
   Undo2,
   ScrollText,
   Home,
+  Bike,
 } from "lucide-react";
 import { AppShell, type NavEntry } from "@/components/AppShell";
 import { BulkScanButton } from "@/components/BulkScanModal";
@@ -65,6 +66,7 @@ const NAV: NavEntry[] = [
     ],
   },
   { label: "Orders", to: "/admin/orders", icon: <ShoppingCart className="h-4 w-4" /> },
+  { label: "Rider Followup", to: "/admin/rider-followup", icon: <Bike className="h-4 w-4" /> },
   { label: "Customers", to: "/admin/customers", icon: <Contact className="h-4 w-4" /> },
 
   {

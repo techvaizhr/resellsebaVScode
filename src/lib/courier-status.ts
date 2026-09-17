@@ -52,9 +52,17 @@ export const STEADFAST_STATUS_MAP: Record<string, StatusMapping> = {
   unknown_approval_pending: { ship: "in_transit", order: "shipped", label: "Unknown (approval pending)" },
   delivered: { ship: "delivered", order: "delivered", label: "Delivered" },
   partial_delivered: { ship: "delivered", order: "pending_partial", label: "Partial delivered" },
+  // money collected but parcel (fully or partly) coming back — settle as partial
+  paid_return: { ship: "returned", order: "pending_partial", label: "Paid return" },
+  "paid-return": { ship: "returned", order: "pending_partial", label: "Paid return" },
+  // rider stage — still "To Courier", but tracked in Rider Followup
+  assigned_for_delivery: { ship: "in_transit", order: "shipped", label: "Assigned for delivery" },
+  assigned_to_rider: { ship: "in_transit", order: "shipped", label: "Assigned to rider" },
+  ready_for_delivery: { ship: "in_transit", order: "shipped", label: "Ready for delivery" },
   // courier side return — order waits in Pending Return until admin receives it
   cancelled: { ship: "returned", order: "pending_return", label: "Cancelled / returning" },
   return_requested: { ship: "returned", order: "pending_return", label: "Return requested" },
+  returned: { ship: "returned", order: "pending_return", label: "Returned (courier)" },
   unknown: { ship: "in_transit", order: "shipped", label: "Unknown" },
 };
 
@@ -73,13 +81,18 @@ export const CARRYBEE_STATUS_MAP: Record<string, StatusMapping> = {
   "at-central-warehouse": { ship: "in_transit", order: "shipped", label: "At central warehouse" },
   "in-transit": { ship: "in_transit", order: "shipped", label: "In transit" },
   "received-at-last-mile-hub": { ship: "in_transit", order: "shipped", label: "Received at last mile hub" },
+  sorted: { ship: "in_transit", order: "shipped", label: "Sorted" },
   "assigned-for-delivery": { ship: "in_transit", order: "shipped", label: "Assigned for delivery" },
+  "assigned-to-rider": { ship: "in_transit", order: "shipped", label: "Assigned to rider" },
+  "ready-for-delivery": { ship: "in_transit", order: "shipped", label: "Ready for delivery" },
   "delivery-on-hold": { ship: "in_transit", order: "shipped", label: "Delivery on hold" },
   delivered: { ship: "delivered", order: "delivered", label: "Delivered" },
   "partial-delivery": { ship: "delivered", order: "pending_partial", label: "Partial delivered" },
+  "partial-delivered": { ship: "delivered", order: "pending_partial", label: "Partial delivered" },
   "delivery-failed": { ship: "in_transit", order: "pending_return", label: "Delivery failed" },
   returned: { ship: "returned", order: "pending_return", label: "Returned (courier)" },
-  "paid-return": { ship: "returned", order: "pending_return", label: "Paid return" },
+  // money already collected — the order settles as a partial, not a plain return
+  "paid-return": { ship: "returned", order: "pending_partial", label: "Paid return" },
   exchange: { ship: "in_transit", order: "shipped", label: "Exchange" },
   paid: { ship: "delivered", order: "delivered", label: "Paid / invoiced" },
   "returned-at-sorting": { ship: "returned", order: "pending_return", label: "Returned at sorting" },
@@ -105,6 +118,8 @@ export const PATHAO_STATUS_MAP: Record<string, StatusMapping> = {
   "in-transit": { ship: "in_transit", order: "shipped", label: "In transit" },
   "received-at-last-mile-hub": { ship: "in_transit", order: "shipped", label: "Received at last mile hub" },
   "assigned-for-delivery": { ship: "in_transit", order: "shipped", label: "Assigned for delivery" },
+  "assigned-to-rider": { ship: "in_transit", order: "shipped", label: "Assigned to rider" },
+  "ready-for-delivery": { ship: "in_transit", order: "shipped", label: "Ready for delivery" },
   delivered: { ship: "delivered", order: "delivered", label: "Delivered" },
   "partial-delivery": { ship: "delivered", order: "pending_partial", label: "Partial delivered" },
   "delivery-failed": { ship: "in_transit", order: "pending_return", label: "Delivery failed" },
@@ -115,7 +130,9 @@ export const PATHAO_STATUS_MAP: Record<string, StatusMapping> = {
   // courier-side return family — order waits in Pending Return until admin receives it
   returned: { ship: "returned", order: "pending_return", label: "Returned (courier)" },
   return: { ship: "returned", order: "pending_return", label: "Returned (courier)" },
-  "paid-return": { ship: "returned", order: "pending_return", label: "Paid return" },
+  // money already collected — the order settles as a partial, not a plain return
+  "paid-return": { ship: "returned", order: "pending_partial", label: "Paid return" },
+  "return-initiated": { ship: "returned", order: "pending_return", label: "Return initiated" },
   "return-id-created": { ship: "returned", order: "pending_return", label: "Return id created" },
   "return-in-transit": { ship: "returned", order: "pending_return", label: "Return in transit" },
   "returned-to-merchant": { ship: "returned", order: "pending_return", label: "Returned to merchant" },
@@ -169,6 +186,42 @@ export function courierStatusLabel(raw: string | null | undefined, provider?: st
     key.replace(/[-_]/g, " ")
   );
 }
+
+/**
+ * Rider stage: the parcel is with a delivery rider right now.
+ * The order status stays "To Courier"; these orders are additionally collected
+ * in the Rider Followup page so nobody has to dig through the whole list.
+ */
+export const RIDER_FOLLOWUP_COURIER_STATUSES = [
+  "assigned-for-delivery",
+  "assigned_for_delivery",
+  "assigned-to-rider",
+  "assigned_to_rider",
+  "ready-for-delivery",
+  "ready_for_delivery",
+];
+
+export function isRiderFollowupStatus(
+  provider: string | null | undefined,
+  raw: string | null | undefined,
+): boolean {
+  const key = normalizeCourierStatus(provider, raw).replace(/_/g, "-");
+  return RIDER_FOLLOWUP_COURIER_STATUSES.map((s) => s.replace(/_/g, "-")).includes(key);
+}
+
+/** "4h 20m" style elapsed label used by the Rider Followup list. */
+export function elapsedLabel(from: string | Date | null | undefined, now: Date = new Date()) {
+  if (!from) return "—";
+  const start = typeof from === "string" ? new Date(from) : from;
+  const mins = Math.max(0, Math.floor((now.getTime() - start.getTime()) / 60000));
+  const d = Math.floor(mins / 1440);
+  const h = Math.floor((mins % 1440) / 60);
+  const m = mins % 60;
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
 
 
 export type OrderTabKey =

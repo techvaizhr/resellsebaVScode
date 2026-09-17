@@ -72,3 +72,69 @@ export const recheckCourierStatus = createServerFn({ method: "POST" })
     return { success: true, message: `Courier status: ${statuses.join(", ")}` };
   });
 
+/**
+ * Bulk "check courier status" for selected orders.
+ * The caller's own (RLS-scoped) client decides which orders they may touch;
+ * the sync itself runs privileged because courier credentials are admin-only.
+ */
+export const bulkRecheckCourierStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ orderIds: z.array(z.string()).min(1).max(200) }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { syncShipmentStatus } = await import("@/lib/couriers.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Only orders the caller can actually read.
+    const { data: visible } = await supabase
+      .from("orders")
+      .select("id, order_number, status")
+      .in("id", data.orderIds);
+    const allowed = visible ?? [];
+    if (allowed.length === 0) return { checked: 0, changed: 0, errors: ["No accessible order."] };
+
+    const { data: shipments } = await supabaseAdmin
+      .from("shipments")
+      .select("id, provider, consignment_id, tracking_id, order_id")
+      .in(
+        "order_id",
+        allowed.map((o: any) => o.id),
+      );
+
+    const before = new Map(allowed.map((o: any) => [o.id, o.status]));
+    const errors: string[] = [];
+    let checked = 0;
+    for (const sh of shipments ?? []) {
+      const num = allowed.find((o: any) => o.id === (sh as any).order_id)?.order_number ?? null;
+      try {
+        await syncShipmentStatus(supabaseAdmin as any, sh as any, num);
+        checked += 1;
+      } catch (err: any) {
+        errors.push(
+          `${num ?? (sh as any).order_id}: ${
+            err instanceof Response ? await err.clone().text() : (err?.message ?? String(err))
+          }`,
+        );
+      }
+    }
+
+    const { data: after } = await supabaseAdmin
+      .from("orders")
+      .select("id, status")
+      .in(
+        "id",
+        allowed.map((o: any) => o.id),
+      );
+    const changed = (after ?? []).filter((o: any) => before.get(o.id) !== o.status).length;
+    return { checked, changed, errors: errors.slice(0, 5) };
+  });
+
+/** Orders currently out with a delivery rider (admin / reseller / supplier scoped). */
+export const getRiderFollowup = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc("rider_followup_orders");
+    if (error) throw new Error(error.message);
+    return (data ?? { orders: [] }) as { orders: any[]; now?: string };
+  });
+
