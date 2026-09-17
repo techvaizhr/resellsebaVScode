@@ -116,6 +116,8 @@ function EditProduct() {
       setMetaTitle(p.meta_title ?? "");
       setMetaDesc(p.meta_description ?? "");
       setKeywords(p.keywords ?? "");
+      setVideoUrl((p as any).video_url ?? "");
+      setVideoFileUrl((p as any).video_file_url ?? null);
       const existing: UploadedImage[] = (imgs ?? []).map((r) => ({ url: r.url, path: "", bytes: 0 }));
       if (existing.length === 0 && p.og_image_url) existing.push({ url: p.og_image_url, path: "", bytes: 0 });
       setImages(existing);
