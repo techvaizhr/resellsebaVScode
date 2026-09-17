@@ -204,6 +204,13 @@
       "when": 1789630550517,
       "tag": "0028_reseller_report",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1789630766164,
+      "tag": "0029_reseller_report_overview_fix",
+      "breakpoints": true
     }
   ]
 }
