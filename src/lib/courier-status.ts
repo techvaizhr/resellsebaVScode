@@ -98,6 +98,15 @@ export const CARRYBEE_STATUS_MAP: Record<string, StatusMapping> = {
   "returned-at-sorting": { ship: "returned", order: "pending_return", label: "Returned at sorting" },
   "returned-in-transit": { ship: "returned", order: "pending_return", label: "Return in transit" },
   "returned-to-merchant": { ship: "returned", order: "pending_return", label: "Returned to merchant" },
+  // short forms seen on the sync API (no `order.` prefix, plain words)
+  return: { ship: "returned", order: "pending_return", label: "Returned (courier)" },
+  "return-requested": { ship: "returned", order: "pending_return", label: "Return requested" },
+  "return-in-transit": { ship: "returned", order: "pending_return", label: "Return in transit" },
+  "partial-paid-return": { ship: "returned", order: "pending_partial", label: "Partial paid return" },
+  "on-hold": { ship: "in_transit", order: "shipped", label: "On hold" },
+  "pickup-on-hold": { ship: "booked", order: "shipped", label: "Pickup on hold" },
+  "on-the-way-to-last-mile-hub": { ship: "in_transit", order: "shipped", label: "On the way to last mile hub" },
+  "on-the-way-to-sorting-hub": { ship: "in_transit", order: "shipped", label: "On the way to sorting hub" },
 };
 
 /**
@@ -136,18 +145,24 @@ export const PATHAO_STATUS_MAP: Record<string, StatusMapping> = {
   "return-id-created": { ship: "returned", order: "pending_return", label: "Return id created" },
   "return-in-transit": { ship: "returned", order: "pending_return", label: "Return in transit" },
   "returned-to-merchant": { ship: "returned", order: "pending_return", label: "Returned to merchant" },
+  "pickup-on-hold": { ship: "booked", order: "shipped", label: "Pickup on hold" },
+  "on-the-way-to-sorting-hub": { ship: "in_transit", order: "shipped", label: "On the way to sorting hub" },
+  "on-the-way-to-last-mile-hub": { ship: "in_transit", order: "shipped", label: "On the way to last mile hub" },
 };
 
-export function normalizeCourierStatus(provider: string | null | undefined, raw: string | null | undefined) {
-  const key = String(raw ?? "")
+/**
+ * Every provider is normalized the same way: drop the event prefix, lowercase,
+ * and collapse spaces / underscores / dots into single hyphens. Carrybee sends
+ * the same state as `order.paid-return`, `paid return` or `paid_return`
+ * depending on whether it came from the webhook or the sync API.
+ */
+export function normalizeCourierStatus(_provider: string | null | undefined, raw: string | null | undefined) {
+  return String(raw ?? "")
     .trim()
-    .toLowerCase();
-  if (provider === "carrybee") return key.replace(/^order\./, "");
-  if (provider === "pathao")
-    return key
-      .replace(/^(order|store)\./, "")
-      .replace(/[\s_]+/g, "-");
-  return key;
+    .toLowerCase()
+    .replace(/^(order|store|delivery|shipment)\./, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function statusTable(provider: string | null | undefined) {
@@ -156,13 +171,18 @@ function statusTable(provider: string | null | undefined) {
   return STEADFAST_STATUS_MAP;
 }
 
+/** Look a normalized (hyphen) key up in a table that may use underscore keys. */
+function lookup(table: Record<string, StatusMapping>, key: string): StatusMapping | undefined {
+  return table[key] ?? table[key.replace(/-/g, "_")];
+}
+
 export function mapCourierStatus(
   provider: string | null | undefined,
   raw: string | null | undefined,
 ): StatusMapping {
   const key = normalizeCourierStatus(provider, raw);
   return (
-    statusTable(provider)[key] ?? {
+    lookup(statusTable(provider), key) ?? {
       ship: "in_transit" as ShipmentStatus,
       order: "shipped" as OrderStatus,
       label: key ? key.replace(/[-_]/g, " ") : "unknown",
