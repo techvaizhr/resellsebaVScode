@@ -64,6 +64,34 @@ export function VideoDownloadButton({
   );
 }
 
+export function CopyVideoLinkButton({ url }: { url: string }) {
+  const [done, setDone] = useState(false);
+
+  async function copy(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(url);
+      setDone(true);
+      toast.success("Video link copied");
+      setTimeout(() => setDone(false), 1600);
+    } catch {
+      toast.error("Could not copy the link");
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title="Copy video link"
+      className="btn-brand inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold shadow-sm"
+    >
+      {done ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy video link
+    </button>
+  );
+}
+
 /**
  * Product video block: YouTube embed and/or uploaded file with 1-click download.
  * Renders nothing when the product has no video.
