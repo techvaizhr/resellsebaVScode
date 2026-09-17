@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui-kit";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader, type UploadedImage } from "@/components/ImageUploader";
+import { VideoUploader } from "@/components/VideoUploader";
 import { SearchableSelect } from "@/components/searchable-select";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { uniqueProductSlug } from "@/lib/slug";
@@ -47,6 +48,8 @@ function NewProduct() {
   const [stock, setStock] = useState("0");
   const [weight, setWeight] = useState("");
   const [images, setImages] = useState<UploadedImage[]>([]);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [videoFileUrl, setVideoFileUrl] = useState<string | null>(null);
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDesc, setMetaDesc] = useState("");
   const [keywords, setKeywords] = useState("");
@@ -217,6 +220,8 @@ function NewProduct() {
           stock: Number(stock),
           weight_grams: weight === "" ? null : Math.max(0, Math.round((Number(weight) || 0) * 1000)),
           og_image_url: images[0]?.url ?? null,
+          video_url: videoUrl.trim() || null,
+          video_file_url: videoFileUrl,
           meta_title: metaTitle || null,
           meta_description: metaDesc || null,
           keywords: keywords || null,
@@ -341,6 +346,21 @@ function NewProduct() {
             variant="square"
             label="Add image"
           />
+        </div>
+
+        <div className="surface-card p-6">
+          <h3 className="mb-3 text-sm font-semibold">Video</h3>
+          <div className="space-y-4">
+            <Field label="YouTube link (optional)">
+              <input
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                className={inputCls}
+                placeholder="https://youtu.be/…"
+              />
+            </Field>
+            <VideoUploader value={videoFileUrl} onChange={setVideoFileUrl} />
+          </div>
         </div>
 
         <div className="surface-card p-6">

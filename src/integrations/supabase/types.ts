@@ -1535,6 +1535,8 @@ export type Database = {
           supplier_id: string | null
           supplier_price: number
           updated_at: string
+          video_file_url: string | null
+          video_url: string | null
           weight_grams: number | null
         }
         Insert: {
@@ -1572,6 +1574,8 @@ export type Database = {
           supplier_id?: string | null
           supplier_price?: number
           updated_at?: string
+          video_file_url?: string | null
+          video_url?: string | null
           weight_grams?: number | null
         }
         Update: {
@@ -1609,6 +1613,8 @@ export type Database = {
           supplier_id?: string | null
           supplier_price?: number
           updated_at?: string
+          video_file_url?: string | null
+          video_url?: string | null
           weight_grams?: number | null
         }
         Relationships: [

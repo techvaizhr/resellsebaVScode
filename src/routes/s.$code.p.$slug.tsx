@@ -10,6 +10,7 @@ import { addToCart } from "@/lib/store-cart";
 import { deliveryLabel } from "@/lib/delivery";
 import { useStore } from "@/components/store/store-context";
 import { ProductCodeChip } from "@/components/product-code";
+import { ProductVideo } from "@/components/product-video";
 import {
   CopyButton,
   ImageDownloadTools,
@@ -169,6 +170,12 @@ function ProductPage() {
               ))}
             </div>
           )}
+          <ProductVideo
+            youtubeUrl={p.video_url}
+            fileUrl={p.video_file_url}
+            name={title}
+            className="mt-4 space-y-2"
+          />
         </div>
 
         <div>

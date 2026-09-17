@@ -13,6 +13,7 @@ import { ResellerProductCalc } from "@/components/price-breakdown";
 import { DataToolbar, Pagination, usePaginated, type FilterDef } from "@/components/data-list";
 import { CopyButton, stripHtml } from "@/components/store/reseller-tools";
 import { ImagePickerButton } from "@/components/catalog/image-picker";
+import { ProductVideo } from "@/components/product-video";
 
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { ProductCodeChip } from "@/components/product-code";
@@ -572,6 +573,7 @@ function ProductDetailModal({ id, onClose, brands, categories }: { id: string; o
                   ))}
                 </div>
               )}
+              <ProductVideo youtubeUrl={p.video_url} fileUrl={p.video_file_url} name={p.name} />
             </div>
 
 
