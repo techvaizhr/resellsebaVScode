@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, Loader2, Play } from "lucide-react";
+import { Check, Copy, Download, Loader2, Play } from "lucide-react";
 import { toast } from "sonner";
 import { youtubeEmbed } from "@/lib/tutorials";
 
