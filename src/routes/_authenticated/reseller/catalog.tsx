@@ -13,7 +13,7 @@ import { ResellerProductCalc } from "@/components/price-breakdown";
 import { DataToolbar, Pagination, usePaginated, type FilterDef } from "@/components/data-list";
 import { CopyButton, stripHtml } from "@/components/store/reseller-tools";
 import { ImagePickerButton } from "@/components/catalog/image-picker";
-import { ProductVideo } from "@/components/product-video";
+import { ProductMediaGallery } from "@/components/product-media-gallery";
 
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { ProductCodeChip } from "@/components/product-code";
@@ -500,7 +500,6 @@ function ProductDetailModal({ id, onClose, brands, categories }: { id: string; o
   const { settings: adv } = useAdvancedSettings();
   const [p, setP] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [active, setActive] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -532,7 +531,6 @@ function ProductDetailModal({ id, onClose, brands, categories }: { id: string; o
     ),
   ];
 
-  const activeUrl = imageUrls[Math.min(active, imageUrls.length - 1)] ?? null;
   const detailsText = stripHtml([p.short_description, p.description].filter(Boolean).join("\n\n"));
 
   return (
@@ -547,34 +545,17 @@ function ProductDetailModal({ id, onClose, brands, categories }: { id: string; o
 
         <div className="p-6">
           <div className="grid gap-8 md:grid-cols-2">
-            <div className="space-y-4">
-              <div className="relative aspect-square overflow-hidden rounded-xl border bg-muted">
-                {activeUrl ? (
-                  <img src={activeUrl} className="h-full w-full object-cover" alt="" />
-                ) : (
-                  <div className="grid h-full w-full place-items-center text-muted-foreground">No image</div>
-                )}
-                <div className="absolute right-3 top-3 flex flex-col gap-2">
+            <ProductMediaGallery
+              images={imageUrls}
+              youtubeUrl={p.video_url}
+              fileUrl={p.video_file_url}
+              name={p.name}
+              renderImageActions={() => (
+                <div className="absolute right-3 top-3 z-10">
                   <ImagePickerButton images={imageUrls} baseName={p.name} />
                 </div>
-
-              </div>
-              {imageUrls.length > 1 && (
-                <div className="flex flex-wrap gap-2">
-                  {imageUrls.map((url, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setActive(i)}
-                      className={`h-16 w-16 overflow-hidden rounded-lg border bg-muted transition ${i === active ? "ring-2 ring-primary border-primary" : "hover:opacity-80"}`}
-                    >
-                      <img src={url} className="h-full w-full object-cover" alt="" />
-                    </button>
-                  ))}
-                </div>
               )}
-              <ProductVideo youtubeUrl={p.video_url} fileUrl={p.video_file_url} name={p.name} />
-            </div>
+            />
 
 
             <div className="space-y-6">

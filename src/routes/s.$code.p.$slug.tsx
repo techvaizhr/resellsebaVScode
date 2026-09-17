@@ -10,7 +10,7 @@ import { addToCart } from "@/lib/store-cart";
 import { deliveryLabel } from "@/lib/delivery";
 import { useStore } from "@/components/store/store-context";
 import { ProductCodeChip } from "@/components/product-code";
-import { ProductVideo } from "@/components/product-video";
+import { ProductMediaGallery } from "@/components/product-media-gallery";
 import {
   CopyButton,
   ImageDownloadTools,
@@ -56,12 +56,10 @@ function ProductPage() {
   const store = useStore();
   const listing = store.bySlug(slug);
   const [qty, setQty] = useState(1);
-  const [idx, setIdx] = useState(0);
   const tools = useResellerTools();
 
   useEffect(() => {
     setQty(1);
-    setIdx(0);
     if (listing)
       trackViewContent({ id: listing.product!.id, name: store.title(listing), price: Number(listing.selling_price) });
   }, [listing?.id]);
@@ -82,7 +80,7 @@ function ProductPage() {
   const title = store.title(listing);
   const price = Number(listing.selling_price);
   const images = p.product_images ?? [];
-  const active = images[idx]?.url ?? store.image(listing);
+  const active = images[0]?.url ?? store.image(listing);
   const inStock = p.stock === null || Number(p.stock) > 0;
   const imageUrls = images.map((im) => im.url).filter(Boolean);
   const detailsText = stripHtml(
@@ -125,20 +123,17 @@ function ProductPage() {
 
       <div className="grid gap-10 lg:grid-cols-2">
         <div>
-          <div
-            className={cx(
-              "relative aspect-square overflow-hidden rounded-[var(--st-radius)] border bg-[var(--st-bg-alt)]",
-              borderc,
-            )}
-          >
-            {active ? (
-              <img src={active} alt={title} className="h-full w-full object-cover" />
-            ) : (
-              <div className={cx("grid h-full w-full place-items-center text-xs", muted)}>No image</div>
-            )}
-            {tools && (
-              <div className="absolute right-3 top-3 z-10 flex flex-col gap-2">
-                <ImageDownloadTools compact images={imageUrls} activeUrl={active} baseName={title} />
+          <ProductMediaGallery
+            images={imageUrls.length ? imageUrls : [active]}
+            youtubeUrl={p.video_url}
+            fileUrl={p.video_file_url}
+            name={title}
+            frameClassName={cx("rounded-[var(--st-radius)] bg-[var(--st-bg-alt)]", borderc)}
+            thumbnailClassName="rounded-[var(--st-radius-sm)]"
+            renderImageActions={(activeUrl, allImages) =>
+              tools ? (
+                <div className="absolute right-3 top-3 z-10 flex flex-col gap-2">
+                  <ImageDownloadTools compact images={allImages} activeUrl={activeUrl} baseName={title} />
                 <CopyButton
                   value={title}
                   className="h-9 w-9 rounded-full bg-[var(--st-surface)]/90 p-0 shadow-sm backdrop-blur"
@@ -150,31 +145,9 @@ function ProductPage() {
                     className="h-9 w-9 rounded-full bg-[var(--st-surface)]/90 p-0 shadow-sm backdrop-blur"
                   />
                 )}
-              </div>
-            )}
-          </div>
-          {images.length > 1 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {images.map((im, i) => (
-                <button
-                  key={i}
-                  onClick={() => setIdx(i)}
-                  aria-label={`Image ${i + 1}`}
-                  className={cx(
-                    "h-16 w-16 flex-none overflow-hidden rounded-[var(--st-radius-sm)] border",
-                    i === idx ? "border-[var(--st-primary)]" : borderc,
-                  )}
-                >
-                  <img src={im.url} alt="" loading="lazy" className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
-          <ProductVideo
-            youtubeUrl={p.video_url}
-            fileUrl={p.video_file_url}
-            name={title}
-            className="mt-4 space-y-2"
+                </div>
+              ) : null
+            }
           />
         </div>
 

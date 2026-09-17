@@ -6,7 +6,7 @@ import { getCatalogProductSeo } from "@/lib/seo.functions";
 import { seoLinks, seoMeta } from "@/lib/seo-meta";
 import { CopyBtn, useCatalogPrices } from "@/components/catalog/shell";
 import { ImagePickerButton } from "@/components/catalog/image-picker";
-import { ProductVideo } from "@/components/product-video";
+import { ProductMediaGallery } from "@/components/product-media-gallery";
 import { bdt } from "@/lib/finance-report";
 import { areaLabel } from "@/lib/delivery";
 import { ArrowLeft, Loader2, Truck } from "lucide-react";
@@ -35,7 +35,6 @@ function CatalogDetails() {
   const fetchProduct = useServerFn(getCatalogProduct);
   const [state, setState] = useState<"loading" | "done">("loading");
   const [p, setP] = useState<P>(null);
-  const [idx, setIdx] = useState(0);
   // Price/profit/delivery shown only when logged in as admin/staff/reseller/leader.
   const showPrices = useCatalogPrices();
 
@@ -43,7 +42,6 @@ function CatalogDetails() {
     setState("loading");
     fetchProduct({ data: { slug } }).then((d) => {
       setP(d as P);
-      setIdx(0);
       setState("done");
     });
   }, [fetchProduct, slug]);
@@ -87,33 +85,18 @@ function CatalogDetails() {
 
       <div className="mt-6 grid gap-8 lg:grid-cols-2">
         <div>
-          <div className="surface-card aspect-square overflow-hidden">
-            {p.images[idx] ? (
-              <img src={p.images[idx]} alt={p.name} className="h-full w-full object-cover" />
-            ) : (
-              <div className="grid h-full w-full place-items-center text-sm text-muted-foreground">No image</div>
-            )}
-          </div>
-          <ProductVideo
+          <ProductMediaGallery
+            images={p.images}
             youtubeUrl={p.videoUrl}
             fileUrl={p.videoFileUrl}
             name={p.name}
-            className="mt-4 space-y-2"
+            frameClassName="surface-card"
+            renderImageActions={() => (
+              <div className="absolute right-3 top-3 z-10">
+                <ImagePickerButton images={p.images} baseName={p.name} />
+              </div>
+            )}
           />
-          {p.images.length > 1 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {p.images.map((u, i) => (
-                <button
-                  key={u}
-                  type="button"
-                  onClick={() => setIdx(i)}
-                  className={`h-16 w-16 overflow-hidden rounded-lg border-2 ${i === idx ? "border-primary" : "border-transparent"}`}
-                >
-                  <img src={u} alt={`${p.name} ${i + 1}`} className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         <div>
