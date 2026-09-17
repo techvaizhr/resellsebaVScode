@@ -83,7 +83,6 @@ export const bulkRecheckCourierStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { syncShipmentStatus } = await import("@/lib/couriers.server");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Only orders the caller can actually read.
     const { data: visible } = await supabase
@@ -93,7 +92,8 @@ export const bulkRecheckCourierStatus = createServerFn({ method: "POST" })
     const allowed = visible ?? [];
     if (allowed.length === 0) return { checked: 0, changed: 0, errors: ["No accessible order."] };
 
-    const { data: shipments } = await supabaseAdmin
+    // Same client as the single-order recheck: the caller's RLS-scoped session.
+    const { data: shipments } = await supabase
       .from("shipments")
       .select("id, provider, consignment_id, tracking_id, order_id")
       .in(
@@ -107,7 +107,7 @@ export const bulkRecheckCourierStatus = createServerFn({ method: "POST" })
     for (const sh of shipments ?? []) {
       const num = allowed.find((o: any) => o.id === (sh as any).order_id)?.order_number ?? null;
       try {
-        await syncShipmentStatus(supabaseAdmin as any, sh as any, num);
+        await syncShipmentStatus(supabase as any, sh as any, num);
         checked += 1;
       } catch (err: any) {
         errors.push(
@@ -118,7 +118,7 @@ export const bulkRecheckCourierStatus = createServerFn({ method: "POST" })
       }
     }
 
-    const { data: after } = await supabaseAdmin
+    const { data: after } = await supabase
       .from("orders")
       .select("id, status")
       .in(
