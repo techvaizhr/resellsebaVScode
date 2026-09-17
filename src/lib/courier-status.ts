@@ -313,23 +313,39 @@ export const COURIER_LOCKED_ORDER_STATUSES: OrderStatus[] = [
 ];
 
 /**
- * Courier-driven waiting states. They may only move forward to another
- * end-of-journey state — never back to "To Courier" / handover.
+ * THE ONLY AUTOMATIC FLOW (webhook, manual recheck, bulk recheck — all the same):
+ *
+ *   New Order / Send To admin / Confirmed / Packaging / Courier Handover  →  To Courier
+ *   To Courier                                                            →  Delivered
+ *                                                                         →  Pending Partial
+ *                                                                         →  Pending Return
+ *
+ * Nothing else is ever changed automatically. Pending Partial / Pending Return
+ * are settled by hand (Partial family, Returned, Damaged), and settled orders
+ * are never dragged back by a late or out-of-order courier event.
  */
-const COURIER_WAITING_STATUSES: OrderStatus[] = ["pending_partial", "pending_return"];
-const COURIER_FORWARD_FROM_WAITING: OrderStatus[] = ["delivered", "pending_partial", "pending_return"];
+const COURIER_PRE_SHIP_STATUSES: OrderStatus[] = [
+  "draft",
+  "pending",
+  "forwarded",
+  "confirmed",
+  "packaging",
+  "ready_to_ship",
+];
+const COURIER_IN_TRANSIT_STATUSES: OrderStatus[] = ["shipped", "processing"];
+/** Only these two targets are reachable automatically. */
+const COURIER_AUTO_TO_COURIER: OrderStatus[] = ["shipped"];
+const COURIER_AUTO_FROM_COURIER: OrderStatus[] = ["delivered", "pending_partial", "pending_return"];
 
-/**
- * Decide whether a courier event is allowed to change the order status.
- * Prevents the classic bug: an order settled as Partial / Returned gets pushed
- * back to "To Courier" by a later (or out-of-order) courier event.
- */
+/** Decide whether a courier event is allowed to change the order status. */
 export function canCourierSetOrderStatus(current: string, next: string): boolean {
   if (current === next) return false;
-  if ((COURIER_LOCKED_ORDER_STATUSES as string[]).includes(current)) return false;
-  if ((COURIER_WAITING_STATUSES as string[]).includes(current))
-    return (COURIER_FORWARD_FROM_WAITING as string[]).includes(next);
-  return true;
+  if ((COURIER_PRE_SHIP_STATUSES as string[]).includes(current))
+    return (COURIER_AUTO_TO_COURIER as string[]).includes(next);
+  if ((COURIER_IN_TRANSIT_STATUSES as string[]).includes(current))
+    return (COURIER_AUTO_FROM_COURIER as string[]).includes(next);
+  // pending_partial / pending_return / delivered / partial* / returned / damaged / cancelled
+  return false;
 }
 
 
