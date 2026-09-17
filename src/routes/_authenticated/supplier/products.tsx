@@ -11,6 +11,7 @@ import { DataToolbar, Pagination, ActionMenu, usePaginated, type FilterDef } fro
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { type UploadedImage } from "@/components/ImageUploader";
 import { ProductFormModal } from "@/components/product-form-modal";
+import { ProductVideo } from "@/components/product-video";
 
 import { useSupplier } from "@/components/supplier-context";
 import {

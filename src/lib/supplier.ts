@@ -313,6 +313,8 @@ export type SupplierProduct = {
   meta_title: string | null;
   meta_description: string | null;
   keywords: string | null;
+  video_url: string | null;
+  video_file_url: string | null;
   created_at: string;
   updated_at: string;
   images: SupplierProductImage[];
@@ -331,6 +333,7 @@ export type SupplierProductPayload = {
   meta_title?: string | null;
   meta_description?: string | null;
   keywords?: string | null;
+  video_url?: string | null;
   images?: SupplierProductImage[];
 };
 
