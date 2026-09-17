@@ -52,9 +52,17 @@ export const STEADFAST_STATUS_MAP: Record<string, StatusMapping> = {
   unknown_approval_pending: { ship: "in_transit", order: "shipped", label: "Unknown (approval pending)" },
   delivered: { ship: "delivered", order: "delivered", label: "Delivered" },
   partial_delivered: { ship: "delivered", order: "pending_partial", label: "Partial delivered" },
+  // money collected but parcel (fully or partly) coming back — settle as partial
+  paid_return: { ship: "returned", order: "pending_partial", label: "Paid return" },
+  "paid-return": { ship: "returned", order: "pending_partial", label: "Paid return" },
+  // rider stage — still "To Courier", but tracked in Rider Followup
+  assigned_for_delivery: { ship: "in_transit", order: "shipped", label: "Assigned for delivery" },
+  assigned_to_rider: { ship: "in_transit", order: "shipped", label: "Assigned to rider" },
+  ready_for_delivery: { ship: "in_transit", order: "shipped", label: "Ready for delivery" },
   // courier side return — order waits in Pending Return until admin receives it
   cancelled: { ship: "returned", order: "pending_return", label: "Cancelled / returning" },
   return_requested: { ship: "returned", order: "pending_return", label: "Return requested" },
+  returned: { ship: "returned", order: "pending_return", label: "Returned (courier)" },
   unknown: { ship: "in_transit", order: "shipped", label: "Unknown" },
 };
 
