@@ -253,6 +253,13 @@
       "when": 1789647845930,
       "tag": "0035_panel_nav_counts_supplier_payouts",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1789649846054,
+      "tag": "0036_admin_supplier_payout_report",
+      "breakpoints": true
     }
   ]
 }
