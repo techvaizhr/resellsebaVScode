@@ -3134,10 +3134,6 @@ export type Database = {
           reseller_id: string
         }[]
       }
-      admin_reseller_overview: {
-        Args: { _from?: string; _to?: string }
-        Returns: Json
-      }
       admin_review_product: {
         Args: { _approve: boolean; _id: string; _note?: string }
         Returns: Json
@@ -3379,7 +3375,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_reseller_report_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_supplier_admin: { Args: never; Returns: boolean }
       is_supplier_manager: { Args: never; Returns: boolean }
@@ -3454,10 +3449,6 @@ export type Database = {
           paid_out: number
           pending_payout: number
         }[]
-      }
-      reseller_report: {
-        Args: { _from?: string; _reseller?: string; _to?: string }
-        Returns: Json
       }
       resolve_delivery_charge: {
         Args: {
