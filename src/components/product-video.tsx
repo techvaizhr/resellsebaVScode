@@ -85,9 +85,11 @@ export function CopyVideoLinkButton({ url }: { url: string }) {
       type="button"
       onClick={copy}
       title="Copy video link"
-      className="btn-brand inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold shadow-sm"
+      className="btn-brand inline-flex max-w-full shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-semibold shadow-sm sm:px-2.5 sm:text-[11px]"
     >
-      {done ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy video link
+      {done ? <Check className="h-3.5 w-3.5 shrink-0" /> : <Copy className="h-3.5 w-3.5 shrink-0" />}
+      <span className="hidden sm:inline">Copy video link</span>
+      <span className="sm:hidden">Link</span>
     </button>
   );
 }
