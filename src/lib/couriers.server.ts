@@ -1,5 +1,5 @@
 import {
-  COURIER_LOCKED_ORDER_STATUSES,
+
   canCourierSetOrderStatus,
   isRiderFollowupStatus,
   mapCourierStatus,
