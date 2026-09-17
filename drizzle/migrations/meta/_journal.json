@@ -225,6 +225,13 @@
       "when": 1789636335700,
       "tag": "0031_supplier_product_video",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1789636603606,
+      "tag": "0032_rider_followup_status_match",
+      "breakpoints": true
     }
   ]
 }
