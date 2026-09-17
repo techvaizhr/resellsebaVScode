@@ -26,6 +26,7 @@ export type ProductFormValues = {
   meta_title: string;
   meta_description: string;
   keywords: string;
+  video_url: string;
   images: UploadedImage[];
 };
 
@@ -41,6 +42,7 @@ export const emptyProductForm: ProductFormValues = {
   meta_title: "",
   meta_description: "",
   keywords: "",
+  video_url: "",
   images: [],
 };
 
