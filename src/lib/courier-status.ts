@@ -118,6 +118,8 @@ export const PATHAO_STATUS_MAP: Record<string, StatusMapping> = {
   "in-transit": { ship: "in_transit", order: "shipped", label: "In transit" },
   "received-at-last-mile-hub": { ship: "in_transit", order: "shipped", label: "Received at last mile hub" },
   "assigned-for-delivery": { ship: "in_transit", order: "shipped", label: "Assigned for delivery" },
+  "assigned-to-rider": { ship: "in_transit", order: "shipped", label: "Assigned to rider" },
+  "ready-for-delivery": { ship: "in_transit", order: "shipped", label: "Ready for delivery" },
   delivered: { ship: "delivered", order: "delivered", label: "Delivered" },
   "partial-delivery": { ship: "delivered", order: "pending_partial", label: "Partial delivered" },
   "delivery-failed": { ship: "in_transit", order: "pending_return", label: "Delivery failed" },
