@@ -5,13 +5,10 @@
  * `ResellerTotalCell` = money received + reseller buy / delivery / packaging / profit.
  * `AdminTotalCell`    = admin revenue + admin buy / delivery / packaging / profit.
  *
- * Chips render in a fixed 2-column grid. When an advance was collected for the
- * order, an `adv` chip appears on both sides following the holder logic:
- *  · Reseller side — reseller-held advance is deducted from their profit
- *    (shown as a cost / danger tone); admin-held advance doesn't touch the
- *    reseller (neutral).
- *  · Admin side — admin-held advance stays with admin (profit tone);
- *    reseller-held advance doesn't reach admin (neutral).
+ * Chips render in a fixed 2-column grid. The `adv` chip appears only on the side
+ * that actually holds the customer's advance: reseller-held shows on the reseller
+ * side (cost tone), admin-held on the admin side (profit tone). Money math is
+ * unchanged — only the chip placement follows the holder.
  */
 import {
   adminOrderRevenue,
@@ -136,8 +133,8 @@ export function AdminTotalCell({ order, buyingCost }: { order: ProfitOrder; buyi
       delivery={delivery}
       packaging={packaging}
       profit={profit}
-      advance={advance > 0 ? advance : undefined}
-      advanceTone={adminHeld ? "profit" : "advance"}
+      advance={adminHeld ? advance : undefined}
+      advanceTone="profit"
     />
   );
 }
