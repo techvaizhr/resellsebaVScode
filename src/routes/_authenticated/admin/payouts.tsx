@@ -8,6 +8,7 @@ import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { useAuth, useCan } from "@/lib/use-auth";
 import { DataToolbar, Pagination, usePaginated } from "@/components/data-list";
 import { toast } from "sonner";
+import { PayoutResellerReport } from "@/components/payout-reseller-report";
 
 export const Route = createFileRoute("/_authenticated/admin/payouts")({
   validateSearch: (s: Record<string, unknown>): { reseller?: string; status?: string } => ({
