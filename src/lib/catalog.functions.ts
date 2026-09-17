@@ -70,7 +70,7 @@ export const getCatalogProduct = createServerFn({ method: "GET" })
     const { data: row } = await supabase
       .from("products")
       .select(
-        "id, brand_id, category_id, name, slug, product_code, short_description, description, suggested_price, reseller_price, keywords, stock, weight_grams, delivery_mode, delivery_inside, delivery_outside, delivery_sub, delivery_flat, categories(name, slug), brands(name, slug), product_images(url, is_primary, sort_order, alt_text)",
+        "id, brand_id, category_id, name, slug, product_code, short_description, description, suggested_price, reseller_price, keywords, stock, weight_grams, delivery_mode, delivery_inside, delivery_outside, delivery_sub, delivery_flat, video_url, video_file_url, categories(name, slug), brands(name, slug), product_images(url, is_primary, sort_order, alt_text)",
       )
       .eq("slug", data.slug)
       .eq("is_active", true)
@@ -104,5 +104,7 @@ export const getCatalogProduct = createServerFn({ method: "GET" })
       categorySlug: p.categories?.slug ?? null,
       brand: p.brands?.name ?? null,
       images: images.map((i) => i.url),
+      videoUrl: (p.video_url ?? null) as string | null,
+      videoFileUrl: (p.video_file_url ?? null) as string | null,
     };
   });
