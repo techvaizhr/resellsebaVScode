@@ -239,6 +239,13 @@
       "when": 1789639561341,
       "tag": "0033_panel_nav_counts_rider_match",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1789639743098,
+      "tag": "0034_rider_followup_reseller_phone",
+      "breakpoints": true
     }
   ]
 }
