@@ -463,6 +463,11 @@ function SupplierProductDetail({
             ))}
           </div>
         )}
+        <ProductVideo
+          youtubeUrl={(draft.video_url as string | undefined) ?? product.video_url}
+          fileUrl={product.video_file_url}
+          name={product.name}
+        />
         <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
           <DetailField label="Supply price" value={bdtNum(Number(product.supplier_price))} />
           <DetailField label="Stock" value={String(product.stock)} />
@@ -724,6 +729,7 @@ function ProductForm({
     meta_title: prefill?.meta_title ?? (v("meta_title", product?.meta_title ?? "") ?? ""),
     meta_description: prefill?.meta_description ?? (v("meta_description", product?.meta_description ?? "") ?? ""),
     keywords: prefill?.keywords ?? (v("keywords", product?.keywords ?? "") ?? ""),
+    video_url: (v("video_url", product?.video_url ?? "") ?? "") as string,
     images: (prefill?.images ?? (draft.images as UploadedImage[] | undefined) ?? product?.images ?? []).map(
       (i: any) => ({ url: i.url, path: i.path ?? "", bytes: i.bytes ?? 0 }),
     ),
@@ -753,6 +759,7 @@ function ProductForm({
           meta_title: values.meta_title || null,
           meta_description: values.meta_description || null,
           keywords: values.keywords || null,
+          video_url: values.video_url.trim() || null,
           images: values.images.map((i) => ({ url: i.url })),
         });
         toast.success(
