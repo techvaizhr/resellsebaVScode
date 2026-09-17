@@ -167,6 +167,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
     "orders.ship",
     "orders.settle",
   ],
+  "/admin/rider-followup": ["orders.view", "orders.edit", "orders.status", "orders.ship"],
   "/admin/customers": ["customers.view", "orders.view", "reports.view"],
   "/admin/transactions": ["finance.view"],
   "/admin/business-report": ["reports.view"],
