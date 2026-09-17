@@ -247,43 +247,68 @@ export function RiderFollowupView({ role }: { role: "admin" | "reseller" | "supp
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${ageTone(hrs)}`}>
                         {elapsedLabel(r.rider_assigned_at)} with rider
                       </span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                      <span>
-                        <span className="font-medium">Customer:</span>{" "}
-                        <span className="text-muted-foreground">{r.customer_name}</span>
+                      {/* desktop: assigned time + booking ids sit on the same top line */}
+                      <span className="hidden items-center gap-x-3 text-xs text-muted-foreground sm:flex sm:flex-wrap">
+                        <span>
+                          Assigned:{" "}
+                          {r.rider_assigned_at
+                            ? new Date(r.rider_assigned_at).toLocaleString("en-GB", { hour12: true })
+                            : "—"}
+                        </span>
+                        {r.consignment_id ? (
+                          <span className="flex items-center gap-0.5">
+                            <span>CN {r.consignment_id}</span>
+                            <CopyButton value={r.consignment_id} label="booking id" />
+                          </span>
+                        ) : null}
+                        {r.tracking_id && r.tracking_id !== r.consignment_id ? (
+                          <span className="flex items-center gap-0.5">
+                            <span>Track ID {r.tracking_id}</span>
+                            <CopyButton value={r.tracking_id} label="tracking id" />
+                          </span>
+                        ) : null}
                       </span>
-                      <div className="flex items-center gap-0.5">
-                        <span className="text-muted-foreground">{r.customer_phone}</span>
-                        <CopyButton value={r.customer_phone} label="customer number" />
-                        <CallButton phone={r.customer_phone} />
-                      </div>
                     </div>
 
-                    {role === "admin" && r.reseller_name ? (
+                    {/* desktop: customer + reseller share one line; mobile keeps them stacked */}
+                    <div className="space-y-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-x-6 sm:space-y-0">
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                         <span>
-                          <span className="font-medium">Reseller:</span>{" "}
-                          <span className="text-muted-foreground">{r.reseller_name}</span>
+                          <span className="font-medium">Customer:</span>{" "}
+                          <span className="text-muted-foreground">{r.customer_name}</span>
                         </span>
-                        {r.reseller_code ? (
-                          <div className="flex items-center gap-0.5">
-                            <span className="text-muted-foreground">ID {r.reseller_code}</span>
-                            <CopyButton value={r.reseller_code} label="reseller code" />
-                          </div>
-                        ) : null}
-                        {r.reseller_phone ? (
-                          <div className="flex items-center gap-0.5">
-                            <span className="text-muted-foreground">{r.reseller_phone}</span>
-                            <CopyButton value={r.reseller_phone} label="reseller number" />
-                            <CallButton phone={r.reseller_phone} />
-                          </div>
-                        ) : null}
+                        <div className="flex items-center gap-0.5">
+                          <span className="text-muted-foreground">{r.customer_phone}</span>
+                          <CopyButton value={r.customer_phone} label="customer number" />
+                          <CallButton phone={r.customer_phone} />
+                        </div>
                       </div>
-                    ) : null}
 
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      {role === "admin" && r.reseller_name ? (
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-l-0 text-sm sm:border-l sm:pl-6">
+                          <span>
+                            <span className="font-medium">Reseller:</span>{" "}
+                            <span className="text-muted-foreground">{r.reseller_name}</span>
+                          </span>
+                          {r.reseller_code ? (
+                            <div className="flex items-center gap-0.5">
+                              <span className="text-muted-foreground">ID {r.reseller_code}</span>
+                              <CopyButton value={r.reseller_code} label="reseller code" />
+                            </div>
+                          ) : null}
+                          {r.reseller_phone ? (
+                            <div className="flex items-center gap-0.5">
+                              <span className="text-muted-foreground">{r.reseller_phone}</span>
+                              <CopyButton value={r.reseller_phone} label="reseller number" />
+                              <CallButton phone={r.reseller_phone} />
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* mobile only: assigned time + booking ids */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:hidden">
                       <span>
                         Assigned:{" "}
                         {r.rider_assigned_at
