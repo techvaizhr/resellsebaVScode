@@ -298,6 +298,43 @@ export function isPartialStatus(status: string): boolean {
 }
 
 /**
+ * Statuses an admin has already settled by hand. A courier event must NEVER
+ * move an order out of one of these — the money/items are already accounted for.
+ */
+export const COURIER_LOCKED_ORDER_STATUSES: OrderStatus[] = [
+  "delivered",
+  "partial",
+  "partial_full",
+  "partial_item",
+  "partial_delivery",
+  "returned",
+  "damaged",
+  "cancelled",
+];
+
+/**
+ * Courier-driven waiting states. They may only move forward to another
+ * end-of-journey state — never back to "To Courier" / handover.
+ */
+const COURIER_WAITING_STATUSES: OrderStatus[] = ["pending_partial", "pending_return"];
+const COURIER_FORWARD_FROM_WAITING: OrderStatus[] = ["delivered", "pending_partial", "pending_return"];
+
+/**
+ * Decide whether a courier event is allowed to change the order status.
+ * Prevents the classic bug: an order settled as Partial / Returned gets pushed
+ * back to "To Courier" by a later (or out-of-order) courier event.
+ */
+export function canCourierSetOrderStatus(current: string, next: string): boolean {
+  if (current === next) return false;
+  if ((COURIER_LOCKED_ORDER_STATUSES as string[]).includes(current)) return false;
+  if ((COURIER_WAITING_STATUSES as string[]).includes(current))
+    return (COURIER_FORWARD_FROM_WAITING as string[]).includes(next);
+  return true;
+}
+
+
+
+/**
  * Statuses that need admin settlement input (amount / returned items).
  * "delivered" is intentionally excluded: a full delivery means nothing changed,
  * so the full order total is collected and no settlement popup is needed.
