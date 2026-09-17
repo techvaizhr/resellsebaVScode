@@ -113,7 +113,9 @@ export function ProductVideo({
   if (!embed && !fileUrl) return null;
 
   const vertical = !!youtubeUrl && /\/shorts\/|\/reel|[?&]feature=shorts/i.test(youtubeUrl);
-  const ratio = vertical ? "aspect-[9/16] mx-auto max-w-[280px]" : "aspect-video w-full";
+  const ratio = vertical
+    ? "aspect-[9/16] w-full max-w-[240px] sm:max-w-[280px]"
+    : "aspect-video w-full";
 
   return (
     <div className={className ?? "space-y-2"}>
