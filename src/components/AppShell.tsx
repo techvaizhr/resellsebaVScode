@@ -152,6 +152,9 @@ export function AppShell({
           const hasActive = entry.items.some(
             (it) => currentPath === it.to || (!it.end && currentPath.startsWith(it.to + "/")),
           );
+          // A group shows the total of its children's badges, so a pending item
+          // stays visible even while the group is collapsed.
+          const groupBadge = entry.items.reduce((sum, it) => sum + (it.badge ?? 0), 0);
           if (collapsed) {
             return (
               <button
@@ -163,11 +166,16 @@ export function AppShell({
                 }}
                 title={entry.label}
                 className={cn(
-                  "mb-1 flex w-full items-center justify-center rounded-md p-2 text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  "relative mb-1 flex w-full items-center justify-center rounded-md p-2 text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                   hasActive && "bg-sidebar-accent/60 text-sidebar-accent-foreground",
                 )}
               >
                 {entry.icon}
+                {!!groupBadge && (
+                  <span className="absolute right-1 top-1 grid min-w-4 place-items-center rounded-full bg-destructive px-1 text-[9px] font-bold leading-4 text-destructive-foreground shadow">
+                    {groupBadge > 99 ? "99+" : groupBadge}
+                  </span>
+                )}
               </button>
             );
           }
