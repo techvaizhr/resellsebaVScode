@@ -443,6 +443,19 @@ function OrdersPage() {
   };
 
 
+  /** Live courier status for every selected order (webhooks can be missed). */
+  const bulkCheckCourierStatus = async () => {
+    if (marked.length === 0) return;
+    try {
+      const res = await bulkRecheck({ data: { orderIds: [...marked] } });
+      toast.success(`${res.checked} parcel checked, ${res.changed} status updated`);
+      if (res.errors?.length) toast.error(res.errors[0]!);
+      await syncOrders([...marked]);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Courier status check failed");
+    }
+  };
+
   const bulkDeleteOrders = async () => {
     if (marked.length === 0) return;
     
