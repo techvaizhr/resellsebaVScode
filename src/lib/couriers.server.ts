@@ -1,4 +1,10 @@
-import { isRiderFollowupStatus, mapCourierStatus, normalizeCourierStatus } from "@/lib/courier-status";
+import {
+  COURIER_LOCKED_ORDER_STATUSES,
+  canCourierSetOrderStatus,
+  isRiderFollowupStatus,
+  mapCourierStatus,
+  normalizeCourierStatus,
+} from "@/lib/courier-status";
 
 export type Cfg = Record<string, string>;
 
