@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, Loader2, Play } from "lucide-react";
+import { Check, Copy, Download, Loader2, Play } from "lucide-react";
 import { toast } from "sonner";
 import { youtubeEmbed } from "@/lib/tutorials";
 
@@ -64,6 +64,34 @@ export function VideoDownloadButton({
   );
 }
 
+export function CopyVideoLinkButton({ url }: { url: string }) {
+  const [done, setDone] = useState(false);
+
+  async function copy(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(url);
+      setDone(true);
+      toast.success("Video link copied");
+      setTimeout(() => setDone(false), 1600);
+    } catch {
+      toast.error("Could not copy the link");
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title="Copy video link"
+      className="btn-brand inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold shadow-sm"
+    >
+      {done ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy video link
+    </button>
+  );
+}
+
 /**
  * Product video block: YouTube embed and/or uploaded file with 1-click download.
  * Renders nothing when the product has no video.
@@ -88,7 +116,10 @@ export function ProductVideo({
         <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
           <Play className="h-3 w-3" /> Product video
         </span>
-        {fileUrl && <VideoDownloadButton fileUrl={fileUrl} baseName={name} />}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {fileUrl && <VideoDownloadButton fileUrl={fileUrl} baseName={name} />}
+          {!fileUrl && youtubeUrl && <CopyVideoLinkButton url={youtubeUrl} />}
+        </div>
       </div>
       <div className="overflow-hidden rounded-xl border bg-black">
         {embed ? (
