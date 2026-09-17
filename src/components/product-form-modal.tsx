@@ -26,6 +26,7 @@ export type ProductFormValues = {
   meta_title: string;
   meta_description: string;
   keywords: string;
+  video_url: string;
   images: UploadedImage[];
 };
 
@@ -41,6 +42,7 @@ export const emptyProductForm: ProductFormValues = {
   meta_title: "",
   meta_description: "",
   keywords: "",
+  video_url: "",
   images: [],
 };
 
@@ -172,6 +174,27 @@ export function ProductFormModal({
             label="Add image"
           />
         </div>
+
+        <div className="surface-card p-4 sm:p-6">
+          <h3 className="mb-3 text-sm font-semibold">Video</h3>
+          <Field
+            label="YouTube link"
+            hint="Paste the product's YouTube link (watch / shorts / youtu.be). It will show on the product page."
+          >
+            <input
+              value={v.video_url}
+              onChange={(e) => set("video_url", e.target.value)}
+              className={inputCls}
+              placeholder="https://www.youtube.com/watch?v=..."
+            />
+          </Field>
+          {role === "supplier" && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Supplier accounts can add a YouTube link only. Video file upload is done by the admin.
+            </p>
+          )}
+        </div>
+
 
         <div className="surface-card p-4 sm:p-6">
           <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold">

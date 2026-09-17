@@ -218,6 +218,13 @@
       "when": 1789631681758,
       "tag": "0030_product_videos_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1789636335700,
+      "tag": "0031_supplier_product_video",
+      "breakpoints": true
     }
   ]
 }

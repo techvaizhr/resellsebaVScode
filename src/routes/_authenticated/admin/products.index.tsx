@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, EmptyState } from "@/components/ui-kit";
+import { ProductVideo } from "@/components/product-video";
 import {
   Plus,
   Loader2,
@@ -1112,6 +1113,7 @@ function ProductDetailModal({
                   ))}
                 </div>
               )}
+              <ProductVideo youtubeUrl={p.video_url} fileUrl={p.video_file_url} name={p.name} />
             </div>
 
             <div className="space-y-6">
