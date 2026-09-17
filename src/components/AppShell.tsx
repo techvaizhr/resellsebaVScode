@@ -192,6 +192,11 @@ export function AppShell({
               >
                 <span className="text-current">{entry.icon}</span>
                 <span className="flex-1 text-left">{entry.label}</span>
+                {!!groupBadge && (
+                  <span className="grid min-w-5 place-items-center rounded-full bg-destructive px-1.5 text-[10px] font-bold leading-5 text-destructive-foreground shadow-sm">
+                    {groupBadge > 99 ? "99+" : groupBadge}
+                  </span>
+                )}
                 <ChevronDown
                   className={cn(
                     "h-3.5 w-3.5 transition-transform",
