@@ -30,12 +30,12 @@ export function OrderSearch({
       <select
         value={mode}
         onChange={(e) => onMode(e.target.value as OrderSearchMode)}
-        className="h-full shrink-0 rounded-l-md border-0 border-r bg-primary px-2 text-xs font-medium text-primary-foreground outline-none"
+        className="h-full w-auto max-w-[7.5rem] shrink-0 truncate rounded-l-md border-0 border-r bg-primary px-2 text-xs font-medium text-primary-foreground outline-none"
         title="Search type"
       >
-        <option value="order">Order search</option>
-        <option value="product">Product search</option>
-        <option value="consignment">Consignment / booking</option>
+        <option value="order">Order</option>
+        <option value="product">Product</option>
+        <option value="consignment">Consignment</option>
       </select>
       <Search className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
       <input
