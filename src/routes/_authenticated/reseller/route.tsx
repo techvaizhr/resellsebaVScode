@@ -99,7 +99,8 @@ const NAV: NavEntry[] = [
 
 function ResellerLayout() {
   const { user, roles, loading } = useAuth();
-  const orderNavCount = useOrderNavCount();
+  const navCounts = usePanelNavCounts();
+  const orderNavCount = navCounts.orders;
   const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
   const navWithBadge = useMemo(() => {
     // A panel-only plan has no public storefront, so its settings stay hidden.
