@@ -8,6 +8,7 @@ import { StatusTabs } from "@/components/status-tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { bdtNum, loadAdminSupplierOverview, type AdminSupplierOverview } from "@/lib/supplier";
 import { useCan } from "@/lib/use-auth";
+import { PayoutSupplierReport } from "@/components/payout-supplier-report";
 
 export const Route = createFileRoute("/_authenticated/admin/supplier-payouts")({
   component: AdminSupplierPayoutsPage,
@@ -48,7 +49,8 @@ function AdminSupplierPayoutsPage() {
   const [data, setData] = useState<AdminSupplierOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [tab, setTab] = useState("all");
+  const [viewTab, setViewTab] = useState<"requests" | "report">("requests");
+  const [statusTab, setStatusTab] = useState("pending");
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -94,8 +96,8 @@ function AdminSupplierPayoutsPage() {
   }, [all, supplierFilter, search]);
 
   const rows = useMemo(
-    () => (tab === "all" ? scoped : scoped.filter((p) => p.status === tab)),
-    [scoped, tab],
+    () => (statusTab === "all" ? scoped : scoped.filter((p) => p.status === statusTab)),
+    [scoped, statusTab],
   );
   const count = useCallback(
     (k: string) => (k === "all" ? scoped.length : scoped.filter((p) => p.status === k).length),
@@ -173,9 +175,39 @@ function AdminSupplierPayoutsPage() {
   return (
     <div>
       <PageHeader
-        title="Supplier payouts"
-        description="Approve/pay supplier withdrawal requests, or record a payment directly."
+        title="Supplier Payout Management"
+        description="Review withdrawal requests, check payout accounts and process supplier payments."
       />
+
+      <div className="mb-4 inline-flex rounded-lg border bg-muted/40 p-1">
+        {(["requests", "report"] as const).map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => setViewTab(item)}
+            className={
+              "rounded-md px-3 py-1.5 text-xs font-medium transition-colors " +
+              (viewTab === item ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")
+            }
+          >
+            {item === "requests" ? "Payout requests" : "Supplier balance report"}
+          </button>
+        ))}
+      </div>
+
+      {viewTab === "report" ? (
+        <>
+          <DataToolbar
+            search={search}
+            onSearch={setSearch}
+            searchPlaceholder="Search supplier, code, account…"
+            perPage={perPage}
+            onPerPage={setPerPage}
+          />
+          <PayoutSupplierReport search={search} />
+        </>
+      ) : (
+      <>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -264,9 +296,9 @@ function AdminSupplierPayoutsPage() {
 
       <StatusTabs
         tabs={TABS}
-        tab={tab}
+        tab={statusTab}
         onChange={(k) => {
-          setTab(k);
+          setStatusTab(k);
           setPage(1);
         }}
         count={count}
@@ -395,6 +427,8 @@ function AdminSupplierPayoutsPage() {
 
           <Pagination page={page} perPage={perPage} total={rows.length} onPage={setPage} />
         </>
+      )}
+      </>
       )}
     </div>
   );
