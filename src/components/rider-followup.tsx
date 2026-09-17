@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Bike, Clock, AlertTriangle, RefreshCw, Loader2, ExternalLink, Search } from "lucide-react";
+import { Bike, Clock, AlertTriangle, RefreshCw, Loader2, ExternalLink, Search, Copy as CopyIcon, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, StatCard } from "@/components/ui-kit";
 import { courierStatusLabel, elapsedLabel } from "@/lib/courier-status";
@@ -20,6 +20,7 @@ type Row = {
   cod_amount: number | string;
   reseller_name: string | null;
   reseller_code: string | null;
+  reseller_phone: string | null;
   provider: string;
   consignment_id: string | null;
   tracking_id: string | null;
@@ -40,6 +41,43 @@ function ageTone(hours: number) {
   if (hours >= 48) return "bg-destructive/15 text-destructive";
   if (hours >= 24) return "bg-amber-500/15 text-amber-600";
   return "bg-primary/15 text-primary";
+}
+
+async function copyToClipboard(text: string | null | undefined) {
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success("Copied");
+  } catch {
+    toast.error("Copy failed");
+  }
+}
+
+function CopyButton({ value, label }: { value: string | null | undefined; label?: string }) {
+  if (!value) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => copyToClipboard(value)}
+      title={label ? `Copy ${label}` : "Copy"}
+      className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+    >
+      <CopyIcon className="h-3.5 w-3.5" />
+    </button>
+  );
+}
+
+function CallButton({ phone }: { phone: string | null | undefined }) {
+  if (!phone) return null;
+  return (
+    <a
+      href={`tel:${phone}`}
+      title={`Call ${phone}`}
+      className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+    >
+      <Phone className="h-3.5 w-3.5" />
+    </a>
+  );
 }
 
 /**
@@ -78,6 +116,8 @@ export function RiderFollowupView({ role }: { role: "admin" | "reseller" | "supp
         r.consignment_id,
         r.tracking_id,
         r.reseller_name,
+        r.reseller_code,
+        r.reseller_phone,
       ]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(term));
@@ -190,11 +230,14 @@ export function RiderFollowupView({ role }: { role: "admin" | "reseller" | "supp
               return (
                 <div
                   key={r.order_id}
-                  className="flex flex-col gap-3 rounded-lg border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-lg border bg-background p-3 sm:flex-row sm:items-start sm:justify-between"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold">#{r.order_number}</span>
+                      <div className="flex items-center gap-0.5 font-semibold">
+                        #{r.order_number}
+                        <CopyButton value={r.order_number} label="order number" />
+                      </div>
                       <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium capitalize text-primary">
                         {r.provider}
                       </span>
@@ -205,20 +248,63 @@ export function RiderFollowupView({ role }: { role: "admin" | "reseller" | "supp
                         {elapsedLabel(r.rider_assigned_at)} with rider
                       </span>
                     </div>
-                    <div className="mt-1 truncate text-sm text-muted-foreground">
-                      {r.customer_name} · {r.customer_phone}
-                      {r.city ? ` · ${r.city}` : ""}
-                      {role === "admin" && r.reseller_name ? ` · ${r.reseller_name}` : ""}
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                      <span>
+                        <span className="font-medium">Customer:</span>{" "}
+                        <span className="text-muted-foreground">{r.customer_name}</span>
+                      </span>
+                      <div className="flex items-center gap-0.5">
+                        <span className="text-muted-foreground">{r.customer_phone}</span>
+                        <CopyButton value={r.customer_phone} label="customer number" />
+                        <CallButton phone={r.customer_phone} />
+                      </div>
                     </div>
-                    <div className="mt-0.5 text-xs text-muted-foreground">
-                      Assigned:{" "}
-                      {r.rider_assigned_at
-                        ? new Date(r.rider_assigned_at).toLocaleString("en-GB", { hour12: true })
-                        : "—"}
-                      {r.consignment_id ? ` · CN ${r.consignment_id}` : ""}
+
+                    {role === "admin" && r.reseller_name ? (
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                        <span>
+                          <span className="font-medium">Reseller:</span>{" "}
+                          <span className="text-muted-foreground">{r.reseller_name}</span>
+                        </span>
+                        {r.reseller_code ? (
+                          <div className="flex items-center gap-0.5">
+                            <span className="text-muted-foreground">ID {r.reseller_code}</span>
+                            <CopyButton value={r.reseller_code} label="reseller code" />
+                          </div>
+                        ) : null}
+                        {r.reseller_phone ? (
+                          <div className="flex items-center gap-0.5">
+                            <span className="text-muted-foreground">{r.reseller_phone}</span>
+                            <CopyButton value={r.reseller_phone} label="reseller number" />
+                            <CallButton phone={r.reseller_phone} />
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span>
+                        Assigned:{" "}
+                        {r.rider_assigned_at
+                          ? new Date(r.rider_assigned_at).toLocaleString("en-GB", { hour12: true })
+                          : "—"}
+                      </span>
+                      {r.consignment_id ? (
+                        <div className="flex items-center gap-0.5">
+                          <span>CN {r.consignment_id}</span>
+                          <CopyButton value={r.consignment_id} label="booking id" />
+                        </div>
+                      ) : null}
+                      {r.tracking_id && r.tracking_id !== r.consignment_id ? (
+                        <div className="flex items-center gap-0.5">
+                          <span>Track ID {r.tracking_id}</span>
+                          <CopyButton value={r.tracking_id} label="tracking id" />
+                        </div>
+                      ) : null}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 sm:flex-col sm:items-end">
+                  <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-2">
                     <div className="text-sm font-semibold text-success">{bdt(r.cod_amount)}</div>
                     <div className="flex gap-2">
                       {link ? (
