@@ -119,7 +119,11 @@ export function ProductVideo({
 
   return (
     <div className={className ?? "space-y-2"}>
-      <div className="relative overflow-hidden rounded-xl border bg-black">
+      <div
+        className={`relative w-full overflow-hidden rounded-xl border bg-black ${
+          vertical ? "mx-auto max-w-[240px] sm:max-w-[280px]" : ""
+        }`}
+      >
         {embed ? (
           <iframe
             src={embed}
