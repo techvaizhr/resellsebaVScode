@@ -136,14 +136,14 @@ export function RiderFollowupView({ role }: { role: "admin" | "reseller" | "supp
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="With rider" value={String(visible.length)} icon={<Bike className="h-4 w-4" />} />
-        <StatCard label="Over 24 hours" value={String(over24)} tone="warning" icon={<Clock className="h-4 w-4" />} />
+        <StatCard label="Over 24 hours" value={String(over24)} tone="amber" icon={<Clock className="h-4 w-4" />} />
         <StatCard
           label="Over 48 hours"
           value={String(over48)}
-          tone="danger"
+          tone="rose"
           icon={<AlertTriangle className="h-4 w-4" />}
         />
-        <StatCard label="COD to collect" value={bdt(codTotal)} tone="success" />
+        <StatCard label="COD to collect" value={bdt(codTotal)} tone="emerald" />
       </div>
 
       <div className="surface-card p-4">
