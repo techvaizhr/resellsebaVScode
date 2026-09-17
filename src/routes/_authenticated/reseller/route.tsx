@@ -107,8 +107,12 @@ function ResellerLayout() {
     const base = subscription && subscription.store_enabled === false
       ? NAV.filter((n) => n.label !== "Store")
       : NAV;
-    return applyOrderBadge(base, "/reseller/orders", orderNavCount);
-  }, [orderNavCount, subscription]);
+    return applyNavBadges(base, {
+      "/reseller/orders": navCounts.orders,
+      "/reseller/rider-followup": navCounts.rider,
+      "/reseller/payouts": navCounts.payouts,
+    });
+  }, [navCounts, subscription]);
   const { required: needsVerify, loading: verifyLoading } = useVerification();
   const location = useLocation();
   const nav = useNavigate();
