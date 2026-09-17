@@ -199,10 +199,10 @@ export function courierStatusLabel(raw: string | null | undefined, provider?: st
   if (!raw) return "—";
   const key = normalizeCourierStatus(provider, raw);
   return (
-    statusTable(provider)[key]?.label ??
-    PATHAO_STATUS_MAP[key]?.label ??
-    CARRYBEE_STATUS_MAP[key]?.label ??
-    STEADFAST_STATUS_MAP[key]?.label ??
+    lookup(statusTable(provider), key)?.label ??
+    lookup(PATHAO_STATUS_MAP, key)?.label ??
+    lookup(CARRYBEE_STATUS_MAP, key)?.label ??
+    lookup(STEADFAST_STATUS_MAP, key)?.label ??
     key.replace(/[-_]/g, " ")
   );
 }
