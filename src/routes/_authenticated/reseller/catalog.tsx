@@ -572,6 +572,7 @@ function ProductDetailModal({ id, onClose, brands, categories }: { id: string; o
                   ))}
                 </div>
               )}
+              <ProductVideo youtubeUrl={p.video_url} fileUrl={p.video_file_url} name={p.name} />
             </div>
 
 
