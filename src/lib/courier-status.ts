@@ -130,7 +130,9 @@ export const PATHAO_STATUS_MAP: Record<string, StatusMapping> = {
   // courier-side return family — order waits in Pending Return until admin receives it
   returned: { ship: "returned", order: "pending_return", label: "Returned (courier)" },
   return: { ship: "returned", order: "pending_return", label: "Returned (courier)" },
-  "paid-return": { ship: "returned", order: "pending_return", label: "Paid return" },
+  // money already collected — the order settles as a partial, not a plain return
+  "paid-return": { ship: "returned", order: "pending_partial", label: "Paid return" },
+  "return-initiated": { ship: "returned", order: "pending_return", label: "Return initiated" },
   "return-id-created": { ship: "returned", order: "pending_return", label: "Return id created" },
   "return-in-transit": { ship: "returned", order: "pending_return", label: "Return in transit" },
   "returned-to-merchant": { ship: "returned", order: "pending_return", label: "Returned to merchant" },
