@@ -83,6 +83,11 @@ const NAV: NavEntry[] = [
         to: "/admin/business-report",
         icon: <PieChart className="h-4 w-4" />,
       },
+      {
+        label: "Reseller report",
+        to: "/admin/reseller-report",
+        icon: <Handshake className="h-4 w-4" />,
+      },
       { label: "Expenses", to: "/admin/expenses", icon: <Receipt className="h-4 w-4" /> },
       { label: "Payouts", to: "/admin/payouts", icon: <Wallet className="h-4 w-4" /> },
       { label: "Commissions", to: "/admin/commissions", icon: <Percent className="h-4 w-4" /> },
