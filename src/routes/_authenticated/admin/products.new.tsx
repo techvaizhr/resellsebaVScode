@@ -47,6 +47,8 @@ function NewProduct() {
   const [stock, setStock] = useState("0");
   const [weight, setWeight] = useState("");
   const [images, setImages] = useState<UploadedImage[]>([]);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [videoFileUrl, setVideoFileUrl] = useState<string | null>(null);
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDesc, setMetaDesc] = useState("");
   const [keywords, setKeywords] = useState("");
