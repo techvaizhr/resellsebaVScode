@@ -195,6 +195,8 @@ function EditProduct() {
           weight_grams: weight === "" ? null : Math.max(0, Math.round((Number(weight) || 0) * 1000)),
           is_active: isActive,
           og_image_url: images[0]?.url ?? null,
+          video_url: videoUrl.trim() || null,
+          video_file_url: videoFileUrl,
           meta_title: metaTitle || null,
           meta_description: metaDesc || null,
           keywords: keywords || null,
