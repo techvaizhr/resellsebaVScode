@@ -215,7 +215,8 @@ function firstAllowedRoute(nav: NavEntry[], permissions: string[]): string | nul
 
 function AdminLayout() {
   const { user, roles, permissions, loading } = useAuth();
-  const orderNavCount = useOrderNavCount();
+  const navCounts = usePanelNavCounts();
+  const orderNavCount = navCounts.orders;
   const nav = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
   const isSuperAdmin = roles.includes("super_admin");
