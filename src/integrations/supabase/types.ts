@@ -3186,6 +3186,29 @@ export type Database = {
         Args: { _from?: string; _to?: string }
         Returns: Json
       }
+      admin_supplier_payout_report: {
+        Args: never
+        Returns: {
+          approved_payout: number
+          code: string
+          display_name: string
+          due_balance: number
+          earned_amount: number
+          last_paid_at: string
+          last_request_at: string
+          paid_out: number
+          payout_account_name: string
+          payout_account_number: string
+          payout_bank_name: string
+          payout_branch: string
+          payout_method: string
+          pending_payout: number
+          rejected_payout: number
+          request_count: number
+          status: string
+          supplier_id: string
+        }[]
+      }
       admin_update_staff_account: {
         Args: { _email: string; _full_name: string; _user_id: string }
         Returns: undefined
