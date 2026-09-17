@@ -40,7 +40,7 @@ import { getGlobalSettings, getMyReseller } from "@/lib/app-data";
 import { getPanelBootstrapPayload } from "@/lib/panel-bootstrap";
 import { fmtDate, statusLabel, type SubscriptionState } from "@/lib/subscription";
 import { consumeImpersonationReturnTarget } from "@/lib/impersonation";
-import { useOrderNavCount, applyOrderBadge } from "@/lib/use-order-nav-count";
+import { usePanelNavCounts, applyNavBadges } from "@/lib/use-order-nav-count";
 
 export const Route = createFileRoute("/_authenticated/reseller")({
   component: ResellerLayout,

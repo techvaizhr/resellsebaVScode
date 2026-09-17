@@ -45,7 +45,7 @@ import { useAuth } from "@/lib/use-auth";
 import { useBrandingTheme } from "@/lib/branding";
 import { getGlobalSettings } from "@/lib/app-data";
 import { Loader2 } from "lucide-react";
-import { useOrderNavCount, applyOrderBadge } from "@/lib/use-order-nav-count";
+import { usePanelNavCounts, applyNavBadges } from "@/lib/use-order-nav-count";
 import { ROUTE_PERMISSIONS } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
