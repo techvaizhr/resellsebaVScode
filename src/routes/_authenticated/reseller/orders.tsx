@@ -46,7 +46,7 @@ import { bdt, orderProfit, orderReceived, orderShortfall } from "@/lib/finance-r
 import { OrderMoneyPanel, AdvanceChip } from "@/components/order-money";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getOrderDetails, recheckCourierStatus } from "@/lib/order-details.functions";
+import { getOrderDetails, recheckCourierStatus, bulkRecheckCourierStatus } from "@/lib/order-details.functions";
 import { syncSteadfastStatus, syncPathaoStatus } from "@/lib/couriers.functions";
 
 import { CourierTimeline, type CourierEvent } from "@/components/CourierTimeline";
@@ -689,6 +689,14 @@ function OrdersPage() {
             onClick={() => setStatusModal({ open: true, orderId: marked[0], currentStatus: orders.find(o => o.id === marked[0])?.status || "pending", isBulk: true })}
           >
             <Settings2 className="h-3.5 w-3.5" /> Change Status
+          </button>
+
+          <button
+            type="button"
+            className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent"
+            onClick={bulkCheckCourierStatus}
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Check Courier Status
           </button>
 
           <button
