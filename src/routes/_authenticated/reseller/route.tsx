@@ -40,7 +40,7 @@ import { getGlobalSettings, getMyReseller } from "@/lib/app-data";
 import { getPanelBootstrapPayload } from "@/lib/panel-bootstrap";
 import { fmtDate, statusLabel, type SubscriptionState } from "@/lib/subscription";
 import { consumeImpersonationReturnTarget } from "@/lib/impersonation";
-import { useOrderNavCount, applyOrderBadge } from "@/lib/use-order-nav-count";
+import { usePanelNavCounts, applyNavBadges } from "@/lib/use-order-nav-count";
 
 export const Route = createFileRoute("/_authenticated/reseller")({
   component: ResellerLayout,
@@ -99,15 +99,20 @@ const NAV: NavEntry[] = [
 
 function ResellerLayout() {
   const { user, roles, loading } = useAuth();
-  const orderNavCount = useOrderNavCount();
+  const navCounts = usePanelNavCounts();
+  const orderNavCount = navCounts.orders;
   const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
   const navWithBadge = useMemo(() => {
     // A panel-only plan has no public storefront, so its settings stay hidden.
     const base = subscription && subscription.store_enabled === false
       ? NAV.filter((n) => n.label !== "Store")
       : NAV;
-    return applyOrderBadge(base, "/reseller/orders", orderNavCount);
-  }, [orderNavCount, subscription]);
+    return applyNavBadges(base, {
+      "/reseller/orders": navCounts.orders,
+      "/reseller/rider-followup": navCounts.rider,
+      "/reseller/payouts": navCounts.payouts,
+    });
+  }, [navCounts, subscription]);
   const { required: needsVerify, loading: verifyLoading } = useVerification();
   const location = useLocation();
   const nav = useNavigate();

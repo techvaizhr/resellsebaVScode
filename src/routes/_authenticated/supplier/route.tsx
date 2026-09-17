@@ -19,7 +19,7 @@ import { useBrandingTheme } from "@/lib/branding";
 import { supabase } from "@/integrations/supabase/client";
 import { loadSupplierBootstrap, type SupplierReport } from "@/lib/supplier";
 import { SupplierProvider } from "@/components/supplier-context";
-import { useOrderNavCount, applyOrderBadge } from "@/lib/use-order-nav-count";
+import { usePanelNavCounts, applyNavBadges } from "@/lib/use-order-nav-count";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
 
 
@@ -40,10 +40,16 @@ const NAV: NavEntry[] = [
 
 function SupplierLayout() {
   const { user, roles, loading } = useAuth();
-  const orderNavCount = useOrderNavCount();
+  const navCounts = usePanelNavCounts();
+  const orderNavCount = navCounts.orders;
   const navWithBadge = useMemo(
-    () => applyOrderBadge(NAV, "/supplier/orders", orderNavCount),
-    [orderNavCount],
+    () =>
+      applyNavBadges(NAV, {
+        "/supplier/orders": navCounts.orders,
+        "/supplier/rider-followup": navCounts.rider,
+        "/supplier/payouts": navCounts.payouts,
+      }),
+    [navCounts],
   );
   const { required: needsVerify, loading: verifyLoading } = useVerification();
   const nav = useNavigate();

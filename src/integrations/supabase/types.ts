@@ -3404,6 +3404,7 @@ export type Database = {
       order_nav_count: { Args: never; Returns: number }
       order_visible_to_me: { Args: { _order_id: string }; Returns: boolean }
       panel_bootstrap: { Args: never; Returns: Json }
+      panel_nav_counts: { Args: never; Returns: Json }
       pathao_webhook_handshake_secret: { Args: never; Returns: string }
       pricing_rule_apply: { Args: { _cost: number }; Returns: Json }
       product_slugify: { Args: { _name: string }; Returns: string }
