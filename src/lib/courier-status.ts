@@ -187,6 +187,42 @@ export function courierStatusLabel(raw: string | null | undefined, provider?: st
   );
 }
 
+/**
+ * Rider stage: the parcel is with a delivery rider right now.
+ * The order status stays "To Courier"; these orders are additionally collected
+ * in the Rider Followup page so nobody has to dig through the whole list.
+ */
+export const RIDER_FOLLOWUP_COURIER_STATUSES = [
+  "assigned-for-delivery",
+  "assigned_for_delivery",
+  "assigned-to-rider",
+  "assigned_to_rider",
+  "ready-for-delivery",
+  "ready_for_delivery",
+];
+
+export function isRiderFollowupStatus(
+  provider: string | null | undefined,
+  raw: string | null | undefined,
+): boolean {
+  const key = normalizeCourierStatus(provider, raw).replace(/_/g, "-");
+  return RIDER_FOLLOWUP_COURIER_STATUSES.map((s) => s.replace(/_/g, "-")).includes(key);
+}
+
+/** "4h 20m" style elapsed label used by the Rider Followup list. */
+export function elapsedLabel(from: string | Date | null | undefined, now: Date = new Date()) {
+  if (!from) return "—";
+  const start = typeof from === "string" ? new Date(from) : from;
+  const mins = Math.max(0, Math.floor((now.getTime() - start.getTime()) / 60000));
+  const d = Math.floor(mins / 1440);
+  const h = Math.floor((mins % 1440) / 60);
+  const m = mins % 60;
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+
 
 export type OrderTabKey =
   | "all"
