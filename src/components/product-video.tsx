@@ -110,18 +110,12 @@ export function ProductVideo({
   const embed = youtubeUrl ? youtubeEmbed(youtubeUrl) : null;
   if (!embed && !fileUrl) return null;
 
+  const vertical = !!youtubeUrl && /\/shorts\/|\/reel|[?&]feature=shorts/i.test(youtubeUrl);
+  const ratio = vertical ? "aspect-[9/16] mx-auto max-w-[280px]" : "aspect-video w-full";
+
   return (
     <div className={className ?? "space-y-2"}>
-      <div className="flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
-          <Play className="h-3 w-3" /> Product video
-        </span>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {fileUrl && <VideoDownloadButton fileUrl={fileUrl} baseName={name} />}
-          {!fileUrl && youtubeUrl && <CopyVideoLinkButton url={youtubeUrl} />}
-        </div>
-      </div>
-      <div className="overflow-hidden rounded-xl border bg-black">
+      <div className="relative overflow-hidden rounded-xl border bg-black">
         {embed ? (
           <iframe
             src={embed}
@@ -129,11 +123,20 @@ export function ProductVideo({
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             loading="lazy"
-            className="aspect-video w-full"
+            className={`block ${ratio}`}
           />
         ) : (
-          <video src={fileUrl!} controls preload="metadata" className="aspect-video w-full bg-black" />
+          <video src={fileUrl!} controls preload="metadata" className={`block bg-black ${ratio}`} />
         )}
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-black/55 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur">
+            <Play className="h-3 w-3" /> Video
+          </span>
+          <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1.5">
+            {fileUrl && <VideoDownloadButton fileUrl={fileUrl} baseName={name} />}
+            {!fileUrl && youtubeUrl && <CopyVideoLinkButton url={youtubeUrl} />}
+          </div>
+        </div>
       </div>
       {embed && fileUrl && (
         <video src={fileUrl} controls preload="metadata" className="aspect-video w-full rounded-xl border bg-black" />
