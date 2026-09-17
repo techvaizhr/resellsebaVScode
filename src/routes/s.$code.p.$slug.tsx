@@ -169,6 +169,12 @@ function ProductPage() {
               ))}
             </div>
           )}
+          <ProductVideo
+            youtubeUrl={p.video_url}
+            fileUrl={p.video_file_url}
+            name={title}
+            className="mt-4 space-y-2"
+          />
         </div>
 
         <div>
