@@ -36,14 +36,66 @@ export function useOrderNavCount(enabled = true) {
 
 /** Returns a copy of the nav with the count badge attached to the orders entry. */
 export function applyOrderBadge(nav: NavEntry[], ordersTo: string, count: number): NavEntry[] {
-  if (!count) return nav;
+  return applyNavBadges(nav, { [ordersTo]: count });
+}
+
+/** Attach count badges to any nav routes (`{ "/admin/orders": 4 }`). */
+export function applyNavBadges(nav: NavEntry[], counts: Record<string, number>): NavEntry[] {
+  const badgeFor = (to: string) => {
+    const value = counts[to];
+    return value && value > 0 ? value : undefined;
+  };
   return nav.map((entry) => {
     if ("items" in entry) {
       return {
         ...entry,
-        items: entry.items.map((it) => (it.to === ordersTo ? { ...it, badge: count } : it)),
+        items: entry.items.map((it) => {
+          const badge = badgeFor(it.to);
+          return badge ? { ...it, badge } : it;
+        }),
       };
     }
-    return entry.to === ordersTo ? { ...entry, badge: count } : entry;
+    const badge = badgeFor(entry.to);
+    return badge ? { ...entry, badge } : entry;
   });
+}
+
+export interface PanelNavCounts {
+  orders: number;
+  rider: number;
+  payouts: number;
+}
+
+/**
+ * Live badge counts for the panel nav, role-scoped in `panel_nav_counts`:
+ * actionable orders, orders waiting on a rider, and pending payout requests.
+ */
+export function usePanelNavCounts(enabled = true): PanelNavCounts {
+  const [counts, setCounts] = useState<PanelNavCounts>({ orders: 0, rider: 0, payouts: 0 });
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.rpc("panel_nav_counts" as never);
+    if (error || !data || typeof data !== "object") return;
+    const row = data as Partial<PanelNavCounts>;
+    setCounts({
+      orders: Number(row.orders ?? 0),
+      rider: Number(row.rider ?? 0),
+      payouts: Number(row.payouts ?? 0),
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) return;
+    void load();
+    const onFocus = () => void load();
+    window.addEventListener("focus", onFocus);
+    timer.current = setInterval(load, 60_000);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      if (timer.current) clearInterval(timer.current);
+    };
+  }, [enabled, load]);
+
+  return counts;
 }
