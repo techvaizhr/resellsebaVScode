@@ -44,7 +44,8 @@ type StatusMapping = { ship: ShipmentStatus; order: OrderStatus | null; label: s
 
 /** Steadfast delivery statuses (API v1). */
 export const STEADFAST_STATUS_MAP: Record<string, StatusMapping> = {
-  in_review: { ship: "booked", order: "shipped", label: "In review" },
+  // Booking created but the parcel is not with the courier yet → no auto order change.
+  in_review: { ship: "booked", order: null, label: "In review" },
   pending: { ship: "in_transit", order: "shipped", label: "Pending / on the way" },
   hold: { ship: "in_transit", order: "shipped", label: "On hold" },
   delivered_approval_pending: { ship: "in_transit", order: "shipped", label: "Delivered (approval pending)" },
