@@ -35,7 +35,12 @@ export type OrderStatus =
 
 export type CourierProvider = "steadfast" | "pathao" | "carrybee" | "manual";
 
-type StatusMapping = { ship: ShipmentStatus; order: OrderStatus; label: string };
+/**
+ * `order: null` means "booking stage only" — the consignment exists in the
+ * courier panel but the parcel is still with us, so the order status must NOT
+ * change automatically. Only the shipment row records the courier state.
+ */
+type StatusMapping = { ship: ShipmentStatus; order: OrderStatus | null; label: string };
 
 /** Steadfast delivery statuses (API v1). */
 export const STEADFAST_STATUS_MAP: Record<string, StatusMapping> = {
