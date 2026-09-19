@@ -366,7 +366,10 @@ const COURIER_AUTO_TO_COURIER: OrderStatus[] = ["shipped"];
 const COURIER_AUTO_FROM_COURIER: OrderStatus[] = ["delivered", "pending_partial", "pending_return"];
 
 /** Decide whether a courier event is allowed to change the order status. */
-export function canCourierSetOrderStatus(current: string, next: string): boolean {
+export function canCourierSetOrderStatus(current: string, next: string | null | undefined): boolean {
+  // Booking-stage courier states carry no order target: booking alone never
+  // means the courier has taken the parcel.
+  if (!next) return false;
   if (current === next) return false;
   if ((COURIER_PRE_SHIP_STATUSES as string[]).includes(current))
     return (COURIER_AUTO_TO_COURIER as string[]).includes(next);
