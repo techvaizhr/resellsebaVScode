@@ -74,13 +74,14 @@ export const STEADFAST_STATUS_MAP: Record<string, StatusMapping> = {
 
 /** Carrybee webhook events (`order.*`), keyed without the `order.` prefix. */
 export const CARRYBEE_STATUS_MAP: Record<string, StatusMapping> = {
-  created: { ship: "booked", order: "shipped", label: "Order created" },
+  // Booking / pickup stage: parcel still with the merchant → no auto order change.
+  created: { ship: "booked", order: null, label: "Order created" },
   "create-failed": { ship: "failed", order: "ready_to_ship", label: "Create failed" },
-  updated: { ship: "booked", order: "shipped", label: "Order updated" },
-  "pickup-requested": { ship: "booked", order: "shipped", label: "Pickup requested" },
-  "assigned-for-pickup": { ship: "booked", order: "shipped", label: "Assigned for pickup" },
+  updated: { ship: "booked", order: null, label: "Order updated" },
+  "pickup-requested": { ship: "booked", order: null, label: "Pickup requested" },
+  "assigned-for-pickup": { ship: "booked", order: null, label: "Assigned for pickup" },
   picked: { ship: "in_transit", order: "shipped", label: "Picked" },
-  "pickup-failed": { ship: "booked", order: "shipped", label: "Pickup failed" },
+  "pickup-failed": { ship: "booked", order: null, label: "Pickup failed" },
   "pickup-cancelled": { ship: "cancelled", order: "ready_to_ship", label: "Pickup cancelled" },
   "at-the-sorting-hub": { ship: "in_transit", order: "shipped", label: "At sorting hub" },
   "on-the-way-to-central-warehouse": { ship: "in_transit", order: "shipped", label: "On the way to central warehouse" },
