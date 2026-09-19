@@ -121,13 +121,14 @@ export const CARRYBEE_STATUS_MAP: Record<string, StatusMapping> = {
  * values, keyed without the prefix and with `_`/spaces normalized to `-`.
  */
 export const PATHAO_STATUS_MAP: Record<string, StatusMapping> = {
-  created: { ship: "booked", order: "shipped", label: "Order created" },
-  pending: { ship: "booked", order: "shipped", label: "Pending" },
-  updated: { ship: "booked", order: "shipped", label: "Order updated" },
-  "pickup-requested": { ship: "booked", order: "shipped", label: "Pickup requested" },
-  "assigned-for-pickup": { ship: "booked", order: "shipped", label: "Assigned for pickup" },
+  // Booking / pickup stage: parcel still with the merchant → no auto order change.
+  created: { ship: "booked", order: null, label: "Order created" },
+  pending: { ship: "booked", order: null, label: "Pending" },
+  updated: { ship: "booked", order: null, label: "Order updated" },
+  "pickup-requested": { ship: "booked", order: null, label: "Pickup requested" },
+  "assigned-for-pickup": { ship: "booked", order: null, label: "Assigned for pickup" },
   picked: { ship: "in_transit", order: "shipped", label: "Picked" },
-  "pickup-failed": { ship: "booked", order: "shipped", label: "Pickup failed" },
+  "pickup-failed": { ship: "booked", order: null, label: "Pickup failed" },
   "pickup-cancelled": { ship: "cancelled", order: "ready_to_ship", label: "Pickup cancelled" },
   "at-the-sorting-hub": { ship: "in_transit", order: "shipped", label: "At sorting hub" },
   "at-sorting-hub": { ship: "in_transit", order: "shipped", label: "At sorting hub" },
