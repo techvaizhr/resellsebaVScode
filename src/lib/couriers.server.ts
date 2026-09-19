@@ -339,6 +339,7 @@ export async function applyCourierUpdate(
     !!order &&
     !args.bypassFinalLock &&
     !allowStatusChange &&
+    mapped.order != null &&
     order.status !== mapped.order;
 
   // Courier-collected money (partial delivery = less than the order total).
