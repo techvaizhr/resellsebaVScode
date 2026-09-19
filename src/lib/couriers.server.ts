@@ -339,6 +339,7 @@ export async function applyCourierUpdate(
     !!order &&
     !args.bypassFinalLock &&
     !allowStatusChange &&
+    mapped.order != null &&
     order.status !== mapped.order;
 
   // Courier-collected money (partial delivery = less than the order total).
@@ -347,7 +348,7 @@ export async function applyCourierUpdate(
     await db.from("orders").update({ received_amount: args.codAmount }).eq("id", orderId);
   }
 
-  if (order && allowStatusChange) {
+  if (order && allowStatusChange && mapped.order) {
     await db.from("orders").update({ status: mapped.order }).eq("id", orderId);
     await db.from("order_status_history").insert({
       order_id: orderId,
