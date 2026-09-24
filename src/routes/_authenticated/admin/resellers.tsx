@@ -150,7 +150,7 @@ function ResellersPage() {
   const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>(
-    (FILTERS as readonly string[]).includes(searchParams.status ?? "") ? (searchParams.status as Filter) : "all",
+    (FILTERS as readonly string[]).includes(searchParams.status ?? "") ? (searchParams.status as Filter) : "active",
   );
   const [query, setQuery] = useState(searchParams.q ?? "");
   useEffect(() => {
