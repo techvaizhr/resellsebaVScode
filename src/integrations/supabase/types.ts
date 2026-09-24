@@ -3700,6 +3700,10 @@ export type Database = {
           status: string
         }[]
       }
+      transaction_report_page: {
+        Args: { _from: string; _reseller_id: string; _to: string }
+        Returns: Json
+      }
       verify_check: {
         Args: { _channel: string; _code: string }
         Returns: boolean
