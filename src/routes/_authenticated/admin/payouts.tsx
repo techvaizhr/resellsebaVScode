@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { SearchableSelect } from "@/components/searchable-select";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/ui-kit";
@@ -376,6 +376,7 @@ function AdminPayouts() {
                       </td>
                     </tr>
                   )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
