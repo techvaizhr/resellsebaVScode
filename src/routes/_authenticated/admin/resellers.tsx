@@ -105,11 +105,12 @@ type Summary = {
   frozen_amount: number;
 };
 
-type ResellerSearch = { status?: string };
+type ResellerSearch = { status?: string; q?: string };
 
 export const Route = createFileRoute("/_authenticated/admin/resellers")({
   validateSearch: (s: Record<string, unknown>): ResellerSearch => ({
     status: typeof s.status === "string" ? s.status : undefined,
+    q: typeof s.q === "string" && s.q ? s.q : s.q != null && s.q !== "" ? String(s.q) : undefined,
   }),
   component: ResellersPage,
 });
@@ -152,7 +153,10 @@ function ResellersPage() {
   const [filter, setFilter] = useState<Filter>(
     (FILTERS as readonly string[]).includes(searchParams.status ?? "") ? (searchParams.status as Filter) : "all",
   );
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(searchParams.q ?? "");
+  useEffect(() => {
+    if (searchParams.q != null) setQuery(searchParams.q);
+  }, [searchParams.q]);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
   const [editing, setEditing] = useState<Reseller | null>(null);

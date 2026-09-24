@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { TransactionReport } from "@/components/transaction-report";
 
 export const Route = createFileRoute("/_authenticated/admin/transactions")({
-  validateSearch: (s: Record<string, unknown>): { reseller?: string } => ({
+  validateSearch: (s: Record<string, unknown>): { reseller?: string; q?: string } => ({
     reseller: typeof s.reseller === "string" && s.reseller ? s.reseller : undefined,
+    q: typeof s.q === "string" && s.q ? s.q : s.q != null && s.q !== "" ? String(s.q) : undefined,
   }),
   component: AdminTransactionReportPage,
   head: () => ({
@@ -22,10 +23,10 @@ export const Route = createFileRoute("/_authenticated/admin/transactions")({
 });
 
 function AdminTransactionReportPage() {
-  const { reseller } = Route.useSearch();
+  const { reseller, q } = Route.useSearch();
   return (
     <div className="space-y-5">
-      <TransactionReport admin initialReseller={reseller ?? null} />
+      <TransactionReport key={`${reseller ?? ""}|${q ?? ""}`} admin initialReseller={reseller ?? null} initialSearch={q ?? null} />
     </div>
   );
 }

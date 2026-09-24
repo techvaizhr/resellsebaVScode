@@ -6,6 +6,9 @@ interface CopyOrderNumberProps {
   prefix?: boolean;
   className?: string;
   iconClassName?: string;
+  /** Makes the number itself clickable. */
+  onLabelClick?: () => void;
+  labelTitle?: string;
 }
 
 export function CopyOrderNumber({
@@ -13,6 +16,8 @@ export function CopyOrderNumber({
   prefix = true,
   className = "",
   iconClassName = "h-3 w-3",
+  onLabelClick,
+  labelTitle,
 }: CopyOrderNumberProps) {
   const label = `${prefix ? "#" : ""}${orderNumber}`;
 
@@ -28,7 +33,13 @@ export function CopyOrderNumber({
 
   return (
     <span className={`inline-flex items-center gap-1 ${className}`}>
-      <span className="truncate">{label}</span>
+      {onLabelClick ? (
+        <button type="button" title={labelTitle} onClick={(e) => { e.stopPropagation(); onLabelClick(); }} className="truncate hover:text-primary hover:underline">
+          {label}
+        </button>
+      ) : (
+        <span className="truncate">{label}</span>
+      )}
       <button
         type="button"
         onClick={handleCopy}
