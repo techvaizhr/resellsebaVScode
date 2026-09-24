@@ -303,7 +303,9 @@ function AdminPayouts() {
               <div key={r.id} className="surface-card p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="truncate font-semibold">{r.reseller?.business_name ?? "—"}</div>
+                    <button type="button" onClick={() => goToReport(r)} title="View balance report" className="truncate font-semibold text-primary hover:underline">
+                      {r.reseller?.business_name ?? "—"}
+                    </button>
                     <div className="text-[11px] text-muted-foreground">{new Date(r.created_at).toLocaleString()}</div>
                   </div>
                   <div className="text-right">
@@ -342,7 +344,9 @@ function AdminPayouts() {
                 {rows.map((r) => (
                   <tr key={r.id} className="border-t align-top">
                     <td className="p-3">
-                      <div className="font-medium">{r.reseller?.business_name ?? "—"}</div>
+                      <button type="button" onClick={() => goToReport(r)} title="View balance report" className="font-medium text-primary hover:underline">
+                        {r.reseller?.business_name ?? "—"}
+                      </button>
                     </td>
                     <td className="p-3 font-semibold tabular-nums">৳{Number(r.amount).toLocaleString()}</td>
                     <td className="p-3"><PayoutAccount r={r.reseller} fallback={r.reference} /></td>
