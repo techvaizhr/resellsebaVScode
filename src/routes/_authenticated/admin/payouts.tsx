@@ -144,6 +144,24 @@ function AdminPayouts() {
   const [toDelete, setToDelete] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [tab, setTab] = useState<"requests" | "report">("requests");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const reportCache = useRef<Map<string, PayoutReportRow> | null>(null);
+
+  async function toggleExpand(id: string, resellerId: string) {
+    const next = !expanded[id];
+    setExpanded((p) => ({ ...p, [id]: next }));
+    if (next && !reportCache.current) {
+      const { data, error } = await supabase.rpc("admin_payout_report");
+      if (error) { toast.error(error.message); return; }
+      reportCache.current = new Map(((data ?? []) as any[]).map((r) => [r.reseller_id, r as PayoutReportRow]));
+      setExpanded((p) => ({ ...p }));
+    }
+  }
+
+  function goToReport(r: Row) {
+    setQuery(r.reseller?.code ?? r.reseller?.business_name ?? "");
+    setTab("report");
+  }
 
   useEffect(() => { load(); }, []);
 
