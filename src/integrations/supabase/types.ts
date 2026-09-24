@@ -3126,6 +3126,7 @@ export type Database = {
         Returns: undefined
       }
       admin_lookups: { Args: never; Returns: Json }
+      admin_order_status_counts: { Args: never; Returns: Json }
       admin_orders_page: { Args: { _statuses?: string[] }; Returns: Json }
       admin_payout_report: {
         Args: never
