@@ -121,6 +121,13 @@ type OrderItemLite = {
   supplier_name?: string | null;
 };
 
+/** Expand {status: count} into lightweight rows for the tab counters (no row cap). */
+function countsToRows(counts: unknown) {
+  return Object.entries((counts ?? {}) as Record<string, number>).flatMap(([status, count]) =>
+    Array.from({ length: Number(count) || 0 }, () => ({ status })),
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/admin/orders")({
   validateSearch: (s: Record<string, unknown>): { tab?: OrderTabKey; reseller?: string; q?: string } => ({
     tab: ORDER_TABS.some((t) => t.key === s.tab) ? (s.tab as OrderTabKey) : undefined,
@@ -296,10 +303,10 @@ function AdminOrdersPage() {
       supabase.from("orders").select(ORDER_SELECT).in("id", list),
       supabase.from("order_items").select(ITEM_SELECT).in("order_id", list),
       supabase.from("shipments").select(SHIPMENT_SELECT).in("order_id", list),
-      supabase.from("orders").select("status"),
+      supabase.rpc("admin_order_status_counts"),
     ]);
     const fetched = ((rows ?? []) as unknown) as OrderRow[];
-    setAllOrders(allStats ?? []);
+    setAllOrders(countsToRows(allStats));
     setOrders((prev) => {
       let next = prev
         .map((o) => fetched.find((f) => f.id === o.id) ?? o)
@@ -319,8 +326,8 @@ function AdminOrdersPage() {
     setShipments((prev) => prev.filter((s) => !ids.includes(s.order_id)));
     setMarked((prev) => prev.filter((id) => !ids.includes(id)));
     setExpandedOrders((prev) => prev.filter((id) => !ids.includes(id)));
-    const { data: allStats } = await supabase.from("orders").select("status");
-    setAllOrders(allStats ?? []);
+    const { data: allStats } = await supabase.rpc("admin_order_status_counts");
+    setAllOrders(countsToRows(allStats));
   }
 
 
