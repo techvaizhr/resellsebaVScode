@@ -151,6 +151,10 @@ function AdminOrdersPage() {
   };
   const { tab: tabParam, reseller: resellerParam, q: qParam } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const goTx = (o: { reseller_id: string | null; order_number: string }) =>
+    navigate({ to: "/admin/transactions", search: { reseller: o.reseller_id ?? undefined, q: o.order_number } as never });
+  const goReseller = (o: { resellers: { code: string } | null }) =>
+    navigate({ to: "/admin/resellers", search: { q: o.resellers?.code ?? "" } as never });
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [allOrders, setAllOrders] = useState<{ status: string }[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItemLite[]>([]);
@@ -830,7 +834,7 @@ function AdminOrdersPage() {
                     />
                     )}
                     <div className="min-w-0 flex-1">
-                      <CopyOrderNumber orderNumber={o.order_number} className="text-sm font-bold tracking-tight" />
+                      <CopyOrderNumber orderNumber={o.order_number} className="text-sm font-bold tracking-tight" onLabelClick={() => goTx(o)} labelTitle="Open in Transaction Report" />
                       <div className="text-[10px] uppercase tracking-wide text-muted-foreground tabular-nums">
                         {new Date(o.created_at).toLocaleString([], { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </div>
@@ -915,7 +919,7 @@ function AdminOrdersPage() {
                     </div>
                     <div className="min-w-0 space-y-0.5 border-l pl-2">
                       <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Reseller</div>
-                      <div className="truncate text-xs font-medium">{o.resellers?.business_name || "Direct"}</div>
+                      <div className="truncate text-xs font-medium">{o.resellers ? <button type="button" onClick={() => goReseller(o)} className="truncate hover:text-primary hover:underline">{o.resellers.business_name}</button> : "Direct"}</div>
                       {o.resellers?.contact_phone && (
                         <div className="flex min-w-0 items-center gap-1 text-[11px] tabular-nums text-muted-foreground">
                           <span className="truncate">{o.resellers.contact_phone}</span>
@@ -966,6 +970,7 @@ function AdminOrdersPage() {
                                     <button onClick={() => { navigator.clipboard.writeText(s.consignment_id || ""); toast.success("Booking ID copied"); }} className="shrink-0 opacity-50 hover:opacity-100">
                                       <Copy className="h-2.5 w-2.5" />
                                     </button>
+                                    <CourierRecheckButton shipment={s} orderId={o.id} onDone={() => load({ silent: true })} />
                                   </>
                                 )}
                               </div>
@@ -1069,7 +1074,7 @@ function AdminOrdersPage() {
                     </button>
                   </div>
                   <div className="min-w-0 text-center">
-                    <CopyOrderNumber orderNumber={o.order_number} prefix={false} className="font-medium" />
+                    <CopyOrderNumber orderNumber={o.order_number} prefix={false} className="font-medium" onLabelClick={() => goTx(o)} labelTitle="Open in Transaction Report" />
                     <div className="text-[11px] text-muted-foreground">
                       {new Date(o.created_at).toLocaleDateString()}
                     </div>
@@ -1078,7 +1083,7 @@ function AdminOrdersPage() {
                     </div>
                   </div>
                   <div className="min-w-0 text-center">
-                     <div className="font-medium truncate">{o.resellers?.business_name || "Direct"}</div>
+                     <div className="font-medium truncate">{o.resellers ? <button type="button" onClick={() => goReseller(o)} className="truncate hover:text-primary hover:underline">{o.resellers.business_name}</button> : "Direct"}</div>
                      <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
                        {o.resellers?.contact_phone || "—"}
                        {o.resellers?.contact_phone && (
@@ -1164,6 +1169,9 @@ function AdminOrdersPage() {
                                     <button onClick={() => { navigator.clipboard.writeText(s.consignment_id); toast.success("Booking ID copied"); }} className="opacity-50 hover:opacity-100 transition-opacity">
                                       <Copy className="h-2.5 w-2.5" />
                                     </button>
+                                  )}
+                                  {(s.consignment_id || s.tracking_id) && (
+                                    <CourierRecheckButton shipment={s} orderId={o.id} onDone={() => load({ silent: true })} />
                                   )}
                                 </div>
                               </div>
@@ -1719,3 +1727,38 @@ function OrderDrawer({
   );
 }
 
+
+function CourierRecheckButton({
+  shipment,
+  orderId,
+  onDone,
+}: {
+  shipment: { id: string; provider: string };
+  orderId: string;
+  onDone: () => void;
+}) {
+  const recheckStatus = useServerFn(recheckCourierStatus);
+  const syncSteadfast = useServerFn(syncSteadfastStatus);
+  const syncPathao = useServerFn(syncPathaoStatus);
+  const [busy, setBusy] = useState(false);
+  async function run(e: React.MouseEvent) {
+    e.stopPropagation();
+    setBusy(true);
+    try {
+      if (shipment.provider === "steadfast") await syncSteadfast({ data: { shipmentId: shipment.id } });
+      else if (shipment.provider === "pathao") await syncPathao({ data: { shipmentId: shipment.id } });
+      else await recheckStatus({ data: { orderId } });
+      toast.success("Courier status updated");
+      onDone();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to recheck status");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button type="button" onClick={run} disabled={busy} title="Check courier status" className="shrink-0 opacity-60 hover:opacity-100 hover:text-primary disabled:opacity-40">
+      <RefreshCw className={`h-2.5 w-2.5 ${busy ? "animate-spin" : ""}`} />
+    </button>
+  );
+}
