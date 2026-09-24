@@ -3162,6 +3162,7 @@ export type Database = {
           reseller_id: string
         }[]
       }
+      admin_resellers_page: { Args: never; Returns: Json }
       admin_review_product: {
         Args: { _approve: boolean; _id: string; _note?: string }
         Returns: Json
