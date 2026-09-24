@@ -150,7 +150,11 @@ function ResellersPage() {
   const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>(
-    (FILTERS as readonly string[]).includes(searchParams.status ?? "") ? (searchParams.status as Filter) : "active",
+    (FILTERS as readonly string[]).includes(searchParams.status ?? "")
+      ? (searchParams.status as Filter)
+      : searchParams.q
+        ? "all" // deep-link search (e.g. from orders) must find the reseller in any status
+        : "active",
   );
   const [query, setQuery] = useState(searchParams.q ?? "");
   useEffect(() => {
