@@ -41,7 +41,7 @@ import {
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { useServerFn } from "@tanstack/react-start";
-import { confirmUserEmail, listResellerEmailStatus, deleteAuthUser } from "@/lib/admin-users.functions";
+import { confirmUserEmail, deleteAuthUser } from "@/lib/admin-users.functions";
 import { impersonateReseller, resetResellerPassword } from "@/lib/reseller-access.functions";
 import { startImpersonation } from "@/lib/impersonation";
 import {
