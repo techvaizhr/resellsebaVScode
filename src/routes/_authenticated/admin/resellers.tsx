@@ -172,85 +172,50 @@ function ResellersPage() {
   const canImpersonate = can("resellers.impersonate");
 
 
-  async function load() {
-    setLoading(true);
-    const [listRes, metricsRes] = await Promise.all([
-      supabase
-        .from("resellers")
-        .select(
-          "id,user_id,avatar_url,business_name,code,contact_phone,address,nid_number,status,commission_rate,leader_id,agent_id,notes,approved_at,created_at,payout_method,payout_account_name,payout_account_number,payout_bank_name,payout_branch,payout_routing,deposit_required,deposit_required_amount,frozen_amount",
-        )
-        .order("created_at", { ascending: false }),
-      supabase.rpc("admin_reseller_metrics"),
-    ]);
-
-    const rows = (listRes.data ?? []) as Reseller[];
-    setItems(rows);
-
-    // App-level verification lives on profiles (auth email confirm is separate).
-    const ids = rows.map((r) => r.user_id);
-    if (ids.length) {
-      const { data: profRows } = await supabase
-        .from("profiles")
-        .select("id,email_verified_at,phone_verified_at")
-        .in("id", ids);
-      setProfileVerify(
-        Object.fromEntries(
-          (profRows ?? []).map((p: any) => [
-            p.id,
-            { email: Boolean(p.email_verified_at), phone: Boolean(p.phone_verified_at) },
-          ]),
-        ),
-      );
+  /** One indexed database call returns resellers + metrics + verification + emails + agents. */
+  async function load(silent = false) {
+    if (!silent) setLoading(true);
+    const { data, error } = await supabase.rpc("admin_resellers_page" as never);
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+      return;
     }
-
-    const { data: agentRows } = await supabase.from("agents").select("id,display_name").order("display_name");
-    setAgents((agentRows ?? []) as Array<{ id: string; display_name: string }>);
-
-    const metrics = (metricsRes.data ?? []) as Array<{
-      reseller_id: string;
-      orders: number;
-      delivered_profit: number;
-      pending_payout: number;
-      paid_out: number;
-      available: number;
-      deposit_balance: number;
-      frozen_amount: number;
-    }>;
-    setSummaries(
-      Object.fromEntries(
-        metrics.map((m) => [
-          m.reseller_id,
-          {
-            delivered_profit: Number(m.delivered_profit ?? 0),
-            pending_payout: Number(m.pending_payout ?? 0),
-            paid_out: Number(m.paid_out ?? 0),
-            available: Number(m.available ?? 0),
-            deposit_balance: Number(m.deposit_balance ?? 0),
-            frozen_amount: Number(m.frozen_amount ?? 0),
-          } as Summary,
-        ]),
-      ),
-    );
-    setOrderCounts(Object.fromEntries(metrics.map((m) => [m.reseller_id, Number(m.orders ?? 0)])));
+    const payload = (data ?? {}) as { resellers?: any[]; agents?: Array<{ id: string; display_name: string }> };
+    const rows = payload.resellers ?? [];
+    setItems(rows as Reseller[]);
+    setAgents(payload.agents ?? []);
+    const pv: Record<string, { email: boolean; phone: boolean }> = {};
+    const es: Record<string, { email: string | null; verified: boolean }> = {};
+    const sm: Record<string, Summary> = {};
+    const oc: Record<string, number> = {};
+    for (const m of rows) {
+      pv[m.user_id] = { email: !!m.p_email, phone: !!m.p_phone };
+      es[m.user_id] = { email: m.a_email ?? null, verified: !!m.a_confirmed };
+      sm[m.id] = {
+        delivered_profit: Number(m.m_dp ?? 0),
+        pending_payout: Number(m.m_pp ?? 0),
+        paid_out: Number(m.m_po ?? 0),
+        available: Number(m.m_av ?? 0),
+        deposit_balance: Number(m.m_db ?? 0),
+        frozen_amount: Number(m.frozen_amount ?? 0),
+      } as Summary;
+      oc[m.id] = Number(m.m_orders ?? 0);
+    }
+    setProfileVerify(pv);
+    setEmailStatus(es);
+    setSummaries(sm);
+    setOrderCounts(oc);
     setLoading(false);
   }
 
-
-  async function loadEmailStatus() {
-    try {
-      const list = await listEmailStatusFn();
-      const map: Record<string, { email: string | null; verified: boolean }> = {};
-      for (const u of list) map[u.user_id] = { email: u.email, verified: u.email_confirmed };
-      setEmailStatus(map);
-    } catch {
-      // non-critical
-    }
+  /** Email status now arrives with the page payload — refresh quietly. */
+  function loadEmailStatus() {
+    void load(true);
   }
 
   useEffect(() => {
     load();
-    loadEmailStatus();
   }, []);
 
   useEffect(() => {
