@@ -321,7 +321,13 @@ function AdminPayouts() {
                     <span className="font-medium text-foreground">Admin note:</span> {r.notes}
                   </p>
                 )}
-                <div className="mt-3">{actions(r)}</div>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  {actions(r)}
+                  <button type="button" onClick={() => toggleExpand(r.id, r.reseller_id)} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted">
+                    <ChevronDown className={"h-3.5 w-3.5 transition-transform " + (expanded[r.id] ? "rotate-180" : "")} /> Info
+                  </button>
+                </div>
+                {expanded[r.id] && <div className="mt-3"><ResellerInfoCollapse resellerId={r.reseller_id} cache={reportCache.current ?? new Map()} /></div>}
               </div>
             ))}
           </div>
@@ -353,8 +359,22 @@ function AdminPayouts() {
                     <td className="p-3"><StatusPill s={r.status} /></td>
                     <td className="p-3 max-w-[220px] text-xs text-muted-foreground">{r.notes || "—"}</td>
                     <td className="p-3 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
-                    <td className="p-3">{actions(r)}</td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-1.5">
+                        {actions(r)}
+                        <button type="button" onClick={() => toggleExpand(r.id, r.reseller_id)} title="Reseller balance info" className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted">
+                          <ChevronDown className={"h-3.5 w-3.5 transition-transform " + (expanded[r.id] ? "rotate-180" : "")} /> Info
+                        </button>
+                      </div>
+                    </td>
                   </tr>
+                  {expanded[r.id] && (
+                    <tr key={r.id + "-info"} className="border-t bg-muted/10">
+                      <td colSpan={7} className="p-3">
+                        <ResellerInfoCollapse resellerId={r.reseller_id} cache={reportCache.current ?? new Map()} />
+                      </td>
+                    </tr>
+                  )}
                 ))}
               </tbody>
             </table>
