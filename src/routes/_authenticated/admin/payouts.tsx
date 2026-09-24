@@ -348,7 +348,8 @@ function AdminPayouts() {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className="border-t align-top">
+                  <Fragment key={r.id}>
+                  <tr className="border-t align-top">
                     <td className="p-3">
                       <button type="button" onClick={() => goToReport(r)} title="View balance report" className="font-medium text-primary hover:underline">
                         {r.reseller?.business_name ?? "—"}
