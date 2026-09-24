@@ -176,30 +176,23 @@ export function TransactionReport({
   const [error, setError] = useState<string | null>(null);
   const avatarById = useMemo(() => new Map(resellers.map((r) => [r.id, r.avatar_url])), [resellers]);
 
-  useEffect(() => {
-    if (!admin) return;
-    void supabase
-      .from("resellers")
-      .select("id,business_name,code,avatar_url")
-      .order("business_name")
-      .then(({ data }) => setResellers(data ?? []));
-  }, [admin]);
-
+  // One backend call: every transaction in range (no row cap) + reseller picker for admins.
   useEffect(() => {
     if (!admin && !resellerId) return;
     const { fromTs, toTs } = resolveRange(range);
     setLoading(true);
     setError(null);
     void supabase
-      .rpc("transaction_report", {
+      .rpc("transaction_report_page" as never, {
         _reseller_id: (admin ? reseller : resellerId) || null,
         _from: fromTs != null ? new Date(fromTs).toISOString() : null,
         _to: toTs != null ? new Date(toTs).toISOString() : null,
-        _limit: 1000,
       } as never)
       .then(({ data, error }) => {
         if (error) setError(error.message);
-        setRows(withRunningBalance((data ?? []) as TxRow[], Boolean((admin ? reseller : resellerId) || "")));
+        const pl = (data ?? {}) as { rows?: TxRow[]; resellers?: any[] };
+        if (admin && pl.resellers?.length && resellers.length === 0) setResellers(pl.resellers);
+        setRows(withRunningBalance(pl.rows ?? [], Boolean((admin ? reseller : resellerId) || "")));
         setLoading(false);
       });
   }, [admin, reseller, resellerId, range]);
