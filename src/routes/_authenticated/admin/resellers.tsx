@@ -138,7 +138,6 @@ const FILTER_LABELS: Record<Filter, string> = {
 function ResellersPage() {
   const nav = useNavigate();
   const confirmEmailFn = useServerFn(confirmUserEmail);
-  const listEmailStatusFn = useServerFn(listResellerEmailStatus);
   const deleteAuthUserFn = useServerFn(deleteAuthUser);
   const resetPasswordFn = useServerFn(resetResellerPassword);
   const impersonateFn = useServerFn(impersonateReseller);
