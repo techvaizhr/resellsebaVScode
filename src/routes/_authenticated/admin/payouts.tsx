@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { SearchableSelect } from "@/components/searchable-select";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/ui-kit";
@@ -8,7 +8,43 @@ import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { useAuth, useCan } from "@/lib/use-auth";
 import { DataToolbar, Pagination, usePaginated } from "@/components/data-list";
 import { toast } from "sonner";
-import { PayoutResellerReport } from "@/components/payout-reseller-report";
+import { PayoutResellerReport, type PayoutReportRow } from "@/components/payout-reseller-report";
+
+const bdt = (n: number) => "৳" + Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+function ResellerInfoCollapse({ resellerId, cache }: { resellerId: string; cache: Map<string, PayoutReportRow> }) {
+  const row = cache.get(resellerId);
+  if (!row) return <div className="p-3 text-xs text-muted-foreground">No balance data.</div>;
+  const items: [string, number][] = [
+    ["Total profit", row.earned_profit],
+    ["Deposit", row.deposit_balance],
+    ["Pending request", row.pending_payout],
+    ["Approved", row.approved_payout],
+    ["Withdrawn", row.paid_out],
+    ["Frozen", row.frozen_amount],
+  ];
+  return (
+    <div className="rounded-md border bg-muted/30 p-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
+        {items.map(([label, val]) => (
+          <div key={label}>
+            <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
+            <div className="text-sm font-semibold tabular-nums">{bdt(val)}</div>
+          </div>
+        ))}
+        <div>
+          <div className="text-[10px] uppercase text-muted-foreground">Due balance</div>
+          <div className={"text-sm font-bold tabular-nums " + (row.due_balance > 0 ? "text-destructive" : "text-success")}>{bdt(row.due_balance)}</div>
+        </div>
+      </div>
+      <div className="mt-2 text-[11px] text-muted-foreground">
+        Requests: {row.request_count}
+        {row.last_request_at ? ` · Last request ${new Date(row.last_request_at).toLocaleDateString()}` : ""}
+        {row.last_paid_at ? ` · Last paid ${new Date(row.last_paid_at).toLocaleDateString()}` : ""}
+      </div>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/admin/payouts")({
   validateSearch: (s: Record<string, unknown>): { reseller?: string; status?: string } => ({
@@ -108,6 +144,24 @@ function AdminPayouts() {
   const [toDelete, setToDelete] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [tab, setTab] = useState<"requests" | "report">("requests");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const reportCache = useRef<Map<string, PayoutReportRow> | null>(null);
+
+  async function toggleExpand(id: string, resellerId: string) {
+    const next = !expanded[id];
+    setExpanded((p) => ({ ...p, [id]: next }));
+    if (next && !reportCache.current) {
+      const { data, error } = await supabase.rpc("admin_payout_report");
+      if (error) { toast.error(error.message); return; }
+      reportCache.current = new Map(((data ?? []) as any[]).map((r) => [r.reseller_id, r as PayoutReportRow]));
+      setExpanded((p) => ({ ...p }));
+    }
+  }
+
+  function goToReport(r: Row) {
+    setQuery(r.reseller?.code ?? r.reseller?.business_name ?? "");
+    setTab("report");
+  }
 
   useEffect(() => { load(); }, []);
 
@@ -249,7 +303,9 @@ function AdminPayouts() {
               <div key={r.id} className="surface-card p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="truncate font-semibold">{r.reseller?.business_name ?? "—"}</div>
+                    <button type="button" onClick={() => goToReport(r)} title="View balance report" className="truncate font-semibold text-primary hover:underline">
+                      {r.reseller?.business_name ?? "—"}
+                    </button>
                     <div className="text-[11px] text-muted-foreground">{new Date(r.created_at).toLocaleString()}</div>
                   </div>
                   <div className="text-right">
@@ -265,7 +321,13 @@ function AdminPayouts() {
                     <span className="font-medium text-foreground">Admin note:</span> {r.notes}
                   </p>
                 )}
-                <div className="mt-3">{actions(r)}</div>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  {actions(r)}
+                  <button type="button" onClick={() => toggleExpand(r.id, r.reseller_id)} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted">
+                    <ChevronDown className={"h-3.5 w-3.5 transition-transform " + (expanded[r.id] ? "rotate-180" : "")} /> Info
+                  </button>
+                </div>
+                {expanded[r.id] && <div className="mt-3"><ResellerInfoCollapse resellerId={r.reseller_id} cache={reportCache.current ?? new Map()} /></div>}
               </div>
             ))}
           </div>
@@ -286,17 +348,35 @@ function AdminPayouts() {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className="border-t align-top">
+                  <Fragment key={r.id}>
+                  <tr className="border-t align-top">
                     <td className="p-3">
-                      <div className="font-medium">{r.reseller?.business_name ?? "—"}</div>
+                      <button type="button" onClick={() => goToReport(r)} title="View balance report" className="font-medium text-primary hover:underline">
+                        {r.reseller?.business_name ?? "—"}
+                      </button>
                     </td>
                     <td className="p-3 font-semibold tabular-nums">৳{Number(r.amount).toLocaleString()}</td>
                     <td className="p-3"><PayoutAccount r={r.reseller} fallback={r.reference} /></td>
                     <td className="p-3"><StatusPill s={r.status} /></td>
                     <td className="p-3 max-w-[220px] text-xs text-muted-foreground">{r.notes || "—"}</td>
                     <td className="p-3 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
-                    <td className="p-3">{actions(r)}</td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-1.5">
+                        {actions(r)}
+                        <button type="button" onClick={() => toggleExpand(r.id, r.reseller_id)} title="Reseller balance info" className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted">
+                          <ChevronDown className={"h-3.5 w-3.5 transition-transform " + (expanded[r.id] ? "rotate-180" : "")} /> Info
+                        </button>
+                      </div>
+                    </td>
                   </tr>
+                  {expanded[r.id] && (
+                    <tr key={r.id + "-info"} className="border-t bg-muted/10">
+                      <td colSpan={7} className="p-3">
+                        <ResellerInfoCollapse resellerId={r.reseller_id} cache={reportCache.current ?? new Map()} />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
