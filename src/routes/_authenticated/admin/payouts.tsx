@@ -8,7 +8,43 @@ import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import { useAuth, useCan } from "@/lib/use-auth";
 import { DataToolbar, Pagination, usePaginated } from "@/components/data-list";
 import { toast } from "sonner";
-import { PayoutResellerReport } from "@/components/payout-reseller-report";
+import { PayoutResellerReport, type PayoutReportRow } from "@/components/payout-reseller-report";
+
+const bdt = (n: number) => "৳" + Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+function ResellerInfoCollapse({ resellerId, cache }: { resellerId: string; cache: Map<string, PayoutReportRow> }) {
+  const row = cache.get(resellerId);
+  if (!row) return <div className="p-3 text-xs text-muted-foreground">No balance data.</div>;
+  const items: [string, number][] = [
+    ["Total profit", row.earned_profit],
+    ["Deposit", row.deposit_balance],
+    ["Pending request", row.pending_payout],
+    ["Approved", row.approved_payout],
+    ["Withdrawn", row.paid_out],
+    ["Frozen", row.frozen_amount],
+  ];
+  return (
+    <div className="rounded-md border bg-muted/30 p-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
+        {items.map(([label, val]) => (
+          <div key={label}>
+            <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
+            <div className="text-sm font-semibold tabular-nums">{bdt(val)}</div>
+          </div>
+        ))}
+        <div>
+          <div className="text-[10px] uppercase text-muted-foreground">Due balance</div>
+          <div className={"text-sm font-bold tabular-nums " + (row.due_balance > 0 ? "text-destructive" : "text-success")}>{bdt(row.due_balance)}</div>
+        </div>
+      </div>
+      <div className="mt-2 text-[11px] text-muted-foreground">
+        Requests: {row.request_count}
+        {row.last_request_at ? ` · Last request ${new Date(row.last_request_at).toLocaleDateString()}` : ""}
+        {row.last_paid_at ? ` · Last paid ${new Date(row.last_paid_at).toLocaleDateString()}` : ""}
+      </div>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/admin/payouts")({
   validateSearch: (s: Record<string, unknown>): { reseller?: string; status?: string } => ({
