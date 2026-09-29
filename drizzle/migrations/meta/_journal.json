@@ -288,6 +288,13 @@
       "when": 1790691942697,
       "tag": "0040_payout_report_negative_due",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1790692494198,
+      "tag": "0041_admin_resellers_page_signed_available",
+      "breakpoints": true
     }
   ]
 }
