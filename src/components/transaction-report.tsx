@@ -123,20 +123,30 @@ function PartialSummary({ r }: { r: TxRow }) {
  * simple sum of the Amount column above it. When a single reseller is selected the
  * balance runs per reseller; with "All resellers" it is one combined balance.
  */
-function withRunningBalance(rows: TxRow[], perReseller: boolean): TxRow[] {
+function withRunningBalance(
+  rows: TxRow[],
+  perReseller: boolean,
+  opening: Record<string, number> = {},
+): TxRow[] {
   const asc = [...rows].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   const run = new Map<string, number>();
+  const openAll = Object.values(opening).reduce((s, v) => s + (Number(v) || 0), 0);
   const balances = new Map<TxRow, number>();
   for (const r of asc) {
-    const key = perReseller ? (r.reseller_id ?? "-") : "all";
-    let bal = run.get(key) ?? 0;
+    // Admin direct orders don't belong to any reseller balance.
+    if (!r.reseller_id) {
+      balances.set(r, NaN);
+      continue;
+    }
+    const key = perReseller ? r.reseller_id : "all";
+    let bal = run.get(key) ?? (perReseller ? Number(opening[r.reseller_id]) || 0 : openAll);
     const amount = Number(r.amount) || 0;
     if (r.direction === "in") bal += amount;
     else if (r.direction === "out") bal -= amount;
     run.set(key, bal);
     balances.set(r, bal);
   }
-  return rows.map((r) => ({ ...r, running: balances.get(r) ?? (Number(r.running) || 0) }));
+  return rows.map((r) => ({ ...r, running: balances.get(r) ?? 0 }));
 }
 
 
@@ -190,9 +200,9 @@ export function TransactionReport({
       } as never)
       .then(({ data, error }) => {
         if (error) setError(error.message);
-        const pl = (data ?? {}) as { rows?: TxRow[]; resellers?: any[] };
+        const pl = (data ?? {}) as { rows?: TxRow[]; resellers?: any[]; opening?: Record<string, number> };
         if (admin && pl.resellers?.length && resellers.length === 0) setResellers(pl.resellers);
-        setRows(withRunningBalance(pl.rows ?? [], Boolean((admin ? reseller : resellerId) || "")));
+        setRows(withRunningBalance(pl.rows ?? [], Boolean((admin ? reseller : resellerId) || ""), pl.opening ?? {}));
         setLoading(false);
       });
   }, [admin, reseller, resellerId, range]);
@@ -231,8 +241,8 @@ export function TransactionReport({
     for (const r of filtered) {
       if (r.kind === "deposit") deposit += Number(r.amount);
 
-      if (r.direction === "in") inflow += Number(r.amount);
-      if (r.direction === "out") outflow += Number(r.amount);
+      if (r.reseller_id && r.direction === "in") inflow += Number(r.amount);
+      if (r.reseller_id && r.direction === "out") outflow += Number(r.amount);
       if (r.kind === "withdraw" && r.direction === "out") withdraw += Number(r.amount);
       if (r.kind === "profit") profit += Number(r.amount);
       if (r.kind === "loss") loss += Number(r.amount);
@@ -284,7 +294,7 @@ export function TransactionReport({
         r.advance_by ?? "",
         r.amount,
         r.direction,
-        r.running,
+        Number.isNaN(Number(r.running)) ? "" : r.running,
       ]),
 
     );
@@ -596,7 +606,7 @@ export function TransactionReport({
                         {inflow ? "+" : "−"}
                         {bdt(Number(r.amount))}
                       </td>
-                      <td className="px-3 py-2 text-right font-semibold tabular-nums">{bdt(Number(r.running))}</td>
+                      <td className="px-3 py-2 text-right font-semibold tabular-nums">{Number.isNaN(Number(r.running)) ? "—" : bdt(Number(r.running))}</td>
 
                     </tr>
                   );

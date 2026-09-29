@@ -295,6 +295,13 @@
       "when": 1790692494198,
       "tag": "0041_admin_resellers_page_signed_available",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1790692656353,
+      "tag": "0042_transaction_report_opening_balance",
+      "breakpoints": true
     }
   ]
 }
