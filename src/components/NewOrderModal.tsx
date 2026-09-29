@@ -70,10 +70,13 @@ export function NewOrderModal({
   const filteredResellers = useMemo(() => {
     const q = resellerSearch.trim().toLowerCase();
     if (!q) return [];
-    return resellers.filter(r => 
-      r.business_name.toLowerCase().includes(q) || 
-      (r.code && r.code.toLowerCase().includes(q))
-    ).slice(0, 5);
+    const digits = q.replace(/\D/g, "").replace(/^(?:88)?0?/, "");
+    return resellers.filter(r => {
+      const phone = String(r.contact_phone ?? r.phone ?? "").replace(/\D/g, "");
+      return (r.business_name ?? "").toLowerCase().includes(q) ||
+        (r.code && r.code.toLowerCase().includes(q)) ||
+        (digits.length >= 3 && phone.includes(digits));
+    }).slice(0, 5);
   }, [resellers, resellerSearch]);
 
   const results = useMemo(() => {
