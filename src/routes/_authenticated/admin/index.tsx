@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getAdminDashboard, getAdminLookups, clearBootstrapCache } from "@/lib/bootstrap";
@@ -56,6 +57,17 @@ function AdminDashboard() {
     categories: 0, activeCategories: 0, activeBrands: 0,
   });
   const [orderReport, setOrderReport] = useState<FinanceReport>(() => buildFinanceReport([], []));
+  const [minus, setMinus] = useState<{ count: number; total: number } | null>(null);
+  useEffect(() => {
+    supabase.rpc("admin_payout_report").then(({ data }) => {
+      let count = 0, total = 0;
+      for (const r of (data ?? []) as any[]) {
+        const v = Number(r.due_balance || 0);
+        if (v < 0) { count++; total += v; }
+      }
+      setMinus({ count, total });
+    });
+  }, []);
   const [resellerReport, setResellerReport] = useState({
     total: 0, active: 0, pending: 0, suspended: 0, rejected: 0,
     withStore: 0, depositBalance: 0, frozen: 0, withdrawable: 0,
@@ -291,11 +303,22 @@ function AdminDashboard() {
           <MiniCard to="/admin/resellers" search={{ status: "suspended" }} label="Deactivated" value={resellerReport.suspended} tone="rose" />
           <MiniCard to="/admin/resellers" search={{ status: "rejected" }} label="Rejected" value={resellerReport.rejected} tone="rose" />
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
           <MiniCard to="/admin/resellers" search={{ status: "active" }} label="Selling resellers" value={resellerReport.withStore} hint="With at least 1 order" tone="violet" />
           <MiniCard to="/admin/advanced" label="Deposit balance" value={bdt(resellerReport.depositBalance)} />
           <MiniCard to="/admin/advanced" label="Frozen" value={bdt(resellerReport.frozen)} tone="amber" />
           <MiniCard to="/admin/payouts" label="Withdrawable" value={bdt(resellerReport.withdrawable)} tone="emerald" />
+          <Link
+            to="/admin/payouts"
+            className="surface-card border-destructive/40 bg-destructive/10 px-3 py-2.5 text-center text-destructive transition hover:-translate-y-0.5 hover:border-destructive"
+          >
+            <div className="text-lg font-black leading-tight break-words sm:text-2xl">
+              {minus ? `-${bdt(Math.abs(minus.total))}` : "…"}
+            </div>
+            <div className="mt-0.5 text-[10px] font-bold uppercase leading-tight tracking-widest">
+              Minus resellers ({minus ? minus.count : "…"})
+            </div>
+          </Link>
         </div>
       </section>
 
