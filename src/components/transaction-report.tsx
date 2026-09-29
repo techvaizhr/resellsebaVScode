@@ -123,20 +123,30 @@ function PartialSummary({ r }: { r: TxRow }) {
  * simple sum of the Amount column above it. When a single reseller is selected the
  * balance runs per reseller; with "All resellers" it is one combined balance.
  */
-function withRunningBalance(rows: TxRow[], perReseller: boolean): TxRow[] {
+function withRunningBalance(
+  rows: TxRow[],
+  perReseller: boolean,
+  opening: Record<string, number> = {},
+): TxRow[] {
   const asc = [...rows].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   const run = new Map<string, number>();
+  const openAll = Object.values(opening).reduce((s, v) => s + (Number(v) || 0), 0);
   const balances = new Map<TxRow, number>();
   for (const r of asc) {
-    const key = perReseller ? (r.reseller_id ?? "-") : "all";
-    let bal = run.get(key) ?? 0;
+    // Admin direct orders don't belong to any reseller balance.
+    if (!r.reseller_id) {
+      balances.set(r, NaN);
+      continue;
+    }
+    const key = perReseller ? r.reseller_id : "all";
+    let bal = run.get(key) ?? (perReseller ? Number(opening[r.reseller_id]) || 0 : openAll);
     const amount = Number(r.amount) || 0;
     if (r.direction === "in") bal += amount;
     else if (r.direction === "out") bal -= amount;
     run.set(key, bal);
     balances.set(r, bal);
   }
-  return rows.map((r) => ({ ...r, running: balances.get(r) ?? (Number(r.running) || 0) }));
+  return rows.map((r) => ({ ...r, running: balances.get(r) ?? 0 }));
 }
 
 
