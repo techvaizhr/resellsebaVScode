@@ -34,7 +34,7 @@ function ResellerInfoCollapse({ resellerId, cache }: { resellerId: string; cache
         ))}
         <div>
           <div className="text-[10px] uppercase text-muted-foreground">Due balance</div>
-          <div className={"text-sm font-bold tabular-nums " + (row.due_balance > 0 ? "text-destructive" : "text-success")}>{bdt(row.due_balance)}</div>
+          <div className={"text-sm font-bold tabular-nums " + (row.due_balance < 0 ? "text-destructive" : "text-success")}>{bdt(row.due_balance)}</div>
         </div>
       </div>
       <div className="mt-2 text-[11px] text-muted-foreground">

@@ -167,7 +167,7 @@ export function PayoutResellerReport({ search }: { search: string }) {
               </div>
               <div className="text-right">
                 <div className="text-[10px] uppercase text-muted-foreground">Due</div>
-                <div className="font-bold tabular-nums text-primary">{bdt(r.due_balance)}</div>
+                <div className={"font-bold tabular-nums " + (r.due_balance < 0 ? "text-destructive" : "text-primary")}>{bdt(r.due_balance)}</div>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
@@ -214,7 +214,7 @@ export function PayoutResellerReport({ search }: { search: string }) {
                 <td className="p-3 text-right tabular-nums">{r.approved_payout ? bdt(r.approved_payout) : "—"}</td>
                 <td className="p-3 text-right tabular-nums text-success">{bdt(r.paid_out)}</td>
                 <td className="p-3 text-right tabular-nums text-muted-foreground">{r.frozen_amount ? bdt(r.frozen_amount) : "—"}</td>
-                <td className="p-3 text-right font-semibold tabular-nums text-primary">{bdt(r.due_balance)}</td>
+                <td className={"p-3 text-right font-semibold tabular-nums " + (r.due_balance < 0 ? "text-destructive" : "text-primary")}>{bdt(r.due_balance)}</td>
                 <td className="p-3 text-right tabular-nums text-muted-foreground">{r.request_count}</td>
                 <td className="p-3 text-right text-xs text-muted-foreground">
                   {r.last_request_at ? new Date(r.last_request_at).toLocaleDateString() : "—"}
