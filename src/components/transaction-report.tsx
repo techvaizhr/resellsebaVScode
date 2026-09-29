@@ -200,9 +200,9 @@ export function TransactionReport({
       } as never)
       .then(({ data, error }) => {
         if (error) setError(error.message);
-        const pl = (data ?? {}) as { rows?: TxRow[]; resellers?: any[] };
+        const pl = (data ?? {}) as { rows?: TxRow[]; resellers?: any[]; opening?: Record<string, number> };
         if (admin && pl.resellers?.length && resellers.length === 0) setResellers(pl.resellers);
-        setRows(withRunningBalance(pl.rows ?? [], Boolean((admin ? reseller : resellerId) || "")));
+        setRows(withRunningBalance(pl.rows ?? [], Boolean((admin ? reseller : resellerId) || ""), pl.opening ?? {}));
         setLoading(false);
       });
   }, [admin, reseller, resellerId, range]);
@@ -241,8 +241,8 @@ export function TransactionReport({
     for (const r of filtered) {
       if (r.kind === "deposit") deposit += Number(r.amount);
 
-      if (r.direction === "in") inflow += Number(r.amount);
-      if (r.direction === "out") outflow += Number(r.amount);
+      if (r.reseller_id && r.direction === "in") inflow += Number(r.amount);
+      if (r.reseller_id && r.direction === "out") outflow += Number(r.amount);
       if (r.kind === "withdraw" && r.direction === "out") withdraw += Number(r.amount);
       if (r.kind === "profit") profit += Number(r.amount);
       if (r.kind === "loss") loss += Number(r.amount);
@@ -606,7 +606,7 @@ export function TransactionReport({
                         {inflow ? "+" : "−"}
                         {bdt(Number(r.amount))}
                       </td>
-                      <td className="px-3 py-2 text-right font-semibold tabular-nums">{bdt(Number(r.running))}</td>
+                      <td className="px-3 py-2 text-right font-semibold tabular-nums">{Number.isNaN(Number(r.running)) ? "—" : bdt(Number(r.running))}</td>
 
                     </tr>
                   );
