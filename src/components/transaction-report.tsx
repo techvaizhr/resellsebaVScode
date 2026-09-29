@@ -181,6 +181,7 @@ export function TransactionReport({
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState<number | "all">(20);
   const [rows, setRows] = useState<TxRow[]>([]);
+  const [opening, setOpening] = useState<Record<string, number>>({});
   const [resellers, setResellers] = useState<{ id: string; business_name: string; code: string; avatar_url: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
