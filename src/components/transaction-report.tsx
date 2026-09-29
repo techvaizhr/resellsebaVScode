@@ -202,6 +202,7 @@ export function TransactionReport({
         if (error) setError(error.message);
         const pl = (data ?? {}) as { rows?: TxRow[]; resellers?: any[]; opening?: Record<string, number> };
         if (admin && pl.resellers?.length && resellers.length === 0) setResellers(pl.resellers);
+        setOpening(pl.opening ?? {});
         setRows(withRunningBalance(pl.rows ?? [], Boolean((admin ? reseller : resellerId) || ""), pl.opening ?? {}));
         setLoading(false);
       });
@@ -219,6 +220,30 @@ export function TransactionReport({
       return haystack.includes(q);
     });
   }, [rows, kind, search]);
+
+  // Closing balance per reseller (date + reseller filter apply; search/type don't change a real balance).
+  const minusResellers = useMemo(() => {
+    const bal = new Map<string, number>();
+    for (const [id, v] of Object.entries(opening)) bal.set(id, Number(v) || 0);
+    for (const r of rows) {
+      if (!r.reseller_id) continue;
+      const a = Number(r.amount) || 0;
+      const cur = bal.get(r.reseller_id) ?? 0;
+      if (r.direction === "in") bal.set(r.reseller_id, cur + a);
+      else if (r.direction === "out") bal.set(r.reseller_id, cur - a);
+    }
+    const q = search.trim().toLowerCase();
+    let count = 0, total = 0;
+    for (const [id, v] of bal) {
+      if (v >= 0) continue;
+      if (q) {
+        const any = rows.find((r) => r.reseller_id === id);
+        if (any && ![any.reseller_name, any.reseller_code].join(" ").toLowerCase().includes(q)) continue;
+      }
+      count++; total += v;
+    }
+    return { count, total };
+  }, [rows, opening, search]);
 
   const paged = useMemo(() => {
     if (perPage === "all") return filtered;
@@ -438,10 +463,11 @@ export function TransactionReport({
         />
         <StatCard label="Security deposit" value={bdt(totals.deposit)} icon={<Wallet className="h-4 w-4" />} />
         <StatCard label="Withdrawn" value={bdt(totals.withdraw)} icon={<ArrowUpRight className="h-4 w-4" />} />
+        <StatCard label={`Loss orders (${filtered.filter((r) => r.kind === "loss").length})`} value={`-${bdt(Math.abs(totals.loss))}`} icon={<AlertTriangle className="h-4 w-4" />} />
         <StatCard label="Transactions" value={String(filtered.length)} icon={<TrendingUp className="h-4 w-4" />} />
         <StatCard
-          label="Loss orders / total minus"
-          value={`${filtered.filter((r) => r.kind === "loss").length} / -${bdt(Math.abs(totals.loss))}`}
+          label={`Minus resellers (${minusResellers.count})`}
+          value={minusResellers.count ? `-${bdt(Math.abs(minusResellers.total))}` : bdt(0)}
           icon={<AlertTriangle className="h-4 w-4" />}
         />
       </div>
