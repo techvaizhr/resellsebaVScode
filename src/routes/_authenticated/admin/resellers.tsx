@@ -746,7 +746,13 @@ function Metric({
       <div
         className={
           "text-sm font-semibold tabular-nums " +
-          (accent ? "text-success" : muted ? "text-muted-foreground" : "")
+          (value != null && value < 0
+            ? "text-destructive"
+            : accent
+              ? "text-success"
+              : muted
+                ? "text-muted-foreground"
+                : "")
         }
       >
         {value == null ? "—" : plain ? value.toLocaleString() : `৳${value.toLocaleString()}`}
