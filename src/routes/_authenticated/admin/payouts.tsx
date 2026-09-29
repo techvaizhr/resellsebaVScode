@@ -288,6 +288,25 @@ function AdminPayouts() {
         ))}
       </div>
 
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {([
+          ["pending", "Pending", "bg-warning/20 text-warning-foreground"],
+          ["approved", "Approved", "bg-primary/10 text-primary"],
+          ["paid", "Paid", "bg-success/15 text-success"],
+          ["rejected", "Rejected", "bg-destructive/10 text-destructive"],
+          ["all", "Total", "bg-accent/15 text-accent-foreground"],
+        ] as const).map(([k, label, tone]) => {
+          const list = k === "all" ? scoped : scoped.filter((r) => r.status === k);
+          const sum = list.reduce((a, r) => a + Number(r.amount || 0), 0);
+          return (
+            <button key={k} onClick={() => setFilter(k as Filter)} className={"rounded-xl border p-3 text-left " + tone + (filter === k ? " ring-2 ring-primary" : "")}>
+              <div className="text-[11px] uppercase opacity-80">{label} ({list.length})</div>
+              <div className="mt-1 text-lg font-bold tabular-nums">৳{sum.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+            </button>
+          );
+        })}
+      </div>
+
       {loading ? (
         <div className="grid place-items-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       ) : filteredRows.length === 0 ? (
