@@ -257,7 +257,8 @@ export function OrderSettleModal({
                         type="number"
                         min={0}
                         max={i.quantity}
-                        value={i.returned_qty}
+                        value={i.returned_qty === 0 ? "" : i.returned_qty}
+                        placeholder="0"
                         onChange={(e) =>
                           setItems((prev) =>
                             prev.map((x) =>
