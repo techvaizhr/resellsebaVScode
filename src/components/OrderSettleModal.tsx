@@ -341,7 +341,8 @@ function Field({
       <input
         type="number"
         min={0}
-        value={value}
+        value={value === 0 ? "" : value}
+        placeholder="0"
         disabled={disabled}
         onChange={(e) => onChange(num(e.target.value))}
         className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-sm tabular-nums disabled:opacity-60"
