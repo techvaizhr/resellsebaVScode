@@ -439,7 +439,11 @@ export function TransactionReport({
         <StatCard label="Security deposit" value={bdt(totals.deposit)} icon={<Wallet className="h-4 w-4" />} />
         <StatCard label="Withdrawn" value={bdt(totals.withdraw)} icon={<ArrowUpRight className="h-4 w-4" />} />
         <StatCard label="Transactions" value={String(filtered.length)} icon={<TrendingUp className="h-4 w-4" />} />
-        <StatCard label="Loss orders" value={String(filtered.filter((r) => r.kind === "loss").length)} icon={<AlertTriangle className="h-4 w-4" />} />
+        <StatCard
+          label="Loss orders / total minus"
+          value={`${filtered.filter((r) => r.kind === "loss").length} / -${bdt(Math.abs(totals.loss))}`}
+          icon={<AlertTriangle className="h-4 w-4" />}
+        />
       </div>
 
       <p className="rounded-lg border bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">{PROFIT_FORMULA_HINT}</p>
