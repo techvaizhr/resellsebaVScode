@@ -281,6 +281,13 @@
       "when": 1790267439718,
       "tag": "0039_transaction_report_page",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1790691942697,
+      "tag": "0040_payout_report_negative_due",
+      "breakpoints": true
     }
   ]
 }
