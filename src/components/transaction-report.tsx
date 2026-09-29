@@ -294,7 +294,7 @@ export function TransactionReport({
         r.advance_by ?? "",
         r.amount,
         r.direction,
-        r.running,
+        Number.isNaN(Number(r.running)) ? "" : r.running,
       ]),
 
     );
