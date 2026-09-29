@@ -102,8 +102,10 @@ export function PayoutResellerReport({ search }: { search: string }) {
           paid: acc.paid + r.paid_out,
           pending: acc.pending + r.pending_payout + r.approved_payout,
           due: acc.due + r.due_balance,
+          minus: acc.minus + (r.due_balance < 0 ? r.due_balance : 0),
+          minusCount: acc.minusCount + (r.due_balance < 0 ? 1 : 0),
         }),
-        { earned: 0, paid: 0, pending: 0, due: 0 },
+        { earned: 0, paid: 0, pending: 0, due: 0, minus: 0, minusCount: 0 },
       ),
     [filtered],
   );
@@ -143,11 +145,12 @@ export function PayoutResellerReport({ search }: { search: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Stat label="Total profit" value={totals.earned} tone="bg-primary/10 text-primary" />
         <Stat label="Withdrawn" value={totals.paid} tone="bg-success/15 text-success" />
         <Stat label="In request" value={totals.pending} tone="bg-warning/20 text-warning-foreground" />
         <Stat label="Due balance" value={totals.due} tone="bg-accent/15 text-accent-foreground" />
+        <Stat label={`Total minus (${totals.minusCount} reseller)`} value={totals.minus} tone="bg-destructive/10 text-destructive" />
       </div>
 
       <div className="flex justify-end">
