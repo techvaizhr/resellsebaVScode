@@ -29,6 +29,7 @@ export function DepositSettingsPanel() {
   const [triggerOn, setTriggerOn] = useState(false);
   const [amount, setAmount] = useState("0");
   const [frozen, setFrozen] = useState("0");
+  const [applyAll, setApplyAll] = useState(false);
   const [texts, setTexts] = useState<DepositTexts>(DEFAULT_DEPOSIT_TEXTS);
 
   const inp = "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
@@ -62,8 +63,21 @@ export function DepositSettingsPanel() {
       } as any)
       .eq("id", 1);
     clearAppDataCache("settings");
+    if (error) {
+      setBusy(false);
+      return toast.error(error.message);
+    }
+    if (applyAll) {
+      const { error: e2 } = await supabase
+        .from("resellers")
+        .update({ frozen_amount: Number(frozen) || 0 } as any)
+        .not("id", "is", null);
+      setBusy(false);
+      if (e2) return toast.error(e2.message);
+      setApplyAll(false);
+      return toast.success("Saved — freeze applied to all resellers");
+    }
     setBusy(false);
-    if (error) return toast.error(error.message);
     toast.success("Deposit settings saved");
   }
 
@@ -100,15 +114,30 @@ export function DepositSettingsPanel() {
             <span className="text-muted-foreground">If off, new resellers can work without a deposit.</span>
           </span>
         </label>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-xs font-medium">Default deposit amount (৳)</label>
-            <input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} className={inp} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium">Default freeze amount (৳)</label>
-            <input type="number" min={0} value={frozen} onChange={(e) => setFrozen(e.target.value)} className={inp} />
-          </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium">Default deposit amount (৳)</label>
+          <input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} className={inp} />
+        </div>
+
+        <div className="border-t pt-3">
+          <h3 className="text-sm font-semibold">Frozen amount (separate from deposit)</h3>
+          <p className="mb-2 text-xs text-muted-foreground">
+            Works even when the deposit trigger is off. This amount can never be withdrawn by the reseller.
+          </p>
+          <label className="mb-1 block text-xs font-medium">Default freeze amount (৳)</label>
+          <input type="number" min={0} value={frozen} onChange={(e) => setFrozen(e.target.value)} className={inp} />
+          <label className="mt-2 flex cursor-pointer items-start gap-3 rounded-md border bg-muted/30 p-3">
+            <input
+              type="checkbox"
+              checked={applyAll}
+              onChange={(e) => setApplyAll(e.target.checked)}
+              className="mt-0.5 h-4 w-4"
+            />
+            <span className="text-xs">
+              <span className="block font-medium">Apply this freeze to ALL existing resellers on save</span>
+              <span className="text-muted-foreground">Off = only new resellers get it.</span>
+            </span>
+          </label>
         </div>
       </div>
 
