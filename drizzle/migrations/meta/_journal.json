@@ -309,6 +309,13 @@
       "when": 1790693000000,
       "tag": "0043_fix_transaction_report_payout_and_dates",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1790693500000,
+      "tag": "0044_order_settled_at_lifecycle",
+      "breakpoints": true
     }
   ]
 }
