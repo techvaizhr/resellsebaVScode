@@ -128,7 +128,14 @@ function withRunningBalance(
   perReseller: boolean,
   opening: Record<string, number> = {},
 ): TxRow[] {
-  const asc = [...rows].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+  // Sort ascending by time; use order_number/note/id as tie-breaker
+  const asc = [...rows].sort((a, b) => {
+    const diff = new Date(a.at).getTime() - new Date(b.at).getTime();
+    if (diff !== 0) return diff;
+    const numA = a.order_number ?? a.note ?? a.label ?? "";
+    const numB = b.order_number ?? b.note ?? b.label ?? "";
+    return numA.localeCompare(numB);
+  });
   const run = new Map<string, number>();
   const openAll = Object.values(opening).reduce((s, v) => s + (Number(v) || 0), 0);
   const balances = new Map<TxRow, number>();
@@ -146,7 +153,15 @@ function withRunningBalance(
     run.set(key, bal);
     balances.set(r, bal);
   }
-  return rows.map((r) => ({ ...r, running: balances.get(r) ?? 0 }));
+  // Sort descending by time with matching tie-breaker so the latest running balance is always at the top
+  const desc = [...rows].sort((a, b) => {
+    const diff = new Date(b.at).getTime() - new Date(a.at).getTime();
+    if (diff !== 0) return diff;
+    const numA = a.order_number ?? a.note ?? a.label ?? "";
+    const numB = b.order_number ?? b.note ?? b.label ?? "";
+    return numB.localeCompare(numA);
+  });
+  return desc.map((r) => ({ ...r, running: balances.get(r) ?? 0 }));
 }
 
 

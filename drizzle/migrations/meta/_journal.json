@@ -302,6 +302,13 @@
       "when": 1790692656353,
       "tag": "0042_transaction_report_opening_balance",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1790693000000,
+      "tag": "0043_fix_transaction_report_payout_and_dates",
+      "breakpoints": true
     }
   ]
 }
