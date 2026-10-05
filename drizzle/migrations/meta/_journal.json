@@ -323,6 +323,13 @@
       "when": 1790694000000,
       "tag": "0045_unify_payout_and_reseller_balance_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1790694500000,
+      "tag": "0046_fix_reseller_ledger_paid_only",
+      "breakpoints": true
     }
   ]
 }
