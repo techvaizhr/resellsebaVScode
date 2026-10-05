@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ProductVideo } from "@/components/product-video";
+import { ProductVideo, VideoActionToolbar } from "@/components/product-video";
 import { youtubeThumb } from "@/lib/tutorials";
 import { cn } from "@/lib/utils";
 
@@ -55,7 +55,7 @@ export function ProductMediaGallery({
             youtubeUrl={youtubeUrl}
             fileUrl={fileUrl}
             name={name}
-            className="flex h-full min-w-0 max-w-full items-center justify-center overflow-hidden p-2 sm:p-4"
+            className="flex h-full w-full min-w-0 max-w-full items-center justify-center overflow-hidden p-2 sm:p-4"
           />
         ) : activeUrl ? (
           <img src={activeUrl} alt={name} className="h-full w-full object-cover" />
@@ -64,6 +64,11 @@ export function ProductMediaGallery({
         )}
 
         {activeUrl && renderImageActions?.(activeUrl, imageUrls)}
+        {active === "video" && hasVideo && (
+          <div className="absolute right-3 top-3 z-20">
+            <VideoActionToolbar youtubeUrl={youtubeUrl} fileUrl={fileUrl} baseName={name} />
+          </div>
+        )}
       </div>
 
       {mediaCount > 1 && (

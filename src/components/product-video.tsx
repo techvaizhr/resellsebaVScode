@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Check, Copy, Download, Loader2, Play } from "lucide-react";
+import { Check, Copy, Download, ExternalLink, Loader2, Play } from "lucide-react";
 import { toast } from "sonner";
-import { youtubeEmbed } from "@/lib/tutorials";
+import { youtubeEmbed, youtubeId } from "@/lib/tutorials";
 
 function safeName(base: string) {
   return (
@@ -14,10 +14,12 @@ function safeName(base: string) {
 
 export function VideoDownloadButton({
   fileUrl,
+  youtubeUrl,
   baseName,
   className,
 }: {
-  fileUrl: string;
+  fileUrl?: string | null;
+  youtubeUrl?: string | null;
   baseName: string;
   className?: string;
 }) {
@@ -26,57 +28,76 @@ export function VideoDownloadButton({
   async function download(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    setBusy(true);
-    try {
-      const res = await fetch(fileUrl);
-      if (!res.ok) throw new Error("Download failed");
-      const blob = await res.blob();
-      const ext = (fileUrl.split("?")[0]?.split(".").pop() || "mp4").slice(0, 5);
-      const href = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = href;
-      a.download = `${safeName(baseName)}.${ext}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(href);
-      toast.success("Video downloaded");
-    } catch {
-      toast.error("Could not download the video");
-    } finally {
-      setBusy(false);
+
+    if (fileUrl) {
+      setBusy(true);
+      try {
+        const res = await fetch(fileUrl);
+        if (!res.ok) throw new Error("Download failed");
+        const blob = await res.blob();
+        const ext = (fileUrl.split("?")[0]?.split(".").pop() || "mp4").slice(0, 5);
+        const href = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = href;
+        a.download = `${safeName(baseName)}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(href);
+        toast.success("ভিডিও ডাউনলোড শুরু হয়েছে");
+      } catch {
+        toast.error("ভিডিও ফাইল ডাউনলোড করা যায়নি");
+      } finally {
+        setBusy(false);
+      }
+    } else if (youtubeUrl) {
+      const id = youtubeId(youtubeUrl);
+      const cleanUrl = id ? `https://www.youtube.com/watch?v=${id}` : youtubeUrl;
+      const downloadUrl = id ? `https://ssyoutube.com/watch?v=${id}` : `https://ssyoutube.com/${youtubeUrl}`;
+
+      try {
+        await navigator.clipboard.writeText(cleanUrl);
+      } catch {}
+
+      window.open(downloadUrl, "_blank", "noopener,noreferrer");
+      toast.success("ভিডিও ডাউনলোড পেজ ওপেন হয়েছে (লিঙ্ক কপি করা হয়েছে)");
     }
   }
+
+  if (!fileUrl && !youtubeUrl) return null;
 
   return (
     <button
       type="button"
       onClick={download}
       disabled={busy}
-      title="Download video"
+      title={fileUrl ? "ভিডিও ডাউনলোড করুন" : "ইউটিউব ভিডিও ডাউনলোড করুন"}
       className={
         className ??
-        "inline-flex items-center gap-1 rounded-lg border bg-card/90 px-2 py-1.5 text-[11px] font-semibold shadow-sm backdrop-blur hover:border-primary/50 hover:text-primary disabled:opacity-60"
+        "inline-flex items-center gap-1 rounded-md border bg-card/90 px-2 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur hover:border-primary/50 hover:text-primary disabled:opacity-60"
       }
     >
-      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Video
+      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+      <span>Download</span>
     </button>
   );
 }
 
-export function CopyVideoLinkButton({ url }: { url: string }) {
+export function CopyVideoLinkButton({ url, className }: { url: string; className?: string }) {
   const [done, setDone] = useState(false);
 
   async function copy(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(url);
+      const id = youtubeId(url);
+      const cleanUrl = id ? `https://www.youtube.com/watch?v=${id}` : url;
+      await navigator.clipboard.writeText(cleanUrl);
       setDone(true);
-      toast.success("Video link copied");
-      setTimeout(() => setDone(false), 1600);
+      toast.success("ভিডিওর YouTube লিঙ্ক কপি হয়েছে");
+      setTimeout(() => setDone(false), 2000);
     } catch {
-      toast.error("Could not copy the link");
+      toast.error("লিঙ্ক কপি করা যায়নি");
     }
   }
 
@@ -84,18 +105,70 @@ export function CopyVideoLinkButton({ url }: { url: string }) {
     <button
       type="button"
       onClick={copy}
-      title="Copy video link"
-      className="btn-brand inline-flex max-w-full shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-semibold shadow-sm sm:px-2.5 sm:text-[11px]"
+      title="ভিডিওর YouTube লিঙ্ক কপি করুন"
+      className={
+        className ??
+        "inline-flex items-center gap-1 rounded-md border bg-card/90 px-2 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur hover:border-primary/50 hover:text-primary"
+      }
     >
-      {done ? <Check className="h-3.5 w-3.5 shrink-0" /> : <Copy className="h-3.5 w-3.5 shrink-0" />}
-      <span className="hidden sm:inline">Copy video link</span>
-      <span className="sm:hidden">Link</span>
+      {done ? (
+        <Check className="h-3.5 w-3.5 text-emerald-500" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" />
+      )}
+      <span>{done ? "Copied!" : "Copy link"}</span>
     </button>
   );
 }
 
+export function OpenYouTubeButton({ url, className }: { url: string; className?: string }) {
+  const id = youtubeId(url);
+  const cleanUrl = id ? `https://www.youtube.com/watch?v=${id}` : url;
+
+  return (
+    <a
+      href={cleanUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="YouTube-এ ভিডিওটি ওপেন করুন"
+      onClick={(e) => e.stopPropagation()}
+      className={
+        className ??
+        "inline-flex items-center gap-1 rounded-md border bg-card/90 px-2 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur hover:border-primary/50 hover:text-primary"
+      }
+    >
+      <ExternalLink className="h-3.5 w-3.5" />
+      <span>YouTube</span>
+    </a>
+  );
+}
+
+export function VideoActionToolbar({
+  youtubeUrl,
+  fileUrl,
+  baseName,
+  className,
+}: {
+  youtubeUrl?: string | null;
+  fileUrl?: string | null;
+  baseName: string;
+  className?: string;
+}) {
+  if (!youtubeUrl && !fileUrl) return null;
+
+  return (
+    <div className={`flex flex-wrap items-center gap-1.5 ${className ?? ""}`}>
+      {youtubeUrl && <CopyVideoLinkButton url={youtubeUrl} />}
+      {(fileUrl || youtubeUrl) && (
+        <VideoDownloadButton fileUrl={fileUrl} youtubeUrl={youtubeUrl} baseName={baseName} />
+      )}
+      {youtubeUrl && <OpenYouTubeButton url={youtubeUrl} />}
+    </div>
+  );
+}
+
 /**
- * Product video block: YouTube embed and/or uploaded file with 1-click download.
+ * Product video block: YouTube embed and/or uploaded file with 1-click download & copy.
  * Renders nothing when the product has no video.
  */
 export function ProductVideo({
@@ -137,12 +210,12 @@ export function ProductVideo({
           <video src={fileUrl ?? undefined} controls preload="metadata" className={`block min-w-0 max-w-full bg-black ${ratio}`} />
         )}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2">
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-black/55 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur">
-            <Play className="h-3 w-3" /> Video
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur">
+            <Play className="h-3 w-3 fill-current text-primary" /> Video
           </span>
           <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1.5">
-            {fileUrl && <VideoDownloadButton fileUrl={fileUrl} baseName={name} />}
-            {!fileUrl && youtubeUrl && <CopyVideoLinkButton url={youtubeUrl} />}
+            {youtubeUrl && <CopyVideoLinkButton url={youtubeUrl} />}
+            <VideoDownloadButton fileUrl={fileUrl} youtubeUrl={youtubeUrl} baseName={name} />
           </div>
         </div>
       </div>
