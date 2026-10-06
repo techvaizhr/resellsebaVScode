@@ -72,6 +72,8 @@ export type LpBootstrap = {
     id: string;
     name: string;
     slug: string;
+    category_id: string | null;
+    category_ids?: string[] | null;
     main_image: string | null;
     price: number;
     base_price: number;
@@ -96,6 +98,8 @@ export function getLpBootstrap(host: string, force = false) {
 
 export type StoreBootstrap = {
   store: Record<string, any> | null;
+  /** True when the reseller's monthly package does not cover the public store. */
+  store_closed?: boolean;
   listings: any[];
   categories: { id: string; name: string; slug: string; image_url: string | null }[];
   menu: any[];
@@ -106,8 +110,28 @@ export type StoreBootstrap = {
 
 };
 
+const STORE_BOOT_CACHE_KEY = "__st_boot_";
+const STORE_BOOT_TTL = 3 * 60 * 1000; // 3 minutes
+
 /** Storefront: settings + listings + categories + menu + delivery rule in one call. */
 export function getStoreBootstrap(code: string, force = false) {
+  if (!force && typeof window !== "undefined") {
+    try {
+      const cached = sessionStorage.getItem(`${STORE_BOOT_CACHE_KEY}${code}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.data && Date.now() - Number(parsed.ts || 0) < STORE_BOOT_TTL) {
+          const data = parsed.data as StoreBootstrap;
+          setGlobalDelivery(mergeDeliverySettings(data.delivery as never));
+          primeGlobalSettings(data.settings);
+          return Promise.resolve(data);
+        }
+      }
+    } catch {
+      // fallback to network
+    }
+  }
+
   return once(
     `store:${code}`,
     async () => {
@@ -118,6 +142,17 @@ export function getStoreBootstrap(code: string, force = false) {
         setGlobalDelivery(mergeDeliverySettings(data.delivery as never));
         // checkout reads platform/advanced settings — seed them from this payload
         primeGlobalSettings(data.settings);
+
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(
+              `${STORE_BOOT_CACHE_KEY}${code}`,
+              JSON.stringify({ data, ts: Date.now() }),
+            );
+          } catch {
+            // ignore
+          }
+        }
       }
       return data;
     },
@@ -138,7 +173,6 @@ export type ResellerDashboard = {
   listings_total: number;
   listings_active: number;
   products: any[];
-  top_resellers: { name: string; sales: number }[];
 };
 
 /** Reseller dashboard: reseller + orders + items + payouts + commissions + listings in one call. */
