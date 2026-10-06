@@ -1,5 +1,5 @@
-import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { canAccessResellerPanel } from "@/lib/reseller-status";
 
 import {
@@ -24,9 +24,9 @@ import {
   UserCircle,
   ListTree,
   CreditCard,
-  BadgeCheck,
-  Lock,
-  ScrollText,
+  Crown,
+  UserCog,
+
 
 
   Bike,
@@ -36,11 +36,11 @@ import { ImpersonationBanner } from "@/components/impersonation-banner";
 import { useAuth } from "@/lib/use-auth";
 import { useVerification } from "@/lib/use-verification";
 import { useBrandingTheme } from "@/lib/branding";
-import { getGlobalSettings, getMyReseller } from "@/lib/app-data";
+import { getGlobalSettings, getMyReseller, getResellerStoreUrl } from "@/lib/app-data";
 import { getPanelBootstrapPayload } from "@/lib/panel-bootstrap";
-import { fmtDate, statusLabel, type SubscriptionState } from "@/lib/subscription";
 import { consumeImpersonationReturnTarget } from "@/lib/impersonation";
-import { usePanelNavCounts, applyNavBadges } from "@/lib/use-order-nav-count";
+import { SubscriptionGate } from "@/components/subscription-lock";
+import { RESELLER_ROUTE_PERMISSION, useResellerAccess } from "@/lib/reseller-staff";
 
 export const Route = createFileRoute("/_authenticated/reseller")({
   component: ResellerLayout,
@@ -67,7 +67,6 @@ const NAV: NavEntry[] = [
       { label: "Transactions", to: "/reseller/transactions", icon: <TrendingUp className="h-4 w-4" /> },
       { label: "Payouts", to: "/reseller/payouts", icon: <Wallet className="h-4 w-4" /> },
       { label: "Leader commissions", to: "/reseller/commissions", icon: <Award className="h-4 w-4" /> },
-      { label: "My subscription", to: "/reseller/subscription", icon: <BadgeCheck className="h-4 w-4" /> },
     ],
   },
   {
@@ -91,37 +90,76 @@ const NAV: NavEntry[] = [
       { label: "Visitors", to: "/reseller/visitors", icon: <Activity className="h-4 w-4" /> },
     ],
   },
+  { label: "My staff", to: "/reseller/staff", icon: <UserCog className="h-4 w-4" />, ownerOnly: true } as NavEntry,
+  { label: "My package", to: "/reseller/subscription", icon: <Crown className="h-4 w-4" /> },
   { label: "My profile", to: "/reseller/profile", icon: <UserCircle className="h-4 w-4" /> },
-  { label: "Policies", to: "/reseller/policies", icon: <ScrollText className="h-4 w-4" /> },
   { label: "Support", to: "/reseller/support", icon: <Headphones className="h-4 w-4" /> },
 ];
+
+/** Hides menu entries a reseller staff account has no permission for. */
+function filterNav(nav: NavEntry[], isOwner: boolean, can: (key?: string) => boolean): NavEntry[] {
+  const keep = (entry: any) => {
+    if (entry.ownerOnly) return isOwner;
+    if (entry.external) return true;
+    return can(RESELLER_ROUTE_PERMISSION[entry.to as string]);
+  };
+  const out: NavEntry[] = [];
+  for (const entry of nav) {
+    const group = entry as { items?: any[] };
+    if (group.items) {
+      const items = group.items.filter(keep);
+      if (items.length) out.push({ ...(entry as any), items } as NavEntry);
+      continue;
+    }
+    if (keep(entry)) out.push(entry);
+  }
+  return out;
+}
+
 
 
 function ResellerLayout() {
   const { user, roles, loading } = useAuth();
-  const navCounts = usePanelNavCounts();
-  const orderNavCount = navCounts.orders;
-  const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
-  const navWithBadge = useMemo(() => {
-    // A panel-only plan has no public storefront, so its settings stay hidden.
-    const base = subscription && subscription.store_enabled === false
-      ? NAV.filter((n) => n.label !== "Store")
-      : NAV;
-    return applyNavBadges(base, {
-      "/reseller/orders": navCounts.orders,
-      "/reseller/rider-followup": navCounts.rider,
-      "/reseller/payouts": navCounts.payouts,
-    });
-  }, [navCounts, subscription]);
   const { required: needsVerify, loading: verifyLoading } = useVerification();
-  const location = useLocation();
   const nav = useNavigate();
+  const pathname = useLocation({ select: (l) => l.pathname });
+  const { isOwner, isStaff, staff, can } = useResellerAccess();
   const [storeName, setStoreName] = useState("My store");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [storeCode, setStoreCode] = useState<string | null>(null);
+  const [storeUrl, setStoreUrl] = useState<string | null>(null);
   const [primary, setPrimary] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [approved, setApproved] = useState<boolean | null>(null);
+
+  const menu = filterNav(NAV, isOwner, can);
+  const firstAllowed = (() => {
+    for (const e of menu) {
+      const g = e as { items?: { to?: string }[] };
+      if (g.items) {
+        const hit = g.items.find((i) => i.to?.startsWith("/reseller"));
+        if (hit?.to) return hit.to;
+        continue;
+      }
+      const to = (e as { to?: string }).to;
+      if (to?.startsWith("/reseller")) return to;
+    }
+    return null;
+  })();
+
+  // Reseller staff may only open the menus their owner allowed.
+  useEffect(() => {
+    if (!isStaff || loading) return;
+    if (pathname === "/reseller/staff") {
+      nav({ to: (firstAllowed ?? "/reseller") as never, replace: true });
+      return;
+    }
+    const needed = RESELLER_ROUTE_PERMISSION[pathname];
+    if (needed && !can(needed) && firstAllowed && firstAllowed !== pathname) {
+      nav({ to: firstAllowed as never, replace: true });
+    }
+  }, [isStaff, loading, pathname, can, firstAllowed, nav]);
+
 
   useEffect(() => {
     if (loading || verifyLoading || !user) return;
@@ -156,10 +194,12 @@ function ResellerLayout() {
         setStoreName(r.business_name);
         setStoreCode(r.code);
         setAvatarUrl(r.avatar_url ?? null);
+
+        const activeUrl = await getResellerStoreUrl(r.id, r.code);
+        setStoreUrl(activeUrl);
+
         // Store branding rides along with the panel bootstrap.
-        const boot = getPanelBootstrapPayload();
-        setSubscription(boot?.subscription ?? null);
-        const s = boot?.reseller_settings ?? null;
+        const s = getPanelBootstrapPayload()?.reseller_settings ?? null;
         if (s?.logo_url) logo = s.logo_url;
         if (s?.primary_color) color = s.primary_color;
       } else {
@@ -173,6 +213,21 @@ function ResellerLayout() {
 
   useBrandingTheme(primary);
 
+
+  // A staff login the owner switched off keeps a clear message instead of the
+  // reseller signup form.
+  if (!loading && user && isStaff && staff && !staff.active) {
+    return (
+      <div className="grid min-h-screen place-items-center px-4">
+        <div className="surface-card max-w-sm p-8 text-center">
+          <h1 className="text-lg font-semibold">Access turned off</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            আপনার স্টাফ অ্যাকাউন্টটি বন্ধ করা হয়েছে। স্টোর মালিকের সাথে যোগাযোগ করুন।
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (
     loading ||
@@ -188,87 +243,33 @@ function ResellerLayout() {
   }
 
 
-  const allowedWhileLocked = ["/reseller/subscription", "/reseller/profile", "/reseller/support"];
-  const locked =
-    Boolean(subscription?.locked) && !allowedWhileLocked.some((p) => location.pathname.startsWith(p));
-
   return (
     <AppShell
-      title="Reseller panel"
-      homeTo="/reseller"
-      bottomNav={{
-        homeTo: "/reseller",
-        left: { label: "Orders", to: "/reseller/orders", icon: ClipboardList, badge: orderNavCount },
-        right: { label: "Catalog", to: "/reseller/catalog", icon: Package },
-      }}
+      title={isStaff ? "Store staff panel" : "Reseller panel"}
       brand={{ name: storeName, sub: storeCode ? `/${storeCode}` : "Reseller", logoUrl }}
-      nav={navWithBadge}
+      nav={menu}
       user={{
         name: storeName || (user.user_metadata?.full_name ?? "Reseller"),
         email: user.email ?? "",
         avatarUrl,
       }}
       headerRight={
-        <>
-          <Link
-            to="/reseller/catalog"
-            title="Catalog"
-            className="hidden md:inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
+        storeUrl || storeCode ? (
+          <a
+            href={storeUrl || `/s/${storeCode}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-sm font-medium transition hover:bg-muted"
           >
-            <Package className="h-4 w-4" />
-            <span className="hidden sm:inline">Catalog</span>
-          </Link>
-          {storeCode ? (
-            <a
-              href={`/s/${storeCode}`}
-              target="_blank"
-              rel="noreferrer"
-              title="Visit store"
-              className="inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
-            >
-              <ExternalLink className="h-4 w-4" />
-              <span className="hidden sm:inline">Visit store</span>
-            </a>
-          ) : null}
-        </>
+            <ExternalLink className="h-4 w-4" /> Visit store
+          </a>
+        ) : null
       }
     >
       <ImpersonationBanner />
-      {subscription?.status === "grace" ? (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-          <span>
-            Your subscription ended on {fmtDate(subscription.current_period_end ?? subscription.ends_at)} —{" "}
-            {subscription.grace_days_left ?? 0} day(s) of grace access left.
-          </span>
-          <Link to="/reseller/subscription" className="rounded-md bg-amber-500 px-2.5 py-1 font-semibold text-white">
-            Renew now
-          </Link>
-        </div>
-      ) : null}
-      {locked ? <SubscriptionLock state={subscription} /> : <Outlet />}
+      <SubscriptionGate>
+        <Outlet />
+      </SubscriptionGate>
     </AppShell>
-  );
-}
-
-
-/** Shown instead of the page when the plan has expired past its grace period. */
-function SubscriptionLock({ state }: { state: SubscriptionState | null }) {
-  return (
-    <div className="mx-auto max-w-lg py-16 text-center">
-      <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10 text-destructive">
-        <Lock className="h-6 w-6" />
-      </div>
-      <h2 className="text-lg font-semibold">Your subscription has ended</h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {statusLabel(state?.status)} · {state?.plan_name ?? "No plan"} — the panel, your storefront and new orders stay
-        paused until the plan is renewed.
-      </p>
-      <Link
-        to="/reseller/subscription"
-        className="mt-5 inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-      >
-        Renew subscription
-      </Link>
-    </div>
   );
 }

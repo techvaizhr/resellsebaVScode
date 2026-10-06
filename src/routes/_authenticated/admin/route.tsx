@@ -1,5 +1,5 @@
-import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sliders,
@@ -18,9 +18,10 @@ import {
   Award,
   Shield,
   ShieldCheck,
-  BadgeCheck,
   Eraser,
+  DatabaseBackup,
   Globe,
+
   Bell,
   FileText,
   Handshake,
@@ -28,31 +29,88 @@ import {
   Rocket,
   GraduationCap,
   Cog,
+  Crown,
   LineChart,
   PieChart,
   Percent,
   UserCheck,
   Target,
   Receipt,
-  Undo2,
-  ScrollText,
+  ExternalLink,
   Home,
-  Bike,
 } from "lucide-react";
-import { AppShell, type NavEntry } from "@/components/AppShell";
+import { AppShell, type NavEntry, type NavGroup, type NavItem } from "@/components/AppShell";
 import { BulkScanButton } from "@/components/BulkScanModal";
 import { useAuth } from "@/lib/use-auth";
 import { useBrandingTheme } from "@/lib/branding";
 import { getGlobalSettings } from "@/lib/app-data";
+import { Bike } from "lucide-react";
 import { Loader2 } from "lucide-react";
-import { usePanelNavCounts, applyNavBadges } from "@/lib/use-order-nav-count";
-import { ROUTE_PERMISSIONS } from "@/lib/permissions";
+import { Button } from "@/components/ui/button";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminLayout,
 });
 
-/** Which permission unlocks each admin route (see src/lib/permissions.ts). */
+/** Which permission unlocks each admin route. Super admin always sees everything. */
+const ROUTE_PERMISSIONS: Record<string, string[]> = {
+  "/admin": ["dashboard.view"],
+  "/admin/products": ["products.view", "products.manage", "products.create", "products.edit", "products.delete"],
+  "/admin/products/new": ["products.manage", "products.create"],
+  "/admin/brands": ["brands.manage", "brands.view", "brands.create", "brands.edit", "brands.delete"],
+  "/admin/categories": ["categories.manage", "categories.view", "categories.create", "categories.edit", "categories.delete"],
+  "/admin/orders": ["orders.view", "orders.edit", "orders.create", "orders.delete", "orders.status", "orders.ship"],
+  "/admin/rider-followup": ["orders.view", "orders.edit", "orders.status", "orders.ship"],
+  "/admin/customers": ["customers.view", "orders.view", "orders.edit", "reports.view"],
+  "/admin/transactions": ["finance.view"],
+  "/admin/business-report": ["reports.view"],
+  "/admin/expenses": ["expenses.manage", "expenses.view", "finance.view", "reports.view", "settings.manage"],
+  "/admin/payouts": ["payouts.manage", "payouts.view"],
+  "/admin/commissions": ["commissions.manage"],
+  "/admin/resellers": [
+    "resellers.manage",
+    "resellers.view",
+    "resellers.create",
+    "resellers.edit",
+    "resellers.delete",
+    "resellers.verify",
+    "resellers.deposit",
+    "resellers.password",
+    "resellers.impersonate",
+  ],
+  "/admin/agents": ["agents.manage", "agents.view", "agents.create", "agents.edit", "agents.delete"],
+  "/admin/agent-report": ["agents.view", "agents.manage"],
+  "/admin/agent-payouts": ["agents.manage", "payouts.manage"],
+  "/admin/agent-deposits": ["deposits.collect_own", "deposits.manage"],
+
+  "/admin/visitors": ["visitors.view", "reports.view", "dashboard.view", "resellers.manage"],
+  "/admin/reseller-pricing": ["reseller_pricing.manage", "products.manage", "resellers.manage"],
+  "/admin/marketing": ["marketing.manage"],
+  "/admin/notifications": ["notifications.manage"],
+  "/admin/notices": ["notifications.manage", "settings.manage"],
+  "/admin/tutorials": ["settings.manage", "landing.manage"],
+  "/admin/landing": ["landing.manage"],
+  "/admin/couriers": ["couriers.manage"],
+  "/admin/payments": ["payments.manage"],
+  "/admin/staff": ["staff.manage"],
+  "/admin/maintenance": ["maintenance.manage", "settings.manage"],
+  "/admin/backup": ["backup.manage", "settings.manage"],
+  "/admin/advanced": ["settings.advanced", "settings.manage"],
+  "/admin/domains": ["domains.manage", "settings.manage"],
+  "/admin/deposits": ["deposits.manage", "deposits.view", "settings.manage", "resellers.manage", "finance.view"],
+  "/admin/deposit-transactions": ["deposits.manage", "deposits.view", "finance.view", "resellers.manage", "settings.manage"],
+  "/admin/subscriptions": [
+    "subscriptions.manage",
+    "subscriptions.view",
+    "resellers.manage",
+    "finance.view",
+    "settings.manage",
+  ],
+  "/admin/settings": ["settings.manage"],
+  "/admin/privacy": ["settings.manage"],
+};
+
 
 const NAV: NavEntry[] = [
   { label: "Dashboard", to: "/admin", icon: <LayoutDashboard className="h-4 w-4" />, end: true },
@@ -73,66 +131,25 @@ const NAV: NavEntry[] = [
     label: "Finance",
     icon: <Wallet className="h-4 w-4" />,
     items: [
-      {
-        label: "Transaction Report",
-        to: "/admin/transactions",
-        icon: <LineChart className="h-4 w-4" />,
-      },
-      {
-        label: "Business report",
-        to: "/admin/business-report",
-        icon: <PieChart className="h-4 w-4" />,
-      },
+      { label: "Transaction Report", to: "/admin/transactions", icon: <LineChart className="h-4 w-4" /> },
+      { label: "Business report", to: "/admin/business-report", icon: <PieChart className="h-4 w-4" /> },
       { label: "Expenses", to: "/admin/expenses", icon: <Receipt className="h-4 w-4" /> },
       { label: "Payouts", to: "/admin/payouts", icon: <Wallet className="h-4 w-4" /> },
       { label: "Commissions", to: "/admin/commissions", icon: <Percent className="h-4 w-4" /> },
-      {
-        label: "Subscriptions",
-        to: "/admin/subscriptions",
-        icon: <BadgeCheck className="h-4 w-4" />,
-      },
-      {
-        label: "Deposit transactions",
-        to: "/admin/deposit-transactions",
-        icon: <ShieldCheck className="h-4 w-4" />,
-      },
+      { label: "Deposit transactions", to: "/admin/deposit-transactions", icon: <ShieldCheck className="h-4 w-4" /> },
+      { label: "Monthly packages", to: "/admin/subscriptions", icon: <Crown className="h-4 w-4" /> },
     ],
   },
   { label: "Resellers", to: "/admin/resellers", icon: <Handshake className="h-4 w-4" /> },
-  {
-    label: "Suppliers",
-    icon: <Truck className="h-4 w-4" />,
-    items: [
-      { label: "Supplier accounts", to: "/admin/suppliers", icon: <Truck className="h-4 w-4" /> },
-      {
-        label: "Supplier report",
-        to: "/admin/supplier-report",
-        icon: <Target className="h-4 w-4" />,
-      },
-      {
-        label: "Return handover",
-        to: "/admin/supplier-returns",
-        icon: <Undo2 className="h-4 w-4" />,
-      },
-      {
-        label: "Supplier payouts",
-        to: "/admin/supplier-payouts",
-        icon: <Wallet className="h-4 w-4" />,
-      },
-    ],
-  },
-
   {
     label: "Agents",
     icon: <UserCheck className="h-4 w-4" />,
     items: [
       { label: "Commission Agents", to: "/admin/agents", icon: <UserCheck className="h-4 w-4" /> },
       { label: "Agent report", to: "/admin/agent-report", icon: <Target className="h-4 w-4" /> },
-      {
-        label: "Commission payout",
-        to: "/admin/agent-payouts",
-        icon: <Percent className="h-4 w-4" />,
-      },
+      { label: "Commission payout", to: "/admin/agent-payouts", icon: <Percent className="h-4 w-4" /> },
+      { label: "Collect deposits", to: "/admin/agent-deposits", icon: <ShieldCheck className="h-4 w-4" /> },
+
     ],
   },
   { label: "Store visitors", to: "/admin/visitors", icon: <Activity className="h-4 w-4" /> },
@@ -140,14 +157,11 @@ const NAV: NavEntry[] = [
     label: "Growth",
     icon: <Rocket className="h-4 w-4" />,
     items: [
+      { label: "Reseller pricing", to: "/admin/reseller-pricing", icon: <Tag className="h-4 w-4" /> },
       { label: "Marketing", to: "/admin/marketing", icon: <Megaphone className="h-4 w-4" /> },
       { label: "Notifications", to: "/admin/notifications", icon: <Bell className="h-4 w-4" /> },
       { label: "Reseller notices", to: "/admin/notices", icon: <Megaphone className="h-4 w-4" /> },
-      {
-        label: "Video tutorials",
-        to: "/admin/tutorials",
-        icon: <GraduationCap className="h-4 w-4" />,
-      },
+      { label: "Video tutorials", to: "/admin/tutorials", icon: <GraduationCap className="h-4 w-4" /> },
     ],
   },
   {
@@ -161,18 +175,67 @@ const NAV: NavEntry[] = [
       { label: "Staff & Permissions", to: "/admin/staff", icon: <Users className="h-4 w-4" /> },
       { label: "Custom domains", to: "/admin/domains", icon: <Globe className="h-4 w-4" /> },
       { label: "Cache & cleanup", to: "/admin/maintenance", icon: <Eraser className="h-4 w-4" /> },
+      { label: "Backup & restore", to: "/admin/backup", icon: <DatabaseBackup className="h-4 w-4" /> },
       { label: "Advanced settings", to: "/admin/advanced", icon: <Sliders className="h-4 w-4" /> },
 
-      {
-        label: "Reseller policies",
-        to: "/admin/policies",
-        icon: <ScrollText className="h-4 w-4" />,
-      },
       { label: "Privacy policy", to: "/admin/privacy", icon: <Shield className="h-4 w-4" /> },
       { label: "Settings", to: "/admin/settings", icon: <Settings className="h-4 w-4" /> },
+
     ],
   },
 ];
+
+type NavCounts = { payouts: number; forwarded: number; rider: number };
+
+/** Live pending-work counters shown as sidebar badges. */
+function useNavCounts(enabled: boolean): NavCounts {
+  const [counts, setCounts] = useState<NavCounts>({ payouts: 0, forwarded: 0, rider: 0 });
+
+  useEffect(() => {
+    if (!enabled) return;
+    let alive = true;
+    const load = async () => {
+      const [payouts, forwarded, rider] = await Promise.all([
+        supabase.from("payouts").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "forwarded"),
+        supabase.from("orders").select("id", { count: "exact", head: true }).not("rider_assigned_at", "is", null),
+      ]);
+      if (!alive) return;
+      setCounts({
+        payouts: payouts.count ?? 0,
+        forwarded: forwarded.count ?? 0,
+        rider: rider.count ?? 0,
+      });
+    };
+    void load();
+    const timer = setInterval(() => void load(), 60000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [enabled]);
+
+  return counts;
+}
+
+/** Attach badge counts to the nav entries that track pending work. */
+function withBadges(nav: NavEntry[], counts: NavCounts): NavEntry[] {
+  return nav.map((entry) => {
+    const group = entry as NavGroup;
+    if (group.items) {
+      return {
+        ...group,
+        items: group.items.map((item) =>
+          item.to === "/admin/payouts" ? { ...item, badge: counts.payouts } : item,
+        ),
+      };
+    }
+    const item = entry as NavItem;
+    if (item.to === "/admin/orders") return { ...item, badge: counts.forwarded };
+    if (item.to === "/admin/rider-followup") return { ...item, badge: counts.rider };
+    return item;
+  });
+}
 
 function allowed(to: string | undefined, permissions: string[], isSuperAdmin: boolean) {
   if (isSuperAdmin) return true;
@@ -215,43 +278,23 @@ function firstAllowedRoute(nav: NavEntry[], permissions: string[]): string | nul
 
 function AdminLayout() {
   const { user, roles, permissions, loading } = useAuth();
-  const navCounts = usePanelNavCounts();
-  const orderNavCount = navCounts.orders;
   const nav = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
   const isSuperAdmin = roles.includes("super_admin");
-  const navWithBadge = useMemo(
-    () =>
-      applyNavBadges(filterNav(NAV, permissions, isSuperAdmin), {
-        "/admin/orders": navCounts.orders,
-        "/admin/rider-followup": navCounts.rider,
-        "/admin/payouts": navCounts.payouts,
-        "/admin/supplier-payouts": navCounts.supplierPayouts,
-      }),
-    [navCounts, permissions, isSuperAdmin],
-  );
   const isStaff = roles.includes("staff");
   const canEnter = isSuperAdmin || isStaff;
-  const routePermission = Object.entries(ROUTE_PERMISSIONS)
-    .sort(([a], [b]) => b.length - a.length)
-    .find(([route]) => pathname === route || pathname.startsWith(`${route}/`))?.[1];
+  // Editing / creating a product needs write access, not just products.view.
+  const isProductWriteRoute = /^\/admin\/products\/(new$|.+\/edit$)/.test(pathname);
+  const routePermission = isProductWriteRoute
+    ? ["products.manage"]
+    : Object.entries(ROUTE_PERMISSIONS)
+        .sort(([a], [b]) => b.length - a.length)
+        .find(([route]) => pathname === route || pathname.startsWith(`${route}/`))?.[1];
   const canViewRoute =
     isSuperAdmin ||
-    (isStaff &&
-      routePermission != null &&
-      routePermission.some((permission) => permissions.includes(permission)));
+    (isStaff && routePermission != null && routePermission.some((permission) => permissions.includes(permission)));
   const landing = isSuperAdmin ? "/admin" : firstAllowedRoute(NAV, permissions);
-  const canCatalog =
-    isSuperAdmin ||
-    permissions.includes("products.view") ||
-    permissions.includes("products.manage");
-  const canScan = isSuperAdmin || permissions.includes("orders.status");
-
-  const [brand, setBrand] = useState<{
-    name: string;
-    logoUrl: string | null;
-    primary: string | null;
-  }>({
+  const [brand, setBrand] = useState<{ name: string; logoUrl: string | null; primary: string | null }>({
     name: "Admin",
     logoUrl: null,
     primary: null,
@@ -277,19 +320,7 @@ function AdminLayout() {
     if (landing && landing !== pathname) {
       nav({ to: landing, replace: true });
     }
-  }, [
-    loading,
-    user,
-    canEnter,
-    canViewRoute,
-    roles,
-    permissions,
-    pathname,
-    nav,
-    isStaff,
-    isSuperAdmin,
-    landing,
-  ]);
+  }, [loading, user, canEnter, canViewRoute, roles, permissions, pathname, nav, isStaff, isSuperAdmin, landing]);
 
   useEffect(() => {
     let alive = true;
@@ -308,6 +339,8 @@ function AdminLayout() {
 
   useBrandingTheme(brand.primary);
 
+  const navCounts = useNavCounts(!loading && !!user && canEnter);
+
   // Staff account that has zero openable pages: show a message instead of a
   // spinner that never resolves.
   if (!loading && user && canEnter && !canViewRoute && !landing) {
@@ -316,7 +349,7 @@ function AdminLayout() {
         <div className="surface-card max-w-sm p-8 text-center">
           <h1 className="text-lg font-semibold">No panel access</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your account does not have permission for any page yet. Please contact the super admin.
+            আপনার অ্যাকাউন্টে এখনো কোনো পেজের পারমিশন দেওয়া হয়নি। সুপার অ্যাডমিনের সাথে যোগাযোগ করুন।
           </p>
           <button
             onClick={async () => {
@@ -343,63 +376,26 @@ function AdminLayout() {
   return (
     <AppShell
       title={isSuperAdmin ? "Super Admin" : "Staff Panel"}
-      homeTo="/admin"
-      bottomNav={{
-        homeTo: "/admin",
-        left: { label: "Orders", to: "/admin/orders", icon: ShoppingCart, badge: orderNavCount },
-        right: { label: "Catalog", to: "/admin/products", icon: Package },
-      }}
-
-      mobileFooterLinks={
-        canCatalog
-          ? [
-              {
-                label: "Public catalog",
-                to: "/catalog",
-                icon: <Store className="h-4 w-4" />,
-                external: true,
-              },
-              { label: "Homepage", to: "/", icon: <Home className="h-4 w-4" />, external: true },
-            ]
-          : undefined
-      }
-
       headerRight={
-        <>
-          {canCatalog ? (
-            <>
-              <a
-                href="/catalog"
-                target="_blank"
-                rel="noreferrer"
-                title="Open public catalog"
-                className="hidden md:inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
-              >
-                <Store className="h-4 w-4" />
-                <span className="hidden sm:inline">Catalog</span>
-              </a>
-              <a
-                href="/"
-                target="_blank"
-                rel="noreferrer"
-                title="Open homepage"
-                className="hidden md:inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted sm:px-3"
-              >
-                <Home className="h-4 w-4" />
-                <span className="hidden sm:inline">Home</span>
-              </a>
-            </>
-          ) : null}
-          {canScan ? <BulkScanButton compact /> : null}
-        </>
+        <div className="flex items-center gap-2">
+          <a
+            href="/"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden md:inline-flex"
+            title="Visit landing page"
+          >
+            <Button variant="outline" size="sm" className="gap-2">
+              <Home className="h-4 w-4" />
+              <span>LP Visit</span>
+              <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+            </Button>
+          </a>
+          <BulkScanButton compact />
+        </div>
       }
-
-      brand={{
-        name: brand.name,
-        sub: isSuperAdmin ? "Admin panel" : "Staff panel",
-        logoUrl: brand.logoUrl,
-      }}
-      nav={navWithBadge}
+      brand={{ name: brand.name, sub: isSuperAdmin ? "Admin panel" : "Staff panel", logoUrl: brand.logoUrl }}
+      nav={withBadges(filterNav(NAV, permissions, isSuperAdmin), navCounts)}
       user={{
         name: user.user_metadata?.full_name ?? (isSuperAdmin ? "Admin" : "Staff"),
         email: user.email ?? "",
