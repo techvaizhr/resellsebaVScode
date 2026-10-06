@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CustomDomainStoreLayout } from "@/components/store/custom-domain-shell";
 import { CategoryPageContent } from "@/components/store/pages/category-page-content";
 
-export const Route = createFileRoute("/s/$code/c/$slug")({
-  component: CategoryPage,
+export const Route = createFileRoute("/c/$slug")({
   head: ({ params }) => ({
     meta: [
       { title: `${params.slug.replace(/-/g, " ")} — Collection` },
@@ -13,9 +13,14 @@ export const Route = createFileRoute("/s/$code/c/$slug")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  component: CustomDomainCategoryRoute,
 });
 
-function CategoryPage() {
-  const { code, slug } = Route.useParams();
-  return <CategoryPageContent slug={slug} code={code} />;
+function CustomDomainCategoryRoute() {
+  const { slug } = Route.useParams();
+  return (
+    <CustomDomainStoreLayout path={`/c/${slug}`}>
+      {({ code }) => <CategoryPageContent slug={slug} code={code} />}
+    </CustomDomainStoreLayout>
+  );
 }

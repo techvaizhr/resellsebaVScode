@@ -8,7 +8,9 @@ import {
 } from "@/lib/store-content";
 import { buildMenuTree, type MenuNode } from "@/lib/store-menu";
 import { getStoreBootstrap } from "@/lib/bootstrap";
-import { injectTrackingFromRows } from "@/lib/tracking";
+import { injectTracking, injectTrackingFromRows } from "@/lib/tracking";
+import { useServerFn } from "@tanstack/react-start";
+import { getStoreMarketingPixelsServer } from "@/lib/capi.functions";
 
 
 export type StoreImage = { url: string; is_primary: boolean | null; sort_order?: number | null };
@@ -22,6 +24,7 @@ export type StoreProduct = {
   product_code?: string | null;
   stock: number | null;
   category_id: string | null;
+  category_ids?: string[] | null;
   brand_id: string | null;
   is_featured: boolean | null;
   delivery_mode: string | null;
@@ -29,8 +32,6 @@ export type StoreProduct = {
   delivery_inside: number | null;
   delivery_outside: number | null;
   delivery_sub: number | null;
-  video_url?: string | null;
-  video_file_url?: string | null;
   product_images: StoreImage[];
 };
 
@@ -68,7 +69,7 @@ export type StoreSettings = {
   theme_settings?: Record<string, ThemeContentValues> | null;
 };
 
-export type StoreCategory = { id: string; name: string; slug: string; image_url: string | null };
+export type StoreCategory = { id: string; name: string; slug: string; image_url: string | null; product_count?: number };
 
 export type StoreData = {
   code: string;
@@ -93,7 +94,29 @@ export type StoreData = {
   bySlug: (slug: string) => StoreListing | undefined;
   title: (l: StoreListing) => string;
   image: (l: StoreListing) => string | undefined;
+  /** Builds clean URLs on custom domains (e.g. /p/item) vs /s/code/p/item on platform domain */
+  url: (path: string) => string;
 };
+
+export function isCustomDomainHost(): boolean {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname.toLowerCase();
+  if (!host || host === "localhost" || host === "127.0.0.1") return false;
+  if (host.endsWith(".lovable.app") || host.endsWith(".lovableproject.com")) return false;
+  if (host === "ecomsellerbd.com" || host.endsWith(".ecomsellerbd.com")) {
+    if (host === "fallback.ecomsellerbd.com") return true;
+    return false;
+  }
+  return true;
+}
+
+export function buildStorePath(code: string, subpath: string): string {
+  const clean = subpath.startsWith("/") ? subpath : `/${subpath}`;
+  if (isCustomDomainHost()) {
+    return clean === "" ? "/" : clean;
+  }
+  return clean === "/" ? `/s/${code}` : `/s/${code}${clean}`;
+}
 
 
 /** reseller-specific method overrides the platform one with the same key */
@@ -117,13 +140,13 @@ export function useStore(): StoreData {
   return ctx;
 }
 
-/** `closed` = the reseller exists but their subscription no longer includes a storefront. */
 export type LoadState = "loading" | "missing" | "closed" | "ready";
 
 export function useStoreLoader(code: string, themeOverride?: string | null, paletteOverride?: string | null) {
   const [state, setState] = useState<LoadState>("loading");
   const [data, setData] = useState<Omit<StoreData, "cart" | "cartCount"> | null>(null);
   const [cart, setCart] = useState<CartLine[]>([]);
+  const fetchLivePixels = useServerFn(getStoreMarketingPixelsServer);
 
   const refreshCart = useCallback(() => setCart(readCart(code)), [code]);
 
@@ -141,29 +164,40 @@ export function useStoreLoader(code: string, themeOverride?: string | null, pale
       const boot = await getStoreBootstrap(code);
       if (!alive) return;
       const r = boot?.store as (StoreSettings & { reseller_id: string; business_name: string }) | null;
-      if (!r) return setState((boot as { closed?: boolean } | null)?.closed ? "closed" : "missing");
+      if (!r) return setState(boot?.store_closed ? "closed" : "missing");
 
       const rid = r.reseller_id;
       const s = r as unknown as StoreSettings;
 
-      // Out-of-stock products are hidden from the storefront automatically.
-      const listings = ((boot?.listings ?? []) as unknown as StoreListing[])
-        .filter((l) => l.product && (l.product.stock === null || Number(l.product.stock) > 0))
-        .map((l) => ({
-          ...l,
-          product: l.product
-            ? {
-                ...l.product,
-                product_images: [...(l.product.product_images ?? [])].sort(
-                  (a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0),
-                ),
-              }
-            : null,
-        })) as StoreListing[];
+      const listings = ((boot?.listings ?? []) as unknown as StoreListing[]).map((l) => ({
+        ...l,
+        product: l.product
+          ? {
+              ...l.product,
+              product_images: [...(l.product.product_images ?? [])].sort(
+                (a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0),
+              ),
+            }
+          : null,
+      })) as StoreListing[];
 
       const categories = (boot?.categories ?? []) as StoreCategory[];
       const menuRows = (boot?.menu ?? []) as never;
-      injectTrackingFromRows(boot?.pixels as never);
+      
+      // Inject tracking from bootstrap rows first
+      if (boot?.pixels) {
+        injectTrackingFromRows(boot.pixels as never);
+      }
+
+      // Also ensure live pixels are loaded from server (handles custom domain & instant cache busting)
+      fetchLivePixels({ data: { code } })
+        .then((live) => {
+          if (!alive || !live) return;
+          if (live.fb_pixel || live.tiktok_pixel || live.ga4_id) {
+            injectTracking(live);
+          }
+        })
+        .catch(() => {});
 
       const theme = getStoreTheme(themeOverride || s?.theme);
       ensureThemeFont(theme);
@@ -193,6 +227,7 @@ export function useStoreLoader(code: string, themeOverride?: string | null, pale
         title: (l) => l.custom_title || l.product?.name || "",
         image: (l) =>
           l.product?.product_images?.find((i) => i.is_primary)?.url ?? l.product?.product_images?.[0]?.url,
+        url: (path: string) => buildStorePath(code, path),
       });
       setState("ready");
     })();

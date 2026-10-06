@@ -1,15 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { PERMISSION_GROUPS } from "@/lib/permissions";
-
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
-import { Shield, UserPlus, Trash2, MoreHorizontal, Loader2, Mail, Plus, Check, Eye, EyeOff, Pencil, Save } from "lucide-react";
+import { Shield, UserPlus, Key, Trash2, MoreHorizontal, Loader2, Mail, Phone, Pencil, Plus, Check, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/use-auth";
 import {
   createAdminUser,
-  updateAdminUserAccount,
+  updateAdminUser,
+  updateAdminUserPassword,
+  updateAdminUserRole,
 } from "@/lib/user-management.functions";
 import { deleteAuthUser, listStaffUsers, type StaffUser } from "@/lib/admin-users.functions";
 import { getRoles, getPermissions, saveRole, deleteRole } from "@/lib/roles-permissions.functions";
@@ -62,18 +62,25 @@ function StaffPage() {
   const [customRoles, setCustomRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPassModalOpen, setIsPassModalOpen] = useState(false);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ email: "", fullName: "", phone: "", role: "", password: "" });
+  const [showEditPassword, setShowEditPassword] = useState(false);
   const [selectedUser, setSelectedUser] = useState<StaffUser | null>(null);
-  const [editData, setEditData] = useState({ fullName: "", email: "", role: "", password: "" });
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState("");
   const [formData, setFormData] = useState({ email: "", password: "", fullName: "", role: "" });
   const [showAddPassword, setShowAddPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createUserMutation = useServerFn(createAdminUser);
-  const updateAccountMutation = useServerFn(updateAdminUserAccount);
+  const passwordMutation = useServerFn(updateAdminUserPassword);
+  const roleMutation = useServerFn(updateAdminUserRole);
   const deleteUserMutation = useServerFn(deleteAuthUser);
+  const editUserMutation = useServerFn(updateAdminUser);
 
   const { user: currentUser, roles: currentRoles } = useAuth();
   const isSuperAdmin = currentRoles.includes("super_admin");
@@ -117,13 +124,14 @@ function StaffPage() {
 
   const openEdit = (user: StaffUser) => {
     setSelectedUser(user);
-    setEditData({
-      fullName: user.full_name ?? "",
+    setEditForm({
       email: user.email ?? "",
+      fullName: user.full_name ?? "",
+      phone: user.phone ?? "",
       role: user.custom_role_id ?? "",
       password: "",
     });
-    setShowNewPassword(false);
+    setShowEditPassword(false);
     setIsEditModalOpen(true);
   };
 
@@ -132,14 +140,15 @@ function StaffPage() {
     if (!selectedUser) return;
     setIsSubmitting(true);
     try {
-      await updateAccountMutation({
+      await editUserMutation({
         data: {
           userId: selectedUser.id,
-          email: editData.email.trim(),
-          fullName: editData.fullName.trim(),
-          // Super admin role is never reassigned from here.
-          role: selectedUser.role === "super_admin" || !editData.role ? undefined : editData.role,
-          password: editData.password ? editData.password : undefined,
+          email: editForm.email,
+          fullName: editForm.fullName,
+          phone: editForm.phone,
+          // Super admin accounts keep their system role untouched.
+          role: selectedUser.role === "super_admin" ? "" : editForm.role,
+          password: editForm.password,
         },
       });
       toast.success("User updated");
@@ -147,6 +156,39 @@ function StaffPage() {
       loadUsers();
     } catch (error: any) {
       toast.error(error?.message || "Failed to update user");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    setIsSubmitting(true);
+    try {
+      await passwordMutation({ data: { userId: selectedUser.id, password: newPassword } });
+      toast.success("Password updated");
+      setIsPassModalOpen(false);
+      setNewPassword("");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update password");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRoleChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser || !newRole) return;
+    setIsSubmitting(true);
+    try {
+      await roleMutation({ data: { userId: selectedUser.id, role: newRole } });
+      toast.success("Role updated");
+      setIsRoleModalOpen(false);
+      setNewRole("");
+      loadUsers();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update role");
     } finally {
       setIsSubmitting(false);
     }
@@ -196,6 +238,12 @@ function StaffPage() {
                       <Mail className="h-3.5 w-3.5" />
                       {user.email || "No email"}
                     </div>
+                    {user.phone ? (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                        <Phone className="h-3.5 w-3.5" />
+                        {user.phone}
+                      </div>
+                    ) : null}
                     <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                       <Shield className="h-3 w-3" />
                       {user.role === "super_admin" ? "Super Admin" : user.custom_role_name || "No role assigned"}
@@ -203,38 +251,47 @@ function StaffPage() {
                   </div>
                 </div>
                 {isSuperAdmin && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(user)}
-                      title="Edit user"
-                      aria-label="Edit user"
-                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="p-1 hover:bg-muted rounded-md">
-                        <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEdit(user)}>
-                          <Pencil className="mr-2 h-4 w-4" /> Edit user
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="p-1 hover:bg-muted rounded-md">
+                      <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEdit(user)}>
+                        <Pencil className="mr-2 h-4 w-4" /> Edit user
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setNewPassword("");
+                          setIsPassModalOpen(true);
+                        }}
+                      >
+                        <Key className="mr-2 h-4 w-4" /> Change Password
+                      </DropdownMenuItem>
+                      {user.role !== "super_admin" && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setNewRole(user.custom_role_id ?? "");
+                            setIsRoleModalOpen(true);
+                          }}
+                        >
+                          <Shield className="mr-2 h-4 w-4" /> Change Role
                         </DropdownMenuItem>
-                        {user.id !== currentUser?.id && user.role !== "super_admin" && (
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setIsDeleteModalOpen(true);
-                            }}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete User
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                      )}
+                      {user.id !== currentUser?.id && user.role !== "super_admin" && (
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsDeleteModalOpen(true);
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete User
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
             </div>
@@ -336,18 +393,19 @@ function StaffPage() {
         <DialogContent className="w-[95vw] sm:max-w-[425px]">
           <form onSubmit={handleEditUser}>
             <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
+              <DialogTitle>Edit user</DialogTitle>
               <DialogDescription>
-                Update name, email, role and password. Leave password empty to keep the current one.
+                Update the account details. Leave the password field empty to keep the current password.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="grid max-h-[65vh] gap-4 overflow-y-auto modal-scroll py-4 pr-1">
               <div className="grid gap-2">
-                <Label htmlFor="editName">Full Name</Label>
+                <Label htmlFor="editFullName">Full name</Label>
                 <Input
-                  id="editName"
-                  value={editData.fullName}
-                  onChange={(e) => setEditData({ ...editData, fullName: e.target.value })}
+                  id="editFullName"
+                  value={editForm.fullName}
+                  onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                  maxLength={120}
                   required
                 />
               </div>
@@ -356,18 +414,26 @@ function StaffPage() {
                 <Input
                   id="editEmail"
                   type="email"
-                  value={editData.email}
-                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  maxLength={255}
                   required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="editPhone">Phone</Label>
+                <Input
+                  id="editPhone"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  placeholder="01XXXXXXXXX"
+                  maxLength={30}
                 />
               </div>
               {selectedUser?.role !== "super_admin" && (
                 <div className="grid gap-2">
                   <Label>Role</Label>
-                  <Select
-                    value={editData.role}
-                    onValueChange={(v) => setEditData({ ...editData, role: v })}
-                  >
+                  <Select value={editForm.role} onValueChange={(v) => setEditForm({ ...editForm, role: v })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
@@ -382,39 +448,106 @@ function StaffPage() {
                 </div>
               )}
               <div className="grid gap-2">
-                <Label htmlFor="editPassword">New Password</Label>
+                <Label htmlFor="editPassword">New password (optional)</Label>
                 <div className="relative">
                   <Input
                     id="editPassword"
-                    type={showNewPassword ? "text" : "password"}
-                    value={editData.password}
-                    onChange={(e) => setEditData({ ...editData, password: e.target.value })}
-                    placeholder="Leave blank to keep current"
+                    type={showEditPassword ? "text" : "password"}
+                    value={editForm.password}
+                    onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                    placeholder="Leave empty to keep current"
                     className="pr-10"
+                    minLength={6}
                   />
                   <button
                     type="button"
-                    onClick={() => setShowNewPassword((v) => !v)}
+                    onClick={() => setShowEditPassword((v) => !v)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    aria-label={showNewPassword ? "Hide password" : "Show password"}
+                    aria-label={showEditPassword ? "Hide password" : "Show password"}
                     tabIndex={-1}
                   >
-                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {editData.password.length > 0 && editData.password.length < 6 && (
-                  <p className="text-xs text-destructive">Password must be at least 6 characters.</p>
-                )}
               </div>
             </div>
             <DialogFooter>
-              <button
-                type="submit"
-                disabled={isSubmitting || (editData.password.length > 0 && editData.password.length < 6)}
-                className="btn-brand w-full py-2.5 flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              <button type="submit" disabled={isSubmitting} className="btn-brand w-full py-2.5 flex items-center justify-center gap-2">
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 Save changes
+              </button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPassModalOpen} onOpenChange={setIsPassModalOpen}>
+        <DialogContent className="w-[95vw] sm:max-w-[400px]">
+          <form onSubmit={handlePassword}>
+            <DialogHeader>
+              <DialogTitle>Change Password</DialogTitle>
+              <DialogDescription>{selectedUser?.email}</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-2 py-4">
+              <Label htmlFor="newPassword">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showNewPassword ? "text" : "password"}
+                  minLength={6}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  aria-label={showNewPassword ? "Hide password" : "Show password"}
+                  tabIndex={-1}
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <DialogFooter>
+              <button type="submit" disabled={isSubmitting} className="btn-brand w-full py-2.5 flex items-center justify-center gap-2">
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
+                Update Password
+              </button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isRoleModalOpen} onOpenChange={setIsRoleModalOpen}>
+        <DialogContent className="w-[95vw] sm:max-w-[400px]">
+          <form onSubmit={handleRoleChange}>
+            <DialogHeader>
+              <DialogTitle>Change Role</DialogTitle>
+              <DialogDescription>{selectedUser?.email}</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-2 py-4">
+              <Label>Role</Label>
+              <Select value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {customRoles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <button type="submit" disabled={isSubmitting} className="btn-brand w-full py-2.5 flex items-center justify-center gap-2">
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
+                Save Role
               </button>
             </DialogFooter>
           </form>
@@ -509,41 +642,31 @@ function RolesPage() {
     }));
   };
 
+  /** Select / clear a whole menu group at once. */
   const toggleGroup = (ids: string[], on: boolean) => {
     setFormData((prev) => ({
       ...prev,
       permissionIds: on
         ? Array.from(new Set([...prev.permissionIds, ...ids]))
-        : prev.permissionIds.filter((id) => !ids.includes(id)),
+        : prev.permissionIds.filter((pid) => !ids.includes(pid)),
     }));
   };
 
-  /** Permissions arranged exactly like the admin sidebar menu. */
-  const groupedPermissions = useMemo(() => {
-    const byName = new Map<string, any>((permissions ?? []).map((p: any) => [p.name, p]));
-    const used = new Set<string>();
-    const groups = PERMISSION_GROUPS.map((group) => ({
-      key: group.key,
-      label: group.label,
-      items: group.permissions
-        .map((def) => {
-          const row = byName.get(def.key);
-          if (!row) return null;
-          used.add(def.key);
-          return { id: row.id as string, label: def.label, description: def.description };
-        })
-        .filter(Boolean) as { id: string; label: string; description: string }[],
-    })).filter((g) => g.items.length > 0);
-
-    const others = (permissions ?? [])
-      .filter((p: any) => !used.has(p.name))
-      .map((p: any) => ({ id: p.id as string, label: p.name as string, description: (p.description ?? "") as string }));
-    if (others.length > 0) groups.push({ key: "other", label: "Other", items: others });
-    return groups;
+  /** Permissions grouped and ordered exactly like the admin menu. */
+  const permissionGroups = useMemo(() => {
+    const sorted = [...permissions].sort(
+      (a, b) => (a.sort_order ?? 100) - (b.sort_order ?? 100) || String(a.name).localeCompare(String(b.name)),
+    );
+    const map = new Map<string, { key: string; label: string; items: any[] }>();
+    for (const perm of sorted) {
+      const key = perm.group_key ?? "other";
+      if (!map.has(key)) map.set(key, { key, label: perm.group_label ?? "Other", items: [] });
+      map.get(key)!.items.push(perm);
+    }
+    return Array.from(map.values());
   }, [permissions]);
 
   const customRoles = roles.filter((role) => !role.is_system);
-
 
   return (
     <div className="space-y-6">
@@ -561,17 +684,28 @@ function RolesPage() {
           customRoles.map((role) => (
             <div key={role.id} className="surface-card p-5 group relative">
               <div className="flex items-start justify-between">
-                <button type="button" onClick={() => openEdit(role)} className="flex items-center gap-2 text-left">
+                <div className="flex items-center gap-2 text-left">
                   <Shield className="h-5 w-5 text-primary" />
                   <h3 className="font-bold">{role.name}</h3>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeleteTarget(role)}
-                  className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(role)}
+                    className="text-muted-foreground hover:text-primary transition-colors p-1"
+                    aria-label="Edit role"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(role)}
+                    className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                    aria-label="Delete role"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               <p className="text-sm text-muted-foreground mt-2">{role.description}</p>
               <div className="mt-4 flex flex-wrap gap-1">
@@ -627,34 +761,28 @@ function RolesPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div className="flex items-center justify-between border-b pb-2">
                   <Label className="text-base font-bold">Permissions</Label>
                   <span className="text-xs text-muted-foreground">{formData.permissionIds.length} selected</span>
                 </div>
-                {groupedPermissions.map((group) => {
-                  const ids = group.items.map((i) => i.id);
-                  const selected = ids.filter((id) => formData.permissionIds.includes(id));
-                  const allOn = ids.length > 0 && selected.length === ids.length;
+                {permissionGroups.map((group) => {
+                  const groupIds: string[] = group.items.map((p: any) => p.id as string);
+                  const allOn = groupIds.every((id: string) => formData.permissionIds.includes(id));
                   return (
-                    <div key={group.key} className="rounded-lg border">
-                      <div className="flex items-center justify-between gap-2 border-b bg-muted/40 px-3 py-2">
-                        <span className="text-sm font-bold">{group.label}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-muted-foreground">
-                            {selected.length}/{ids.length}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => toggleGroup(ids, !allOn)}
-                            className="rounded-md border bg-background px-2 py-1 text-[11px] font-medium hover:bg-muted"
-                          >
-                            {allOn ? "Clear all" : "Select all"}
-                          </button>
-                        </div>
+                    <div key={group.key} className="rounded-xl border bg-muted/20 p-3">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <h4 className="text-sm font-bold text-foreground">{group.label}</h4>
+                        <button
+                          type="button"
+                          onClick={() => toggleGroup(groupIds, !allOn)}
+                          className="rounded-md border bg-background px-2 py-1 text-[11px] font-semibold text-muted-foreground transition hover:text-foreground"
+                        >
+                          {allOn ? "Clear all" : "Select all"}
+                        </button>
                       </div>
-                      <div className="grid gap-2 p-3 sm:grid-cols-2">
-                        {group.items.map((perm) => {
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {group.items.map((perm: any) => {
                           const active = formData.permissionIds.includes(perm.id);
                           return (
                             <button
@@ -662,7 +790,7 @@ function RolesPage() {
                               key={perm.id}
                               aria-pressed={active}
                               onClick={() => togglePermission(perm.id)}
-                              className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all hover:shadow-sm ${
+                              className={`flex w-full items-start gap-2.5 rounded-lg border bg-background p-2.5 text-left transition-all hover:shadow-sm ${
                                 active ? "border-primary bg-primary/5 shadow-sm" : "hover:bg-muted/50"
                               }`}
                             >
@@ -673,11 +801,11 @@ function RolesPage() {
                               >
                                 {active && <Check className="h-3 w-3" />}
                               </span>
-                              <span className="grid gap-1 leading-none">
-                                <span className="text-sm font-semibold leading-none">{perm.label}</span>
-                                <span className="block text-[11px] text-muted-foreground leading-tight mt-1">
-                                  {perm.description}
+                              <span className="grid gap-0.5 leading-none">
+                                <span className="text-sm font-semibold leading-tight">
+                                  {perm.label || perm.name}
                                 </span>
+                                <span className="block text-[10px] font-mono text-muted-foreground/70">{perm.name}</span>
                               </span>
                             </button>
                           );

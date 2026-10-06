@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/ui-kit";
 import { Facebook, Zap, LineChart, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/_authenticated/admin/marketing")({
   component: MarketingPage,
@@ -36,12 +37,27 @@ function MarketingPage() {
   }
 
   async function save(r: Row) {
-    const payload = { platform: r.platform, is_active: r.is_active, pixel_id: r.pixel_id || null, access_token: r.access_token || null, test_event_code: r.test_event_code || null, reseller_id: null as any };
+    const hasValue = Boolean(r.pixel_id?.trim() || r.access_token?.trim());
+    const isActive = hasValue ? (r.is_active !== false) : r.is_active;
+    const payload = {
+      platform: r.platform,
+      is_active: isActive,
+      pixel_id: r.pixel_id?.trim() || null,
+      access_token: r.access_token?.trim() || null,
+      test_event_code: r.test_event_code?.trim() || null,
+      reseller_id: null as any,
+    };
     const { error } = r.id
       ? await supabase.from("marketing_configs").update(payload).eq("id", r.id)
       : await supabase.from("marketing_configs").insert(payload);
     if (error) toast.error(error.message);
-    else { toast.success("Saved"); load(); }
+    else {
+      toast.success("Saved successfully");
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+      }
+      load();
+    }
   }
 
   if (loading) return <div className="grid place-items-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
@@ -60,24 +76,74 @@ function MarketingPage() {
           const m = meta[r.platform];
           return (
             <div key={r.platform} className="surface-card p-5">
-              <div className="mb-3 flex items-center gap-2">
-                <div className="grid h-9 w-9 place-items-center rounded-md bg-primary-soft text-primary">{m.icon}</div>
-                <div className="flex-1 font-semibold">{m.name}</div>
-                <label className="inline-flex items-center gap-2 text-xs">
-                  <input type="checkbox" checked={r.is_active} onChange={(e) => {
-                    const copy = [...rows]; copy[idx] = { ...r, is_active: e.target.checked }; setRows(copy);
-                  }} /> Active
-                </label>
+              <div className="mb-4 flex items-center justify-between gap-3 border-b pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="grid h-10 w-10 place-items-center rounded-md bg-primary-soft text-primary">{m.icon}</div>
+                  <div>
+                    <div className="font-semibold text-sm leading-tight">{m.name}</div>
+                    <div className="text-[11px] text-muted-foreground">{m.pixelLabel}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-xs font-semibold px-2.5 py-0.5 rounded-full transition-colors ${
+                      r.is_active
+                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {r.is_active ? "Active" : "Off"}
+                  </span>
+                  <Switch
+                    checked={r.is_active}
+                    onCheckedChange={(checked) => {
+                      const copy = [...rows];
+                      copy[idx] = { ...r, is_active: checked };
+                      setRows(copy);
+                    }}
+                  />
+                </div>
               </div>
               <div className="space-y-3">
                 <Field label={m.pixelLabel}>
-                  <input value={r.pixel_id} onChange={(e) => { const c=[...rows]; c[idx]={...r,pixel_id:e.target.value}; setRows(c); }} className={inp} />
+                  <input
+                    value={r.pixel_id}
+                    placeholder="Enter Global Pixel ID"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const c = [...rows];
+                      c[idx] = { ...r, pixel_id: val, is_active: val.trim() ? true : r.is_active };
+                      setRows(c);
+                    }}
+                    className={inp}
+                  />
                 </Field>
                 <Field label="Access Token / API Secret">
-                  <input type="password" value={r.access_token} onChange={(e) => { const c=[...rows]; c[idx]={...r,access_token:e.target.value}; setRows(c); }} className={inp} />
+                  <input
+                    type="password"
+                    value={r.access_token}
+                    placeholder="Conversions API Token"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const c = [...rows];
+                      c[idx] = { ...r, access_token: val, is_active: val.trim() ? true : r.is_active };
+                      setRows(c);
+                    }}
+                    className={inp}
+                  />
                 </Field>
                 <Field label="Test Event Code">
-                  <input value={r.test_event_code} onChange={(e) => { const c=[...rows]; c[idx]={...r,test_event_code:e.target.value}; setRows(c); }} className={inp} />
+                  <input
+                    value={r.test_event_code}
+                    placeholder="e.g. TEST12345"
+                    onChange={(e) => {
+                      const c = [...rows];
+                      c[idx] = { ...r, test_event_code: e.target.value };
+                      setRows(c);
+                    }}
+                    className={inp}
+                  />
                 </Field>
               </div>
               <button onClick={() => save(r)} className="btn-brand mt-4 rounded-md px-3 py-1.5 text-xs font-medium">Save</button>

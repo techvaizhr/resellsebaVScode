@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CustomDomainStoreLayout } from "@/components/store/custom-domain-shell";
 import { ProductPageContent } from "@/components/store/pages/product-page-content";
 
-export const Route = createFileRoute("/s/$code/p/$slug")({
-  component: ProductPage,
+export const Route = createFileRoute("/p/$slug")({
   head: ({ params }) => {
     const label = params.slug.replace(/-/g, " ");
     return {
@@ -16,9 +16,14 @@ export const Route = createFileRoute("/s/$code/p/$slug")({
       ],
     };
   },
+  component: CustomDomainProductRoute,
 });
 
-function ProductPage() {
-  const { code, slug } = Route.useParams();
-  return <ProductPageContent slug={slug} code={code} />;
+function CustomDomainProductRoute() {
+  const { slug } = Route.useParams();
+  return (
+    <CustomDomainStoreLayout path={`/p/${slug}`}>
+      {({ code }) => <ProductPageContent slug={slug} code={code} />}
+    </CustomDomainStoreLayout>
+  );
 }

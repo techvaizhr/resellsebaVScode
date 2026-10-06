@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CustomDomainStoreLayout } from "@/components/store/custom-domain-shell";
 import { ThanksPageContent } from "@/components/store/pages/thanks-page-content";
 
-export const Route = createFileRoute("/s/$code/thanks")({
+export const Route = createFileRoute("/thanks")({
   head: () => ({
     meta: [
       { title: "Order received · Reseller Store" },
@@ -19,11 +20,14 @@ export const Route = createFileRoute("/s/$code/thanks")({
     ...(typeof s.pay === "string" ? { pay: s.pay } : {}),
     ...(typeof s.txn === "string" ? { txn: s.txn } : {}),
   }),
-  component: Thanks,
+  component: CustomDomainThanksRoute,
 });
 
-function Thanks() {
-  const { code } = Route.useParams();
+function CustomDomainThanksRoute() {
   const { n, pay, txn } = Route.useSearch();
-  return <ThanksPageContent code={code} n={n} pay={pay} txn={txn} />;
+  return (
+    <CustomDomainStoreLayout path="/thanks">
+      {({ code }) => <ThanksPageContent code={code} n={n} pay={pay} txn={txn} />}
+    </CustomDomainStoreLayout>
+  );
 }

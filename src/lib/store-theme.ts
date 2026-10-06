@@ -13,13 +13,13 @@
  * Tracking (GA4 / Meta / TikTok) is theme-independent and stays global.
  */
 
-export type StoreThemeId = "aurora" | "noir" | "bazaar" | "atelier";
+export type StoreThemeId = "aurora" | "noir" | "bazaar" | "atelier" | "poripati";
 
 export type StoreThemeLayout = {
   /** header composition */
-  header: "glass" | "bar" | "classic" | "editorial";
+  header: "glass" | "bar" | "classic" | "editorial" | "sohoj" | "poripati";
   /** home hero composition */
-  hero: "gradient" | "spotlight" | "banner" | "split";
+  hero: "gradient" | "spotlight" | "banner" | "split" | "sohoj" | "poripati";
   /** product card composition */
   card: "soft" | "frame" | "compact" | "bare";
   /** category strip composition */
@@ -29,6 +29,7 @@ export type StoreThemeLayout = {
   uppercaseNav: boolean;
   trustBar: boolean;
 };
+
 
 /** A complete color set. Every field is required so no color can be missing. */
 export type StorePalette = {
@@ -87,7 +88,7 @@ export const STORE_THEMES: StoreTheme[] = [
   {
     id: "aurora",
     name: "Aurora",
-    description: "Modern gradient commerce — soft cards, glass header, bold hero.",
+    description: "Modern gradient store with soft cards, glass header, and vibrant hero.",
     vars: {
       "--st-radius": "16px",
       "--st-radius-sm": "10px",
@@ -151,7 +152,7 @@ export const STORE_THEMES: StoreTheme[] = [
   {
     id: "noir",
     name: "Noir Luxe",
-    description: "Dark premium boutique — serif headlines, metallic accents, spotlight hero.",
+    description: "Dark luxury boutique with serif titles, gold accents, and spotlight hero.",
     vars: {
       "--st-radius": "4px",
       "--st-radius-sm": "2px",
@@ -215,7 +216,7 @@ export const STORE_THEMES: StoreTheme[] = [
   {
     id: "bazaar",
     name: "Bazaar",
-    description: "High-density marketplace — colored top bar, compact cards, deal strips.",
+    description: "High-density marketplace with compact cards and top deal strips.",
     vars: {
       "--st-radius": "8px",
       "--st-radius-sm": "6px",
@@ -278,65 +279,105 @@ export const STORE_THEMES: StoreTheme[] = [
   },
   {
     id: "atelier",
-    name: "Atelier",
-    description: "Editorial minimal — paper tones, serif display, generous whitespace.",
+    name: "Simple Shop",
+    description: "Clean classic store with high-contrast header, call-to-order, and fast checkout.",
     vars: {
-      "--st-radius": "2px",
-      "--st-radius-sm": "2px",
-      "--st-font-head": SYS_SERIF,
+      "--st-radius": "6px",
+      "--st-radius-sm": "5px",
+      "--st-font-head": SYS_SANS,
       "--st-font-body": SYS_SANS,
-      "--st-head-weight": "400",
-      "--st-track": "-0.01em",
+      "--st-head-weight": "800",
+      "--st-track": "0",
     },
     layout: {
-      header: "editorial",
-      hero: "split",
-      card: "bare",
-      nav: "pills",
-      grid: "airy",
-      uppercaseNav: true,
+      header: "sohoj",
+      hero: "sohoj",
+      card: "compact",
+      nav: "tabs",
+      grid: "dense",
+      uppercaseNav: false,
       trustBar: false,
     },
     palettes: [
-      pal("clay", "Warm Clay", false, {
-        bg: "#f6f4ef",
-        bgAlt: "#efece4",
-        surface: "#fffdf8",
-        fg: "#1d1b18",
-        muted: "#736d63",
-        border: "rgba(29,27,24,0.14)",
-        primary: "#a9714a",
-        accent: "#1d1b18",
-      }),
-      pal("ink", "Paper & Ink", false, {
-        bg: "#f5f5f3",
-        bgAlt: "#ecebe7",
+      pal("kamla", "Orange", false, {
+        bg: "#f2f4f7",
+        bgAlt: "#ffffff",
         surface: "#ffffff",
-        fg: "#151513",
-        muted: "#6d6d68",
-        border: "rgba(21,21,19,0.14)",
-        primary: "#1f1f1c",
-        accent: "#8a8579",
+        fg: "#1b2431",
+        muted: "#64748b",
+        border: "rgba(27,36,49,0.12)",
+        primary: "#fb6514",
+        accent: "#1b3d8f",
       }),
-      pal("olive", "Olive Studio", false, {
-        bg: "#f4f5ec",
-        bgAlt: "#eceee1",
-        surface: "#fbfcf6",
-        fg: "#1e2118",
-        muted: "#6b7060",
-        border: "rgba(30,33,24,0.14)",
-        primary: "#5f6b3c",
-        accent: "#2b2f22",
+      pal("shobuj", "Green", false, {
+        bg: "#f1f6f2",
+        bgAlt: "#ffffff",
+        surface: "#ffffff",
+        fg: "#14231a",
+        muted: "#5b7266",
+        border: "rgba(20,35,26,0.12)",
+        primary: "#12924f",
+        accent: "#0f5132",
       }),
-      pal("noirpaper", "Charcoal Paper", true, {
-        bg: "#171614",
-        bgAlt: "#1e1c19",
-        surface: "#232120",
-        fg: "#f4f1ea",
-        muted: "#a29c91",
-        border: "rgba(244,241,234,0.16)",
-        primary: "#d8b48c",
-        accent: "#f4f1ea",
+      pal("nil", "Blue", false, {
+        bg: "#f1f4f9",
+        bgAlt: "#ffffff",
+        surface: "#ffffff",
+        fg: "#121d31",
+        muted: "#5b6880",
+        border: "rgba(18,29,49,0.12)",
+        primary: "#1266d6",
+        accent: "#0b2545",
+      }),
+      pal("lal", "Red", false, {
+        bg: "#f7f3f3",
+        bgAlt: "#ffffff",
+        surface: "#ffffff",
+        fg: "#1f1618",
+        muted: "#6d5c60",
+        border: "rgba(31,22,24,0.12)",
+        primary: "#e02440",
+        accent: "#7a1020",
+      }),
+    ],
+  },
+  {
+    id: "poripati",
+    name: "Clean Minimal",
+    description: "Editorial minimalist shop with image banners and refined grid layout.",
+    vars: {
+      "--st-radius": "2px",
+      "--st-radius-sm": "2px",
+      "--st-font-head": SYS_SANS,
+      "--st-font-body": SYS_SANS,
+      "--st-head-weight": "750",
+      "--st-track": "0",
+    },
+    layout: {
+      header: "poripati",
+      hero: "poripati",
+      card: "bare",
+      nav: "links",
+      grid: "airy",
+      uppercaseNav: false,
+      trustBar: false,
+    },
+    palettes: [
+      pal("ink-coral", "Ink & Coral", false, {
+        bg: "#f8f8f5", bgAlt: "#eeeeea", surface: "#ffffff", fg: "#18201c", muted: "#68716c",
+        border: "rgba(24,32,28,0.14)", primary: "#d94b36", accent: "#1f6650",
+      }),
+      pal("forest-red", "Forest & Red", false, {
+        bg: "#f4f7f4", bgAlt: "#e8eee9", surface: "#ffffff", fg: "#15231c", muted: "#617067",
+        border: "rgba(21,35,28,0.14)", primary: "#176b4a", accent: "#c74632",
+      }),
+      pal("cobalt-lemon", "Cobalt & Lemon", false, {
+        bg: "#f6f7fa", bgAlt: "#eaedf4", surface: "#ffffff", fg: "#172033", muted: "#657086",
+        border: "rgba(23,32,51,0.14)", primary: "#2357b6", accent: "#9a7600",
+      }),
+      pal("night-coral", "Night & Coral", true, {
+        bg: "#111715", bgAlt: "#19221f", surface: "#202a27", fg: "#f5f6f3", muted: "#a8b4ae",
+        border: "rgba(245,246,243,0.14)", primary: "#f06b55", accent: "#65c39f",
       }),
     ],
   },

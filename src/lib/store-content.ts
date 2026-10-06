@@ -68,13 +68,11 @@ function baseGroups(): ContentGroup[] {
       description: "First screen customers see — the strongest conversion spot.",
       fields: [
         on("hero_show", "Show hero banner", true),
-        t("hero_badge", "Small badge above headline", "Cash on delivery all over Bangladesh"),
-        t("hero_headline", "Headline", "Shop smart at {store}"),
-        area("hero_sub", "Sub headline", "Handpicked products, honest prices and delivery to your door. Pay only when you receive."),
-        t("hero_cta", "Primary button text", "Shop now"),
-        t("hero_cta2", "Secondary button text", "Order on WhatsApp"),
+        t("hero_headline", "Headline", "স্মার্ট শপিং করুন {store} এ"),
+        area("hero_sub", "Sub headline", "বাছাই করা পণ্য, সঠিক দাম আর ঘরে বসে ডেলিভারি — পণ্য হাতে পেয়ে টাকা দিন।"),
+        t("hero_cta", "Primary button text", "কেনাকাটা করুন"),
+        t("hero_cta2", "Secondary button text", "WhatsApp এ অর্ডার করুন"),
         img("hero_image", "Hero image", "Leave empty to use your top product image."),
-        t("hero_note", "Small note under buttons", "Delivery in 1–3 days • Easy return within 24h"),
       ],
     },
     {
@@ -100,39 +98,9 @@ function baseGroups(): ContentGroup[] {
       fields: [
         on("cat_show", "Show category section"),
         t("cat_title", "Category section title", "Shop by category"),
-        t("cat_sub", "Category section subtitle", "Find what you need faster"),
         on("featured_show", "Show featured section"),
         t("featured_title", "Featured section title", "Best sellers"),
-        t("featured_sub", "Featured section subtitle", "Most ordered products this month"),
         t("latest_title", "New arrivals title", "New arrivals"),
-        t("latest_sub", "New arrivals subtitle", "Freshly added to the store"),
-      ],
-    },
-    {
-      id: "promo",
-      title: "Promo banner",
-      description: "Offer strip between sections — great for discounts or bundles.",
-      fields: [
-        on("promo_show", "Show promo banner", true),
-        t("promo_title", "Promo title", "Order today, pay on delivery"),
-        area("promo_text", "Promo text", "No advance payment needed. Confirm your order and pay the courier when the parcel reaches you."),
-        t("promo_cta", "Promo button text", "Browse products"),
-        img("promo_image", "Promo image"),
-      ],
-    },
-    {
-      id: "why",
-      title: "Why shop with us",
-      description: "Three reasons that remove buying hesitation.",
-      fields: [
-        on("why_show", "Show this section", true),
-        t("why_title", "Section title", "Why customers choose {store}"),
-        t("why1_t", "Reason 1", "Real product, real photos"),
-        area("why1_d", "Reason 1 detail", "Every item is checked before it leaves our warehouse."),
-        t("why2_t", "Reason 2", "Fast, tracked delivery"),
-        area("why2_d", "Reason 2 detail", "Courier tracking is shared right after your order is booked."),
-        t("why3_t", "Reason 3", "Support that replies"),
-        area("why3_d", "Reason 3 detail", "Call or WhatsApp us any day between 10am and 9pm."),
       ],
     },
     {
@@ -151,30 +119,10 @@ function baseGroups(): ContentGroup[] {
       ],
     },
     {
-      id: "faq",
-      title: "FAQ",
-      description: "Answer the questions that stop people from ordering.",
-      fields: [
-        on("faq_show", "Show FAQ", true),
-        t("faq_title", "Section title", "Frequently asked questions"),
-        t("faq1_q", "Question 1", "How do I pay?"),
-        area("faq1_a", "Answer 1", "Cash on delivery — you pay the courier when the parcel arrives."),
-        t("faq2_q", "Question 2", "How long is delivery?"),
-        area("faq2_a", "Answer 2", "1–3 days inside Dhaka and 2–5 days outside Dhaka."),
-        t("faq3_q", "Question 3", "Can I return a product?"),
-        area("faq3_a", "Answer 3", "Yes. If the product is wrong or damaged, report within 24 hours of delivery."),
-      ],
-    },
-    {
       id: "product",
       title: "Product page",
-      description: "Trust lines and urgency shown next to the buy button.",
+      description: "Product page mobile options.",
       fields: [
-        t("pdp_trust1", "Trust line 1", "Cash on delivery available"),
-        t("pdp_trust2", "Trust line 2", "Genuine product guarantee"),
-        t("pdp_trust3", "Trust line 3", "Delivery within 1–5 days"),
-        t("pdp_urgency", "Urgency line", "Limited stock — order today to secure yours"),
-        area("pdp_returns", "Return / warranty note", "Wrong or damaged item? Report within 24 hours for a free replacement."),
         on("pdp_sticky", "Show sticky mobile buy bar", true),
       ],
     },
@@ -183,20 +131,29 @@ function baseGroups(): ContentGroup[] {
       title: "Checkout page",
       description: "Copy that reassures customers on the final step.",
       fields: [
-        t("co_headline", "Checkout headline", "Complete your order"),
-        area("co_note", "Note above the form", "Fill in your delivery details. Our team will call to confirm before dispatch."),
-        t("co_trust", "Trust line under the button", "No advance payment • Pay the courier on delivery"),
-        t("co_success", "Thank-you headline", "Order received!"),
-        area("co_success_note", "Thank-you note", "We will call you shortly to confirm the order and share courier tracking."),
+        t("co_headline", "Checkout headline", "অর্ডার সম্পন্ন করুন"),
+        area("co_note", "Note above the form", "সঠিক তথ্য দিয়ে অর্ডার করুন, ডেলিভারির আগে কল করা হবে।"),
+        t("co_success", "Thank-you headline", "ধন্যবাদ! আপনার অর্ডারটি গ্রহণ করা হয়েছে"),
+        area("co_success_note", "Thank-you note", "আমাদের প্রতিনিধি দ্রুত আপনার সাথে যোগাযোগ করে অর্ডারটি কনফার্ম করবেন।"),
       ],
     },
     {
       id: "footer",
-      title: "Footer",
-      description: "Closing message and store story in the footer.",
+      title: "Footer & Store Info",
+      description: "Store description, office/shop address and bottom copyright text in the footer.",
       fields: [
-        area("footer_about", "About text in footer", ""),
-        t("footer_note", "Bottom note", ""),
+        area(
+          "footer_about",
+          "About store / Address (স্টোর পরিচিতি বা ঠিকানা)",
+          "",
+          "Write a brief intro about your store, office/shop address, or operational details.",
+        ),
+        t(
+          "footer_note",
+          "Bottom note / Copyright (ফুটার কপিরাইট লাইন)",
+          "",
+          "e.g. © 2026 {store}. All rights reserved.",
+        ),
       ],
     },
   ];
@@ -206,7 +163,7 @@ function baseGroups(): ContentGroup[] {
  * Theme-specific groups. Only the active theme's group is shown in the panel,
  * and every field here is rendered by that theme on the storefront.
  */
-const THEME_GROUP: Record<StoreThemeId, ContentGroup> = {
+const THEME_GROUP: Partial<Record<StoreThemeId, ContentGroup>> = {
   aurora: {
     id: "theme-aurora",
     title: "Aurora highlights",
@@ -214,34 +171,32 @@ const THEME_GROUP: Record<StoreThemeId, ContentGroup> = {
     fields: [
       t("aurora_stat1", "Highlight 1 (next to hero buttons)", "10k+ orders delivered"),
       t("aurora_stat2", "Highlight 2 (next to hero buttons)", "4.8★ average rating"),
-      t("aurora_offer", "Offer chip on hero image", "Free delivery over ৳2000"),
-    ],
-  },
-  noir: {
-    id: "theme-noir",
-    title: "Noir brand story",
-    description: "Eyebrow line above the hero headline and the boutique story band.",
-    fields: [
-      t("noir_eyebrow", "Collection eyebrow text", "The signature collection"),
-      area("noir_story", "Brand story paragraph", "Curated pieces, made for people who notice the details."),
-    ],
-  },
-  bazaar: {
-    id: "theme-bazaar",
-    title: "Bazaar deal strip",
-    description: "Colored deal strip shown between the hero and the product sections.",
-    fields: [
-      t("bazaar_deal_title", "Flash deal strip title", "Today's deals"),
-      t("bazaar_deal_note", "Flash deal note", "Limited stock — first come, first served"),
     ],
   },
   atelier: {
     id: "theme-atelier",
-    title: "Atelier editorial quote",
-    description: "Large editorial quote band placed between the product sections.",
+    title: "Simple Shop — Order & Call",
+    description: "Call to order text, order button labels, and return policy details.",
     fields: [
-      t("atelier_quote", "Editorial quote", "Fewer, better things."),
-      t("atelier_credit", "Quote credit", "— our studio promise"),
+      t("sohoj_call_label", "Call order top text", "অর্ডার করতে কল করুন"),
+      t("sohoj_order_label", "Order button label", "অর্ডার করুন"),
+      t("sohoj_free_label", "Free delivery button label", "ফ্রী ডেলিভারিতে অর্ডার করুন"),
+      t("sohoj_free_note", "Free delivery badge text", "এই পণ্যটি পাচ্ছেন সম্পূর্ণ ফ্রি ডেলিভারিতে!"),
+      area(
+        "sohoj_return",
+        "Return policy text",
+        "পণ্য হাতে পাওয়ার ২৪ ঘণ্টার মধ্যে সমস্যা জানালে রিটার্ন বা রিপ্লেসমেন্ট করা হবে। ডেলিভারি ম্যানের সামনেই পণ্য চেক করে নিন।",
+      ),
+    ],
+  },
+  poripati: {
+    id: "theme-poripati",
+    title: "Clean Minimal — Editorial Details",
+    description: "Banner kicker, collection note, and focused story band.",
+    fields: [
+      t("poripati_kicker", "Banner kicker", "Thoughtfully selected for everyday life"),
+      t("poripati_collection", "Collection label", "The current edit"),
+      area("poripati_story", "Story band", "Useful things, clearly presented — so choosing feels simple."),
     ],
   },
 };

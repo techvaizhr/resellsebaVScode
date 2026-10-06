@@ -10,46 +10,44 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TutorialsRouteImport } from './routes/tutorials'
+import { Route as ThanksRouteImport } from './routes/thanks'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ShopRouteImport } from './routes/shop'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
 import { Route as SCodeRouteImport } from './routes/s.$code'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as CatalogSlugRouteImport } from './routes/catalog.$slug'
+import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AuthenticatedVerifyRouteImport } from './routes/_authenticated/verify'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedSupplierRouteRouteImport } from './routes/_authenticated/supplier/route'
 import { Route as AuthenticatedResellerRouteRouteImport } from './routes/_authenticated/reseller/route'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as SCodeIndexRouteImport } from './routes/s.$code.index'
-import { Route as AuthenticatedSupplierIndexRouteImport } from './routes/_authenticated/supplier/index'
 import { Route as AuthenticatedResellerIndexRouteImport } from './routes/_authenticated/reseller/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as SCodeThanksRouteImport } from './routes/s.$code.thanks'
+import { Route as SCodeShopRouteImport } from './routes/s.$code.shop'
 import { Route as SCodeCheckoutRouteImport } from './routes/s.$code.checkout'
 import { Route as ApiPublicRobotsRouteImport } from './routes/api/public/robots'
 import { Route as ApiPublicProductRouteImport } from './routes/api/public/product'
-import { Route as ApiPublicManifestRouteImport } from './routes/api/public/manifest'
-import { Route as AuthenticatedSupplierRiderFollowupRouteImport } from './routes/_authenticated/supplier/rider-followup'
-import { Route as AuthenticatedSupplierReturnsRouteImport } from './routes/_authenticated/supplier/returns'
-import { Route as AuthenticatedSupplierReportRouteImport } from './routes/_authenticated/supplier/report'
-import { Route as AuthenticatedSupplierProfileRouteImport } from './routes/_authenticated/supplier/profile'
-import { Route as AuthenticatedSupplierProductsRouteImport } from './routes/_authenticated/supplier/products'
-import { Route as AuthenticatedSupplierPayoutsRouteImport } from './routes/_authenticated/supplier/payouts'
-import { Route as AuthenticatedSupplierOrdersRouteImport } from './routes/_authenticated/supplier/orders'
 import { Route as AuthenticatedResellerVisitorsRouteImport } from './routes/_authenticated/reseller/visitors'
 import { Route as AuthenticatedResellerTutorialsRouteImport } from './routes/_authenticated/reseller/tutorials'
 import { Route as AuthenticatedResellerTransactionsRouteImport } from './routes/_authenticated/reseller/transactions'
 import { Route as AuthenticatedResellerThemeRouteImport } from './routes/_authenticated/reseller/theme'
 import { Route as AuthenticatedResellerSupportRouteImport } from './routes/_authenticated/reseller/support'
 import { Route as AuthenticatedResellerSubscriptionRouteImport } from './routes/_authenticated/reseller/subscription'
+import { Route as AuthenticatedResellerStaffRouteImport } from './routes/_authenticated/reseller/staff'
 import { Route as AuthenticatedResellerSettingsRouteImport } from './routes/_authenticated/reseller/settings'
 import { Route as AuthenticatedResellerRiderFollowupRouteImport } from './routes/_authenticated/reseller/rider-followup'
 import { Route as AuthenticatedResellerProfileRouteImport } from './routes/_authenticated/reseller/profile'
-import { Route as AuthenticatedResellerPoliciesRouteImport } from './routes/_authenticated/reseller/policies'
 import { Route as AuthenticatedResellerPayoutsRouteImport } from './routes/_authenticated/reseller/payouts'
 import { Route as AuthenticatedResellerPaymentsRouteImport } from './routes/_authenticated/reseller/payments'
 import { Route as AuthenticatedResellerOrdersRouteImport } from './routes/_authenticated/reseller/orders'
@@ -63,17 +61,13 @@ import { Route as AuthenticatedResellerCatalogRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminVisitorsRouteImport } from './routes/_authenticated/admin/visitors'
 import { Route as AuthenticatedAdminTutorialsRouteImport } from './routes/_authenticated/admin/tutorials'
 import { Route as AuthenticatedAdminTransactionsRouteImport } from './routes/_authenticated/admin/transactions'
-import { Route as AuthenticatedAdminSuppliersRouteImport } from './routes/_authenticated/admin/suppliers'
-import { Route as AuthenticatedAdminSupplierReturnsRouteImport } from './routes/_authenticated/admin/supplier-returns'
-import { Route as AuthenticatedAdminSupplierReportRouteImport } from './routes/_authenticated/admin/supplier-report'
-import { Route as AuthenticatedAdminSupplierPayoutsRouteImport } from './routes/_authenticated/admin/supplier-payouts'
 import { Route as AuthenticatedAdminSubscriptionsRouteImport } from './routes/_authenticated/admin/subscriptions'
 import { Route as AuthenticatedAdminStaffRouteImport } from './routes/_authenticated/admin/staff'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminRiderFollowupRouteImport } from './routes/_authenticated/admin/rider-followup'
 import { Route as AuthenticatedAdminResellersRouteImport } from './routes/_authenticated/admin/resellers'
+import { Route as AuthenticatedAdminResellerPricingRouteImport } from './routes/_authenticated/admin/reseller-pricing'
 import { Route as AuthenticatedAdminPrivacyRouteImport } from './routes/_authenticated/admin/privacy'
-import { Route as AuthenticatedAdminPoliciesRouteImport } from './routes/_authenticated/admin/policies'
 import { Route as AuthenticatedAdminPayoutsRouteImport } from './routes/_authenticated/admin/payouts'
 import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin/payments'
 import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin/orders'
@@ -92,9 +86,11 @@ import { Route as AuthenticatedAdminCommissionsRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin/categories'
 import { Route as AuthenticatedAdminBusinessReportRouteImport } from './routes/_authenticated/admin/business-report'
 import { Route as AuthenticatedAdminBrandsRouteImport } from './routes/_authenticated/admin/brands'
+import { Route as AuthenticatedAdminBackupRouteImport } from './routes/_authenticated/admin/backup'
 import { Route as AuthenticatedAdminAgentsRouteImport } from './routes/_authenticated/admin/agents'
 import { Route as AuthenticatedAdminAgentReportRouteImport } from './routes/_authenticated/admin/agent-report'
 import { Route as AuthenticatedAdminAgentPayoutsRouteImport } from './routes/_authenticated/admin/agent-payouts'
+import { Route as AuthenticatedAdminAgentDepositsRouteImport } from './routes/_authenticated/admin/agent-deposits'
 import { Route as AuthenticatedAdminAdvancedRouteImport } from './routes/_authenticated/admin/advanced'
 import { Route as AuthenticatedAdminProductsIndexRouteImport } from './routes/_authenticated/admin/products.index'
 import { Route as SCodePSlugRouteImport } from './routes/s.$code.p.$slug'
@@ -103,7 +99,6 @@ import { Route as ApiPublicSitemapCodeRouteImport } from './routes/api/public/si
 import { Route as ApiPublicPaymentSslcommerzIpnRouteImport } from './routes/api/public/payment.sslcommerz-ipn'
 import { Route as ApiPublicPaymentEpaysebaWebhookRouteImport } from './routes/api/public/payment.epayseba-webhook'
 import { Route as ApiPublicPaymentBridgeRouteImport } from './routes/api/public/payment.bridge'
-import { Route as ApiPublicCourierSyncRouteImport } from './routes/api/public/courier.sync'
 import { Route as ApiPublicCourierSteadfastRouteImport } from './routes/api/public/courier.steadfast'
 import { Route as ApiPublicCourierPathaoRouteImport } from './routes/api/public/courier.pathao'
 import { Route as ApiPublicCourierCarrybeeRouteImport } from './routes/api/public/courier.carrybee'
@@ -117,6 +112,26 @@ const TutorialsRoute = TutorialsRouteImport.update({
   path: '/tutorials',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ThanksRoute = ThanksRouteImport.update({
+  id: '/thanks',
+  path: '/thanks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -125,6 +140,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogRoute = CatalogRouteImport.update({
@@ -151,10 +171,20 @@ const SCodeRoute = SCodeRouteImport.update({
   path: '/s/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogSlugRoute = CatalogSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => CatalogRoute,
+} as any)
+const CSlugRoute = CSlugRouteImport.update({
+  id: '/c/$slug',
+  path: '/c/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedVerifyRoute = AuthenticatedVerifyRouteImport.update({
   id: '/verify',
@@ -171,12 +201,6 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSupplierRouteRoute =
-  AuthenticatedSupplierRouteRouteImport.update({
-    id: '/supplier',
-    path: '/supplier',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedResellerRouteRoute =
   AuthenticatedResellerRouteRouteImport.update({
     id: '/reseller',
@@ -193,12 +217,6 @@ const SCodeIndexRoute = SCodeIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SCodeRoute,
 } as any)
-const AuthenticatedSupplierIndexRoute =
-  AuthenticatedSupplierIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedSupplierRouteRoute,
-  } as any)
 const AuthenticatedResellerIndexRoute =
   AuthenticatedResellerIndexRouteImport.update({
     id: '/',
@@ -213,6 +231,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
 const SCodeThanksRoute = SCodeThanksRouteImport.update({
   id: '/thanks',
   path: '/thanks',
+  getParentRoute: () => SCodeRoute,
+} as any)
+const SCodeShopRoute = SCodeShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
   getParentRoute: () => SCodeRoute,
 } as any)
 const SCodeCheckoutRoute = SCodeCheckoutRouteImport.update({
@@ -230,53 +253,6 @@ const ApiPublicProductRoute = ApiPublicProductRouteImport.update({
   path: '/api/public/product',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicManifestRoute = ApiPublicManifestRouteImport.update({
-  id: '/api/public/manifest',
-  path: '/api/public/manifest',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedSupplierRiderFollowupRoute =
-  AuthenticatedSupplierRiderFollowupRouteImport.update({
-    id: '/rider-followup',
-    path: '/rider-followup',
-    getParentRoute: () => AuthenticatedSupplierRouteRoute,
-  } as any)
-const AuthenticatedSupplierReturnsRoute =
-  AuthenticatedSupplierReturnsRouteImport.update({
-    id: '/returns',
-    path: '/returns',
-    getParentRoute: () => AuthenticatedSupplierRouteRoute,
-  } as any)
-const AuthenticatedSupplierReportRoute =
-  AuthenticatedSupplierReportRouteImport.update({
-    id: '/report',
-    path: '/report',
-    getParentRoute: () => AuthenticatedSupplierRouteRoute,
-  } as any)
-const AuthenticatedSupplierProfileRoute =
-  AuthenticatedSupplierProfileRouteImport.update({
-    id: '/profile',
-    path: '/profile',
-    getParentRoute: () => AuthenticatedSupplierRouteRoute,
-  } as any)
-const AuthenticatedSupplierProductsRoute =
-  AuthenticatedSupplierProductsRouteImport.update({
-    id: '/products',
-    path: '/products',
-    getParentRoute: () => AuthenticatedSupplierRouteRoute,
-  } as any)
-const AuthenticatedSupplierPayoutsRoute =
-  AuthenticatedSupplierPayoutsRouteImport.update({
-    id: '/payouts',
-    path: '/payouts',
-    getParentRoute: () => AuthenticatedSupplierRouteRoute,
-  } as any)
-const AuthenticatedSupplierOrdersRoute =
-  AuthenticatedSupplierOrdersRouteImport.update({
-    id: '/orders',
-    path: '/orders',
-    getParentRoute: () => AuthenticatedSupplierRouteRoute,
-  } as any)
 const AuthenticatedResellerVisitorsRoute =
   AuthenticatedResellerVisitorsRouteImport.update({
     id: '/visitors',
@@ -313,6 +289,12 @@ const AuthenticatedResellerSubscriptionRoute =
     path: '/subscription',
     getParentRoute: () => AuthenticatedResellerRouteRoute,
   } as any)
+const AuthenticatedResellerStaffRoute =
+  AuthenticatedResellerStaffRouteImport.update({
+    id: '/staff',
+    path: '/staff',
+    getParentRoute: () => AuthenticatedResellerRouteRoute,
+  } as any)
 const AuthenticatedResellerSettingsRoute =
   AuthenticatedResellerSettingsRouteImport.update({
     id: '/settings',
@@ -329,12 +311,6 @@ const AuthenticatedResellerProfileRoute =
   AuthenticatedResellerProfileRouteImport.update({
     id: '/profile',
     path: '/profile',
-    getParentRoute: () => AuthenticatedResellerRouteRoute,
-  } as any)
-const AuthenticatedResellerPoliciesRoute =
-  AuthenticatedResellerPoliciesRouteImport.update({
-    id: '/policies',
-    path: '/policies',
     getParentRoute: () => AuthenticatedResellerRouteRoute,
   } as any)
 const AuthenticatedResellerPayoutsRoute =
@@ -415,30 +391,6 @@ const AuthenticatedAdminTransactionsRoute =
     path: '/transactions',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
-const AuthenticatedAdminSuppliersRoute =
-  AuthenticatedAdminSuppliersRouteImport.update({
-    id: '/suppliers',
-    path: '/suppliers',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminSupplierReturnsRoute =
-  AuthenticatedAdminSupplierReturnsRouteImport.update({
-    id: '/supplier-returns',
-    path: '/supplier-returns',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminSupplierReportRoute =
-  AuthenticatedAdminSupplierReportRouteImport.update({
-    id: '/supplier-report',
-    path: '/supplier-report',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminSupplierPayoutsRoute =
-  AuthenticatedAdminSupplierPayoutsRouteImport.update({
-    id: '/supplier-payouts',
-    path: '/supplier-payouts',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
 const AuthenticatedAdminSubscriptionsRoute =
   AuthenticatedAdminSubscriptionsRouteImport.update({
     id: '/subscriptions',
@@ -468,16 +420,16 @@ const AuthenticatedAdminResellersRoute =
     path: '/resellers',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminResellerPricingRoute =
+  AuthenticatedAdminResellerPricingRouteImport.update({
+    id: '/reseller-pricing',
+    path: '/reseller-pricing',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminPrivacyRoute =
   AuthenticatedAdminPrivacyRouteImport.update({
     id: '/privacy',
     path: '/privacy',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminPoliciesRoute =
-  AuthenticatedAdminPoliciesRouteImport.update({
-    id: '/policies',
-    path: '/policies',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminPayoutsRoute =
@@ -588,6 +540,12 @@ const AuthenticatedAdminBrandsRoute =
     path: '/brands',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminBackupRoute =
+  AuthenticatedAdminBackupRouteImport.update({
+    id: '/backup',
+    path: '/backup',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminAgentsRoute =
   AuthenticatedAdminAgentsRouteImport.update({
     id: '/agents',
@@ -604,6 +562,12 @@ const AuthenticatedAdminAgentPayoutsRoute =
   AuthenticatedAdminAgentPayoutsRouteImport.update({
     id: '/agent-payouts',
     path: '/agent-payouts',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminAgentDepositsRoute =
+  AuthenticatedAdminAgentDepositsRouteImport.update({
+    id: '/agent-deposits',
+    path: '/agent-deposits',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminAdvancedRoute =
@@ -648,11 +612,6 @@ const ApiPublicPaymentEpaysebaWebhookRoute =
 const ApiPublicPaymentBridgeRoute = ApiPublicPaymentBridgeRouteImport.update({
   id: '/api/public/payment/bridge',
   path: '/api/public/payment/bridge',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicCourierSyncRoute = ApiPublicCourierSyncRouteImport.update({
-  id: '/api/public/courier/sync',
-  path: '/api/public/courier/sync',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicCourierSteadfastRoute =
@@ -700,22 +659,30 @@ const AuthenticatedAdminProductsIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/catalog': typeof CatalogRouteWithChildren
+  '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/register': typeof RegisterRoute
+  '/shop': typeof ShopRoute
+  '/signup': typeof SignupRoute
+  '/thanks': typeof ThanksRoute
   '/tutorials': typeof TutorialsRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/reseller': typeof AuthenticatedResellerRouteRouteWithChildren
-  '/supplier': typeof AuthenticatedSupplierRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/verify': typeof AuthenticatedVerifyRoute
+  '/c/$slug': typeof CSlugRoute
   '/catalog/$slug': typeof CatalogSlugRoute
+  '/p/$slug': typeof PSlugRoute
   '/s/$code': typeof SCodeRouteWithChildren
   '/catalog/': typeof CatalogIndexRoute
   '/admin/advanced': typeof AuthenticatedAdminAdvancedRoute
+  '/admin/agent-deposits': typeof AuthenticatedAdminAgentDepositsRoute
   '/admin/agent-payouts': typeof AuthenticatedAdminAgentPayoutsRoute
   '/admin/agent-report': typeof AuthenticatedAdminAgentReportRoute
   '/admin/agents': typeof AuthenticatedAdminAgentsRoute
+  '/admin/backup': typeof AuthenticatedAdminBackupRoute
   '/admin/brands': typeof AuthenticatedAdminBrandsRoute
   '/admin/business-report': typeof AuthenticatedAdminBusinessReportRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
@@ -734,17 +701,13 @@ export interface FileRoutesByFullPath {
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/payouts': typeof AuthenticatedAdminPayoutsRoute
-  '/admin/policies': typeof AuthenticatedAdminPoliciesRoute
   '/admin/privacy': typeof AuthenticatedAdminPrivacyRoute
+  '/admin/reseller-pricing': typeof AuthenticatedAdminResellerPricingRoute
   '/admin/resellers': typeof AuthenticatedAdminResellersRoute
   '/admin/rider-followup': typeof AuthenticatedAdminRiderFollowupRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/staff': typeof AuthenticatedAdminStaffRoute
   '/admin/subscriptions': typeof AuthenticatedAdminSubscriptionsRoute
-  '/admin/supplier-payouts': typeof AuthenticatedAdminSupplierPayoutsRoute
-  '/admin/supplier-report': typeof AuthenticatedAdminSupplierReportRoute
-  '/admin/supplier-returns': typeof AuthenticatedAdminSupplierReturnsRoute
-  '/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
   '/admin/transactions': typeof AuthenticatedAdminTransactionsRoute
   '/admin/tutorials': typeof AuthenticatedAdminTutorialsRoute
   '/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
@@ -758,37 +721,28 @@ export interface FileRoutesByFullPath {
   '/reseller/orders': typeof AuthenticatedResellerOrdersRouteWithChildren
   '/reseller/payments': typeof AuthenticatedResellerPaymentsRoute
   '/reseller/payouts': typeof AuthenticatedResellerPayoutsRoute
-  '/reseller/policies': typeof AuthenticatedResellerPoliciesRoute
   '/reseller/profile': typeof AuthenticatedResellerProfileRoute
   '/reseller/rider-followup': typeof AuthenticatedResellerRiderFollowupRoute
   '/reseller/settings': typeof AuthenticatedResellerSettingsRoute
+  '/reseller/staff': typeof AuthenticatedResellerStaffRoute
   '/reseller/subscription': typeof AuthenticatedResellerSubscriptionRoute
   '/reseller/support': typeof AuthenticatedResellerSupportRoute
   '/reseller/theme': typeof AuthenticatedResellerThemeRoute
   '/reseller/transactions': typeof AuthenticatedResellerTransactionsRoute
   '/reseller/tutorials': typeof AuthenticatedResellerTutorialsRoute
   '/reseller/visitors': typeof AuthenticatedResellerVisitorsRoute
-  '/supplier/orders': typeof AuthenticatedSupplierOrdersRoute
-  '/supplier/payouts': typeof AuthenticatedSupplierPayoutsRoute
-  '/supplier/products': typeof AuthenticatedSupplierProductsRoute
-  '/supplier/profile': typeof AuthenticatedSupplierProfileRoute
-  '/supplier/report': typeof AuthenticatedSupplierReportRoute
-  '/supplier/returns': typeof AuthenticatedSupplierReturnsRoute
-  '/supplier/rider-followup': typeof AuthenticatedSupplierRiderFollowupRoute
-  '/api/public/manifest': typeof ApiPublicManifestRoute
   '/api/public/product': typeof ApiPublicProductRoute
   '/api/public/robots': typeof ApiPublicRobotsRoute
   '/s/$code/checkout': typeof SCodeCheckoutRoute
+  '/s/$code/shop': typeof SCodeShopRoute
   '/s/$code/thanks': typeof SCodeThanksRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/reseller/': typeof AuthenticatedResellerIndexRoute
-  '/supplier/': typeof AuthenticatedSupplierIndexRoute
   '/s/$code/': typeof SCodeIndexRoute
   '/admin/products/new': typeof AuthenticatedAdminProductsNewRoute
   '/api/public/courier/carrybee': typeof ApiPublicCourierCarrybeeRoute
   '/api/public/courier/pathao': typeof ApiPublicCourierPathaoRoute
   '/api/public/courier/steadfast': typeof ApiPublicCourierSteadfastRoute
-  '/api/public/courier/sync': typeof ApiPublicCourierSyncRoute
   '/api/public/payment/bridge': typeof ApiPublicPaymentBridgeRoute
   '/api/public/payment/epayseba-webhook': typeof ApiPublicPaymentEpaysebaWebhookRoute
   '/api/public/payment/sslcommerz-ipn': typeof ApiPublicPaymentSslcommerzIpnRoute
@@ -802,18 +756,27 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/register': typeof RegisterRoute
+  '/shop': typeof ShopRoute
+  '/signup': typeof SignupRoute
+  '/thanks': typeof ThanksRoute
   '/tutorials': typeof TutorialsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/verify': typeof AuthenticatedVerifyRoute
+  '/c/$slug': typeof CSlugRoute
   '/catalog/$slug': typeof CatalogSlugRoute
+  '/p/$slug': typeof PSlugRoute
   '/catalog': typeof CatalogIndexRoute
   '/admin/advanced': typeof AuthenticatedAdminAdvancedRoute
+  '/admin/agent-deposits': typeof AuthenticatedAdminAgentDepositsRoute
   '/admin/agent-payouts': typeof AuthenticatedAdminAgentPayoutsRoute
   '/admin/agent-report': typeof AuthenticatedAdminAgentReportRoute
   '/admin/agents': typeof AuthenticatedAdminAgentsRoute
+  '/admin/backup': typeof AuthenticatedAdminBackupRoute
   '/admin/brands': typeof AuthenticatedAdminBrandsRoute
   '/admin/business-report': typeof AuthenticatedAdminBusinessReportRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
@@ -832,17 +795,13 @@ export interface FileRoutesByTo {
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/payouts': typeof AuthenticatedAdminPayoutsRoute
-  '/admin/policies': typeof AuthenticatedAdminPoliciesRoute
   '/admin/privacy': typeof AuthenticatedAdminPrivacyRoute
+  '/admin/reseller-pricing': typeof AuthenticatedAdminResellerPricingRoute
   '/admin/resellers': typeof AuthenticatedAdminResellersRoute
   '/admin/rider-followup': typeof AuthenticatedAdminRiderFollowupRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/staff': typeof AuthenticatedAdminStaffRoute
   '/admin/subscriptions': typeof AuthenticatedAdminSubscriptionsRoute
-  '/admin/supplier-payouts': typeof AuthenticatedAdminSupplierPayoutsRoute
-  '/admin/supplier-report': typeof AuthenticatedAdminSupplierReportRoute
-  '/admin/supplier-returns': typeof AuthenticatedAdminSupplierReturnsRoute
-  '/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
   '/admin/transactions': typeof AuthenticatedAdminTransactionsRoute
   '/admin/tutorials': typeof AuthenticatedAdminTutorialsRoute
   '/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
@@ -856,37 +815,28 @@ export interface FileRoutesByTo {
   '/reseller/orders': typeof AuthenticatedResellerOrdersRouteWithChildren
   '/reseller/payments': typeof AuthenticatedResellerPaymentsRoute
   '/reseller/payouts': typeof AuthenticatedResellerPayoutsRoute
-  '/reseller/policies': typeof AuthenticatedResellerPoliciesRoute
   '/reseller/profile': typeof AuthenticatedResellerProfileRoute
   '/reseller/rider-followup': typeof AuthenticatedResellerRiderFollowupRoute
   '/reseller/settings': typeof AuthenticatedResellerSettingsRoute
+  '/reseller/staff': typeof AuthenticatedResellerStaffRoute
   '/reseller/subscription': typeof AuthenticatedResellerSubscriptionRoute
   '/reseller/support': typeof AuthenticatedResellerSupportRoute
   '/reseller/theme': typeof AuthenticatedResellerThemeRoute
   '/reseller/transactions': typeof AuthenticatedResellerTransactionsRoute
   '/reseller/tutorials': typeof AuthenticatedResellerTutorialsRoute
   '/reseller/visitors': typeof AuthenticatedResellerVisitorsRoute
-  '/supplier/orders': typeof AuthenticatedSupplierOrdersRoute
-  '/supplier/payouts': typeof AuthenticatedSupplierPayoutsRoute
-  '/supplier/products': typeof AuthenticatedSupplierProductsRoute
-  '/supplier/profile': typeof AuthenticatedSupplierProfileRoute
-  '/supplier/report': typeof AuthenticatedSupplierReportRoute
-  '/supplier/returns': typeof AuthenticatedSupplierReturnsRoute
-  '/supplier/rider-followup': typeof AuthenticatedSupplierRiderFollowupRoute
-  '/api/public/manifest': typeof ApiPublicManifestRoute
   '/api/public/product': typeof ApiPublicProductRoute
   '/api/public/robots': typeof ApiPublicRobotsRoute
   '/s/$code/checkout': typeof SCodeCheckoutRoute
+  '/s/$code/shop': typeof SCodeShopRoute
   '/s/$code/thanks': typeof SCodeThanksRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/reseller': typeof AuthenticatedResellerIndexRoute
-  '/supplier': typeof AuthenticatedSupplierIndexRoute
   '/s/$code': typeof SCodeIndexRoute
   '/admin/products/new': typeof AuthenticatedAdminProductsNewRoute
   '/api/public/courier/carrybee': typeof ApiPublicCourierCarrybeeRoute
   '/api/public/courier/pathao': typeof ApiPublicCourierPathaoRoute
   '/api/public/courier/steadfast': typeof ApiPublicCourierSteadfastRoute
-  '/api/public/courier/sync': typeof ApiPublicCourierSyncRoute
   '/api/public/payment/bridge': typeof ApiPublicPaymentBridgeRoute
   '/api/public/payment/epayseba-webhook': typeof ApiPublicPaymentEpaysebaWebhookRoute
   '/api/public/payment/sslcommerz-ipn': typeof ApiPublicPaymentSslcommerzIpnRoute
@@ -903,22 +853,30 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/catalog': typeof CatalogRouteWithChildren
+  '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/register': typeof RegisterRoute
+  '/shop': typeof ShopRoute
+  '/signup': typeof SignupRoute
+  '/thanks': typeof ThanksRoute
   '/tutorials': typeof TutorialsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/reseller': typeof AuthenticatedResellerRouteRouteWithChildren
-  '/_authenticated/supplier': typeof AuthenticatedSupplierRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/verify': typeof AuthenticatedVerifyRoute
+  '/c/$slug': typeof CSlugRoute
   '/catalog/$slug': typeof CatalogSlugRoute
+  '/p/$slug': typeof PSlugRoute
   '/s/$code': typeof SCodeRouteWithChildren
   '/catalog/': typeof CatalogIndexRoute
   '/_authenticated/admin/advanced': typeof AuthenticatedAdminAdvancedRoute
+  '/_authenticated/admin/agent-deposits': typeof AuthenticatedAdminAgentDepositsRoute
   '/_authenticated/admin/agent-payouts': typeof AuthenticatedAdminAgentPayoutsRoute
   '/_authenticated/admin/agent-report': typeof AuthenticatedAdminAgentReportRoute
   '/_authenticated/admin/agents': typeof AuthenticatedAdminAgentsRoute
+  '/_authenticated/admin/backup': typeof AuthenticatedAdminBackupRoute
   '/_authenticated/admin/brands': typeof AuthenticatedAdminBrandsRoute
   '/_authenticated/admin/business-report': typeof AuthenticatedAdminBusinessReportRoute
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRoute
@@ -937,17 +895,13 @@ export interface FileRoutesById {
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/_authenticated/admin/payouts': typeof AuthenticatedAdminPayoutsRoute
-  '/_authenticated/admin/policies': typeof AuthenticatedAdminPoliciesRoute
   '/_authenticated/admin/privacy': typeof AuthenticatedAdminPrivacyRoute
+  '/_authenticated/admin/reseller-pricing': typeof AuthenticatedAdminResellerPricingRoute
   '/_authenticated/admin/resellers': typeof AuthenticatedAdminResellersRoute
   '/_authenticated/admin/rider-followup': typeof AuthenticatedAdminRiderFollowupRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/staff': typeof AuthenticatedAdminStaffRoute
   '/_authenticated/admin/subscriptions': typeof AuthenticatedAdminSubscriptionsRoute
-  '/_authenticated/admin/supplier-payouts': typeof AuthenticatedAdminSupplierPayoutsRoute
-  '/_authenticated/admin/supplier-report': typeof AuthenticatedAdminSupplierReportRoute
-  '/_authenticated/admin/supplier-returns': typeof AuthenticatedAdminSupplierReturnsRoute
-  '/_authenticated/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
   '/_authenticated/admin/transactions': typeof AuthenticatedAdminTransactionsRoute
   '/_authenticated/admin/tutorials': typeof AuthenticatedAdminTutorialsRoute
   '/_authenticated/admin/visitors': typeof AuthenticatedAdminVisitorsRoute
@@ -961,37 +915,28 @@ export interface FileRoutesById {
   '/_authenticated/reseller/orders': typeof AuthenticatedResellerOrdersRouteWithChildren
   '/_authenticated/reseller/payments': typeof AuthenticatedResellerPaymentsRoute
   '/_authenticated/reseller/payouts': typeof AuthenticatedResellerPayoutsRoute
-  '/_authenticated/reseller/policies': typeof AuthenticatedResellerPoliciesRoute
   '/_authenticated/reseller/profile': typeof AuthenticatedResellerProfileRoute
   '/_authenticated/reseller/rider-followup': typeof AuthenticatedResellerRiderFollowupRoute
   '/_authenticated/reseller/settings': typeof AuthenticatedResellerSettingsRoute
+  '/_authenticated/reseller/staff': typeof AuthenticatedResellerStaffRoute
   '/_authenticated/reseller/subscription': typeof AuthenticatedResellerSubscriptionRoute
   '/_authenticated/reseller/support': typeof AuthenticatedResellerSupportRoute
   '/_authenticated/reseller/theme': typeof AuthenticatedResellerThemeRoute
   '/_authenticated/reseller/transactions': typeof AuthenticatedResellerTransactionsRoute
   '/_authenticated/reseller/tutorials': typeof AuthenticatedResellerTutorialsRoute
   '/_authenticated/reseller/visitors': typeof AuthenticatedResellerVisitorsRoute
-  '/_authenticated/supplier/orders': typeof AuthenticatedSupplierOrdersRoute
-  '/_authenticated/supplier/payouts': typeof AuthenticatedSupplierPayoutsRoute
-  '/_authenticated/supplier/products': typeof AuthenticatedSupplierProductsRoute
-  '/_authenticated/supplier/profile': typeof AuthenticatedSupplierProfileRoute
-  '/_authenticated/supplier/report': typeof AuthenticatedSupplierReportRoute
-  '/_authenticated/supplier/returns': typeof AuthenticatedSupplierReturnsRoute
-  '/_authenticated/supplier/rider-followup': typeof AuthenticatedSupplierRiderFollowupRoute
-  '/api/public/manifest': typeof ApiPublicManifestRoute
   '/api/public/product': typeof ApiPublicProductRoute
   '/api/public/robots': typeof ApiPublicRobotsRoute
   '/s/$code/checkout': typeof SCodeCheckoutRoute
+  '/s/$code/shop': typeof SCodeShopRoute
   '/s/$code/thanks': typeof SCodeThanksRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/reseller/': typeof AuthenticatedResellerIndexRoute
-  '/_authenticated/supplier/': typeof AuthenticatedSupplierIndexRoute
   '/s/$code/': typeof SCodeIndexRoute
   '/_authenticated/admin/products/new': typeof AuthenticatedAdminProductsNewRoute
   '/api/public/courier/carrybee': typeof ApiPublicCourierCarrybeeRoute
   '/api/public/courier/pathao': typeof ApiPublicCourierPathaoRoute
   '/api/public/courier/steadfast': typeof ApiPublicCourierSteadfastRoute
-  '/api/public/courier/sync': typeof ApiPublicCourierSyncRoute
   '/api/public/payment/bridge': typeof ApiPublicPaymentBridgeRoute
   '/api/public/payment/epayseba-webhook': typeof ApiPublicPaymentEpaysebaWebhookRoute
   '/api/public/payment/sslcommerz-ipn': typeof ApiPublicPaymentSslcommerzIpnRoute
@@ -1008,22 +953,30 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/catalog'
+    | '/checkout'
     | '/login'
     | '/privacy'
+    | '/register'
+    | '/shop'
+    | '/signup'
+    | '/thanks'
     | '/tutorials'
     | '/admin'
     | '/reseller'
-    | '/supplier'
     | '/dashboard'
     | '/onboarding'
     | '/verify'
+    | '/c/$slug'
     | '/catalog/$slug'
+    | '/p/$slug'
     | '/s/$code'
     | '/catalog/'
     | '/admin/advanced'
+    | '/admin/agent-deposits'
     | '/admin/agent-payouts'
     | '/admin/agent-report'
     | '/admin/agents'
+    | '/admin/backup'
     | '/admin/brands'
     | '/admin/business-report'
     | '/admin/categories'
@@ -1042,17 +995,13 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/payments'
     | '/admin/payouts'
-    | '/admin/policies'
     | '/admin/privacy'
+    | '/admin/reseller-pricing'
     | '/admin/resellers'
     | '/admin/rider-followup'
     | '/admin/settings'
     | '/admin/staff'
     | '/admin/subscriptions'
-    | '/admin/supplier-payouts'
-    | '/admin/supplier-report'
-    | '/admin/supplier-returns'
-    | '/admin/suppliers'
     | '/admin/transactions'
     | '/admin/tutorials'
     | '/admin/visitors'
@@ -1066,37 +1015,28 @@ export interface FileRouteTypes {
     | '/reseller/orders'
     | '/reseller/payments'
     | '/reseller/payouts'
-    | '/reseller/policies'
     | '/reseller/profile'
     | '/reseller/rider-followup'
     | '/reseller/settings'
+    | '/reseller/staff'
     | '/reseller/subscription'
     | '/reseller/support'
     | '/reseller/theme'
     | '/reseller/transactions'
     | '/reseller/tutorials'
     | '/reseller/visitors'
-    | '/supplier/orders'
-    | '/supplier/payouts'
-    | '/supplier/products'
-    | '/supplier/profile'
-    | '/supplier/report'
-    | '/supplier/returns'
-    | '/supplier/rider-followup'
-    | '/api/public/manifest'
     | '/api/public/product'
     | '/api/public/robots'
     | '/s/$code/checkout'
+    | '/s/$code/shop'
     | '/s/$code/thanks'
     | '/admin/'
     | '/reseller/'
-    | '/supplier/'
     | '/s/$code/'
     | '/admin/products/new'
     | '/api/public/courier/carrybee'
     | '/api/public/courier/pathao'
     | '/api/public/courier/steadfast'
-    | '/api/public/courier/sync'
     | '/api/public/payment/bridge'
     | '/api/public/payment/epayseba-webhook'
     | '/api/public/payment/sslcommerz-ipn'
@@ -1110,18 +1050,27 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/checkout'
     | '/login'
     | '/privacy'
+    | '/register'
+    | '/shop'
+    | '/signup'
+    | '/thanks'
     | '/tutorials'
     | '/dashboard'
     | '/onboarding'
     | '/verify'
+    | '/c/$slug'
     | '/catalog/$slug'
+    | '/p/$slug'
     | '/catalog'
     | '/admin/advanced'
+    | '/admin/agent-deposits'
     | '/admin/agent-payouts'
     | '/admin/agent-report'
     | '/admin/agents'
+    | '/admin/backup'
     | '/admin/brands'
     | '/admin/business-report'
     | '/admin/categories'
@@ -1140,17 +1089,13 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/payments'
     | '/admin/payouts'
-    | '/admin/policies'
     | '/admin/privacy'
+    | '/admin/reseller-pricing'
     | '/admin/resellers'
     | '/admin/rider-followup'
     | '/admin/settings'
     | '/admin/staff'
     | '/admin/subscriptions'
-    | '/admin/supplier-payouts'
-    | '/admin/supplier-report'
-    | '/admin/supplier-returns'
-    | '/admin/suppliers'
     | '/admin/transactions'
     | '/admin/tutorials'
     | '/admin/visitors'
@@ -1164,37 +1109,28 @@ export interface FileRouteTypes {
     | '/reseller/orders'
     | '/reseller/payments'
     | '/reseller/payouts'
-    | '/reseller/policies'
     | '/reseller/profile'
     | '/reseller/rider-followup'
     | '/reseller/settings'
+    | '/reseller/staff'
     | '/reseller/subscription'
     | '/reseller/support'
     | '/reseller/theme'
     | '/reseller/transactions'
     | '/reseller/tutorials'
     | '/reseller/visitors'
-    | '/supplier/orders'
-    | '/supplier/payouts'
-    | '/supplier/products'
-    | '/supplier/profile'
-    | '/supplier/report'
-    | '/supplier/returns'
-    | '/supplier/rider-followup'
-    | '/api/public/manifest'
     | '/api/public/product'
     | '/api/public/robots'
     | '/s/$code/checkout'
+    | '/s/$code/shop'
     | '/s/$code/thanks'
     | '/admin'
     | '/reseller'
-    | '/supplier'
     | '/s/$code'
     | '/admin/products/new'
     | '/api/public/courier/carrybee'
     | '/api/public/courier/pathao'
     | '/api/public/courier/steadfast'
-    | '/api/public/courier/sync'
     | '/api/public/payment/bridge'
     | '/api/public/payment/epayseba-webhook'
     | '/api/public/payment/sslcommerz-ipn'
@@ -1210,22 +1146,30 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/catalog'
+    | '/checkout'
     | '/login'
     | '/privacy'
+    | '/register'
+    | '/shop'
+    | '/signup'
+    | '/thanks'
     | '/tutorials'
     | '/_authenticated/admin'
     | '/_authenticated/reseller'
-    | '/_authenticated/supplier'
     | '/_authenticated/dashboard'
     | '/_authenticated/onboarding'
     | '/_authenticated/verify'
+    | '/c/$slug'
     | '/catalog/$slug'
+    | '/p/$slug'
     | '/s/$code'
     | '/catalog/'
     | '/_authenticated/admin/advanced'
+    | '/_authenticated/admin/agent-deposits'
     | '/_authenticated/admin/agent-payouts'
     | '/_authenticated/admin/agent-report'
     | '/_authenticated/admin/agents'
+    | '/_authenticated/admin/backup'
     | '/_authenticated/admin/brands'
     | '/_authenticated/admin/business-report'
     | '/_authenticated/admin/categories'
@@ -1244,17 +1188,13 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/orders'
     | '/_authenticated/admin/payments'
     | '/_authenticated/admin/payouts'
-    | '/_authenticated/admin/policies'
     | '/_authenticated/admin/privacy'
+    | '/_authenticated/admin/reseller-pricing'
     | '/_authenticated/admin/resellers'
     | '/_authenticated/admin/rider-followup'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/staff'
     | '/_authenticated/admin/subscriptions'
-    | '/_authenticated/admin/supplier-payouts'
-    | '/_authenticated/admin/supplier-report'
-    | '/_authenticated/admin/supplier-returns'
-    | '/_authenticated/admin/suppliers'
     | '/_authenticated/admin/transactions'
     | '/_authenticated/admin/tutorials'
     | '/_authenticated/admin/visitors'
@@ -1268,37 +1208,28 @@ export interface FileRouteTypes {
     | '/_authenticated/reseller/orders'
     | '/_authenticated/reseller/payments'
     | '/_authenticated/reseller/payouts'
-    | '/_authenticated/reseller/policies'
     | '/_authenticated/reseller/profile'
     | '/_authenticated/reseller/rider-followup'
     | '/_authenticated/reseller/settings'
+    | '/_authenticated/reseller/staff'
     | '/_authenticated/reseller/subscription'
     | '/_authenticated/reseller/support'
     | '/_authenticated/reseller/theme'
     | '/_authenticated/reseller/transactions'
     | '/_authenticated/reseller/tutorials'
     | '/_authenticated/reseller/visitors'
-    | '/_authenticated/supplier/orders'
-    | '/_authenticated/supplier/payouts'
-    | '/_authenticated/supplier/products'
-    | '/_authenticated/supplier/profile'
-    | '/_authenticated/supplier/report'
-    | '/_authenticated/supplier/returns'
-    | '/_authenticated/supplier/rider-followup'
-    | '/api/public/manifest'
     | '/api/public/product'
     | '/api/public/robots'
     | '/s/$code/checkout'
+    | '/s/$code/shop'
     | '/s/$code/thanks'
     | '/_authenticated/admin/'
     | '/_authenticated/reseller/'
-    | '/_authenticated/supplier/'
     | '/s/$code/'
     | '/_authenticated/admin/products/new'
     | '/api/public/courier/carrybee'
     | '/api/public/courier/pathao'
     | '/api/public/courier/steadfast'
-    | '/api/public/courier/sync'
     | '/api/public/payment/bridge'
     | '/api/public/payment/epayseba-webhook'
     | '/api/public/payment/sslcommerz-ipn'
@@ -1315,17 +1246,22 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   CatalogRoute: typeof CatalogRouteWithChildren
+  CheckoutRoute: typeof CheckoutRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
+  RegisterRoute: typeof RegisterRoute
+  ShopRoute: typeof ShopRoute
+  SignupRoute: typeof SignupRoute
+  ThanksRoute: typeof ThanksRoute
   TutorialsRoute: typeof TutorialsRoute
+  CSlugRoute: typeof CSlugRoute
+  PSlugRoute: typeof PSlugRoute
   SCodeRoute: typeof SCodeRouteWithChildren
-  ApiPublicManifestRoute: typeof ApiPublicManifestRoute
   ApiPublicProductRoute: typeof ApiPublicProductRoute
   ApiPublicRobotsRoute: typeof ApiPublicRobotsRoute
   ApiPublicCourierCarrybeeRoute: typeof ApiPublicCourierCarrybeeRoute
   ApiPublicCourierPathaoRoute: typeof ApiPublicCourierPathaoRoute
   ApiPublicCourierSteadfastRoute: typeof ApiPublicCourierSteadfastRoute
-  ApiPublicCourierSyncRoute: typeof ApiPublicCourierSyncRoute
   ApiPublicPaymentBridgeRoute: typeof ApiPublicPaymentBridgeRoute
   ApiPublicPaymentEpaysebaWebhookRoute: typeof ApiPublicPaymentEpaysebaWebhookRoute
   ApiPublicPaymentSslcommerzIpnRoute: typeof ApiPublicPaymentSslcommerzIpnRoute
@@ -1342,6 +1278,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TutorialsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/thanks': {
+      id: '/thanks'
+      path: '/thanks'
+      fullPath: '/thanks'
+      preLoaderRoute: typeof ThanksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -1354,6 +1318,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalog': {
@@ -1391,12 +1362,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/catalog/$slug': {
       id: '/catalog/$slug'
       path: '/$slug'
       fullPath: '/catalog/$slug'
       preLoaderRoute: typeof CatalogSlugRouteImport
       parentRoute: typeof CatalogRoute
+    }
+    '/c/$slug': {
+      id: '/c/$slug'
+      path: '/c/$slug'
+      fullPath: '/c/$slug'
+      preLoaderRoute: typeof CSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/verify': {
       id: '/_authenticated/verify'
@@ -1417,13 +1402,6 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/supplier': {
-      id: '/_authenticated/supplier'
-      path: '/supplier'
-      fullPath: '/supplier'
-      preLoaderRoute: typeof AuthenticatedSupplierRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reseller': {
@@ -1447,13 +1425,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SCodeIndexRouteImport
       parentRoute: typeof SCodeRoute
     }
-    '/_authenticated/supplier/': {
-      id: '/_authenticated/supplier/'
-      path: '/'
-      fullPath: '/supplier/'
-      preLoaderRoute: typeof AuthenticatedSupplierIndexRouteImport
-      parentRoute: typeof AuthenticatedSupplierRouteRoute
-    }
     '/_authenticated/reseller/': {
       id: '/_authenticated/reseller/'
       path: '/'
@@ -1473,6 +1444,13 @@ declare module '@tanstack/react-router' {
       path: '/thanks'
       fullPath: '/s/$code/thanks'
       preLoaderRoute: typeof SCodeThanksRouteImport
+      parentRoute: typeof SCodeRoute
+    }
+    '/s/$code/shop': {
+      id: '/s/$code/shop'
+      path: '/shop'
+      fullPath: '/s/$code/shop'
+      preLoaderRoute: typeof SCodeShopRouteImport
       parentRoute: typeof SCodeRoute
     }
     '/s/$code/checkout': {
@@ -1495,62 +1473,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/product'
       preLoaderRoute: typeof ApiPublicProductRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/api/public/manifest': {
-      id: '/api/public/manifest'
-      path: '/api/public/manifest'
-      fullPath: '/api/public/manifest'
-      preLoaderRoute: typeof ApiPublicManifestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/supplier/rider-followup': {
-      id: '/_authenticated/supplier/rider-followup'
-      path: '/rider-followup'
-      fullPath: '/supplier/rider-followup'
-      preLoaderRoute: typeof AuthenticatedSupplierRiderFollowupRouteImport
-      parentRoute: typeof AuthenticatedSupplierRouteRoute
-    }
-    '/_authenticated/supplier/returns': {
-      id: '/_authenticated/supplier/returns'
-      path: '/returns'
-      fullPath: '/supplier/returns'
-      preLoaderRoute: typeof AuthenticatedSupplierReturnsRouteImport
-      parentRoute: typeof AuthenticatedSupplierRouteRoute
-    }
-    '/_authenticated/supplier/report': {
-      id: '/_authenticated/supplier/report'
-      path: '/report'
-      fullPath: '/supplier/report'
-      preLoaderRoute: typeof AuthenticatedSupplierReportRouteImport
-      parentRoute: typeof AuthenticatedSupplierRouteRoute
-    }
-    '/_authenticated/supplier/profile': {
-      id: '/_authenticated/supplier/profile'
-      path: '/profile'
-      fullPath: '/supplier/profile'
-      preLoaderRoute: typeof AuthenticatedSupplierProfileRouteImport
-      parentRoute: typeof AuthenticatedSupplierRouteRoute
-    }
-    '/_authenticated/supplier/products': {
-      id: '/_authenticated/supplier/products'
-      path: '/products'
-      fullPath: '/supplier/products'
-      preLoaderRoute: typeof AuthenticatedSupplierProductsRouteImport
-      parentRoute: typeof AuthenticatedSupplierRouteRoute
-    }
-    '/_authenticated/supplier/payouts': {
-      id: '/_authenticated/supplier/payouts'
-      path: '/payouts'
-      fullPath: '/supplier/payouts'
-      preLoaderRoute: typeof AuthenticatedSupplierPayoutsRouteImport
-      parentRoute: typeof AuthenticatedSupplierRouteRoute
-    }
-    '/_authenticated/supplier/orders': {
-      id: '/_authenticated/supplier/orders'
-      path: '/orders'
-      fullPath: '/supplier/orders'
-      preLoaderRoute: typeof AuthenticatedSupplierOrdersRouteImport
-      parentRoute: typeof AuthenticatedSupplierRouteRoute
     }
     '/_authenticated/reseller/visitors': {
       id: '/_authenticated/reseller/visitors'
@@ -1594,6 +1516,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResellerSubscriptionRouteImport
       parentRoute: typeof AuthenticatedResellerRouteRoute
     }
+    '/_authenticated/reseller/staff': {
+      id: '/_authenticated/reseller/staff'
+      path: '/staff'
+      fullPath: '/reseller/staff'
+      preLoaderRoute: typeof AuthenticatedResellerStaffRouteImport
+      parentRoute: typeof AuthenticatedResellerRouteRoute
+    }
     '/_authenticated/reseller/settings': {
       id: '/_authenticated/reseller/settings'
       path: '/settings'
@@ -1613,13 +1542,6 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/reseller/profile'
       preLoaderRoute: typeof AuthenticatedResellerProfileRouteImport
-      parentRoute: typeof AuthenticatedResellerRouteRoute
-    }
-    '/_authenticated/reseller/policies': {
-      id: '/_authenticated/reseller/policies'
-      path: '/policies'
-      fullPath: '/reseller/policies'
-      preLoaderRoute: typeof AuthenticatedResellerPoliciesRouteImport
       parentRoute: typeof AuthenticatedResellerRouteRoute
     }
     '/_authenticated/reseller/payouts': {
@@ -1713,34 +1635,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTransactionsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
-    '/_authenticated/admin/suppliers': {
-      id: '/_authenticated/admin/suppliers'
-      path: '/suppliers'
-      fullPath: '/admin/suppliers'
-      preLoaderRoute: typeof AuthenticatedAdminSuppliersRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/supplier-returns': {
-      id: '/_authenticated/admin/supplier-returns'
-      path: '/supplier-returns'
-      fullPath: '/admin/supplier-returns'
-      preLoaderRoute: typeof AuthenticatedAdminSupplierReturnsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/supplier-report': {
-      id: '/_authenticated/admin/supplier-report'
-      path: '/supplier-report'
-      fullPath: '/admin/supplier-report'
-      preLoaderRoute: typeof AuthenticatedAdminSupplierReportRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/supplier-payouts': {
-      id: '/_authenticated/admin/supplier-payouts'
-      path: '/supplier-payouts'
-      fullPath: '/admin/supplier-payouts'
-      preLoaderRoute: typeof AuthenticatedAdminSupplierPayoutsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
     '/_authenticated/admin/subscriptions': {
       id: '/_authenticated/admin/subscriptions'
       path: '/subscriptions'
@@ -1776,18 +1670,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminResellersRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/reseller-pricing': {
+      id: '/_authenticated/admin/reseller-pricing'
+      path: '/reseller-pricing'
+      fullPath: '/admin/reseller-pricing'
+      preLoaderRoute: typeof AuthenticatedAdminResellerPricingRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/privacy': {
       id: '/_authenticated/admin/privacy'
       path: '/privacy'
       fullPath: '/admin/privacy'
       preLoaderRoute: typeof AuthenticatedAdminPrivacyRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/policies': {
-      id: '/_authenticated/admin/policies'
-      path: '/policies'
-      fullPath: '/admin/policies'
-      preLoaderRoute: typeof AuthenticatedAdminPoliciesRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/payouts': {
@@ -1916,6 +1810,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBrandsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/backup': {
+      id: '/_authenticated/admin/backup'
+      path: '/backup'
+      fullPath: '/admin/backup'
+      preLoaderRoute: typeof AuthenticatedAdminBackupRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/agents': {
       id: '/_authenticated/admin/agents'
       path: '/agents'
@@ -1935,6 +1836,13 @@ declare module '@tanstack/react-router' {
       path: '/agent-payouts'
       fullPath: '/admin/agent-payouts'
       preLoaderRoute: typeof AuthenticatedAdminAgentPayoutsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/agent-deposits': {
+      id: '/_authenticated/admin/agent-deposits'
+      path: '/agent-deposits'
+      fullPath: '/admin/agent-deposits'
+      preLoaderRoute: typeof AuthenticatedAdminAgentDepositsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/advanced': {
@@ -1993,13 +1901,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentBridgeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/courier/sync': {
-      id: '/api/public/courier/sync'
-      path: '/api/public/courier/sync'
-      fullPath: '/api/public/courier/sync'
-      preLoaderRoute: typeof ApiPublicCourierSyncRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/courier/steadfast': {
       id: '/api/public/courier/steadfast'
       path: '/api/public/courier/steadfast'
@@ -2054,9 +1955,11 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminAdvancedRoute: typeof AuthenticatedAdminAdvancedRoute
+  AuthenticatedAdminAgentDepositsRoute: typeof AuthenticatedAdminAgentDepositsRoute
   AuthenticatedAdminAgentPayoutsRoute: typeof AuthenticatedAdminAgentPayoutsRoute
   AuthenticatedAdminAgentReportRoute: typeof AuthenticatedAdminAgentReportRoute
   AuthenticatedAdminAgentsRoute: typeof AuthenticatedAdminAgentsRoute
+  AuthenticatedAdminBackupRoute: typeof AuthenticatedAdminBackupRoute
   AuthenticatedAdminBrandsRoute: typeof AuthenticatedAdminBrandsRoute
   AuthenticatedAdminBusinessReportRoute: typeof AuthenticatedAdminBusinessReportRoute
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRoute
@@ -2075,17 +1978,13 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRoute
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
   AuthenticatedAdminPayoutsRoute: typeof AuthenticatedAdminPayoutsRoute
-  AuthenticatedAdminPoliciesRoute: typeof AuthenticatedAdminPoliciesRoute
   AuthenticatedAdminPrivacyRoute: typeof AuthenticatedAdminPrivacyRoute
+  AuthenticatedAdminResellerPricingRoute: typeof AuthenticatedAdminResellerPricingRoute
   AuthenticatedAdminResellersRoute: typeof AuthenticatedAdminResellersRoute
   AuthenticatedAdminRiderFollowupRoute: typeof AuthenticatedAdminRiderFollowupRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminStaffRoute: typeof AuthenticatedAdminStaffRoute
   AuthenticatedAdminSubscriptionsRoute: typeof AuthenticatedAdminSubscriptionsRoute
-  AuthenticatedAdminSupplierPayoutsRoute: typeof AuthenticatedAdminSupplierPayoutsRoute
-  AuthenticatedAdminSupplierReportRoute: typeof AuthenticatedAdminSupplierReportRoute
-  AuthenticatedAdminSupplierReturnsRoute: typeof AuthenticatedAdminSupplierReturnsRoute
-  AuthenticatedAdminSuppliersRoute: typeof AuthenticatedAdminSuppliersRoute
   AuthenticatedAdminTransactionsRoute: typeof AuthenticatedAdminTransactionsRoute
   AuthenticatedAdminTutorialsRoute: typeof AuthenticatedAdminTutorialsRoute
   AuthenticatedAdminVisitorsRoute: typeof AuthenticatedAdminVisitorsRoute
@@ -2098,9 +1997,11 @@ interface AuthenticatedAdminRouteRouteChildren {
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
     AuthenticatedAdminAdvancedRoute: AuthenticatedAdminAdvancedRoute,
+    AuthenticatedAdminAgentDepositsRoute: AuthenticatedAdminAgentDepositsRoute,
     AuthenticatedAdminAgentPayoutsRoute: AuthenticatedAdminAgentPayoutsRoute,
     AuthenticatedAdminAgentReportRoute: AuthenticatedAdminAgentReportRoute,
     AuthenticatedAdminAgentsRoute: AuthenticatedAdminAgentsRoute,
+    AuthenticatedAdminBackupRoute: AuthenticatedAdminBackupRoute,
     AuthenticatedAdminBrandsRoute: AuthenticatedAdminBrandsRoute,
     AuthenticatedAdminBusinessReportRoute:
       AuthenticatedAdminBusinessReportRoute,
@@ -2121,20 +2022,14 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminOrdersRoute: AuthenticatedAdminOrdersRoute,
     AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
     AuthenticatedAdminPayoutsRoute: AuthenticatedAdminPayoutsRoute,
-    AuthenticatedAdminPoliciesRoute: AuthenticatedAdminPoliciesRoute,
     AuthenticatedAdminPrivacyRoute: AuthenticatedAdminPrivacyRoute,
+    AuthenticatedAdminResellerPricingRoute:
+      AuthenticatedAdminResellerPricingRoute,
     AuthenticatedAdminResellersRoute: AuthenticatedAdminResellersRoute,
     AuthenticatedAdminRiderFollowupRoute: AuthenticatedAdminRiderFollowupRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminStaffRoute: AuthenticatedAdminStaffRoute,
     AuthenticatedAdminSubscriptionsRoute: AuthenticatedAdminSubscriptionsRoute,
-    AuthenticatedAdminSupplierPayoutsRoute:
-      AuthenticatedAdminSupplierPayoutsRoute,
-    AuthenticatedAdminSupplierReportRoute:
-      AuthenticatedAdminSupplierReportRoute,
-    AuthenticatedAdminSupplierReturnsRoute:
-      AuthenticatedAdminSupplierReturnsRoute,
-    AuthenticatedAdminSuppliersRoute: AuthenticatedAdminSuppliersRoute,
     AuthenticatedAdminTransactionsRoute: AuthenticatedAdminTransactionsRoute,
     AuthenticatedAdminTutorialsRoute: AuthenticatedAdminTutorialsRoute,
     AuthenticatedAdminVisitorsRoute: AuthenticatedAdminVisitorsRoute,
@@ -2176,10 +2071,10 @@ interface AuthenticatedResellerRouteRouteChildren {
   AuthenticatedResellerOrdersRoute: typeof AuthenticatedResellerOrdersRouteWithChildren
   AuthenticatedResellerPaymentsRoute: typeof AuthenticatedResellerPaymentsRoute
   AuthenticatedResellerPayoutsRoute: typeof AuthenticatedResellerPayoutsRoute
-  AuthenticatedResellerPoliciesRoute: typeof AuthenticatedResellerPoliciesRoute
   AuthenticatedResellerProfileRoute: typeof AuthenticatedResellerProfileRoute
   AuthenticatedResellerRiderFollowupRoute: typeof AuthenticatedResellerRiderFollowupRoute
   AuthenticatedResellerSettingsRoute: typeof AuthenticatedResellerSettingsRoute
+  AuthenticatedResellerStaffRoute: typeof AuthenticatedResellerStaffRoute
   AuthenticatedResellerSubscriptionRoute: typeof AuthenticatedResellerSubscriptionRoute
   AuthenticatedResellerSupportRoute: typeof AuthenticatedResellerSupportRoute
   AuthenticatedResellerThemeRoute: typeof AuthenticatedResellerThemeRoute
@@ -2203,11 +2098,11 @@ const AuthenticatedResellerRouteRouteChildren: AuthenticatedResellerRouteRouteCh
       AuthenticatedResellerOrdersRouteWithChildren,
     AuthenticatedResellerPaymentsRoute: AuthenticatedResellerPaymentsRoute,
     AuthenticatedResellerPayoutsRoute: AuthenticatedResellerPayoutsRoute,
-    AuthenticatedResellerPoliciesRoute: AuthenticatedResellerPoliciesRoute,
     AuthenticatedResellerProfileRoute: AuthenticatedResellerProfileRoute,
     AuthenticatedResellerRiderFollowupRoute:
       AuthenticatedResellerRiderFollowupRoute,
     AuthenticatedResellerSettingsRoute: AuthenticatedResellerSettingsRoute,
+    AuthenticatedResellerStaffRoute: AuthenticatedResellerStaffRoute,
     AuthenticatedResellerSubscriptionRoute:
       AuthenticatedResellerSubscriptionRoute,
     AuthenticatedResellerSupportRoute: AuthenticatedResellerSupportRoute,
@@ -2224,39 +2119,9 @@ const AuthenticatedResellerRouteRouteWithChildren =
     AuthenticatedResellerRouteRouteChildren,
   )
 
-interface AuthenticatedSupplierRouteRouteChildren {
-  AuthenticatedSupplierOrdersRoute: typeof AuthenticatedSupplierOrdersRoute
-  AuthenticatedSupplierPayoutsRoute: typeof AuthenticatedSupplierPayoutsRoute
-  AuthenticatedSupplierProductsRoute: typeof AuthenticatedSupplierProductsRoute
-  AuthenticatedSupplierProfileRoute: typeof AuthenticatedSupplierProfileRoute
-  AuthenticatedSupplierReportRoute: typeof AuthenticatedSupplierReportRoute
-  AuthenticatedSupplierReturnsRoute: typeof AuthenticatedSupplierReturnsRoute
-  AuthenticatedSupplierRiderFollowupRoute: typeof AuthenticatedSupplierRiderFollowupRoute
-  AuthenticatedSupplierIndexRoute: typeof AuthenticatedSupplierIndexRoute
-}
-
-const AuthenticatedSupplierRouteRouteChildren: AuthenticatedSupplierRouteRouteChildren =
-  {
-    AuthenticatedSupplierOrdersRoute: AuthenticatedSupplierOrdersRoute,
-    AuthenticatedSupplierPayoutsRoute: AuthenticatedSupplierPayoutsRoute,
-    AuthenticatedSupplierProductsRoute: AuthenticatedSupplierProductsRoute,
-    AuthenticatedSupplierProfileRoute: AuthenticatedSupplierProfileRoute,
-    AuthenticatedSupplierReportRoute: AuthenticatedSupplierReportRoute,
-    AuthenticatedSupplierReturnsRoute: AuthenticatedSupplierReturnsRoute,
-    AuthenticatedSupplierRiderFollowupRoute:
-      AuthenticatedSupplierRiderFollowupRoute,
-    AuthenticatedSupplierIndexRoute: AuthenticatedSupplierIndexRoute,
-  }
-
-const AuthenticatedSupplierRouteRouteWithChildren =
-  AuthenticatedSupplierRouteRoute._addFileChildren(
-    AuthenticatedSupplierRouteRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
   AuthenticatedResellerRouteRoute: typeof AuthenticatedResellerRouteRouteWithChildren
-  AuthenticatedSupplierRouteRoute: typeof AuthenticatedSupplierRouteRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedVerifyRoute: typeof AuthenticatedVerifyRoute
@@ -2265,7 +2130,6 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
   AuthenticatedResellerRouteRoute: AuthenticatedResellerRouteRouteWithChildren,
-  AuthenticatedSupplierRouteRoute: AuthenticatedSupplierRouteRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedVerifyRoute: AuthenticatedVerifyRoute,
@@ -2289,6 +2153,7 @@ const CatalogRouteWithChildren =
 
 interface SCodeRouteChildren {
   SCodeCheckoutRoute: typeof SCodeCheckoutRoute
+  SCodeShopRoute: typeof SCodeShopRoute
   SCodeThanksRoute: typeof SCodeThanksRoute
   SCodeIndexRoute: typeof SCodeIndexRoute
   SCodeCSlugRoute: typeof SCodeCSlugRoute
@@ -2297,6 +2162,7 @@ interface SCodeRouteChildren {
 
 const SCodeRouteChildren: SCodeRouteChildren = {
   SCodeCheckoutRoute: SCodeCheckoutRoute,
+  SCodeShopRoute: SCodeShopRoute,
   SCodeThanksRoute: SCodeThanksRoute,
   SCodeIndexRoute: SCodeIndexRoute,
   SCodeCSlugRoute: SCodeCSlugRoute,
@@ -2309,17 +2175,22 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   CatalogRoute: CatalogRouteWithChildren,
+  CheckoutRoute: CheckoutRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
+  RegisterRoute: RegisterRoute,
+  ShopRoute: ShopRoute,
+  SignupRoute: SignupRoute,
+  ThanksRoute: ThanksRoute,
   TutorialsRoute: TutorialsRoute,
+  CSlugRoute: CSlugRoute,
+  PSlugRoute: PSlugRoute,
   SCodeRoute: SCodeRouteWithChildren,
-  ApiPublicManifestRoute: ApiPublicManifestRoute,
   ApiPublicProductRoute: ApiPublicProductRoute,
   ApiPublicRobotsRoute: ApiPublicRobotsRoute,
   ApiPublicCourierCarrybeeRoute: ApiPublicCourierCarrybeeRoute,
   ApiPublicCourierPathaoRoute: ApiPublicCourierPathaoRoute,
   ApiPublicCourierSteadfastRoute: ApiPublicCourierSteadfastRoute,
-  ApiPublicCourierSyncRoute: ApiPublicCourierSyncRoute,
   ApiPublicPaymentBridgeRoute: ApiPublicPaymentBridgeRoute,
   ApiPublicPaymentEpaysebaWebhookRoute: ApiPublicPaymentEpaysebaWebhookRoute,
   ApiPublicPaymentSslcommerzIpnRoute: ApiPublicPaymentSslcommerzIpnRoute,

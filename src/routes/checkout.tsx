@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CustomDomainStoreLayout } from "@/components/store/custom-domain-shell";
 import { CheckoutPageContent } from "@/components/store/pages/checkout-page-content";
 
 type Search = {
@@ -7,7 +8,7 @@ type Search = {
   pay?: string;
 };
 
-export const Route = createFileRoute("/s/$code/checkout")({
+export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout · Online Store" },
@@ -23,11 +24,21 @@ export const Route = createFileRoute("/s/$code/checkout")({
     q: s.q ? Number(s.q) : undefined,
     pay: typeof s.pay === "string" ? s.pay : undefined,
   }),
-  component: Checkout,
+  component: CustomDomainCheckoutRoute,
 });
 
-function Checkout() {
-  const { code } = Route.useParams();
+function CustomDomainCheckoutRoute() {
   const { l: directListing, q: directQty, pay: payFlag } = Route.useSearch();
-  return <CheckoutPageContent code={code} directListing={directListing} directQty={directQty} payFlag={payFlag} />;
+  return (
+    <CustomDomainStoreLayout path="/checkout">
+      {({ code }) => (
+        <CheckoutPageContent
+          code={code}
+          directListing={directListing}
+          directQty={directQty}
+          payFlag={payFlag}
+        />
+      )}
+    </CustomDomainStoreLayout>
+  );
 }

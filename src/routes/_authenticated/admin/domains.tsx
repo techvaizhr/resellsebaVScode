@@ -2,7 +2,20 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Globe, Loader2, RefreshCw, Save, Server, ShieldCheck, Trash2, Plug, CheckCircle2, AlertCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  Globe,
+  Loader2,
+  RefreshCw,
+  Save,
+  Server,
+  ShieldCheck,
+  Trash2,
+  Plug,
+  CheckCircle2,
+  AlertCircle,
+  Cpu,
+} from "lucide-react";
 import { PageHeader } from "@/components/ui-kit";
 import { ConfirmModal } from "@/components/ui-kit/ConfirmModal";
 import {
@@ -16,6 +29,7 @@ import {
   savePlatformOrigins,
   type DomainRow,
 } from "@/lib/cloudflare.functions";
+import { groupDomainRows } from "@/lib/hostname-utils";
 
 export const Route = createFileRoute("/_authenticated/admin/domains")({
   component: DomainsAdmin,
@@ -51,8 +65,8 @@ const EMPTY: Form = {
   worker_name: "",
   cname_target: "",
   a_record_ip: "",
-  auto_worker_domain: false,
-  is_active: false,
+  auto_worker_domain: true,
+  is_active: true,
 };
 
 function errorText(err: unknown) {
@@ -74,7 +88,7 @@ function DomainsAdmin() {
   const [rows, setRows] = useState<DomainRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
-  const [confirm, setConfirm] = useState<DomainRow | null>(null);
+  const [confirmGroup, setConfirmGroup] = useState<DomainRow[] | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -123,12 +137,22 @@ function DomainsAdmin() {
     }
   }
 
-  async function onRefresh(row: DomainRow) {
-    setBusy(row.id);
+  async function onRefreshGroup(group: DomainRow[]) {
+    const busyKey = group[0].id;
+    setBusy(busyKey);
     try {
-      const updated = await refresh({ data: { id: row.id } });
-      setRows((rs) => rs.map((r) => (r.id === updated.id ? { ...updated, reseller_name: r.reseller_name, reseller_code: r.reseller_code } : r)));
-      toast.success(`${updated.hostname}: ${updated.ownership_status ?? "pending"} · SSL ${updated.ssl_status}`);
+      const settled = await Promise.allSettled(group.map((r) => refresh({ data: { id: r.id } })));
+      setRows((rs) =>
+        rs.map((r) => {
+          const i = group.findIndex((g) => g.id === r.id);
+          if (i === -1) return r;
+          const s = settled[i];
+          return s.status === "fulfilled" ? { ...s.value, reseller_name: r.reseller_name, reseller_code: r.reseller_code } : r;
+        }),
+      );
+      const failed = settled.filter((s) => s.status === "rejected").length;
+      if (failed > 0) toast.error(`${failed} ta hostname check kora jayni`);
+      else toast.success(`${group.map((r) => r.hostname).join(", ")}: checked`);
     } catch (err) {
       toast.error(errorText(err));
     } finally {
@@ -137,13 +161,18 @@ function DomainsAdmin() {
   }
 
   async function onDelete() {
-    if (!confirm) return;
-    setBusy(confirm.id);
+    if (!confirmGroup) return;
+    const busyKey = confirmGroup[0].id;
+    setBusy(busyKey);
     try {
-      await remove({ data: { id: confirm.id } });
-      setRows((rs) => rs.filter((r) => r.id !== confirm.id));
-      toast.success("Domain disconnected from Cloudflare");
-      setConfirm(null);
+      const ids = confirmGroup.map((r) => r.id);
+      const settled = await Promise.allSettled(ids.map((id) => remove({ data: { id } })));
+      const removedIds = new Set(ids.filter((_, i) => settled[i].status === "fulfilled"));
+      setRows((rs) => rs.filter((r) => !removedIds.has(r.id)));
+      const failed = settled.filter((s) => s.status === "rejected").length;
+      if (failed > 0) toast.error(`${failed} ta hostname remove kora jayni`);
+      else toast.success("Domain disconnected from Cloudflare");
+      setConfirmGroup(null);
     } catch (err) {
       toast.error(errorText(err));
     } finally {
@@ -237,63 +266,95 @@ function DomainsAdmin() {
         )}
 
         {form.mode !== "dns" && (
-        <div className="surface-card space-y-4 p-5">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <ShieldCheck className="h-4 w-4 text-primary" /> Cloudflare credentials
-        </div>
+          <>
+            <div className="surface-card space-y-4 p-5">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <ShieldCheck className="h-4 w-4 text-primary" /> Cloudflare credentials
+              </div>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">
-            API token {hasToken && <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[10px]">saved: {tokenHint}</span>}
-          </span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={form.api_token}
-            placeholder={hasToken ? "Leave blank to keep the saved token" : "Cloudflare API token"}
-            onChange={(e) => setForm((f) => ({ ...f, api_token: e.target.value }))}
-            className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-          <span className="text-[11px] text-muted-foreground">
-            Needs: Zone → SSL and Certificates (Edit), Zone → Zone (Read), Account → Workers Scripts (Edit).
-          </span>
-        </label>
+              <label className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground">API token</span>
+                  {hasToken && (
+                    <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="h-3 w-3" /> Saved ({tokenHint})
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={form.api_token}
+                  placeholder={hasToken ? `•••••••••••••••••••••••• (Saved: ${tokenHint})` : "Cloudflare API token"}
+                  onChange={(e) => setForm((f) => ({ ...f, api_token: e.target.value }))}
+                  className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+                <span className="text-[11px] text-muted-foreground">
+                  Needs: Zone → SSL and Certificates (Edit), Zone → Zone (Read), Zone → Workers Routes (Edit), Account → Workers Scripts (Edit).
+                </span>
+              </label>
 
-        <div className="flex flex-wrap gap-3">
-          {field("account_id", "Account ID", "cf account id")}
-          {field("zone_id", "Zone ID", "cf zone id")}
-        </div>
-        <div className="flex flex-wrap gap-3">
-          {field("zone_name", "Zone name", "yourplatform.com")}
-          {field("worker_name", "Worker script name", "resellhub-worker")}
-        </div>
-        <div className="flex flex-wrap gap-3">
-          {field("cname_target", "CNAME target for resellers", "proxy.yourplatform.com")}
-          {field("a_record_ip", "A record IP (root domains)", "203.0.113.10")}
-        </div>
+              <div className="flex flex-wrap gap-3">
+                {field("account_id", "Account ID", "cf account id")}
+                {field("zone_id", "Zone ID", "cf zone id")}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {field("zone_name", "Zone name", "yourplatform.com")}
+                {field("a_record_ip", "A record IP (root domains)", "203.0.113.10")}
+              </div>
 
-        <div className="flex flex-wrap items-center gap-4">
-          <label className="inline-flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={form.is_active}
-              onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-              className="h-4 w-4 rounded border"
-            />
-            Integration active
-          </label>
-          <label className="inline-flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={form.auto_worker_domain}
-              onChange={(e) => setForm((f) => ({ ...f, auto_worker_domain: e.target.checked }))}
-              className="h-4 w-4 rounded border"
-            />
-            Auto-attach worker domain (same zone only)
-          </label>
-        </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-muted-foreground">Fallback Hostname</span>
+                <input
+                  type="text"
+                  value={form.cname_target}
+                  placeholder="fallback.ecomseba.com"
+                  onChange={(e) => setForm((f) => ({ ...f, cname_target: e.target.value }))}
+                  className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+                <span className="text-[11px] text-muted-foreground">
+                  Business-der domain ei hostname-e CNAME korbe; eta apnar SaaS zone-er moddhe thakte hobe
+                </span>
+              </div>
 
-        </div>
+              <div className="flex flex-wrap items-center gap-4 pt-1">
+                <label className="inline-flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.is_active}
+                    onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
+                    className="h-4 w-4 rounded border"
+                  />
+                  Integration active
+                </label>
+              </div>
+            </div>
+
+            <div className="surface-card space-y-4 p-5">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <Cpu className="h-4 w-4 text-primary" /> Worker Route Automation
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Business domain add/remove korle Cloudflare Worker route (`domain.com/*` ও `www.domain.com/*`) স্বয়ংক্রিয়ভাবে Add ও Delete হবে। API Token e Zone → Workers Routes → Edit permission lagbe.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-muted-foreground">Worker Script Name</span>
+                <input
+                  type="text"
+                  value={form.worker_name}
+                  placeholder="saas-proxy"
+                  onChange={(e) => setForm((f) => ({ ...f, worker_name: e.target.value }))}
+                  className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+                <span className="text-[11px] text-muted-foreground">
+                  Cloudflare → Workers & Pages → apnar proxy worker er script name (URL er moddhe je name dekhen)
+                </span>
+              </div>
+            </div>
+          </>
         )}
 
         <div className="flex flex-wrap gap-2">
@@ -318,61 +379,86 @@ function DomainsAdmin() {
       </div>
 
       <div className="grid gap-3">
-        {rows.map((r) => (
-          <div key={r.id} className="surface-card flex flex-wrap items-center gap-3 p-4">
-            <div className="min-w-[220px] flex-1">
-              <div className="flex items-center gap-2 font-medium">
-                {r.hostname}
-                {r.is_primary && <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary">Primary</span>}
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                  {r.mode === "dns" ? "Server DNS" : "Cloudflare"}
-                </span>
+        {groupDomainRows(rows).map((group) => {
+          const busyKey = group[0].id;
+          const primaryRow = group.find((r) => r.is_primary) ?? group[0];
+          const allVerified = group.every((r) => r.verified_at);
+          return (
+            <div key={group.map((r) => r.id).join("+")} className="surface-card p-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="min-w-[220px] flex-1">
+                  <div className="flex items-center gap-2 font-medium">
+                    {group[0].hostname}
+                    {group.length > 1 && <span className="text-xs font-normal text-muted-foreground">+ www</span>}
+                    {primaryRow.is_primary && <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary">Primary</span>}
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                      {group[0].mode === "dns" ? "Server DNS" : "Cloudflare"}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    {group[0].reseller_name ?? "—"} {group[0].reseller_code ? `· ${group[0].reseller_code}` : ""}
+                  </div>
+                  <div className="mt-1 flex items-center gap-1 text-xs">
+                    {allVerified ? (
+                      <span className="inline-flex items-center gap-1 text-success">
+                        <CheckCircle2 className="h-3 w-3" /> Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-warning">
+                        <AlertCircle className="h-3 w-3" /> {group.some((r) => r.verified_at) ? "Partially active" : "Pending"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => onRefreshGroup(group)}
+                  disabled={busy === busyKey}
+                  className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted"
+                >
+                  {busy === busyKey ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Check status
+                </button>
+                <button
+                  onClick={() => setConfirmGroup(group)}
+                  className="rounded-md border p-1.5 text-muted-foreground hover:bg-muted"
+                  aria-label="Disconnect domain"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
               </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">
-                {r.reseller_name ?? "—"} {r.reseller_code ? `· ${r.reseller_code}` : ""}
-              </div>
-              <div className="mt-1 flex items-center gap-1 text-xs">
-                {r.verified_at ? (
-                  <span className="inline-flex items-center gap-1 text-success">
-                    <CheckCircle2 className="h-3 w-3" /> Active · SSL {r.ssl_status}
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-warning">
-                    <AlertCircle className="h-3 w-3" /> {r.ownership_status ?? "pending"} · SSL {r.ssl_status}
-                  </span>
-                )}
-              </div>
-              {r.last_error && <div className="mt-1 text-[11px] text-destructive">{r.last_error}</div>}
+              {group.length > 1 && (
+                <div className="mt-2 space-y-1 border-t pt-2 text-xs text-muted-foreground">
+                  {group.map((r) => (
+                    <div key={r.id} className="flex items-center gap-1.5">
+                      {r.verified_at ? (
+                        <CheckCircle2 className="h-3 w-3 text-success" />
+                      ) : (
+                        <AlertCircle className="h-3 w-3 text-warning" />
+                      )}
+                      {r.hostname} — {r.verified_at ? "Live" : (r.ownership_status ?? "pending")} · SSL {r.ssl_status}
+                      {r.last_error && <span className="text-destructive"> · {r.last_error}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {group.length === 1 && group[0].last_error && (
+                <div className="mt-1 text-[11px] text-destructive">{group[0].last_error}</div>
+              )}
             </div>
-            <button
-              onClick={() => onRefresh(r)}
-              disabled={busy === r.id}
-              className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted"
-            >
-              {busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Check status
-            </button>
-            <button
-              onClick={() => setConfirm(r)}
-              className="rounded-md border p-1.5 text-muted-foreground hover:bg-muted"
-              aria-label="Disconnect domain"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        ))}
+          );
+        })}
         {rows.length === 0 && (
           <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">No reseller domain connected yet.</div>
         )}
       </div>
 
       <ConfirmModal
-        isOpen={!!confirm}
+        isOpen={!!confirmGroup}
         title="Disconnect domain?"
         description="The hostname will be removed and the store will stop serving on it."
-        detail={confirm?.hostname}
+        detail={confirmGroup?.map((r) => r.hostname).join(", ")}
         confirmText="Disconnect"
-        isLoading={busy === confirm?.id}
-        onClose={() => setConfirm(null)}
+        isLoading={!!confirmGroup && busy === confirmGroup[0].id}
+        onClose={() => setConfirmGroup(null)}
         onConfirm={onDelete}
       />
     </div>

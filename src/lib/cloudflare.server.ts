@@ -14,6 +14,7 @@ export type CfConfig = {
   cname_target: string | null;
   a_record_ip: string | null;
   auto_worker_domain: boolean;
+  auto_worker_routes?: boolean;
   is_active: boolean;
   updated_at: string;
   /** Which setups are allowed: cloudflare only, server DNS only, or both. */
@@ -36,6 +37,7 @@ export async function loadConfig(db: any): Promise<CfConfig> {
     cname_target: null,
     a_record_ip: null,
     auto_worker_domain: false,
+    auto_worker_routes: false,
     is_active: false,
     updated_at: new Date().toISOString(),
     mode: "both",
@@ -55,6 +57,7 @@ const EMPTY_CONFIG: CfConfig = {
   cname_target: null,
   a_record_ip: null,
   auto_worker_domain: false,
+  auto_worker_routes: false,
   is_active: false,
   updated_at: new Date().toISOString(),
   mode: "both",
@@ -92,13 +95,14 @@ export async function loadConfigForProvisioning(supabase: any): Promise<CfConfig
   return { ...EMPTY_CONFIG, ...row, api_token: envToken() } as CfConfig;
 }
 
-/** Admin config when permitted, otherwise the non-secret + env-token config. */
+/**
+ * Admin config when permitted (settings.manage / domains.manage), or the
+ * reseller's own config when they're provisioning their own hostname —
+ * cf_config_get() itself allows both cases via current_reseller_id(), so no
+ * service-role bypass is needed here.
+ */
 export async function loadConfigFlexible(supabase: any): Promise<CfConfig> {
-  try {
-    return await loadConfigAsCaller(supabase);
-  } catch {
-    return loadConfigForProvisioning(supabase);
-  }
+  return loadConfigAsCaller(supabase);
 }
 
 /** Public-safe DNS guide values for any signed-in user. */
@@ -123,6 +127,7 @@ export async function loadDnsGuideAsCaller(supabase: any) {
 /** Config that is safe to send to the admin UI — token is masked. */
 export function maskConfig(c: CfConfig) {
   const token = c.api_token ?? "";
+  const autoRoutes = Boolean(c.auto_worker_routes ?? c.auto_worker_domain);
   return {
     hasToken: token.length > 0,
     tokenHint: token ? `${token.slice(0, 4)}••••${token.slice(-4)}` : "",
@@ -132,7 +137,8 @@ export function maskConfig(c: CfConfig) {
     worker_name: c.worker_name ?? "",
     cname_target: c.cname_target ?? "",
     a_record_ip: c.a_record_ip ?? "",
-    auto_worker_domain: !!c.auto_worker_domain,
+    auto_worker_domain: autoRoutes,
+    auto_worker_routes: autoRoutes,
     is_active: !!c.is_active,
     updated_at: c.updated_at,
     mode: c.mode ?? "both",
@@ -211,7 +217,8 @@ async function cf(c: CfConfig, path: string, init?: RequestInit) {
       body?.error ||
       `Cloudflare request failed (${res.status})`;
     console.error(`Cloudflare ${path} failed [${res.status}]: ${text.slice(0, 500)}`);
-    throw new Response(msg, { status: 502 });
+    const status = res.status >= 400 && res.status <= 599 ? res.status : 502;
+    throw new Response(msg, { status });
   }
   return body?.result ?? body;
 }
@@ -249,6 +256,7 @@ export async function verifyToken(c: CfConfig) {
 
 export type HostnameState = {
   id: string;
+  created: boolean;
   sslStatus: string;
   ownershipStatus: string;
   dnsTarget: string;
@@ -257,11 +265,12 @@ export type HostnameState = {
   active: boolean;
 };
 
-function readHostname(c: CfConfig, r: any): HostnameState {
+function readHostname(c: CfConfig, r: any, created = false): HostnameState {
   const ssl = r?.ssl ?? {};
   const ov = r?.ownership_verification ?? {};
   return {
     id: String(r?.id ?? ""),
+    created,
     sslStatus: String(ssl?.status ?? "pending"),
     ownershipStatus: String(r?.status ?? "pending"),
     dnsTarget: c.cname_target || c.zone_name || "",
@@ -274,7 +283,7 @@ function readHostname(c: CfConfig, r: any): HostnameState {
 export async function createCustomHostname(c: CfConfig, hostname: string): Promise<HostnameState> {
   // Re-use an existing hostname entry when Cloudflare already knows this domain.
   const existing = await cf(c, `/zones/${c.zone_id}/custom_hostnames?hostname=${encodeURIComponent(hostname)}`);
-  if (Array.isArray(existing) && existing.length > 0) return readHostname(c, existing[0]);
+  if (Array.isArray(existing) && existing.length > 0) return readHostname(c, existing[0], false);
 
   const result = await cf(c, `/zones/${c.zone_id}/custom_hostnames`, {
     method: "POST",
@@ -283,7 +292,7 @@ export async function createCustomHostname(c: CfConfig, hostname: string): Promi
       ssl: { method: "http", type: "dv", settings: { min_tls_version: "1.2" }, wildcard: false },
     }),
   });
-  return readHostname(c, result);
+  return readHostname(c, result, true);
 }
 
 export async function getCustomHostname(c: CfConfig, id: string): Promise<HostnameState> {
@@ -295,27 +304,188 @@ export async function deleteCustomHostname(c: CfConfig, id: string) {
   try {
     await cf(c, `/zones/${c.zone_id}/custom_hostnames/${id}`, { method: "DELETE" });
   } catch (err) {
-    // A hostname deleted on Cloudflare's side must not block removal in our DB.
-    console.error("Cloudflare hostname delete failed", err);
+    // A record that is already gone is the desired end state. Other failures
+    // must remain visible so the DB row is retained and cleanup can be retried.
+    if (err instanceof Response && err.status === 404) return;
+    throw err;
   }
 }
 
-/** Attach the hostname straight to the Worker (only for domains inside our own zone). */
+/** Attach the hostname to the Worker (Workers Custom Domains). */
 export async function attachWorkerDomain(c: CfConfig, hostname: string): Promise<string | null> {
-  if (!c.auto_worker_domain || !c.account_id || !c.worker_name || !c.zone_id) return null;
-  if (c.zone_name && !hostname.endsWith(c.zone_name)) return null;
-  const result = await cf(c, `/accounts/${c.account_id}/workers/domains`, {
-    method: "PUT",
-    body: JSON.stringify({ environment: "production", hostname, service: c.worker_name, zone_id: c.zone_id }),
-  });
-  return result?.id ? String(result.id) : null;
-}
+  const accountId = c.account_id?.trim();
+  const service = (c.worker_name && c.worker_name.trim()) || "saas-proxy";
+  if (!accountId || !c.api_token) return null;
 
-export async function detachWorkerDomain(c: CfConfig, id: string) {
-  if (!c.account_id) return;
+  const payload: any = {
+    environment: "production",
+    hostname,
+    service,
+  };
+  if (c.zone_id?.trim()) {
+    payload.zone_id = c.zone_id.trim();
+  }
+
   try {
-    await cf(c, `/accounts/${c.account_id}/workers/domains/${id}`, { method: "DELETE" });
-  } catch (err) {
-    console.error("Cloudflare worker domain delete failed", err);
+    const result = await cf(c, `/accounts/${accountId}/workers/domains`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+    return result?.id ? String(result.id) : null;
+  } catch (err: any) {
+    console.warn(`Cloudflare attachWorkerDomain for ${hostname} returned:`, err?.message || err);
+    // If it failed with zone_id, retry without zone_id
+    if (payload.zone_id) {
+      try {
+        const retryResult = await cf(c, `/accounts/${accountId}/workers/domains`, {
+          method: "PUT",
+          body: JSON.stringify({ environment: "production", hostname, service }),
+        });
+        return retryResult?.id ? String(retryResult.id) : null;
+      } catch (retryErr) {
+        console.warn(`Cloudflare attachWorkerDomain retry without zone_id for ${hostname}:`, retryErr);
+      }
+    }
+    // If it already exists, query existing domains
+    try {
+      const existing = await cf(c, `/accounts/${accountId}/workers/domains`);
+      if (Array.isArray(existing)) {
+        const match = existing.find((d: any) => d.hostname === hostname);
+        if (match?.id) return String(match.id);
+      }
+    } catch {}
+    return null;
   }
 }
+
+export async function detachWorkerDomain(
+  c: CfConfig,
+  target: { id?: string | null; hostname?: string } | string,
+) {
+  const accountId = c.account_id?.trim();
+  if (!accountId || !c.api_token) return;
+
+  const id = typeof target === "string" ? target : target?.id;
+  const hostname = typeof target === "object" ? target?.hostname : undefined;
+
+  if (id) {
+    try {
+      await cf(c, `/accounts/${accountId}/workers/domains/${id}`, { method: "DELETE" });
+      return;
+    } catch (err) {
+      if (err instanceof Response && err.status === 404) return;
+      console.warn(`Worker domain detach by ID failed (${id}):`, err);
+    }
+  }
+
+  if (hostname) {
+    try {
+      const domains = await cf(c, `/accounts/${accountId}/workers/domains`);
+      if (Array.isArray(domains)) {
+        const matches = domains.filter((d: any) => d.hostname === hostname);
+        for (const m of matches) {
+          try {
+            await cf(c, `/accounts/${accountId}/workers/domains/${m.id}`, { method: "DELETE" });
+          } catch (delErr) {
+            console.warn(`Failed to delete matched worker domain ${m.id}:`, delErr);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn(`Could not list/clean worker domains for ${hostname}:`, err);
+    }
+  }
+}
+
+/**
+ * Automatically create or sync a Cloudflare Worker Route for a domain.
+ * Pattern: `hostname/*` pointing to script `c.worker_name || 'saas-proxy'`
+ */
+export async function createWorkerRoute(c: CfConfig, hostname: string): Promise<string | null> {
+  if (!c.zone_id || !c.api_token) return null;
+
+  const pattern = `${hostname}/*`;
+  const scriptName = (c.worker_name && c.worker_name.trim()) || "saas-proxy";
+
+  // Check if a route already exists for this pattern
+  try {
+    const existing = await cf(c, `/zones/${c.zone_id}/workers/routes`);
+    if (Array.isArray(existing)) {
+      const match = existing.find((r: any) => r.pattern === pattern);
+      if (match?.id) {
+        if (match.script !== scriptName) {
+          try {
+            await cf(c, `/zones/${c.zone_id}/workers/routes/${match.id}`, {
+              method: "PUT",
+              body: JSON.stringify({ pattern, script: scriptName }),
+            });
+          } catch (updateErr) {
+            console.error(`Failed to update existing worker route ${match.id}:`, updateErr);
+          }
+        }
+        return String(match.id);
+      }
+    }
+  } catch (err) {
+    console.warn("Could not list worker routes to check existing:", err);
+  }
+
+  try {
+    const result = await cf(c, `/zones/${c.zone_id}/workers/routes`, {
+      method: "POST",
+      body: JSON.stringify({ pattern, script: scriptName }),
+    });
+    return result?.id ? String(result.id) : null;
+  } catch (err: any) {
+    console.error(`Cloudflare worker route creation failed for ${pattern}:`, err);
+    // If route creation reported duplicate or conflict, try finding it again
+    try {
+      const existing = await cf(c, `/zones/${c.zone_id}/workers/routes`);
+      if (Array.isArray(existing)) {
+        const match = existing.find((r: any) => r.pattern === pattern);
+        if (match?.id) return String(match.id);
+      }
+    } catch {}
+    return null;
+  }
+}
+
+/**
+ * Delete a Cloudflare Worker Route by route ID or hostname pattern.
+ */
+export async function deleteWorkerRoute(
+  c: CfConfig,
+  target: { routeId?: string | null; hostname?: string },
+) {
+  if (!c.zone_id || !c.api_token) return;
+
+  if (target.routeId) {
+    try {
+      await cf(c, `/zones/${c.zone_id}/workers/routes/${target.routeId}`, { method: "DELETE" });
+      return;
+    } catch (err) {
+      if (err instanceof Response && err.status === 404) return;
+      console.warn(`Worker route delete by ID failed (${target.routeId}):`, err);
+    }
+  }
+
+  if (target.hostname) {
+    try {
+      const pattern = `${target.hostname}/*`;
+      const routes = await cf(c, `/zones/${c.zone_id}/workers/routes`);
+      if (Array.isArray(routes)) {
+        const matches = routes.filter((r: any) => r.pattern === pattern);
+        for (const m of matches) {
+          try {
+            await cf(c, `/zones/${c.zone_id}/workers/routes/${m.id}`, { method: "DELETE" });
+          } catch (delErr) {
+            console.warn(`Failed to delete matched worker route ${m.id}:`, delErr);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn(`Could not list/clean worker routes for ${target.hostname}:`, err);
+    }
+  }
+}
+
