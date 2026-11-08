@@ -20,6 +20,9 @@ export type GlobalSettings = {
   site_name: string | null;
   logo_url: string | null;
   primary_color: string | null;
+  accent_color?: string | null;
+  secondary_color?: string | null;
+  highlight_color?: string | null;
   contact_phone: string | null;
   contact_email: string | null;
   advanced_settings: unknown;
@@ -32,6 +35,8 @@ export type MyReseller = {
   business_name: string;
   status: string;
   avatar_url?: string | null;
+  /** Live verified custom domain hostname (from panel bootstrap), no scheme. */
+  primary_domain?: string | null;
 };
 
 let settingsPromise: Promise<GlobalSettings | null> | null = null;
@@ -80,8 +85,7 @@ export function primeMyReseller(userId: string | null | undefined, row: unknown)
   resellerPromise = Promise.resolve(row as MyReseller);
 }
 
-/** One `resellers` lookup per signed-in user (shared by every reseller screen). */
-
+/** One `resellers` lookup per signed-in user (shared by every reseller screen, works for both owners & staff). */
 export function getMyReseller(userId?: string | null, force = false): Promise<MyReseller | null> {
   if (force || (userId && resellerForUser && resellerForUser !== userId)) {
     resellerPromise = null;
@@ -93,16 +97,45 @@ export function getMyReseller(userId?: string | null, force = false): Promise<My
       try {
         await waitForPanelBootstrap();
         if (resellerPromise && resellerPromise !== p) return resellerPromise;
+
         let uid = userId ?? null;
         if (!uid) uid = (await supabase.auth.getUser()).data.user?.id ?? null;
         if (!uid) return null;
         resellerForUser = uid;
-        const { data } = await supabase
+
+        // 1. Direct owner lookup
+        const { data: ownerReseller } = await supabase
           .from("resellers")
           .select("id, code, business_name, status, avatar_url")
           .eq("user_id", uid)
           .maybeSingle();
-        return (data as MyReseller | null) ?? null;
+
+        if (ownerReseller) return ownerReseller as MyReseller;
+
+        // 2. Staff lookup: find the owner's reseller via reseller_staff
+        const { data: staffRow } = await supabase
+          .from("reseller_staff")
+          .select("reseller_id, resellers!inner(id, code, business_name, status, avatar_url)")
+          .eq("user_id", uid)
+          .eq("active", true)
+          .maybeSingle();
+
+        if (staffRow?.resellers) {
+          return staffRow.resellers as unknown as MyReseller;
+        }
+
+        // 3. Fallback via current_reseller_id RPC
+        const { data: currentResellerId } = await supabase.rpc("current_reseller_id");
+        if (currentResellerId) {
+          const { data: byRpc } = await supabase
+            .from("resellers")
+            .select("id, code, business_name, status, avatar_url")
+            .eq("id", currentResellerId)
+            .maybeSingle();
+          if (byRpc) return byRpc as MyReseller;
+        }
+
+        return null;
       } catch {
         return null;
       }
@@ -110,6 +143,89 @@ export function getMyReseller(userId?: string | null, force = false): Promise<My
     resellerPromise = p;
   }
   return p;
+}
+
+/**
+ * Generates a clean URL slug for a reseller's store from their business name / name.
+ * If no business name is available, falls back to the reseller code.
+ */
+export function getStoreSlug(businessName?: string | null, fallbackCode?: string | null): string {
+  const raw = (businessName ?? "").trim();
+  if (!raw) return (fallbackCode ?? "").trim();
+
+  // Convert spaces and special characters into hyphens, lowercase
+  // Keeps alphanumeric, Unicode letters and vowel marks (e.g. Bengali), converts spaces/symbols to hyphen
+  const slug = raw
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^\p{L}\p{M}\p{N}-]+/gu, "")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || (fallbackCode ?? "").trim();
+}
+
+/** Builds the relative storefront path, e.g. /s/dhaka-bazar */
+export function buildResellerStorePath(businessName?: string | null, fallbackCode?: string | null): string {
+  const slug = getStoreSlug(businessName, fallbackCode);
+  return slug ? `/s/${slug}` : "/s/";
+}
+
+/** Builds the full absolute storefront URL (or custom domain if provided) */
+export function buildResellerStoreAbsoluteUrl(
+  businessName?: string | null,
+  fallbackCode?: string | null,
+  customHost?: string | null,
+): string {
+  if (customHost) {
+    const cleanHost = customHost.replace(/^https?:\/\//, "").trim();
+    if (cleanHost) return `https://${cleanHost}`;
+  }
+  const path = buildResellerStorePath(businessName, fallbackCode);
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}${path}`;
+  }
+  return path;
+}
+
+/** Resolves the live store URL (custom domain if connected/verified, otherwise /s/(business-name)). */
+export async function getResellerStoreUrl(
+  resellerId: string,
+  resellerCode: string,
+  businessName?: string | null,
+): Promise<string> {
+  const slug = getStoreSlug(businessName, resellerCode);
+  let activeUrl = `/s/${slug}`;
+
+  try {
+    const { data: dRows } = await supabase
+      .from("reseller_domains")
+      .select("hostname, is_primary, ssl_status, verified_at")
+      .eq("reseller_id", resellerId)
+      .order("is_primary", { ascending: false });
+
+    if (dRows && dRows.length > 0) {
+      // Prioritize:
+      // 1. Primary domain
+      // 2. Active SSL or verified domain
+      // 3. Any connected domain
+      const best =
+        dRows.find((d) => d.is_primary && d.hostname) ||
+        dRows.find((d) => (d.ssl_status === "active" || d.verified_at) && d.hostname) ||
+        dRows.find((d) => !!d.hostname);
+
+      if (best?.hostname) {
+        const cleanHost = best.hostname.replace(/^https?:\/\//, "").trim();
+        if (cleanHost) {
+          activeUrl = `https://${cleanHost}`;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to resolve custom domain for reseller:", e);
+  }
+
+  return activeUrl;
 }
 
 /** Drop caches — call after sign-in/out or after saving settings. */
@@ -160,3 +276,4 @@ export function useMyReseller(userId?: string | null) {
 
   return { reseller, loading };
 }
+
